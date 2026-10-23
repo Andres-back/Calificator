@@ -41,15 +41,17 @@ function routeText(provider?: string | null, model?: string | null) {
 
 function GradingPipelineSummary({ stages }: { stages: AIStageControl[] }) {
   const extraction = stages.find((stage) => stage.stage_id === 'extraction')?.effective;
+  const primary = stages.find((stage) => stage.stage_id === 'grading_primary')?.effective;
   const verification = stages.find((stage) => stage.stage_id === 'grading_secondary')?.effective;
   const arbitration = stages.find((stage) => stage.stage_id === 'targeted_recheck')?.effective;
-  if (!extraction && !verification && !arbitration) return null;
+  if (!extraction && !primary && !verification && !arbitration) return null;
 
   return (
     <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-4 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">
       <p className="font-bold">Ruta institucional de calificación</p>
-      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+      <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {extraction && <p><span className="block text-xs font-semibold text-muted">Lectura visual</span>{routeText(extraction.provider, extraction.model)}</p>}
+        {primary && <p><span className="block text-xs font-semibold text-muted">Evaluador principal</span>{routeText(primary.provider, primary.model)}</p>}
         {verification && <p><span className="block text-xs font-semibold text-muted">Segundo evaluador</span>{routeText(verification.provider, verification.model)}</p>}
         {arbitration && <p><span className="block text-xs font-semibold text-muted">Árbitro ante discrepancias</span>{routeText(arbitration.provider, arbitration.model)}</p>}
       </div>
@@ -117,10 +119,10 @@ export function FunctionsSection({
                 provider.active
                 && provider.auth_configured
                 && compatibleModels(models, provider.id, stage.capability).length > 0
-                && (supportedProviders.length === 0 || supportedProviders.includes(provider.id))
+                && (supportedProviders.length === 0 || supportedProviders.includes(provider.id) || (['text', 'vision'].includes(stage.capability) && compatibleModels(models, provider.id, stage.capability).some((m) => m.runtime_profile && m.verification_id)))
               ));
               const modelOptions = route ? compatibleModels(models, route.primary_provider, stage.capability) : [];
-              const fallbackModelOptions = route?.fallback_provider ? compatibleModels(models, route.fallback_provider, stage.capability) : [];
+              const fallbackModelOptions = route?.fallback_provider ? compatibleModels(models, route.fallback_provider, stage.capability).filter((model) => route.fallback_provider !== route.primary_provider || model.model_id !== route.primary_model) : [];
               const currentProviderUnavailable = route && !providerOptions.some((provider) => provider.id === route.primary_provider)
                 ? providers.find((provider) => provider.id === route.primary_provider)
                 : null;
@@ -172,12 +174,13 @@ export function FunctionsSection({
                       <Field label="Proveedor de respaldo">
                         <Select value={route.fallback_provider ?? ''} onChange={(event) => {
                           const fallbackProvider = event.currentTarget.value || null;
-                          const first = fallbackProvider ? compatibleModels(models, fallbackProvider, stage.capability).find((model) => model.recommended) ?? compatibleModels(models, fallbackProvider, stage.capability)[0] : null;
+                          const candidates = fallbackProvider ? compatibleModels(models, fallbackProvider, stage.capability).filter((model) => fallbackProvider !== route.primary_provider || model.model_id !== route.primary_model) : [];
+                          const first = candidates.find((model) => model.recommended) ?? candidates[0] ?? null;
                           onUpsert({ ...route, fallback_provider: fallbackProvider, fallback_model: first?.model_id ?? null });
                         }}>
                           <option value="">Sin respaldo</option>
                           {fallbackProviderUnavailable && <option value={fallbackProviderUnavailable.id} disabled>{fallbackProviderUnavailable.label} (no disponible)</option>}
-                          {providerOptions.filter((provider) => provider.id !== route.primary_provider).map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
+                          {providerOptions.filter((provider) => compatibleModels(models, provider.id, stage.capability).some((model) => provider.id !== route.primary_provider || model.model_id !== route.primary_model)).map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
                         </Select>
                       </Field>
                       <Field label="Modelo de respaldo">

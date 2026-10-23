@@ -101,6 +101,7 @@ class VisionPageResult(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     error_code: str | None = None
     model: str = ""
+    provider: str = ""
     fallback_used: bool = False
     rotation_applied: int = 0
 
@@ -357,7 +358,8 @@ class VisionExtractor:
         provider: Literal["open_code", "ollama"] = "open_code",
     ) -> None:
         self.tracking = tracking or {}
-        if provider not in {"open_code", "ollama"}:
+        snapshot = self.tracking.get("_ai_config") or {}
+        if provider not in {"open_code", "ollama"} and not (snapshot.get("primary") or {}).get("runtime_profile"):
             raise ValueError("Proveedor visual no compatible")
         self.provider = provider
         self.base_url = settings.OPEN_CODE_BASE_URL.rstrip("/")
@@ -368,6 +370,15 @@ class VisionExtractor:
         )
 
     async def _keys(self) -> list[str]:
+        selected = ((self.tracking.get("_ai_config") or {}).get("primary") or {})
+        if selected.get("runtime_profile"):
+            from app.db.session import AsyncSessionLocal
+            from app.services.ai_credentials_service import resolve_api_credential
+            if selected.get("credential_source") == "teacher":
+                return [self.api_key] if self.api_key else []
+            async with AsyncSessionLocal() as credential_db:
+                value = await resolve_api_credential(credential_db, selected.get("connection") or {})
+            return [value] if value else []
         effective = await get_effective_ai_credentials()
         configured = (
             (effective.ollama_key, settings.OLLAMA_API_KEY)
@@ -414,11 +425,15 @@ Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review
 Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
 {{"student_detected":true,"page_role":"unknown","document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"present":true,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
 
-    async def _event(self, event: str, request_id: str, model: str, attempt: int, started: float, page: int, size: int, status: str, error: str | None = None, usage: dict | None = None, http_status: int | None = None) -> None:
+    async def _event(self, event: str, request_id: str, model: str, attempt: int, started: float, page: int, size: int, status: str, error: str | None = None, usage: dict | None = None, http_status: int | None = None, selection: dict | None = None, fallback_used: bool = False) -> None:
         duration = int((time.monotonic() - started) * 1000)
+        snapshot = self.tracking.get("_ai_config") or {}
+        provider = str((selection or {}).get("provider") or self.provider)
+        provider = "opencode" if provider == "open_code" else provider
+        feature = "evaluacion_digitalizar" if str(snapshot.get("feature") or "").startswith(("digitalizacion", "evaluacion_digitalizar")) else "grading"
         logger.info(event, extra={
             "grading_id": self.tracking.get("calificacion_id"), "entrega_id": self.tracking.get("entrega_id"),
-            "model": model, "provider": "opencode" if self.provider == "open_code" else "ollama", "duration_ms": duration,
+            "model": model, "provider": provider, "duration_ms": duration,
             "page": page, "size_bytes": size, "retry_count": attempt - 1, "error_code": error,
             "http_status": http_status,
             "total_pages": getattr(self, "_total_pages", None),
@@ -426,17 +441,25 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
         await log_ai_usage(
             request_id=request_id, pipeline_run_id=self.tracking.get("pipeline_run_id"),
             calificacion_id=self.tracking.get("calificacion_id"), evaluacion_id=self.tracking.get("evaluacion_id"),
-            feature="grading", stage="extraction", provider="opencode" if self.provider == "open_code" else "ollama", model=model,
+            feature=feature, stage="extraction", provider=provider, model=model,
             attempt_number=attempt, status=status, latency_ms=duration,
             input_tokens=(usage or {}).get("prompt_tokens"), output_tokens=(usage or {}).get("completion_tokens"),
             image_count=1, error_code=error,
+            routing_origin=(selection or {}).get("credential_source"),
+            config_hash=snapshot.get("config_hash"),
+            config_version=snapshot.get("teacher_config_version") or snapshot.get("global_config_version"),
+            fallback_used=fallback_used,
         )
 
     async def _one(self, item: tuple[int, bytes, str, bool], total: int, blueprint: dict, purpose: str) -> VisionPageResult:
         page, prepared_data, prepared_mime, allow_rotation = item
         models = [self.primary_model]
-        if self.provider == "open_code" and settings.VISION_FALLBACK_ENABLED:
+        snapshot = self.tracking.get("_ai_config") or {}
+        configured = (snapshot.get("primary") or {}).get("runtime_profile")
+        selections = [s for s in (snapshot.get("primary"), snapshot.get("fallback")) if s and s.get("runtime_profile")]
+        if not configured and self.provider == "open_code" and settings.VISION_FALLBACK_ENABLED:
             models.extend(settings.vision_fallback_models)
+        routes = [(str(s["model"]), s) for s in selections] if configured else [(m, None) for m in dict.fromkeys(models)]
         keys = await self._keys()
         if not keys:
             raise VisionExtractionError("vision_auth_missing")
@@ -454,15 +477,34 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
         for rotation, data, mime in candidates:
             last_size = len(data)
             try_next_orientation = False
-            for model_index, model in enumerate(dict.fromkeys(models)):
-                for attempt in range(1, settings.VISION_MAX_RETRIES + 2):
+            for model_index, (model, selection) in enumerate(routes):
+                connection = (selection or {}).get("connection") or {}
+                retries = min(5, max(0, int(connection.get("max_retries", 1)))) if selection else settings.VISION_MAX_RETRIES
+                for attempt in range(1, retries + 2):
                     started, request_id = time.monotonic(), str(uuid4())
                     response = None
-                    await self._event("vision.request_started", request_id, model, attempt, started, page, len(data), "started")
+                    event_route = {"selection": selection, "fallback_used": model_index > 0}
+                    await self._event("vision.request_started", request_id, model, attempt, started, page, len(data), "started", **event_route)
                     try:
                         encoded_image = base64.b64encode(data).decode()
                         prompt = self._prompt(blueprint, page, total, purpose)
-                        if self.provider == "ollama":
+                        if selection:
+                            from app.db.session import AsyncSessionLocal
+                            from app.services.ai_credentials_service import resolve_api_credential
+                            from app.services.ai_api_connections import call_configured_api
+                            if selection.get("credential_source") == "teacher":
+                                key = self.api_key
+                            else:
+                                async with AsyncSessionLocal() as credential_db:
+                                    key = await resolve_api_credential(credential_db, selection.get("connection") or {})
+                            async with provider_capacity():
+                                payload = await call_configured_api(selection, key, [{"role": "user", "content": [
+                                    {"type": "text", "text": prompt},
+                                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{encoded_image}", "detail": "high"}},
+                                ]}], max_tokens=settings.VISION_MAX_TOKENS, json_mode=True, timeout=min(300, max(5, float(connection.get("timeout_seconds") or 120))), session_id=self._session_id)
+                            content = payload["choices"][0]["message"]["content"]
+                            usage, http_status = payload.get("usage") or {}, 200
+                        elif self.provider == "ollama":
                             payload = {}
                             for key in keys:
                                 provider = OllamaCloudProvider(
@@ -537,6 +579,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         result = _normalize(raw, page, len(data))
                         result.duration_ms = int((time.monotonic() - started) * 1000)
                         result.model = model
+                        result.provider = str(selection.get("provider")) if selection else self.provider
                         result.fallback_used = model_index > 0
                         result.rotation_applied = rotation
                         result.parsing_ms = int((time.monotonic() - parsing_started) * 1000)
@@ -546,7 +589,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                             await self._event(
                                 "vision.request_failed", request_id, model, attempt,
                                 started, page, len(data), "failed", last_error,
-                                usage=usage, http_status=http_status,
+                                usage=usage, http_status=http_status, **event_route,
                             )
                             break
                         expects_student_answers = bool(
@@ -565,12 +608,12 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                             await self._event(
                                 "vision.request_failed", request_id, model, attempt,
                                 started, page, len(data), "failed", last_error,
-                                usage=usage, http_status=http_status,
+                                usage=usage, http_status=http_status, **event_route,
                             )
                             # Texto impreso sin respuestas no es éxito. Primero prueba
                             # otro lector visual; si se agotan, devuelve incertidumbre
                             # explícita para impedir que se convierta en un cero.
-                            if model_index + 1 < len(dict.fromkeys(models)):
+                            if model_index + 1 < len(routes):
                                 break
                             result.status = "requires_review"
                             result.warnings.append(
@@ -586,18 +629,22 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         await self._event(
                             "vision.request_completed", request_id, model, attempt,
                             started, page, len(data), "success",
-                            usage=usage, http_status=http_status,
+                            usage=usage, http_status=http_status, **event_route,
                         )
                         return result
                     except VisionExtractionError as exc:
                         last_error = exc.code
-                        retry = exc.temporary and attempt <= settings.VISION_MAX_RETRIES
+                        retry = exc.temporary and attempt <= retries
                     except RETRYABLE_ERRORS as exc:
                         last_error = "vision_timeout" if isinstance(exc, httpx.TimeoutException) else "vision_transport"
-                        retry = attempt <= settings.VISION_MAX_RETRIES
+                        retry = attempt <= retries
+                    except httpx.HTTPStatusError as exc:
+                        response = exc.response
+                        last_error = f"vision_http_{response.status_code}"
+                        retry = response.status_code in RETRYABLE_HTTP and attempt <= retries
                     except OllamaProviderError as exc:
                         last_error = "vision_provider_failed"
-                        retry = exc.temporary and attempt <= settings.VISION_MAX_RETRIES
+                        retry = exc.temporary and attempt <= retries
                     except Exception:
                         last_error, retry = "vision_invalid_schema", False
                     await self._event(
@@ -605,6 +652,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         request_id, model, attempt, started, page, len(data),
                         "retry" if retry else "failed", last_error,
                         http_status=response.status_code if response is not None else None,
+                        **event_route,
                     )
                     if retry:
                         await asyncio.sleep(min(0.5 * attempt, 2))
@@ -612,10 +660,10 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                     break
                 if try_next_orientation:
                     break
-                if model_index + 1 < len(models):
+                if model_index + 1 < len(routes):
                     logger.warning("vision.fallback", extra={
-                        "primary_model": models[0],
-                        "fallback_model": models[model_index + 1],
+                        "primary_model": routes[0][0],
+                        "fallback_model": routes[model_index + 1][0],
                         "failure_reason": last_error,
                         "page": page,
                     })
@@ -707,7 +755,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                 or any(item.status == "requires_review" for item in results)
                 or any(answer.needs_review for answer in answers)
             ),
-            provider="opencode" if self.provider == "open_code" else "ollama",
+            provider="opencode" if (fallback.provider if fallback else self.provider) == "open_code" else (fallback.provider if fallback else self.provider),
             primary_model=self.primary_model, fallback_used=fallback is not None,
             rotation_applied=next((item.rotation_applied for item in success if item.rotation_applied), 0),
             fallback_model=fallback.model if fallback else None,

@@ -59,6 +59,6 @@ Sin decisiones explícitas de permiso para este dominio.
 
 ## Hallazgos
 
-- **low · orphan_candidate**: 23 superficies no alcanzables o históricas se conservan como candidatas a retiro.
+- **low · orphan_candidate**: 25 superficies no alcanzables o históricas se conservan como candidatas a retiro.
 - **low · missing_coverage**: 13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.
 - **medium · contract_mismatch**: 6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

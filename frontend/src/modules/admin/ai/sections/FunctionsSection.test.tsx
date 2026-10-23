@@ -34,4 +34,12 @@ describe('administración de IA de devoluciones', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Proveedor de respaldo' }), '');
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ feature: route.feature, fallback_provider: null, fallback_model: null }));
   });
+
+  it('permite dos modelos distintos de la misma API como principal y respaldo', async () => {
+    const update = vi.fn();
+    const extra: AIModel = { ...models[0], model_id: 'new-principal', label: 'Principal nuevo' };
+    render(<FunctionsSection functions={functions} features={[{ ...route, primary_model: extra.model_id }]} providers={providers} models={[...models, extra]} onUpsert={update} />);
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Proveedor de respaldo' }), 'open_code');
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ primary_model: 'new-principal', fallback_provider: 'open_code', fallback_model: 'glm-5.3-flash' }));
+  });
 });

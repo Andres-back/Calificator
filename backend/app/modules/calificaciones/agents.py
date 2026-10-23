@@ -28,6 +28,7 @@ from app.services.opencode_request import new_opencode_session_id, opencode_head
 from app.services.vision_service import interpret_image
 from app.services.vision_extractor import VisionExtractionError, VisionExtractor
 from app.services.ai_model_discovery import model_supports_vision
+from app.services.ai_api_connections import call_configured_api
 
 logger = get_logger(__name__)
 
@@ -56,6 +57,21 @@ CANONICAL_AI_STAGES = {
 
 def _canonical_stage(stage: str) -> str:
     return CANONICAL_AI_STAGES.get(stage, stage if stage in CANONICAL_AI_STAGES.values() else "structure")
+
+
+def client_supports_vision(client: Any, model: str) -> bool:
+    checker = getattr(client, "supports_vision", None)
+    return bool(checker(model)) if callable(checker) else model_supports_vision(model)
+
+
+def client_provider_for_model(client: Any, model: str) -> str:
+    selector = getattr(client, "selection_for_model", None)
+    selection = selector(model) if callable(selector) else None
+    if isinstance(selection, dict) and selection.get("runtime_profile"):
+        provider = str(selection.get("provider") or "")
+        if provider:
+            return "opencode" if provider == "open_code" else provider
+    return "opencode"
 
 
 def inference_http_timeout() -> httpx.Timeout:
@@ -338,6 +354,51 @@ class OpenCodeClient:
             "fallback_used": self._fallback_used or bool(snapshot.get("runtime_fallback")),
         }
 
+    def selection_for_model(self, model: str) -> dict[str, Any]:
+        snapshot = self._tracking.get("_ai_config") or {}
+        return next((s for s in (snapshot.get("primary"), snapshot.get("fallback")) if s and s.get("model") == model and s.get("runtime_profile")), {})
+
+    def supports_vision(self, model: str) -> bool:
+        selection = self.selection_for_model(model)
+        return "vision" in selection.get("capabilities", []) if selection else model_supports_vision(model)
+
+    async def _configured_chat(self, selection: dict[str, Any], messages: list[dict], *,
+                               max_tokens: int, json_mode: bool, temperature: float,
+                               stage: str, image_count: int, max_attempts: int | None) -> dict[str, Any]:
+        model = str(selection["model"])
+        configured_secrets = getattr(self, "_configured_secrets", {})
+        connection = selection.get("connection") or {}
+        secret = configured_secrets.get(str(connection.get("credential_revision") or selection.get("provider")), "")
+        if not secret:
+            raise ValueError("La credencial capturada no está disponible; no se utilizará la de otro proveedor.")
+        configured_attempts = min(6, max(1, int(connection.get("max_retries", 1)) + 1))
+        attempts = min(configured_attempts, max(1, max_attempts)) if max_attempts is not None else configured_attempts
+        request_timeout = httpx.Timeout(
+            connect=settings.AI_PROVIDER_CONNECT_TIMEOUT_SECONDS,
+            read=min(300, max(5, float(connection.get("timeout_seconds") or 120))),
+            write=settings.AI_PROVIDER_WRITE_TIMEOUT_SECONDS,
+            pool=settings.AI_PROVIDER_POOL_TIMEOUT_SECONDS,
+        )
+        for attempt in range(1, attempts + 1):
+            started = time.monotonic()
+            try:
+                data = await call_configured_api(selection, secret, messages, max_tokens=max_tokens,
+                    json_mode=json_mode, temperature=temperature, timeout=request_timeout, session_id=self._session_id)
+                usage = data.get("usage") or {}
+                await self._log_call(stage=stage, model=str(data.get("model") or model), status="success", started_at=started,
+                    input_tokens=usage.get("prompt_tokens"), output_tokens=usage.get("completion_tokens"),
+                    image_count=image_count, attempt_number=attempt, provider=str(selection.get("provider") or "open_code"))
+                data["_xcal_route"] = {"provider": str(selection["provider"]), "model": model}
+                return data
+            except Exception as exc:
+                retryable = _is_retryable_transport_error(exc) or (isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in OPEN_CODE_RETRYABLE_STATUS_CODES)
+                await self._log_call(stage=stage, model=model, status="retry" if retryable and attempt < attempts else "failed",
+                    started_at=started, image_count=image_count, attempt_number=attempt, error_code=type(exc).__name__, provider=str(selection.get("provider") or "open_code"))
+                if not retryable or attempt == attempts:
+                    raise
+                await asyncio.sleep(_retry_delay_seconds(attempt))
+        raise RuntimeError("configured_api_unavailable")
+
     async def _log_call(
         self,
         *,
@@ -350,6 +411,7 @@ class OpenCodeClient:
         image_count: int = 0,
         error_code: str | None = None,
         attempt_number: int = 1,
+        provider: str = "open_code",
     ) -> None:
         """Registra una llamada en el ledger (fire-and-forget)."""
         completed_at = time.monotonic()
@@ -360,7 +422,7 @@ class OpenCodeClient:
             pipeline_run_id=self._tracking.get("pipeline_run_id"),
             feature="grading",
             stage=_canonical_stage(stage),
-            provider="opencode",
+            provider="opencode" if provider == "open_code" else provider,
             model=model,
             attempt_number=attempt_number,
             status=status,
@@ -389,6 +451,22 @@ class OpenCodeClient:
         Uses DEFAULT_TIMEOUT (60s) for text-only calls; multimodal callers
         should pass ``timeout=DEFAULT_MULTIMODAL_TIMEOUT`` (180s).
         """
+        selected_profile = self.selection_for_model(model)
+        if selected_profile:
+            options = dict(max_tokens=max_tokens, json_mode=json_mode, temperature=temperature,
+                           stage=stage, image_count=image_count, max_attempts=max_attempts)
+            try:
+                return await self._configured_chat(selected_profile, messages, **options)
+            except Exception:
+                snapshot = self._tracking.get("_ai_config") or {}
+                fallback = snapshot.get("fallback") or {}
+                if (selected_profile != snapshot.get("primary") or not fallback.get("runtime_profile")
+                        or (image_count and "vision" not in fallback.get("capabilities", []))):
+                    raise
+                self._fallback_used = True
+                return await self._configured_chat(fallback, messages, **options)
+        if ((self._tracking.get("_ai_config") or {}).get("primary") or {}).get("runtime_profile"):
+            raise ValueError("El modelo no pertenece a la ruta capturada; no se reutilizará su clave en otra API.")
         protocol = _opencode_protocol(model)
         if protocol == "messages":
             system_prompt, normalized_messages = _to_anthropic_messages(messages)
@@ -700,6 +778,9 @@ async def vision_agent(
             modelo=model, error="No hay imagen para procesar",
         )
     tracking = getattr(client, "_tracking", {}) if client else {}
+    selected = (tracking.get("_ai_config") or {}).get("primary") or {}
+    if selected.get("runtime_profile"):
+        provider = str(selected.get("provider") or provider)
     purpose = "evaluation_document" if prompt_override else "student_response"
     started = time.monotonic()
     try:
@@ -707,7 +788,7 @@ async def vision_agent(
             tracking=tracking,
             primary_model=model,
             api_key=api_key or (client.api_key if client else None),
-            provider="ollama" if provider == "ollama" else "open_code",
+            provider=provider,
         ).extract(
             ctx.image_bytes,
             ctx.image_mime,
@@ -1102,7 +1183,7 @@ async def grader_agent(
     start = time.monotonic()
     try:
         prompt = render_grader_prompt(ctx)
-        if ctx.requires_visual_material and not model_supports_vision(model):
+        if ctx.requires_visual_material and not client_supports_vision(client, model):
             raise VisualContextError('evaluation_visual_model_unsupported', 'El modelo seleccionado no puede ver las figuras. Se necesita un modelo con visión o revisión docente.')
         if ctx.evaluation_visuals and len(prompt) > max(1000, int(settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS)):
             raise VisualContextError('evaluation_visual_budget_exceeded', 'El material de esta pregunta es demasiado extenso para revisarlo completo.')
@@ -1125,12 +1206,16 @@ async def grader_agent(
         content = raw["choices"][0]["message"]["content"]
         parsed = _parse_json_content(content)
 
+        executed = raw.get("_xcal_route") or {}
+        executed_provider = str(executed.get("provider") or client_provider_for_model(client, model))
+        executed_provider = "opencode" if executed_provider == "open_code" else executed_provider
+        executed_model = str(executed.get("model") or model)
         raw_score = parsed.get("nota_sugerida")
         if raw_score is None:
             logger.error("Grader agent %s returned no score", model)
             return AgentResult(
                 nota_sugerida=None, confianza=0, feedback_estudiante="",
-                proveedor="opencode", modelo=model,
+                proveedor=executed_provider, modelo=executed_model,
                 error="grader_missing_score", requiere_revision_docente=True,
                 tiempo_ms=ms, raw_output=parsed,
             )
@@ -1143,7 +1228,7 @@ async def grader_agent(
             componentes=[sanitize_component_payload(item) for item in parsed.get("componentes", []) if isinstance(item, dict)],
             alertas=parsed.get("alertas", []),
             requiere_revision_docente=parsed.get("requiere_revision_docente", True),
-            proveedor="opencode", modelo=model, tiempo_ms=ms,
+            proveedor=executed_provider, modelo=executed_model, tiempo_ms=ms,
             raw_output=parsed,
         )
         logger.info("Grader agent OK: modelo=%s %dms nota=%.2f confianza=%.2f", model, ms, result.nota_sugerida, result.confianza)
@@ -1155,7 +1240,7 @@ async def grader_agent(
             nota_sugerida=None,
             confianza=0,
             feedback_estudiante="",
-            proveedor="opencode",
+            proveedor=client_provider_for_model(client, model),
             modelo=model,
             error=exc.code if isinstance(exc, VisualContextError) else type(exc).__name__,
             requiere_revision_docente=True,
@@ -1275,7 +1360,7 @@ async def verification_agent(
     started = time.monotonic()
     try:
         prompt += describe_evaluation_material(ctx.evaluation_visuals, ctx.blueprint)
-        if ctx.requires_visual_material and not model_supports_vision(model):
+        if ctx.requires_visual_material and not client_supports_vision(client, model):
             raise VisualContextError('evaluation_visual_model_unsupported', 'El verificador seleccionado no puede ver las figuras necesarias.')
         if ctx.evaluation_visuals and len(prompt) > max(1000, int(settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS)):
             raise VisualContextError('evaluation_visual_budget_exceeded', 'El material de esta pregunta es demasiado extenso para verificarlo completo.')
@@ -1288,7 +1373,7 @@ async def verification_agent(
             "max_attempts": max_attempts,
             "stage": "grading_secondary",
         }
-        if (multimodal and ctx.image_bytes and model_supports_vision(model)) or ctx.requires_visual_material:
+        if (multimodal and ctx.image_bytes and client_supports_vision(client, model)) or ctx.requires_visual_material:
             raw = await client.chat_multimodal(
                 **request_options,
                 text=prompt,
@@ -1304,14 +1389,18 @@ async def verification_agent(
         elapsed_ms = int((time.monotonic() - started) * 1000)
         content = raw["choices"][0]["message"]["content"]
         parsed = _parse_json_content(content)
+        executed = raw.get("_xcal_route") or {}
+        executed_provider = str(executed.get("provider") or client_provider_for_model(client, model))
+        executed_provider = "opencode" if executed_provider == "open_code" else executed_provider
+        executed_model = str(executed.get("model") or model)
         raw_score = parsed.get("nota_sugerida")
         if raw_score is None:
             return AgentResult(
                 nota_sugerida=None,
                 confianza=0,
                 feedback_estudiante="",
-                proveedor="opencode",
-                modelo=model,
+                proveedor=executed_provider,
+                modelo=executed_model,
                 error="verifier_missing_score",
                 requiere_revision_docente=True,
                 raw_output=parsed,
@@ -1325,8 +1414,8 @@ async def verification_agent(
             componentes=_normalize_verifier_components(components, ctx.blueprint),
             alertas=[str(item) for item in parsed.get("alertas", [])],
             requiere_revision_docente=bool(parsed.get("requiere_arbitraje", False)),
-            proveedor="opencode",
-            modelo=model,
+            proveedor=executed_provider,
+            modelo=executed_model,
             tiempo_ms=elapsed_ms,
             raw_output=parsed,
         )
@@ -1336,7 +1425,7 @@ async def verification_agent(
             nota_sugerida=None,
             confianza=0,
             feedback_estudiante="",
-            proveedor="opencode",
+            proveedor=client_provider_for_model(client, model),
             modelo=model,
             error=exc.code if isinstance(exc, VisualContextError) else type(exc).__name__,
             requiere_revision_docente=True,

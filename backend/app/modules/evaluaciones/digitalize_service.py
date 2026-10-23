@@ -229,7 +229,7 @@ async def _digitalization_vision_client(
             snapshot = dict(stages.get("extraction") or captured)
             selected = snapshot.get("primary") or {}
             fallback = snapshot.get("fallback") or {}
-            if selected.get("provider") == "open_code" and selected.get("model"):
+            if (selected.get("provider") == "open_code" or selected.get("runtime_profile")) and selected.get("model"):
                 model = str(selected["model"])
             credentials = await get_effective_ai_credentials(db)
             institutional_key = credentials.open_code_key
@@ -264,7 +264,14 @@ async def _digitalization_vision_client(
             if personal_route or api_key:
                 client.api_key = api_key
             client._tracking["_ai_config"] = snapshot
+            if selected.get("runtime_profile"):
+                from app.services.ai_credentials_service import resolve_api_credential
+                client.api_key = await resolve_api_credential(db, selected.get("connection") or {})
+                connection = selected.get("connection") or {}
+                client._configured_secrets = {str(connection.get("credential_revision") or selected.get("provider")): client.api_key}
     except Exception as exc:
+        if ((client._tracking.get("_ai_config") or {}).get("primary") or {}).get("runtime_profile"):
+            raise ValueError("La conexión seleccionada para digitalizar no está disponible. Revisa su configuración.") from exc
         logger.warning(
             "Digitalization AI configuration unavailable; using institutional defaults: %s",
             type(exc).__name__,
@@ -1121,7 +1128,7 @@ async def detectar_estructura_evaluacion(
             fallback_warnings = [
                 *pipeline_warnings,
                 (
-                    "OpenCode no respondió; se utilizó recuperación local. "
+                    "El modelo seleccionado no respondió; se utilizó recuperación local. "
                     "Revisa preguntas y respuestas antes de publicar. "
                     "Si había una lectura, incorpórala desde el documento conservado: no pudimos separarla automáticamente."
                 ),
@@ -1141,7 +1148,7 @@ async def detectar_estructura_evaluacion(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=(
-                "OpenCode no pudo analizar el archivo y no fue posible reconstruir "
+                "El modelo seleccionado no pudo analizar el archivo y no fue posible reconstruir "
                 "localmente las preguntas. Intenta de nuevo en unos minutos."
             ),
         ) from exc

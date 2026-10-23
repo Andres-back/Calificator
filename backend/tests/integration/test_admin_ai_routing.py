@@ -5,6 +5,8 @@ import pytest
 from fastapi import HTTPException
 
 import app.modules.admin_ai_config.router as router
+import app.services.ai_config_service as configuration
+import app.services.ai_credentials_service as credentials
 from app.modules.authorization.catalog import default_permissions_for_role
 from app.modules.admin_ai_config.schemas import (
     AIControlCenterPublication,
@@ -50,6 +52,9 @@ class FakeService:
     async def get_all_models(self):
         return [{"provider_id": "open_code", "model_id": "qwen3.7-plus", "active": True, "capabilities": ["vision", "text"]}]
 
+    async def get_all_features(self):
+        return [publication().features[0].model_dump()]
+
     async def save_features(self, features, admin_id=None):
         self.saved.append((features, admin_id))
 
@@ -67,6 +72,12 @@ def fake_service(monkeypatch):
     FakeService.published = []
     FakeService.restored_version = 8
     monkeypatch.setattr(router, "AIConfigService", FakeService)
+    # All configuration consumers share the same synthetic server state.
+    # The publication validator now reads previous dependencies and server keys.
+    monkeypatch.setattr(configuration, "AIConfigService", FakeService)
+    async def effective_credentials(_db):
+        return credentials.EffectiveAICredentials(open_code_key="synthetic-no-network-key")
+    monkeypatch.setattr(credentials, "get_effective_ai_credentials", effective_credentials)
 
 
 def publication(version=4, capability="vision"):

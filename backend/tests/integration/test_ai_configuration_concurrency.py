@@ -20,6 +20,10 @@ class FakeConfigService:
     async def get_provider_config(self, provider):
         return {"id": provider, "model": "qwen3.7-plus", "allow_institutional_fallback": True}
 
+    async def get_all_models(self):
+        # This scenario deliberately exercises legacy, unprofiled snapshots.
+        return []
+
 
 @pytest.mark.asyncio
 async def test_three_teachers_resolve_concurrently_without_crossing_identity(monkeypatch):

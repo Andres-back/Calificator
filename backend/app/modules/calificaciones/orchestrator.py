@@ -156,7 +156,7 @@ async def _run_grader_cascade(
             multimodal=bool(
                 multimodal
                 and (ctx.image_bytes or ctx.requires_visual_material)
-                and model_supports_vision(model)
+                and (client.supports_vision(model) if callable(getattr(client, "supports_vision", None)) else model_supports_vision(model))
             ),
             client=client,
             timeout=timeout,
@@ -660,18 +660,18 @@ async def orchestrate_grading(
             verification_selected = verification_snapshot.get("primary") or {}
             recheck_selected = recheck_snapshot.get("primary") or {}
             selected_visual_provider = str(vision_selected.get("provider") or "open_code")
-            if selected_visual_provider in {"open_code", "ollama"}:
+            if selected_visual_provider in {"open_code", "ollama"} or vision_selected.get("runtime_profile"):
                 vision_provider = selected_visual_provider
             if vision_selected.get("model"):
                 vision_model = str(vision_selected["model"])
             vision_fallback = vision_snapshot.get("fallback") or {}
             candidate_fallback_provider = str(vision_fallback.get("provider") or "")
-            if candidate_fallback_provider in {"open_code", "ollama"}:
+            if not vision_selected.get("runtime_profile") and candidate_fallback_provider in {"open_code", "ollama"}:
                 vision_fallback_provider = candidate_fallback_provider
                 if vision_fallback.get("model"):
                     vision_fallback_model = str(vision_fallback["model"])
             if (
-                grading_selected.get("provider") == "open_code"
+                (grading_selected.get("provider") == "open_code" or grading_selected.get("runtime_profile"))
                 and grading_selected.get("model")
             ):
                 grader_a_model = str(grading_selected["model"])
@@ -681,9 +681,9 @@ async def orchestrate_grading(
                     and grading_fallback.get("model")
                 ):
                     grader_b_model = str(grading_fallback["model"])
-            if verification_selected.get("provider") == "open_code" and verification_selected.get("model"):
+            if (verification_selected.get("provider") == "open_code" or verification_selected.get("runtime_profile")) and verification_selected.get("model"):
                 verifier_model = str(verification_selected["model"])
-            if recheck_selected.get("provider") == "open_code" and recheck_selected.get("model"):
+            if (recheck_selected.get("provider") == "open_code" or recheck_selected.get("runtime_profile")) and recheck_selected.get("model"):
                 comparator_model = str(recheck_selected["model"])
                 grader_b_model = str(recheck_selected["model"])
 
@@ -758,6 +758,19 @@ async def orchestrate_grading(
                 selected = snapshot.get("primary") or {}
                 fallback = snapshot.get("fallback") or {}
                 target.api_key = institutional_key
+                target._configured_secrets = {}
+                from app.services.ai_credentials_service import resolve_api_credential
+                for route_slot in ("primary", "fallback"):
+                    candidate = snapshot.get(route_slot) or {}
+                    if candidate.get("runtime_profile"):
+                        connection = candidate.get("connection") or {}
+                        if candidate.get("credential_source") == "teacher" and user_id is not None:
+                            key = await get_teacher_ai_credential(db, teacher_id=user_id, provider_id=str(candidate["provider"]))
+                        else:
+                            key = await resolve_api_credential(db, connection)
+                        target._configured_secrets[str(connection.get("credential_revision") or candidate.get("provider"))] = key
+                        if route_slot == "primary":
+                            target.api_key = key
                 if (
                     selected.get("provider") == "open_code"
                     and selected.get("credential_source") == "teacher"
@@ -837,9 +850,9 @@ async def orchestrate_grading(
                 vision_result = await vision_agent(
                     ctx,
                     model=vision_model,
-                    client=vision_client if vision_provider == "open_code" else None,
+                    client=vision_client if vision_provider == "open_code" or (vision_snapshot.get("primary") or {}).get("runtime_profile") else None,
                     provider=vision_provider,
-                    api_key=vision_api_key,
+                    api_key=vision_client.api_key if (vision_snapshot.get("primary") or {}).get("runtime_profile") else vision_api_key,
                 )
             if (
                 (

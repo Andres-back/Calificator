@@ -537,7 +537,7 @@ class AIConfigService:
         try:
             result = await self._db.execute(
                 sql_text(
-                    "SELECT provider_id, model_id, label, capabilities, recommended, active, max_context_tokens FROM ai_provider_models ORDER BY provider_id, recommended DESC, model_id"
+                    "SELECT provider_id, model_id, label, capabilities, recommended, active, max_context_tokens, NULLIF(runtime_profile, '{}'::jsonb) AS runtime_profile, verification_id::text FROM ai_provider_models ORDER BY provider_id, recommended DESC, model_id"
                 )
             )
             rows = result.fetchall()
@@ -747,6 +747,7 @@ class AIConfigService:
                 "tipo": provider.get("tipo", "texto"),
                 "label": provider.get("label") or provider["id"],
                 "base_url": provider.get("base_url"),
+                "credential_revision": provider.get("credential_revision"),
                 "model": provider.get("model"),
                 "active": bool(provider.get("active", True)),
                 "priority": int(provider.get("priority", 99)),
@@ -764,9 +765,9 @@ class AIConfigService:
             await self._db.execute(
                 sql_text("""INSERT INTO ai_provider_settings
                 (id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries,
-                 allow_teacher_credentials, allow_institutional_fallback, config_version, updated_by)
+                 allow_teacher_credentials, allow_institutional_fallback, config_version, updated_by, credential_revision)
                 VALUES (:id, :tipo, :label, :base_url, :model, :active, :priority, :timeout_seconds, :max_retries,
-                 :allow_teacher_credentials, :allow_institutional_fallback, :config_version, :admin)"""),
+                 :allow_teacher_credentials, :allow_institutional_fallback, :config_version, :admin, :credential_revision)"""),
                 item,
             )
         for model in models:
@@ -778,15 +779,17 @@ class AIConfigService:
                 "recommended": bool(model.get("recommended", False)),
                 "active": bool(model.get("active", True)),
                 "max_context_tokens": model.get("max_context_tokens"),
+                "runtime_profile": json.dumps(model.get("runtime_profile") or {}),
+                "verification_id": model.get("verification_id"),
                 "config_version": version,
                 "admin": actor,
             }
             await self._db.execute(
                 sql_text("""INSERT INTO ai_provider_models
                 (provider_id, model_id, label, capabilities, recommended, active,
-                 max_context_tokens, config_version, updated_by)
+                 max_context_tokens, config_version, updated_by, runtime_profile, verification_id)
                 VALUES (:provider_id, :model_id, :label, :capabilities, :recommended, :active,
-                 :max_context_tokens, :config_version, :admin)"""),
+                 :max_context_tokens, :config_version, :admin, CAST(:runtime_profile AS jsonb), :verification_id)"""),
                 item,
             )
         for feature in features:
@@ -1034,7 +1037,7 @@ class AIConfigService:
         try:
             r = await self._db.execute(
                 sql_text(
-                    "SELECT id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials, allow_institutional_fallback, config_version FROM ai_provider_settings ORDER BY priority, id"
+                    "SELECT id, tipo, label, base_url, model, active, priority, timeout_seconds, max_retries, allow_teacher_credentials, allow_institutional_fallback, config_version, credential_revision::text FROM ai_provider_settings ORDER BY priority, id"
                 )
             )
             rows = r.fetchall()

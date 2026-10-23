@@ -379,3 +379,7 @@ actualizar la especificación propietaria, su plan y sus tareas; no debe crear d
 ## Hotfix 117: envío de foto con revisión digitalizada
 
 - [117-foto-entrega-completa](117-foto-entrega-completa/spec.md), [issue #244](https://github.com/Andres-back/Calificator/issues/244): inicializar el tipo antes del autoflush al recibir evidencia nueva de docente o estudiante. Regresión HTTP con PostgreSQL aislado, foto y varias hojas; sin cambiar notas, evidencias anteriores ni modelos. Reparación urgente autorizada el 2026-10-22; Spec 116 sigue independiente.
+
+## Evolución 116: APIs y modelos configurables
+
+- [116-api-modelos-configurables](116-api-modelos-configurables/spec.md), [issue #243](https://github.com/Andres-back/Calificator/issues/243): conexiones institucionales cifradas, catálogo completo, perfiles Chat Completions/Responses/Messages y prueba sintética antes de publicar por función. Captura de destino, formato y revisión de clave en trabajos nuevos. Conserva notas, evidencias y adaptadores de imágenes/embeddings. [Plan aprobado](116-api-modelos-configurables/plan.md) y [validación/entrega](116-api-modelos-configurables/quickstart.md); no implica activación en producción.
