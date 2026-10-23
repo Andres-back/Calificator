@@ -125,7 +125,7 @@ def test_qwen_flash_review_disables_thinking_and_keeps_visual_evidence(stage: st
         "type": "base64", "media_type": "image/png", "data": "YWJj",
     }
     assert result["choices"][0]["message"]["content"] == '{"nota_sugerida": 4.5}'
-    assert call["timeout"].read is None
+    assert call["timeout"].read == (60 if stage in {"grading_secondary", "targeted_recheck"} else None)
 
 
 @pytest.mark.parametrize("stage", ["text", "extraction", "grading_primary"])

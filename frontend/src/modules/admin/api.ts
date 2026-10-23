@@ -85,6 +85,7 @@ export interface AIFunctionControl {
   function_id: string;
   label: string;
   stages: AIStageControl[];
+  execution_policy?: { schema_version: number; call_timeout_seconds: number; max_stage_attempts: number };
 }
 
 export interface AIToolControl {

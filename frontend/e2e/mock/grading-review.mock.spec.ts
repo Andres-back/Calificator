@@ -19,7 +19,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 664 }
       id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1',
       estudiante_nombre: 'Estudiante de prueba con nombre largo', evaluacion_nombre: 'Comprensión de lectura', materia_nombre: 'Lenguaje',
       nota_sugerida: 2.52, nota_confirmada: null, nota_maxima: 5, confianza: 0.8, feedback: 'Identificaste al personaje. Revisa qué emoción expresa al inicio.',
-      estado: 'requiere_revision', revisado_por_docente: false, resultado_json: {}, timeline: [], guia_revision: [],
+      estado: 'requiere_revision', revisado_por_docente: false, resultado_json: { verification_status: 'pending' }, timeline: [], guia_revision: [],
       entrega_tipo: 'foto', entrega_archivo_url: '/api/evidencia-prueba', entrega_evidencia_paginas: 1,
       desglose: { ...breakdown, formula: { ...breakdown.formula, puntos_obtenidos: 2.48, puntos_posibles: 5, nota_base: 2.48, nota_final: 2.48 }, bloqueos: ['feedback_quality:nota_global_no_coincide_con_suma', 'hoja_faltante'] },
       created_at: '2026-10-14T00:00:00Z', updated_at: '2026-10-14T00:00:00Z',
@@ -27,6 +27,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 664 }
     await page.route('**/api/evidencia-prueba/paginas/1', (route) => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="white"/><text x="20" y="40">Evidencia sintética</text></svg>' }));
     await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
     const detail = page.getByTestId('grade-review-scroll');
+    await expect(detail.getByRole('status')).toContainText('Segunda revisión pendiente');
     await expect(detail.getByRole('alert')).toContainText('La IA propone 2.52, pero el cálculo provisional da 2.48. Falta 1 pregunta por puntuar.');
     await expect(detail.getByText(/Consulta el historial para conocer la decisión del docente/)).toHaveCount(0);
     const nav = detail.getByRole('navigation', { name: 'Secciones de la calificación' });

@@ -115,6 +115,7 @@ ALL_SPECS = {
     "116-api-modelos-configurables",
     "117-foto-entrega-completa",
     "118-calificacion-salida-completa",
+    "119-calificacion-lotes-resiliente",
 }
 OWNED_SPECS = {
     name

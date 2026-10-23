@@ -14,6 +14,7 @@ from app.modules.herramientas.tool_registry import TOOLS, canonical_tool_id
 from app.services.ai_capability_registry import STAGES, editable_runtime_features
 from app.services.ai_config_service import AIConfigService, DEFAULT_FEATURES
 from app.services.ai_configuration_resolver import resolve_ai_configuration
+from app.modules.calificaciones.execution_policy import execution_policy
 
 
 def _route_payload(route: dict[str, Any], providers: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -125,7 +126,8 @@ async def get_control_center(db: AsyncSession) -> dict[str, Any]:
     return {
         "version": version,
         "functions": [
-            {"function_id": key, "label": function_labels[key], "stages": stages}
+            {"function_id": key, "label": function_labels[key], "stages": stages,
+             **({"execution_policy": execution_policy()} if key == "calificacion" else {})}
             for key, stages in grouped.items()
         ],
         "tools": tools,
@@ -162,6 +164,7 @@ async def get_effective_route(
         "tool_id": canonical_tool_id(tool_id) if tool_id else None,
         "editable": stage.editable,
         "effective": resolved,
+        **({"execution_policy": execution_policy()} if function_id == "calificacion" else {}),
     }
 
 

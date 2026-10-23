@@ -3,7 +3,7 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any
 
@@ -15,6 +15,9 @@ from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
 from app.modules.calificaciones.feedback_usefulness import is_generic_feedback
 from app.modules.calificaciones.output_budget import grading_output_budget
+from app.modules.calificaciones.execution_policy import (
+    BOUNDED_STAGES, CALL_TIMEOUT_SECONDS, grading_call_window, provider_error_code,
+)
 from app.modules.calificaciones.grading_visuals import (
     EvaluationVisualInput, VisualContextError, describe_evaluation_material, visual_image_groups,
 )
@@ -375,17 +378,22 @@ class OpenCodeClient:
             raise ValueError("La credencial capturada no está disponible; no se utilizará la de otro proveedor.")
         configured_attempts = min(6, max(1, int(connection.get("max_retries", 1)) + 1))
         attempts = min(configured_attempts, max(1, max_attempts)) if max_attempts is not None else configured_attempts
+        if self._tracking.get("_bounded_recovery"):
+            attempts = 1
         request_timeout = httpx.Timeout(
             connect=settings.AI_PROVIDER_CONNECT_TIMEOUT_SECONDS,
-            read=min(300, max(5, float(connection.get("timeout_seconds") or 120))),
+            read=CALL_TIMEOUT_SECONDS if stage in BOUNDED_STAGES else min(300, max(5, float(connection.get("timeout_seconds") or 120))),
             write=settings.AI_PROVIDER_WRITE_TIMEOUT_SECONDS,
             pool=settings.AI_PROVIDER_POOL_TIMEOUT_SECONDS,
         )
         for attempt in range(1, attempts + 1):
             started = time.monotonic()
             try:
-                data = await call_configured_api(selection, secret, messages, max_tokens=max_tokens,
-                    json_mode=json_mode, temperature=temperature, timeout=request_timeout, session_id=self._session_id)
+                async with grading_call_window(stage):
+                    self._tracking["capacity_wait_ms"] = self._tracking.get("capacity_wait_ms", 0) + max(0, int((time.monotonic() - started) * 1000))
+                    started = time.monotonic()
+                    data = await call_configured_api(selection, secret, messages, max_tokens=max_tokens,
+                        json_mode=json_mode, temperature=temperature, timeout=request_timeout, session_id=self._session_id)
                 usage = data.get("usage") or {}
                 await self._log_call(stage=stage, model=str(data.get("model") or model), status="success", started_at=started,
                     input_tokens=usage.get("prompt_tokens"), output_tokens=usage.get("completion_tokens"),
@@ -398,7 +406,7 @@ class OpenCodeClient:
                     started_at=started, image_count=image_count, attempt_number=attempt,
                     input_tokens=exc.input_tokens if isinstance(exc, APIOutputError) else None,
                     output_tokens=exc.output_tokens if isinstance(exc, APIOutputError) else None,
-                    error_code=exc.code if isinstance(exc, APIOutputError) else type(exc).__name__,
+                    error_code=exc.code if isinstance(exc, APIOutputError) else provider_error_code(exc),
                     provider=str(selection.get("provider") or "open_code"))
                 if not retryable or attempt == attempts:
                     raise
@@ -422,6 +430,7 @@ class OpenCodeClient:
         """Registra una llamada en el ledger (fire-and-forget)."""
         completed_at = time.monotonic()
         latency_ms = int((completed_at - started_at) * 1000)
+        completed_utc = datetime.now(timezone.utc)
         await log_ai_usage(
             calificacion_id=self._tracking.get("calificacion_id"),
             evaluacion_id=self._tracking.get("evaluacion_id"),
@@ -433,6 +442,8 @@ class OpenCodeClient:
             attempt_number=attempt_number,
             status=status,
             latency_ms=latency_ms,
+            started_at=completed_utc - timedelta(milliseconds=latency_ms),
+            completed_at=completed_utc,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             image_count=image_count,
@@ -466,7 +477,7 @@ class OpenCodeClient:
             except Exception:
                 snapshot = self._tracking.get("_ai_config") or {}
                 fallback = snapshot.get("fallback") or {}
-                if (selected_profile != snapshot.get("primary") or not fallback.get("runtime_profile")
+                if (self._tracking.get("_bounded_recovery") or selected_profile != snapshot.get("primary") or not fallback.get("runtime_profile")
                         or (image_count and "vision" not in fallback.get("capabilities", []))):
                     raise
                 self._fallback_used = True
@@ -514,16 +525,23 @@ class OpenCodeClient:
             body["thinking"] = thinking
 
         request_timeout = inference_http_timeout()
+        if stage in BOUNDED_STAGES:
+            request_timeout.read = CALL_TIMEOUT_SECONDS
         attempt_limit = max(1, max_attempts if max_attempts is not None else OPEN_CODE_MAX_ATTEMPTS)
+        if self._tracking.get("_bounded_recovery"):
+            attempt_limit = 1
         for attempt_number in range(1, attempt_limit + 1):
             attempt_started = time.monotonic()
             try:
-                response = await self._client.post(
-                    f"{self.base_url}/{endpoint}",
-                    headers=headers,
-                    json=body,
-                    timeout=request_timeout,
-                )
+                async with grading_call_window(stage):
+                    self._tracking["capacity_wait_ms"] = self._tracking.get("capacity_wait_ms", 0) + max(0, int((time.monotonic() - attempt_started) * 1000))
+                    attempt_started = time.monotonic()
+                    response = await self._client.post(
+                        f"{self.base_url}/{endpoint}",
+                        headers=headers,
+                        json=body,
+                        timeout=request_timeout,
+                    )
                 if response.status_code == 401:
                     raise RuntimeError("OpenCode API key invalid o expirada")
                 if (
@@ -608,11 +626,7 @@ class OpenCodeClient:
                 status_value = (
                     "timeout" if isinstance(exc, httpx.TimeoutException) else "failed"
                 )
-                error_code = (
-                    "provider_timeout"
-                    if isinstance(exc, httpx.TimeoutException)
-                    else str(exc)[:60]
-                )
+                error_code = provider_error_code(exc)
                 await self._log_call(
                     stage=_canonical_stage(stage),
                     model=model,
@@ -622,7 +636,7 @@ class OpenCodeClient:
                     error_code=error_code,
                     image_count=image_count,
                 )
-                if self.fallback_api_key and not self._fallback_used:
+                if self.fallback_api_key and not self._fallback_used and not self._tracking.get("_bounded_recovery"):
                     self._fallback_used = True
                     self.api_key = self.fallback_api_key
                     fallbacks = self._tracking.setdefault("fallbacks", [])
@@ -1242,14 +1256,15 @@ async def grader_agent(
         return result
 
     except Exception as exc:
-        logger.error("Grader agent %s failed: %s", model, exc)
+        logger.error("Grader agent %s failed: %s", model,
+            exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else provider_error_code(exc))
         return AgentResult(
             nota_sugerida=None,
             confianza=0,
             feedback_estudiante="",
             proveedor=client_provider_for_model(client, model),
             modelo=model,
-            error=exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else type(exc).__name__,
+            error=exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else provider_error_code(exc),
             requiere_revision_docente=True,
             tiempo_ms=max(0, int((time.monotonic() - start) * 1000)),
         )
@@ -1427,14 +1442,15 @@ async def verification_agent(
             raw_output=parsed,
         )
     except Exception as exc:
-        logger.error("Verification agent %s failed: %s", model, exc)
+        logger.error("Verification agent %s failed: %s", model,
+            exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else provider_error_code(exc))
         return AgentResult(
             nota_sugerida=None,
             confianza=0,
             feedback_estudiante="",
             proveedor=client_provider_for_model(client, model),
             modelo=model,
-            error=exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else type(exc).__name__,
+            error=exc.code if isinstance(exc, (VisualContextError, APIOutputError)) else provider_error_code(exc),
             requiere_revision_docente=True,
             tiempo_ms=max(0, int((time.monotonic() - started) * 1000)),
         )
@@ -1674,7 +1690,8 @@ async def comparator_agent(
     except Exception as exc:
         logger.error("Comparator agent failed: %s", exc)
         nota_final = round(sum(valid_scores) / len(valid_scores), 2)
-        return AgentResult(nota_sugerida=nota_final, confianza=0, feedback_estudiante="", proveedor="comparator", modelo="fallback", error=str(exc))
+        return AgentResult(nota_sugerida=nota_final, confianza=0, feedback_estudiante="", proveedor="comparator", modelo="fallback",
+            error=exc.code if isinstance(exc, APIOutputError) else provider_error_code(exc))
     finally:
         if own_client:
             await client.close()

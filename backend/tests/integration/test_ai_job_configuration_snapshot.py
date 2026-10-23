@@ -93,6 +93,9 @@ def test_job_persists_sanitized_immutable_routing_snapshot(monkeypatch):
         {"feature": "calificacion.revision_adicional", "teacher_id": teacher_id},
     ]
     assert payload["_ai_config"]["schema_version"] == 2
+    assert payload["_ai_config"]["execution_policy"] == {
+        "schema_version": 1, "call_timeout_seconds": 60, "max_stage_attempts": 2,
+    }
     assert (
         payload["_ai_config"]["vision"]["primary"]["model"]
         == "deepseek-v4-flash-vision-exp"

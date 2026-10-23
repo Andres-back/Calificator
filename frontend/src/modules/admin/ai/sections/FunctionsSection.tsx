@@ -41,16 +41,17 @@ function routeText(provider?: string | null, model?: string | null) {
   return provider ? `${provider} · ${model || 'modelo del proveedor'}` : 'No aplica';
 }
 
-function GradingPipelineSummary({ stages }: { stages: AIStageControl[] }) {
+function GradingPipelineSummary({ stages, policy }: { stages: AIStageControl[]; policy?: AIFunctionControl['execution_policy'] }) {
   const extraction = stages.find((stage) => stage.stage_id === 'extraction')?.effective;
   const primary = stages.find((stage) => stage.stage_id === 'grading_primary')?.effective;
   const verification = stages.find((stage) => stage.stage_id === 'grading_secondary')?.effective;
   const arbitration = stages.find((stage) => stage.stage_id === 'targeted_recheck')?.effective;
-  if (!extraction && !primary && !verification && !arbitration) return null;
+  if (!extraction && !primary && !verification && !arbitration && !policy) return null;
 
   return (
     <div className="rounded-xl border border-brand-200 bg-brand-50/60 p-4 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">
       <p className="font-bold">Ruta institucional de calificación</p>
+      {policy && <p className="mt-2 text-sm">Máximo de {policy.call_timeout_seconds} segundos por llamada de evaluación o verificación; no incluye la espera en cola ni la suma de etapas. Si una etapa falla temporalmente, se intenta solo esa etapa pendiente, con un máximo de {policy.max_stage_attempts} intentos en total.</p>}
       <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {extraction && <p><span className="block text-xs font-semibold text-muted">Lectura visual</span>{routeText(extraction.provider, extraction.model)}</p>}
         {primary && <p><span className="block text-xs font-semibold text-muted">Evaluador principal</span>{routeText(primary.provider, primary.model)}</p>}
@@ -115,7 +116,7 @@ export function FunctionsSection({
             {(item.function_id === 'xali' || item.function_id === 'recursos') && (
               <p className="text-sm text-muted">Para las respuestas y el texto de recursos solo se usarán los proveedores elegidos aquí. «Sin respaldo» no enviará la solicitud a otro proveedor. Las imágenes y los evaluadores se configuran por separado.</p>
             )}
-            {item.function_id === 'calificacion' && <GradingPipelineSummary stages={item.stages} />}
+            {item.function_id === 'calificacion' && <GradingPipelineSummary stages={item.stages} policy={item.execution_policy} />}
             {item.stages.map((stage) => {
               const route = routeForStage(stage, features);
               const supportedProviders = stage.supported_providers ?? [];
