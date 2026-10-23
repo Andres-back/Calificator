@@ -18,6 +18,10 @@ import httpx
 class APIConnectionError(ValueError):
     """A user-safe error; never include a URL, key or upstream body."""
 
+    def __init__(self, message: str, *, field: str = "configuration") -> None:
+        super().__init__(message)
+        self.field = field
+
 
 def _public_address(value: str) -> bool:
     address = ipaddress.ip_address(value)
@@ -514,10 +518,12 @@ async def validate_compatible_publication(
             ).get("runtime_profile")
             for provider_id, model_id in pairs
         )
-        for provider_id, model_id in pairs:
+        for slot, (provider_id, model_id) in zip(("primary", "fallback"), pairs):
             provider = provider_map.get(provider_id, {})
             entry = model_map.get((provider_id, model_id or provider.get("model")), {})
             profile = entry.get("runtime_profile")
+            selection_label = "principal" if slot == "primary" else "de respaldo"
+            field = f"features.{feature_ids.index(feature['feature'])}.{slot}_model"
             selection_changed = (provider_id, model_id) not in {
                 (old.get("primary_provider"), old.get("primary_model")),
                 (old.get("fallback_provider"), old.get("fallback_model")),
@@ -530,7 +536,7 @@ async def validate_compatible_publication(
                 and not profile
             ):
                 raise APIConnectionError(
-                    f"Comprueba primero el formato del modelo elegido para «{feature.get('label') or feature['feature']}» en APIs compatibles."
+                    f"Comprueba el modelo {selection_label} «{entry.get('label') or model_id}» de «{feature.get('label') or feature['feature']}» desde Comprobar modelo antes de guardar.", field=field,
                 )
             if (
                 profiled_route
@@ -539,7 +545,7 @@ async def validate_compatible_publication(
                 and not profile
             ):
                 raise APIConnectionError(
-                    f"Prueba también el formato del otro modelo de «{feature.get('label') or feature['feature']}»; principal y respaldo deben tener perfiles comprobados."
+                    f"El modelo {selection_label} «{entry.get('label') or model_id}» de «{feature.get('label') or feature['feature']}» aún no es compatible con esta selección. Compruébalo desde la función, elige un respaldo comprobado o selecciona Sin respaldo.", field=field,
                 )
             if provider_id and str(provider_id).startswith("api_") and not profile:
                 raise APIConnectionError(
@@ -577,6 +583,6 @@ async def validate_compatible_publication(
             )
             if not check:
                 raise APIConnectionError(
-                    f"Prueba nuevamente el modelo de «{feature.get('label') or feature['feature']}» antes de publicar esta selección."
+                    f"Vuelve a comprobar el modelo {selection_label} «{entry.get('label') or model_id}» de «{feature.get('label') or feature['feature']}» antes de guardar.", field=field,
                 )
     return actual, changed

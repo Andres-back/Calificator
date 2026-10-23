@@ -479,7 +479,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "66fb1c243bc6196485070f177d151f3c57334001f298b744cb1dc75e0828067f",
+  "source_digest": "52f5335acc8d289c68347b6d130057ebf239b7583291bee66d5f72866b4c41f5",
   "surfaces": [
     {
       "actors": [
@@ -19646,6 +19646,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/ai/sections/ProvidersSection.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/RouteModelReadiness.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/utils/routePreparation.test.ts"
         },
         {
           "level": "unit",
@@ -41484,6 +41496,12 @@
           "level": "unit",
           "reference": "ollama",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_api_connections.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
         },
         {
@@ -41553,6 +41571,12 @@
           "test_path": "frontend/e2e/admin-ai-control-center.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "frontend/e2e/admin-compatible-api.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "ollama",
           "status": "direct",
@@ -41563,6 +41587,18 @@
           "reference": "ollama",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/ai/sections/ProvidersSection.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/RouteModelReadiness.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/utils/routePreparation.test.ts"
         },
         {
           "level": "unit",
@@ -41631,6 +41667,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_admin_ai_usage_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ai_api_connections.py"
         },
         {
           "level": "unit",

@@ -66,3 +66,19 @@ Analyze/Converge: 11 requisitos funcionales, cinco criterios de éxito y seis es
 | FR-008, FR-010 | Snapshot de ruta y revisión, notas/evidencias intactas, documento sintético con huecos y clave segura; activación real pendiente del procedimiento anterior |
 | FR-009 | `CompatibleAPISection.test.tsx`, `FunctionsSection.test.tsx`, `admin-compatible-api.spec.ts` y regresión de `admin-ai-control-center.spec.ts` |
 | FR-011 | CI obligatorio, migraciones/builds/gobernanza y comprobaciones de entrega separadas de la implementación local |
+
+## Corrección de autoservicio — 23-10-2026, issue #247
+
+Incidente: al seleccionar un principal comprobado para lectura visual, un respaldo heredado sin perfil impedía guardar. La protección era necesaria —el transporte compatible no ejecuta ese respaldo nativo—, pero el aviso no ofrecía una solución desde la función. No se debe retirar la protección ni quitar respaldos en silencio.
+
+T020 añade una ayuda junto a la selección que identifica principal o respaldo pendientes; permite elegir explícitamente otro respaldo comprobado o quitarlo. Los modelos de API pendientes se comprueban en un diálogo con proveedor/modelo y capacidad visual ya seleccionados, reutilizando el mismo editor. Un fallo conserva formato y borrador. No hay inferencia automática al cambiar un selector; cada prueba se inicia con el botón y advierte su costo. Guardar sigue validando comprobantes en servidor, versiones y permisos.
+
+Los errores de validación permanecen en la página con acciones para revisar la función o comprobar el modelo indicado. Backend devuelve el campo exacto sin modificar criterios de aceptación ni pruebas de compatibilidad. Cambiar el proveedor principal ya no elimina automáticamente el respaldo. No hay migraciones nuevas ni modificaciones automáticas de la configuración efectiva, notas o evidencias.
+
+Verificación local: 1.289 pruebas unitarias backend; 858 pruebas frontend en 137 archivos, incluidas 27 focalizadas; TypeScript, ESLint y build correctos. Doce escenarios de navegador Chromium/WebKit cubren cambio con respaldo heredado a 360/1366 px, prueba desde la función con fallo y recuperación, publicación/reapertura y denegación de acceso. Capturas móviles y de escritorio inspeccionadas. El primer E2E nuevo intentaba resolver el respaldo antes de preparar el principal; se corrigió esa secuencia de prueba, sin ampliar timeouts ni relajar aserciones. La primera suite frontend completa no arrancó sus procesos dentro del aislamiento local; se detuvo y se ejecutó con sus permisos normales, sin cambiar pruebas. CI remoto y entrega se registran por separado; estos resultados no significan despliegue.
+
+Convergencia de la corrección: FR-005/FR-009, SC-001/SC-005 y la aceptación US1/AC2 cubiertos; se mantiene la decisión de arquitectura de prueba única explícita y publicación versionada. No quedan tareas de construcción abiertas. No hay hooks de extensiones.
+
+Revisión final de accesibilidad: las etapas sin IA no reciben identificadores repetidos; una prueba adicional comprueba los destinos de navegación (cuatro casos de FunctionsSection verdes). No modifica selecciones ni permisos.
+
+Primer CI del hotfix: una integración seguía comparando el texto «Prueba nuevamente» después del cambio a «Vuelve a comprobar». Se actualizó esa expectativa y se añadió la comprobación del campo `primary_model`; el rechazo de formato/capacidad/comprobante inválidos sigue siendo obligatorio. Los cinco contratos PostgreSQL de Spec 116 pasaron en la base local aislada antes de reenviar CI.

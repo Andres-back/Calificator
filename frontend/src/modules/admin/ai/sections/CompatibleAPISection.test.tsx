@@ -9,6 +9,20 @@ const provider: AIProvider = { id: 'api_direct', name: 'api_direct', label: 'Dir
   model: null, active: true, priority: 1, timeout_seconds: 120, max_retries: 0, auth_configured: true, credential_revision: 'rev1' };
 
 describe('Compatible API administration', () => {
+  it('preselects a function model and preserves its image capability and profile', async () => {
+    const model = { provider_id: provider.id, model_id: 'selected', label: 'Seleccionado', capabilities: ['text', 'vision'], active: true, recommended: true, runtime_profile: { protocol: 'responses' as const, reasoning_effort: 'low' as const } };
+    const prepared = { ...model, verification_id: 'proof' };
+    vi.mocked(probeCompatibleModel).mockResolvedValue({ status: 'ok', detail: 'Comprobado', latency_ms: 100, provider, model: prepared });
+    const done = vi.fn();
+    render(<CompatibleAPISection providers={[provider]} models={[model]} onProvider={vi.fn()} onModels={vi.fn()} selection={{ providerId: provider.id, modelId: model.model_id, capability: 'vision' }} onPrepared={done} />);
+    expect(screen.getByLabelText('Modelo (identificador exacto)')).toHaveValue('selected');
+    expect(screen.getByLabelText('Formato de la API')).toHaveValue('responses');
+    expect(screen.getByRole('checkbox', { name: /recibe imágenes/ })).toBeDisabled();
+    expect(screen.queryByText('Añadir una API o actualizar su clave')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Probar y preparar modelo' }));
+    expect(probeCompatibleModel).toHaveBeenLastCalledWith(provider, expect.objectContaining({ model_id: 'selected', recommended: true, runtime_profile: model.runtime_profile, capabilities: ['text', 'vision'] }));
+    expect(done).toHaveBeenCalledTimes(1);
+  });
   it('prepares a separate connection and clears the write-only key', async () => {
     vi.mocked(prepareCompatibleConnection).mockResolvedValue(provider);
     const onProvider = vi.fn();

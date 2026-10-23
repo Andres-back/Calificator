@@ -179,6 +179,18 @@ beforeEach(() => {
 });
 
 describe('AdminAIConfigPage', () => {
+  it('keeps a publication error visible with a repair action and preserves the draft', async () => {
+    adminApi.validateAIControlCenter.mockResolvedValue({ valid: false, errors: [{ field: 'features.0.fallback_model', message: 'El respaldo anterior necesita comprobarse.' }], warnings: [] });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByLabelText('Permitir API del docente'));
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('El respaldo anterior necesita comprobarse.');
+    expect(screen.getByRole('button', { name: 'Revisar selección' })).toBeVisible();
+    expect(screen.getByLabelText('Permitir API del docente')).toBeChecked();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(adminApi.publishAIControlCenter).not.toHaveBeenCalled();
+  });
   it('saves an edited stage only after validation and confirmation', async () => {
     const user = userEvent.setup();
     renderPage();

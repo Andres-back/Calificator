@@ -347,3 +347,47 @@ def test_admin_observed_structure_shows_the_actual_granular_route():
     )
     assert observed["provider"] == "api_direct"
     assert observed["model"] == "future-model" and observed["config_version"] == 8
+
+
+def test_changed_primary_identifies_legacy_fallback_without_weakening_proof(monkeypatch):
+    from types import SimpleNamespace
+    import app.services.ai_credentials_service as credentials
+    from app.services.ai_config_service import AIConfigService
+    from app.services.ai_api_connections import validate_compatible_publication
+
+    providers = [{"id": "open_code", "model": "old", "base_url": "https://example.test/v1", "active": True}, {"id": "ollama", "model": "native", "active": True}]
+    models = [
+        {"provider_id": "open_code", "model_id": "new", "label": "Principal comprobado", "runtime_profile": {"protocol": "responses"}, "verification_id": "proof", "capabilities": ["vision"]},
+        {"provider_id": "open_code", "model_id": "backup", "runtime_profile": {"protocol": "chat_completions"}, "verification_id": "proof2", "capabilities": ["vision"]},
+        {"provider_id": "ollama", "model_id": "native", "label": "Respaldo anterior", "capabilities": ["vision"]},
+    ]
+    old = {"feature": "calificacion.extraccion", "label": "Lectura", "capability": "vision", "primary_provider": "open_code", "primary_model": "old", "fallback_provider": "ollama", "fallback_model": "native"}
+    monkeypatch.setattr(AIConfigService, "get_all_providers", AsyncMock(return_value=providers))
+    monkeypatch.setattr(AIConfigService, "get_all_models", AsyncMock(return_value=models))
+    monkeypatch.setattr(AIConfigService, "get_all_features", AsyncMock(return_value=[old]))
+    monkeypatch.setattr(credentials, "get_effective_ai_credentials", AsyncMock(return_value=SimpleNamespace(configured_for=lambda _: True)))
+    db = SimpleNamespace(scalar=AsyncMock(return_value=True))
+    selected = {**old, "primary_model": "new"}
+
+    with pytest.raises(APIConnectionError) as error:
+        asyncio.run(validate_compatible_publication(db, providers, models, [selected]))
+    assert error.value.field == "features.0.fallback_model"
+    assert "Respaldo anterior" in str(error.value) and "Sin respaldo" in str(error.value)
+    assert old["primary_model"] == "old" and selected["fallback_provider"] == "ollama"
+    for replacement in ({"fallback_provider": "open_code", "fallback_model": "backup"}, {"fallback_provider": None, "fallback_model": None}):
+        _, changed = asyncio.run(validate_compatible_publication(db, providers, models, [{**selected, **replacement}]))
+        assert len(changed) == 1
+    db.scalar.return_value = False
+    with pytest.raises(APIConnectionError) as invalid:
+        asyncio.run(validate_compatible_publication(db, providers, models, [{**selected, "fallback_provider": None, "fallback_model": None}]))
+    assert invalid.value.field == "features.0.primary_model"
+
+
+def test_validation_returns_an_actionable_selection_field(monkeypatch):
+    from types import SimpleNamespace
+    from app.modules.admin_ai_config.router import _validate_publication
+    import app.services.ai_api_connections as connections
+
+    monkeypatch.setattr(connections, "validate_compatible_publication", AsyncMock(side_effect=APIConnectionError("Comprueba el respaldo", field="features.2.fallback_model")))
+    result = asyncio.run(_validate_publication(None, SimpleNamespace(providers=[], models=[], features=[], tools=None)))
+    assert result == {"valid": False, "errors": [{"field": "features.2.fallback_model", "message": "Comprueba el respaldo"}], "warnings": []}

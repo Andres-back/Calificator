@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { BarChart3, BrainCircuit, ImageIcon, KeyRound, MessageSquare, Server, Wrench } from 'lucide-react';
-import { Badge, Button, Card, ConfirmDialog, QueryError, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, Modal, QueryError, Skeleton } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toApiError } from '@/lib/api';
 import { discoverCompatibleModels, getAISettings, getConfigHash, getAIAudit, getAIControlCenter, getAIControlCenterUsage, refreshGlobalProviderModels, validateAIControlCenter, type AIModel, type AIToolControl } from './api';
@@ -16,6 +16,7 @@ import { FunctionsSection } from './ai/sections/FunctionsSection';
 import { ToolsSection } from './ai/sections/ToolsSection';
 import { ConfigConsistencyCard } from './ai/sections/ConsistencySection';
 import { ControlCenterUsageExplorer, UsageAndAudit } from './ai/sections/AuditSection';
+import type { ModelPreparationSelection } from './ai/utils/routePreparation';
 
 const PERFORMANCE_FEATURE_ALIASES: Record<string, string[]> = {
   presentaciones: ['presentaciones', 'presentacion'],
@@ -33,6 +34,9 @@ export function AdminAIConfigPage() {
   const [validating, setValidating] = useState(false);
   const [usagePeriod, setUsagePeriod] = useState(30);
   const [validationWarnings, setValidationWarnings] = useState<Array<{ field: string; message: string }>>([]);
+  const [validationErrors, setValidationErrors] = useState<Array<{ field: string; message: string }>>([]);
+  const [preparingModel, setPreparingModel] = useState<ModelPreparationSelection | null>(null);
+  const [modelProbeBusy, setModelProbeBusy] = useState(false);
 
   const settingsQuery = useQuery({
     queryKey: ['admin-ai-settings'],
@@ -178,15 +182,18 @@ export function AdminAIConfigPage() {
       return;
     }
     setValidating(true);
+    setValidationErrors([]);
     try {
       const result = await validateAIControlCenter(draftProviders, draftModels, draftFeatures, draftTools, expectedVersion);
       if (!result.valid) {
+        setValidationErrors(result.errors);
         toast.error(result.errors[0]?.message ?? 'La configuración contiene errores.');
         return;
       }
       setValidationWarnings(result.warnings);
       setSaveDialogOpen(true);
     } catch (error) {
+      setValidationErrors([{ field: 'configuration', message: toApiError(error).detail }]);
       toast.error(toApiError(error).detail);
     } finally {
       setValidating(false);
@@ -202,8 +209,12 @@ export function AdminAIConfigPage() {
   });
 
   useEffect(() => {
-    if (saveMutation.isSuccess) setSaveDialogOpen(false);
+    if (saveMutation.isSuccess) { setSaveDialogOpen(false); setValidationErrors([]); }
   }, [saveMutation.isSuccess]);
+
+  useEffect(() => {
+    if (saveMutation.isError) setValidationErrors([{ field: 'configuration', message: toApiError(saveMutation.error).detail }]);
+  }, [saveMutation.isError, saveMutation.error]);
 
   useEffect(() => {
     if (restoreMutation.isSuccess) setRestoreDialogOpen(false);
@@ -278,11 +289,40 @@ export function AdminAIConfigPage() {
         ))}
       </nav>
 
+      {validationErrors.length > 0 && <Card role="alert" className="space-y-3 border-amber-300 p-4">
+        <h2 className="font-bold">Revisa estas selecciones antes de guardar</h2>
+        <p className="text-sm text-muted">Conservamos tu borrador. La configuración publicada no ha cambiado.</p>
+        {validationErrors.map((error, index) => <div key={`${error.field}:${index}`} className="space-y-2 text-sm">
+          <p className="break-words">{error.message}</p>
+          <Button size="sm" variant="outline" onClick={() => {
+            setActiveSection('functions');
+            const match = /^features\.(\d+)/.exec(error.field);
+            const route = match ? draftFeatures[Number(match[1])] : null;
+            window.requestAnimationFrame(() => {
+              const card = route ? document.getElementById(`ai-route-${route.feature}`) : null;
+              const details = card?.closest('details');
+              if (details) details.open = true;
+              card?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            });
+          }}>Revisar selección</Button>
+          {/features\.\d+\.(primary|fallback)_model/.test(error.field) && <Button size="sm" variant="outline" onClick={() => {
+            const match = /^features\.(\d+)\.(primary|fallback)_model/.exec(error.field);
+            const feature = match ? draftFeatures[Number(match[1])] : null;
+            const slot = match?.[2] as 'primary' | 'fallback' | undefined;
+            const providerId = feature && slot ? feature[`${slot}_provider`] : null;
+            const provider = draftProviders.find((p) => p.id === providerId);
+            const modelId = feature && slot ? feature[`${slot}_model`] || provider?.model : null;
+            if (feature && providerId && provider?.base_url && providerId !== 'ollama' && modelId) setPreparingModel({ providerId, modelId, capability: feature.capability ?? 'text' });
+            else setActiveSection('functions');
+          }}>Comprobar modelo indicado</Button>}
+        </div>)}
+      </Card>}
+
       {settingsQuery.isLoading || controlCenterQuery.isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-72" />)}</div>
       ) : settingsQuery.data ? (
         <>
-          {activeSection === 'functions' && <FunctionsSection functions={controlCenterQuery.data?.functions ?? []} features={draftFeatures} providers={draftProviders} models={draftModels} onUpsert={upsertFeature} />}
+          {activeSection === 'functions' && <FunctionsSection functions={controlCenterQuery.data?.functions ?? []} features={draftFeatures} providers={draftProviders} models={draftModels} onUpsert={upsertFeature} onPrepare={setPreparingModel} />}
 
           {activeSection === 'tools' && <ToolsSection
             tools={draftTools}
@@ -338,6 +378,9 @@ export function AdminAIConfigPage() {
         </>
       ) : null}
 
+      <Modal open={Boolean(preparingModel)} onClose={() => { if (!modelProbeBusy) setPreparingModel(null); }} closeOnEscape={!modelProbeBusy} closeOnBackdrop={!modelProbeBusy} showCloseButton={!modelProbeBusy} title="Comprobar el modelo seleccionado" description="Revisa el formato que admite tu API y haz una prueba ficticia. No cambiaremos la función hasta que guardes la configuración." className="max-w-2xl">
+        {preparingModel && <CompatibleAPISection key={`${preparingModel.providerId}:${preparingModel.modelId}`} providers={draftProviders} models={draftModels} onProvider={prepareProvider} onModels={prepareModels} selection={preparingModel} onBusyChange={setModelProbeBusy} onPrepared={() => { setPreparingModel(null); setValidationErrors([]); toast.success('Modelo comprobado. Conservamos tu selección; ahora puedes guardar los cambios.'); }} />}
+      </Modal>
       <ConfirmDialog
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}

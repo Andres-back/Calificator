@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Activity, Bot, ChevronDown, Cpu, Search, ShieldCheck } from 'lucide-react';
 import { Badge, Card, Field, Input, Select } from '@/components/ui';
 import type { AIFunctionControl, AIModel, AIProvider, AIStageControl, FeatureRouting } from '../../api';
+import { RouteModelReadiness } from './RouteModelReadiness';
+import type { ModelPreparationSelection } from '../utils/routePreparation';
 
 function compatibleModels(models: AIModel[], provider: string, capability: string) {
   return models.filter((model) => model.provider_id === provider && model.active && model.capabilities.includes(capability));
@@ -70,12 +72,14 @@ export function FunctionsSection({
   providers,
   models,
   onUpsert,
+  onPrepare,
 }: {
   functions: AIFunctionControl[];
   features: FeatureRouting[];
   providers: AIProvider[];
   models: AIModel[];
   onUpsert: (feature: FeatureRouting) => void;
+  onPrepare?: (selection: ModelPreparationSelection) => void;
 }) {
   const [search, setSearch] = useState('');
   const visible = useMemo(() => {
@@ -136,7 +140,7 @@ export function FunctionsSection({
                 ? unavailableModel(models, route.fallback_provider, route.fallback_model)
                 : null;
               return (
-                <Card key={`${item.function_id}:${stage.stage_id}`} className="space-y-4 p-4">
+                <Card key={`${item.function_id}:${stage.stage_id}`} id={stage.runtime_feature ? `ai-route-${stage.runtime_feature}` : undefined} className="space-y-4 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2"><h3 className="font-bold">{stage.label}</h3><Badge tone={stage.editable ? 'violet' : 'neutral'}>{stage.editable ? stage.capability : 'Sin IA'}</Badge></div>
@@ -152,13 +156,12 @@ export function FunctionsSection({
                         <Select value={route.primary_provider} onChange={(event) => {
                           const provider = event.currentTarget.value;
                           const first = compatibleModels(models, provider, stage.capability).find((model) => model.recommended) ?? compatibleModels(models, provider, stage.capability)[0];
-                          const clearsFallback = route.fallback_provider === provider;
                           onUpsert({
                             ...route,
                             primary_provider: provider,
                             primary_model: first?.model_id ?? null,
-                            fallback_provider: clearsFallback ? null : route.fallback_provider,
-                            fallback_model: clearsFallback ? null : route.fallback_model,
+                            fallback_provider: route.fallback_provider,
+                            fallback_model: route.fallback_model,
                           });
                         }}>
                           {currentProviderUnavailable && <option value={currentProviderUnavailable.id} disabled>{currentProviderUnavailable.label} (no disponible)</option>}
@@ -198,6 +201,8 @@ export function FunctionsSection({
                   ) : (
                     <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">Esta etapa se ejecuta de forma determinista y no necesita seleccionar un modelo.</p>
                   )}
+
+                  {stage.editable && route && <RouteModelReadiness route={route} previous={routeForStage(stage, []) ?? undefined} providers={providers} models={models} onUpsert={onUpsert} onPrepare={onPrepare} />}
 
                   <div className="grid gap-2 md:grid-cols-3">
                     <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><Bot className="h-3.5 w-3.5" /> Guardado</span><p className="mt-1 break-words text-sm font-semibold">{routeText(stage.configured?.provider, stage.configured?.model)}</p><p className="mt-1 text-xs text-muted">Versión {stage.configured?.config_version ?? 'no registrada'}{stage.configured?.fallback_provider ? ` · Alternativa si falla esta etapa: ${routeText(stage.configured.fallback_provider, stage.configured.fallback_model)}` : ''}</p></div>

@@ -41,3 +41,7 @@ MVP seguro: conexión/perfil probados y consumidos por un trabajo sintético ant
 ## Phase 5: Convergence
 
 - [x] T019 Incluir el identificador de función granular en la proyección de último uso de `backend/app/modules/admin_ai_config/control_center_service.py` y probar `digitalizacion.estructura` para no ocultar su proveedor real en el panel, conforme a FR-009 y SC-003 (partial).
+
+## Phase 6: Convergence
+
+- [x] T020 Corregir la brecha de autoservicio al cambiar un modelo en `FunctionsSection.tsx`, `CompatibleAPISection.tsx` y `AdminAIConfigPage.tsx`: mostrar principal/respaldo pendientes antes de guardar, preparar el modelo seleccionado desde su función sin perder el borrador, ofrecer respaldos comprobados o quitarlo solo por decisión explícita y conservar errores accionables; añadir regresión del caso Luna con respaldo heredado y pruebas móvil/escritorio, sin relajar comprobantes del servidor ni cambiar rutas publicadas automáticamente, conforme a FR-005, FR-009, SC-001 y SC-005 (partial).
