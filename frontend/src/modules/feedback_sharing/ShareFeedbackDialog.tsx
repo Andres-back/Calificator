@@ -4,23 +4,26 @@ import { useAuth } from '@/stores/auth';
 import { getEvaluationReview } from '@/modules/calificaciones/api';
 import { formatGradeScore } from '@/modules/calificaciones/gradePresentation';
 import type { ReviewStudent } from '@/types/api';
-import { issueFeedbackAccesses, listFeedbackAccesses, prepareFeedbackPrint, previewFeedback, type FeedbackAccess, type FeedbackPreview, type FeedbackSelection, type IssuedFeedbackAccess } from './api';
+import { issueFeedbackAccesses, listFeedbackAccesses, prepareFeedbackPrint, previewFeedback, type FeedbackAccess, type FeedbackBatchResultItem, type FeedbackPreview, type FeedbackSelection, type IssuedFeedbackAccess } from './api';
 import { FeedbackPrintSheet } from './FeedbackPrintSheet';
 import type { FeedbackPrintEntry } from './printPagination';
 import { IndividualLinks } from './IndividualLinks';
 import { FeedbackAccessList } from './FeedbackAccessList';
 import { FeedbackDeliveryReview } from './FeedbackDeliveryReview';
 import { FeedbackMessage } from './FeedbackMessage';
+import { FeedbackBatchPublish } from './FeedbackBatchPublish';
+import { FeedbackLinkActions } from './FeedbackLinkActions';
+import { queryClient } from '@/lib/queryClient';
 
 type Row = ReviewStudent & { preview?: FeedbackPreview };
 interface Link { id: string; estudiante: string; url: string; expires_at?: string }
 
-export function ShareFeedbackDialog(props: { evaluationId: string; onClose: () => void; onReview: (gradeId: string) => void }) {
-  // Replacing the evaluation unmounts all its private state, including one-time credentials.
-  return <FeedbackDialogContent key={props.evaluationId} {...props} />;
+export function ShareFeedbackDialog(props: { evaluationId: string; initialGradeId?: string; onClose: () => void; onReview: (gradeId: string) => void }) {
+  // Replacing the evaluation unmounts all private state, including copied credentials.
+  return <FeedbackDialogContent key={props.evaluationId+'-'+(props.initialGradeId??'group')} {...props} />;
 }
 
-function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluationId: string; onClose: () => void; onReview: (gradeId: string) => void }) {
+function FeedbackDialogContent({ evaluationId, initialGradeId, onClose, onReview }: { evaluationId: string; initialGradeId?: string; onClose: () => void; onReview: (gradeId: string) => void }) {
   const user = useAuth(state => state.user);
   const [owner] = useState(user);
   const permitted = Boolean(owner) && user === owner && ['profesor', 'admin'].includes(user?.rol ?? '') && Boolean(user?.permissions?.includes('grading.read'));
@@ -69,14 +72,15 @@ function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluation
           if (cursor && seen.has(cursor)) throw new Error('Lista incompleta');
           if (cursor) seen.add(cursor);
         } while (cursor);
-        const ids = students.flatMap(item => item.calificacion_id ? [item.calificacion_id] : []);
+        const scopedStudents = initialGradeId ? students.filter(item=>item.calificacion_id===initialGradeId) : students;
+        const ids = scopedStudents.flatMap(item => item.calificacion_id ? [item.calificacion_id] : []);
         const previews: FeedbackPreview[] = [];
         for (let offset = 0; offset < ids.length; offset += 100) {
           previews.push(...await previewFeedback(evaluationId, ids.slice(offset, offset + 100), abort.signal));
           if (!current()) return;
         }
         if (ids.some(id => !previews.some(item => item.calificacion_id === id))) throw new Error('Falta un resultado');
-        const merged = students.map(item => ({ ...item, preview: previews.find(preview => preview.calificacion_id === item.calificacion_id) }));
+        const merged = scopedStudents.map(item => ({ ...item, preview: previews.find(preview => preview.calificacion_id === item.calificacion_id) }));
         merged.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
         setRows(merged);
         const initial = firstLoad.current;
@@ -88,7 +92,7 @@ function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluation
     }
     void load();
     return () => abort.abort();
-  }, [evaluationId, permitted, reload, refreshAccesses, valid]);
+  }, [evaluationId, initialGradeId, permitted, reload, refreshAccesses, valid]);
 
   const eligible = rows.filter(row => row.preview?.elegible && row.preview.fingerprint);
   const chosen = eligible.filter(row => selected.includes(row.calificacion_id!));
@@ -102,14 +106,25 @@ function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluation
   }
   function approved(result: FeedbackPreview) {
     if (!valid()) return;
-    setRows(current => current.map(row => row.calificacion_id === result.calificacion_id ? { ...row, preview: { ...row.preview, ...result } } : row));
+    setRows(current => current.map(row => row.calificacion_id === result.calificacion_id ? { ...row, preview: { ...row.preview, ...result, batch_candidate: result.batch_candidate } } : row));
     setReviewing(null); setPendingAction(null); setNotice('Devolución aprobada. Ya puedes incluirla en la impresión o crear su enlace.');
     void refreshAccesses();
+  }
+  async function published(results: FeedbackBatchResultItem[], skipped: number) {
+    if(!valid()) return;
+    const successful=results.filter(item=>item.estado!=='failed');
+    setSelected(current=>[...new Set([...current,...successful.map(item=>item.calificacion_id)])]);
+    setNotice(`${successful.length} notas publicadas o ya publicadas. ${results.length-successful.length+skipped} necesitan atención. Puedes imprimir o preparar los enlaces de las listas.`);
+    setBusy(false);
+    void queryClient.invalidateQueries({queryKey:['evaluation-review',evaluationId]});
+    void queryClient.invalidateQueries({queryKey:['calificaciones',evaluationId]});
+    successful.forEach(item=>{void queryClient.invalidateQueries({queryKey:['calificacion-detalle',item.calificacion_id]});});
+    setReload(value=>value+1);
   }
   function received(result: IssuedFeedbackAccess, name: string, lifecycle = false) {
     if (lifecycle && result.id) setLinks(current => current.filter(link => link.id !== result.id));
     if (result.id && result.url && result.credential_available) setLinks(current => [...current.filter(link => link.id !== result.id), { id: result.id!, estudiante: name, url: result.url!, expires_at: result.expires_at }]);
-    else if (!result.error) setNotice('El cambio quedó guardado, pero el enlace privado ya no está disponible para copiar. Si lo necesitas, reemplázalo desde «Controlar enlaces».');
+    else if (!result.error) setNotice('El cambio quedó guardado. Puedes volver a copiar el enlace desde «Copiar enlaces» o revisar sus opciones si es antiguo.');
   }
   async function createLinks() {
     if (!canDeliver || locked.current || !chosen.length || !valid()) return;
@@ -126,7 +141,7 @@ function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluation
           if (item.error) failures++; else { successes++; received(item, rows.find(row => row.calificacion_id === item.calificacion_id)?.nombre ?? 'Estudiante seleccionado'); }
         }
       }
-      setNotice(`${successes} accesos confirmados${failures ? `; ${failures} no se pudieron crear. Revisa la lista antes de reintentar.` : '.'} Copia cada enlace por separado. Si un acceso no muestra enlace, consulta «Controlar enlaces» para reemplazarlo.`);
+      setNotice(`${successes} accesos confirmados${failures ? `; ${failures} no se pudieron crear. Revisa la lista antes de reintentar.` : '.'} Puedes copiar los nuevos enlaces ahora o recuperarlos después desde «Copiar enlaces». Entrégalos individualmente.`);
       await refreshAccesses();
     } catch { if (valid()) setError('No pudimos confirmar todos los enlaces. Actualiza «Controlar enlaces» para saber cuáles se guardaron. Reintentar esta misma selección no los duplica.'); }
     finally { locked.current = false; if (valid()) setBusy(false); }
@@ -148,15 +163,16 @@ function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluation
     finally { locked.current = false; if (valid()) setBusy(false); }
   }
   if (!permitted) return null;
-  const canClose = () => !busy && (!links.length || window.confirm('¿Ya copiaste los enlaces? Al cerrar no volverán a mostrarse. Podrás reemplazarlos si los pierdes.'));
+  const canClose = () => !busy;
   const visible = rows.filter(row => row.nombre.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es')));
-  return <Modal open onClose={() => { if (canClose()) onClose(); }} closeOnBackdrop={!busy} closeOnEscape={!busy} title="Retroalimentaciones" className="max-w-4xl [overflow-wrap:anywhere]" description="Lista privada de esta evaluación. Revisa cada devolución antes de entregarla.">
+  return <Modal open onClose={() => { if (canClose()) onClose(); }} closeOnBackdrop={!busy} closeOnEscape={!busy} title={initialGradeId?'Devolución del estudiante':'Retroalimentaciones'} className="max-w-6xl [overflow-wrap:anywhere]" description="Prepara las notas, imprime las fichas o comparte enlaces individuales.">
     {printEntries ? <FeedbackPrintSheet entries={printEntries} onClose={() => setPrintEntries(null)} /> : loading ? <p role="status">Cargando estudiantes y retroalimentaciones…</p> : reviewRow?.preview?.revision_docente ? <FeedbackDeliveryReview
       key={reviewRow.calificacion_id} evaluationId={evaluationId} name={reviewRow.nombre} preview={reviewRow.preview}
       signal={controller.current.signal} valid={valid} onApproved={approved} onBusy={setBusy} onCancel={() => setReviewing(null)} /> : <div className="space-y-4">
       {error && <div role="alert" className="space-y-2 rounded-xl border border-amber-400 p-3"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => setReload(value => value + 1)}>Actualizar lista</Button></div>}
       {notice && <p role="status" className="text-sm">{notice}</p>}
       <p className="text-sm text-muted">{rows.length} estudiantes · {eligible.length} listos para entregar · {selectedRows.length} seleccionados</p>
+      {canDeliver && <FeedbackBatchPublish evaluationId={evaluationId} rows={rows} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy} onCompleted={published}/>}
       <Button variant="link" disabled={busy} onClick={() => setReload(value => value + 1)}>Actualizar estudiantes y devoluciones</Button>
       {pendingAction && <section role="status" className="space-y-3 rounded-xl border border-amber-400 p-3">
         <p>{pendingRows.length} devoluciones seleccionadas necesitan revisión. No se entregarán sin tu aprobación.</p>
@@ -169,6 +185,7 @@ function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluation
       <label className="block text-sm font-semibold">Buscar estudiante<input type="search" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-base" value={search} onChange={event => setSearch(event.target.value)} /></label>
       {canDeliver && <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy || !rows.some(row => row.preview?.seleccionable || row.preview?.elegible)} onClick={() => setSelected(rows.filter(row => row.preview?.seleccionable || row.preview?.elegible).map(row => row.calificacion_id!))}>Todos con nota</Button><Button variant="outline" disabled={busy || !eligible.length} onClick={() => setSelected(eligible.map(row => row.calificacion_id!))}>Todos los listos</Button><Button variant="outline" disabled={busy} onClick={() => setSelected([])}>Ninguno</Button><Button disabled={busy || !selectedRows.length} onClick={() => requestDelivery('print')}>Preparar impresión</Button></div>}
       {canDeliver && <>
+        <FeedbackLinkActions evaluationId={evaluationId} accesses={initialGradeId?accesses.filter(access=>access.calificacion_id===initialGradeId):accesses} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy}/>
         <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-bold">Enlaces individuales</summary><div className="space-y-3 pt-2">
           <p className="text-sm">La familia abre su enlace sin iniciar sesión. Solo ve la devolución de ese estudiante y puede preguntar a Xali: máximo cinco preguntas cada diez minutos, mientras el enlace esté activo.</p>
           <label className="block text-sm">Duración<select aria-label="Duración del enlace" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3" disabled={busy} value={days} onChange={event => setDays(Number(event.target.value))}>{Array.from({ length: 30 }, (_, index) => index + 1).map(value => <option key={value} value={value}>{value} {value === 1 ? 'día' : 'días'}{value === 3 ? ' · recomendado' : ''}</option>)}</select></label>
@@ -190,7 +207,7 @@ function FeedbackDialogContent({ evaluationId, onClose, onReview }: { evaluation
       </li>)}</ul>
       {!visible.length && <p className="text-sm text-muted">No hay estudiantes que coincidan con la búsqueda.</p>}
       {canDeliver && <>
-        <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-bold">Controlar enlaces</summary><FeedbackAccessList accesses={accesses} previews={rows.flatMap(row => row.preview ? [row.preview] : [])} signal={controller.current.signal} valid={valid} onChanged={refreshAccesses} onIssued={(result, name) => received(result, name, true)} /></details>
+        <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-bold">Controlar enlaces</summary><FeedbackAccessList evaluationId={evaluationId} accesses={initialGradeId?accesses.filter(access=>access.calificacion_id===initialGradeId):accesses} previews={rows.flatMap(row => row.preview ? [row.preview] : [])} signal={controller.current.signal} valid={valid} onChanged={refreshAccesses} onIssued={(result, name) => received(result, name, true)} /></details>
       </>}
     </div>}
   </Modal>;

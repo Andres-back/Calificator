@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 71
+**Superficies propietarias:** 75
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -18,6 +18,7 @@
 | endpoint | `GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia` | admin, profesor | covered | `backend/app/modules/calificaciones/revision_router.py:148` |
 | endpoint | `GET:/estudiantes/{estudiante_id}/boletin` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:835` |
 | endpoint | `GET:/estudiantes/{estudiante_id}/resumen-academico` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:814` |
+| endpoint | `GET:/evaluaciones/{evaluation_id}/devoluciones/lotes/{request_id}` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:100` |
 | endpoint | `PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:979` |
 | endpoint | `PATCH:/calificaciones/{calificacion_id}/ajustar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:720` |
 | endpoint | `PATCH:/calificaciones/{calificacion_id}/confirmar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:703` |
@@ -36,6 +37,8 @@
 | endpoint | `POST:/calificaciones/{calificacion_id}/recalificar` | admin, profesor | covered | `backend/app/modules/calificaciones/revision_router.py:62` |
 | endpoint | `POST:/calificaciones/{calificacion_id}/reintentar-foto` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:273` |
 | endpoint | `POST:/calificaciones/{calificacion_id}/solicitar-reemplazo` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:343` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/accesos/copiar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:106` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/aceptar-publicar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:92` |
 | endpoint | `PUT:/calificaciones/{calificacion_id}/desglose` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1718` |
 | frontend_route | `/app/calificaciones` | authenticated | covered | `frontend/src/config/routes.ts:48` |
 | frontend_route | `/app/calificaciones/boletin` | estudiante | covered | `frontend/src/config/routes.ts:47` |
@@ -75,6 +78,7 @@
 | table | `calificacion_revisiones` | system | covered | `backend/app/modules/calificaciones/models.py:148` |
 | table | `calificaciones` | system | covered | `backend/app/modules/calificaciones/models.py:97` |
 | table | `entregas` | system | covered | `backend/app/modules/calificaciones/models.py:19` |
+| table | `feedback_delivery_batches` | system | covered | `backend/app/modules/feedback_sharing/models.py:83` |
 | table | `salon_sesion_estudiantes` | system | covered | `backend/app/modules/calificaciones/models.py:183` |
 | table | `salon_sesiones` | system | covered | `backend/app/modules/calificaciones/models.py:167` |
 

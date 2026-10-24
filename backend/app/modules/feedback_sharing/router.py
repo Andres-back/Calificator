@@ -14,7 +14,7 @@ from app.modules.calificaciones.models import Calificacion
 from app.modules.feedback_sharing.access_policy import authorize_evaluation, db_now, guard_access
 from app.modules.feedback_sharing.http_policy import PrivateRoute
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackPublication
-from app.modules.feedback_sharing.schemas import AccessAction, AccessCreate, DeliveryReviewInput, PreviewInput, ReactivateInput, RenewInput, SelectedInput
+from app.modules.feedback_sharing.schemas import AccessAction, AccessCopiesInput, AccessCreate, BatchPublishInput, DeliveryReviewInput, PreviewInput, ReactivateInput, RenewInput, SelectedInput
 from app.modules.feedback_sharing.service import approve_delivery_review, create_access, manage_access, prepare_grade_preview, preview_grade
 from app.modules.users.models import User
 
@@ -89,6 +89,28 @@ async def review_delivery(evaluation_id: UUID, payload: DeliveryReviewInput, act
         'resultado': projection.payload}
 
 
+@router.post('/evaluaciones/{evaluation_id}/devoluciones/aceptar-publicar')
+async def accept_publish(evaluation_id: UUID, payload: BatchPublishInput, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from app.modules.feedback_sharing.batch_service import accept_publish_batch
+    result = await accept_publish_batch(db, actor, evaluation_id, payload)
+    await db.commit()
+    return result
+
+
+@router.get('/evaluaciones/{evaluation_id}/devoluciones/lotes/{request_id}')
+async def read_publish_batch(evaluation_id: UUID, request_id: UUID, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from app.modules.feedback_sharing.batch_service import read_batch
+    return await read_batch(db, actor, evaluation_id, request_id)
+
+
+@router.post('/evaluaciones/{evaluation_id}/devoluciones/accesos/copiar')
+async def copy_links(evaluation_id: UUID, payload: AccessCopiesInput, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from app.modules.feedback_sharing.link_service import copy_accesses
+    result = await copy_accesses(db, actor, evaluation_id, payload.access_ids)
+    await db.commit()
+    return result
+
+
 @router.post("/evaluaciones/{evaluation_id}/devoluciones/accesos")
 async def issue(evaluation_id: UUID, payload: AccessCreate, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     await authorize_evaluation(db, actor, evaluation_id)
@@ -105,9 +127,11 @@ async def issue(evaluation_id: UUID, payload: AccessCreate, actor: User = Depend
 
 
 @router.get("/evaluaciones/{evaluation_id}/devoluciones/accesos")
-async def list_accesses(evaluation_id: UUID, cursor: UUID | None = None, limit: int = Query(50, ge=1, le=100), actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def list_accesses(evaluation_id: UUID, cursor: UUID | None = None, limit: int = Query(50, ge=1, le=100), calificacion_id: UUID | None = None, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     await authorize_evaluation(db, actor, evaluation_id, "grading.read")
     query = select(FeedbackAccess, FeedbackPublication).join(FeedbackPublication, FeedbackAccess.publication_id == FeedbackPublication.id).where(FeedbackPublication.evaluacion_id == evaluation_id)
+    if calificacion_id:
+        query = query.where(FeedbackAccess.calificacion_id == calificacion_id)
     if cursor:
         query = query.where(FeedbackAccess.id > cursor)
     rows = (await db.execute(query.order_by(FeedbackAccess.id).limit(limit + 1))).all()
@@ -123,7 +147,7 @@ async def list_accesses(evaluation_id: UUID, cursor: UUID | None = None, limit: 
                     await guard_access(db, access)
                 except HTTPException:
                     state = "suspended"
-        results.append({"id": access.id, "calificacion_id": access.calificacion_id, "estudiante": publication.payload_json["estudiante"], "estado": state, "version": access.version, "expires_at": access.expires_at, "fingerprint": publication.content_fingerprint})
+        results.append({"id": access.id, "calificacion_id": access.calificacion_id, "estudiante": publication.payload_json["estudiante"], "estado": state, "version": access.version, "expires_at": access.expires_at, "fingerprint": publication.content_fingerprint, "copy_available": bool(access.credential_encrypted)})
     return {"resultados": results, "next_cursor": str(rows[limit - 1][0].id) if len(rows) > limit else None}
 
 

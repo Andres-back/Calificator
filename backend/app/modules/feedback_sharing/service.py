@@ -12,6 +12,7 @@ from app.modules.evaluaciones.models import Evaluacion
 from app.modules.feedback_sharing.access_policy import authorize_owner, authorize_teacher, credential_digest, db_now, enabled, load_source, project_source
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackDeliveryReview, FeedbackPublication
 from app.modules.feedback_sharing.projection import build_review_projection, confirmed_score, digest
+from app.modules.feedback_sharing.credentials import seal_credential
 from app.modules.materias.models import Materia
 
 
@@ -61,6 +62,11 @@ async def prepare_grade_preview(db, actor, evaluation_id, grade_id):
             'detail_available': bool(breakdown and breakdown.cobertura_estado == 'completa'
                 and not breakdown.requiere_revision and breakdown.nota_final == note),
         }
+    from app.modules.feedback_sharing.batch_policy import prepare_candidate
+    try:
+        result['batch_candidate'] = prepare_candidate(source, result.get('resultado'))
+    except HTTPException as exc:
+        result['batch_unavailable_reason'] = exc.detail
     return result
 
 
@@ -135,7 +141,7 @@ async def create_access(db, actor, evaluation_id: UUID, grade_id: UUID, fingerpr
     publication = await new_publication(db, source, actor, evidence)
     token = secrets.token_urlsafe(32)
     now = await db_now(db)
-    access = FeedbackAccess(publication_id=publication.id, calificacion_id=grade_id, created_by=actor.id, creation_request_id=request_id, credential_digest=credential_digest(token), expires_at=now + timedelta(days=days), created_at=now, updated_at=now, operations_json={"creation": creation})
+    access = FeedbackAccess(publication_id=publication.id, calificacion_id=grade_id, created_by=actor.id, creation_request_id=request_id, credential_digest=credential_digest(token), credential_encrypted=seal_credential(token), expires_at=now + timedelta(days=days), created_at=now, updated_at=now, operations_json={"creation": creation})
     db.add(access)
     await db.flush()
     await audit_control(db, "created", access.id, actor.id, {"revision": publication.revision})
@@ -194,6 +200,7 @@ async def manage_access(db, actor, access_id, action, payload):
             raise HTTPException(422, "Confirma que el enlace anterior dejará de funcionar.")
         token = secrets.token_urlsafe(32)
         access.credential_digest = credential_digest(token)
+        access.credential_encrypted = seal_credential(token)
         access.credential_generation += 1
         metadata["generation"] = access.credential_generation
         event = "renewed"

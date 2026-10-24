@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "rules": [
+    {"spec":"008-calificaciones","priority":85,"kinds":["endpoint","frontend_call"],"signature_patterns":["*/devoluciones/aceptar-publicar","*/devoluciones/lotes/*","*/devoluciones/accesos/copiar"],"consumers":["122-retroalimentacion-lote-visual"]},
+    {"spec":"008-calificaciones","priority":85,"kinds":["table"],"signature_patterns":["feedback_delivery_batches"],"consumers":["122-retroalimentacion-lote-visual"]},
     {"spec":"021-configuracion-ia-docente","priority":85,"source_patterns":["backend/app/services/ai_api_*.py","frontend/src/modules/admin/ai/sections/CompatibleAPISection.tsx"],"consumers":["116-api-modelos-configurables"]},
     {"spec":"021-configuracion-ia-docente","priority":85,"kinds":["table"],"signature_patterns":["ai_api_credentials","ai_api_model_checks"],"consumers":["116-api-modelos-configurables"]},
     {"spec":"005-evaluaciones","priority":80,"source_patterns":["backend/app/modules/evaluaciones/visual_*.py","backend/app/modules/evaluaciones/grading_visual_context.py","frontend/src/modules/evaluaciones/visualApi.ts","frontend/src/modules/evaluaciones/components/QuestionVisualEditor.tsx"],"consumers":["101-digitalizacion-visual-completa"]},

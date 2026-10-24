@@ -8,7 +8,17 @@ export interface FeedbackPreview {
   borrador_docente?: { estado: string; nota: string | null; nota_maxima: string; retroalimentacion: string };
   seleccionable?: boolean; preparacion?: 'no_grade' | 'needs_review' | 'ready';
   revision_docente?: { source_fingerprint: string; feedback_text: string; detail_available: boolean };
+  batch_candidate?: FeedbackBatchCandidate;
+  batch_unavailable_reason?: string;
 }
+export interface FeedbackBatchCandidate {
+  source_fingerprint: string; nota: string; feedback_text: string;
+  scope: 'summary' | 'detail'; avisos: string[];
+}
+export interface FeedbackBatchSelection { calificacion_id: string; source_fingerprint: string; feedback_text: string; scope: 'summary' | 'detail' }
+export interface FeedbackBatchResultItem { calificacion_id: string; estado: 'published' | 'already_published' | 'failed'; estado_academico?: string; fingerprint?: string; code?: string; error?: string; retryable?: boolean }
+export interface FeedbackBatchResult { id: string; request_id: string; total: number; exitosos: number; fallidos: number; resultados: FeedbackBatchResultItem[] }
+export interface FeedbackCopiedAccess { id: string; calificacion_id?: string; estudiante?: string; url?: string; expires_at?: string; code?: string; error?: string }
 export interface FeedbackReviewInput {
   calificacion_id: string; source_fingerprint: string; feedback_text: string;
   scope: 'summary' | 'detail'; request_id: string;
@@ -17,6 +27,7 @@ export interface FeedbackAccess {
   id: string; calificacion_id: string; estudiante: string;
   estado: 'active' | 'expired' | 'disabled' | 'suspended'; version: number;
   expires_at: string; fingerprint: string;
+  copy_available?: boolean;
 }
 export interface IssuedFeedbackAccess {
   calificacion_id: string; id?: string; estado?: FeedbackAccess['estado']; version?: number;
@@ -40,12 +51,12 @@ export async function issueFeedbackAccesses(id: string, payload: { request_id: s
   const { data } = await api.post<{ resultados: IssuedFeedbackAccess[] }>(path(id) + '/accesos', payload, { signal });
   return data.resultados;
 }
-export async function listFeedbackAccesses(id: string, signal?: AbortSignal) {
+export async function listFeedbackAccesses(id: string, signal?: AbortSignal, gradeId?: string) {
   const results: FeedbackAccess[] = [];
   let cursor: string | undefined;
   const seen = new Set<string>();
   do {
-    const { data } = await api.get<{ resultados: FeedbackAccess[]; next_cursor: string | null }>(path(id) + '/accesos', { signal, params: { limit: 100, cursor } });
+    const { data } = await api.get<{ resultados: FeedbackAccess[]; next_cursor: string | null }>(path(id) + '/accesos', { signal, params: { limit: 100, cursor, ...(gradeId ? {calificacion_id:gradeId} : {}) } });
     results.push(...data.resultados);
     cursor = data.next_cursor ?? undefined;
     if (cursor && seen.has(cursor)) throw new Error('No pudimos completar la lista de enlaces.');
@@ -60,4 +71,17 @@ export async function prepareFeedbackPrint(id: string, selecciones: FeedbackSele
 export async function changeFeedbackAccess(access: FeedbackAccess, action: 'desactivar' | 'reactivar' | 'renovar', payload: Action & { duracion_dias?: number; fingerprint?: string; evidencia?: boolean; confirmar_reemplazo?: boolean }, signal?: AbortSignal) {
   const { data } = await api.post<Omit<IssuedFeedbackAccess, 'calificacion_id'>>(`/devoluciones/accesos/${encodeURIComponent(access.id)}/${action}`, payload, { signal });
   return { ...data, calificacion_id: access.calificacion_id };
+}
+
+export async function publishFeedbackBatch(id: string, payload: {request_id:string; selecciones:FeedbackBatchSelection[]}, signal?: AbortSignal) {
+  const {data}=await api.post<FeedbackBatchResult>(path(id)+'/aceptar-publicar',payload,{signal});
+  return data;
+}
+export async function readFeedbackBatch(id: string, requestId: string, signal?: AbortSignal) {
+  const {data}=await api.get<FeedbackBatchResult>(path(id)+'/lotes/'+encodeURIComponent(requestId),{signal});
+  return data;
+}
+export async function copyFeedbackAccesses(id: string, accessIds: string[], signal?: AbortSignal) {
+  const {data}=await api.post<{resultados:FeedbackCopiedAccess[]}>(path(id)+'/accesos/copiar',{access_ids:accessIds},{signal});
+  return data.resultados;
 }

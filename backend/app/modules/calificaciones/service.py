@@ -184,12 +184,20 @@ async def confirmar_nota(
     payload: ConfirmarNota,
 ) -> Calificacion:
     evaluacion = await get_evaluation_for_calificacion(db, cal)
+    await confirm_grade_decision(db, cal, evaluacion, payload.nota_confirmada)
+    await db.commit()
+    await db.refresh(cal)
+    return cal
+
+
+async def confirm_grade_decision(db, cal, evaluacion, score, *, actor=None):
+    """One explicit academic decision; transaction ownership stays with caller."""
     from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
     await ensure_visual_grade_publishable(db, cal, evaluacion)
     validate_score_within_evaluation(
-        payload.nota_confirmada, evaluacion, "nota_confirmada"
+        score, evaluacion, "nota_confirmada"
     )
-    cal.nota_confirmada = payload.nota_confirmada
+    cal.nota_confirmada = score
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.CONFIRMADA.value
     if cal.entrega:
@@ -198,13 +206,13 @@ async def confirmar_nota(
         cal,
         tipo="confirmada",
         nota_anterior=cal.nota_sugerida,
-        nota_nueva=payload.nota_confirmada,
+        nota_nueva=score,
+        actor_id=getattr(actor, 'id', None),
+        actor_nombre=getattr(actor, 'nombre', None),
         detalle="Confirmada por docente",
     )
     await _update_salon_estudiante_estado(db, cal, "confirmado")
     await suspend_grade_publications(db, cal.id)
-    await db.commit()
-    await db.refresh(cal)
     return cal
 
 
@@ -1300,7 +1308,15 @@ async def publicar_nota(
     db: AsyncSession,
     cal: Calificacion,
 ) -> Calificacion:
-    """Cambia estado a publicada. La calificación debe estar confirmada o ajustada."""
+    _ensure_confirmed_before_publication(cal)
+    evaluacion = await get_evaluation_for_calificacion(db, cal)
+    await publish_grade_decision(db, cal, evaluacion)
+    await db.commit()
+    await db.refresh(cal)
+    return cal
+
+
+def _ensure_confirmed_before_publication(cal):
     if cal.estado not in (
         CalificacionEstado.CONFIRMADA.value,
         CalificacionEstado.AJUSTADA.value,
@@ -1309,7 +1325,11 @@ async def publicar_nota(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Solo calificaciones confirmadas o ajustadas pueden publicarse. Estado actual: {cal.estado}",
         )
-    evaluacion = await get_evaluation_for_calificacion(db, cal)
+
+
+async def publish_grade_decision(db, cal, evaluacion, *, actor=None):
+    """Publish within the caller's transaction, preserving every publication gate."""
+    _ensure_confirmed_before_publication(cal)
     if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED:
         desglose = await get_active_breakdown(db, cal.id)
         if desglose and desglose.requiere_revision:
@@ -1323,10 +1343,10 @@ async def publicar_nota(
         tipo="publicada",
         nota_anterior=cal.nota_confirmada,
         nota_nueva=cal.nota_confirmada,
+        actor_id=getattr(actor, 'id', None),
+        actor_nombre=getattr(actor, 'nombre', None),
         detalle="Resultados publicados al estudiante",
     )
-    await db.commit()
-    await db.refresh(cal)
     return cal
 
 
