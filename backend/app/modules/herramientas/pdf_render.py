@@ -760,6 +760,7 @@ _RENDERERS["mapa_conceptual"] = _render_mapa_conceptual
 
 
 def render_material_html(material: dict, soluciones: bool = False) -> str:
+    from app.modules.motif_library.presentation import decoration_html
     tipo = material.get("tipo")
     contenido = material.get("contenido_json") or {}
     titulo = contenido.get("titulo") or material.get("titulo") or TOOL_LABELS.get(tipo, "Material")
@@ -777,8 +778,10 @@ def render_material_html(material: dict, soluciones: bool = False) -> str:
     return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>{BASE_CSS}</style></head>
 <body>
   <div class="topbar"><span class="htitle">{_e(titulo)}</span><span class="brand">XCalificator</span></div>
-  <div class="title">{_e(titulo)}</div>
-  <div class="subtitle">{_e(meta)}</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:4mm">
+    <div style="min-width:0;flex:1"><div class="title">{_e(titulo)}</div><div class="subtitle">{_e(meta)}</div></div>
+    {decoration_html(contenido)}
+  </div>
   <table class="header-form">
     <tr>
       <td style="width:65%"><b>Nombre:</b> <span class="header-line">&nbsp;</span></td>

@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 542,
+      "covered": 547,
       "missing": 96
     },
     "by_kind": {
-      "endpoint": 301,
-      "frontend_call": 199,
+      "endpoint": 304,
+      "frontend_call": 201,
       "frontend_route": 38,
       "integration": 7,
       "job": 24,
       "table": 69
     },
-    "total": 638
+    "total": 643
   },
   "exceptions": [],
   "findings": [
@@ -235,6 +235,70 @@
     }
   ],
   "permission_overrides": [
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "reason": "El catálogo de selección exige sesión y rol docente o administrador; estudiantes y anónimos están denegados.",
+      "surface_id": "backend:GET:/biblioteca-motivos"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "reason": "La dependencia de selección valida explícitamente roles docentes; no contiene documentos o datos de alumnos.",
+      "surface_id": "backend:GET:/biblioteca-motivos/colecciones"
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "reason": "Arte estático curado público por diseño; ID, variante, digest, raíz interna e integridad son comprobados. No sirve imágenes privadas.",
+      "surface_id": "backend:GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "reason": "Selector compartido de los tres editores docentes; las imágenes estáticas públicas se sirven por ruta separada.",
+      "surface_id": "frontend_call:GET:/biblioteca-motivos:frontend/src/modules/motif_library/api.ts"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "reason": "Consulta de colecciones desde contextos de edición docente; el backend vuelve a validar el rol.",
+      "surface_id": "frontend_call:GET:/biblioteca-motivos/colecciones:frontend/src/modules/motif_library/api.ts"
+    },
     {
       "actors": [
         "admin",
@@ -479,7 +543,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "4892530925af7499ddc94a4c5bbaaba6ed2b609fe5a84175ee8cad0e9d75c2c1",
+  "source_digest": "7fd7df775c0e5c4bd65e220831880e93766c076bae3de79b08634476f5aa6c65",
   "surfaces": [
     {
       "actors": [
@@ -867,6 +931,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -1074,6 +1144,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -3209,6 +3285,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -3270,6 +3352,266 @@
           "reference": "GET:/auth/me",
           "status": "domain",
           "test_path": "frontend/src/stores/auth.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "005-evaluaciones",
+        "008-calificaciones",
+        "123-motivos-por-area"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "motifs",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_motif_library_permissions.py",
+          "frontend/e2e/motif-editors.spec.ts"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/259",
+        "permission_override_reason": "El catálogo de selección exige sesión y rol docente o administrador; estudiantes y anónimos están denegados.",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/biblioteca-motivos",
+      "kind": "endpoint",
+      "owner_spec": "006-recursos-actividades",
+      "signature": "GET:/biblioteca-motivos",
+      "source_line": 33,
+      "source_path": "backend/app/modules/motif_library/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_library_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_motif_library.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_resource_motif_render.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery-batch.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/components/ResourceEditorPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/motifLibrary.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "public"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "005-evaluaciones",
+        "008-calificaciones",
+        "123-motivos-por-area"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "image",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_motif_library_permissions.py",
+          "frontend/e2e/motif-editors.spec.ts"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/259",
+        "permission_override_reason": "Arte estático curado público por diseño; ID, variante, digest, raíz interna e integridad son comprobados. No sirve imágenes privadas.",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+      "kind": "endpoint",
+      "owner_spec": "006-recursos-actividades",
+      "signature": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+      "source_line": 47,
+      "source_path": "backend/app/modules/motif_library/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_library_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_motif_library.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_resource_motif_render.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery-batch.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/components/ResourceEditorPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/motifLibrary.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "005-evaluaciones",
+        "008-calificaciones",
+        "123-motivos-por-area"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "collections",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_motif_library_permissions.py",
+          "frontend/e2e/motif-editors.spec.ts"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/259",
+        "permission_override_reason": "La dependencia de selección valida explícitamente roles docentes; no contiene documentos o datos de alumnos.",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/biblioteca-motivos/colecciones",
+      "kind": "endpoint",
+      "owner_spec": "006-recursos-actividades",
+      "signature": "GET:/biblioteca-motivos/colecciones",
+      "source_line": 28,
+      "source_path": "backend/app/modules/motif_library/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_library_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_motif_library.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery-batch.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         }
       ]
     },
@@ -4216,6 +4558,18 @@
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         }
       ]
     },
@@ -4405,6 +4759,12 @@
           "reference": "GET:/evaluaciones/contenido-visual/capacidades",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/contenido-visual/capacidades",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "unit",
@@ -4605,6 +4965,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -5597,6 +5963,12 @@
           "level": "e2e",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -5859,6 +6231,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -6628,6 +7006,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -6908,6 +7292,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -8717,6 +9107,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -8892,6 +9288,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -10067,6 +10469,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -10380,6 +10788,12 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -10717,6 +11131,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -11119,6 +11539,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -11847,6 +12273,24 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         },
         {
           "level": "e2e",
@@ -14388,6 +14832,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -14720,6 +15170,12 @@
           "reference": "POST:/evaluaciones/recursos",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/recursos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "unit",
@@ -17550,6 +18006,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -19279,6 +19741,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/fixtures/render_motif_samples.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/fixtures/render_visual_export_samples.py"
         },
         {
@@ -19472,6 +19940,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_document_preservation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_library_permissions.py"
         },
         {
           "level": "unit",
@@ -19837,6 +20317,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_motif_library.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_multipage_recovery.py"
         },
         {
@@ -19910,6 +20396,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_rate_limit.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_resource_motif_render.py"
         },
         {
           "level": "unit",
@@ -20096,6 +20588,24 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         },
         {
           "level": "e2e",
@@ -20737,6 +21247,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackMotifs.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/feedbackSections.test.ts"
         },
         {
@@ -20948,6 +21464,24 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/useAttendanceAutosave.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/MotifPicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/motifLibrary.test.ts"
         },
         {
           "level": "unit",
@@ -21235,6 +21769,24 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         },
         {
           "level": "e2e",
@@ -22517,6 +23069,18 @@
           "level": "e2e",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -23400,6 +23964,12 @@
           "level": "e2e",
           "reference": "/app/herramientas",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -23557,6 +24127,12 @@
           "reference": "/app/herramientas/{id}",
           "status": "domain",
           "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -23754,6 +24330,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -23999,6 +24581,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -25750,6 +26338,18 @@
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/devolucion",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/devolucion",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/devolucion",
           "status": "direct",
@@ -27016,6 +27616,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -27222,6 +27828,12 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -29859,6 +30471,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -29908,6 +30526,172 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "005-evaluaciones",
+        "008-calificaciones",
+        "123-motivos-por-area"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/biblioteca-motivos/colecciones",
+        "backend_contract_candidates": [],
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_motif_library_permissions.py",
+          "frontend/e2e/motif-editors.spec.ts"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/259",
+        "permission_override_reason": "Consulta de colecciones desde contextos de edición docente; el backend vuelve a validar el rol."
+      },
+      "id": "frontend_call:GET:/biblioteca-motivos/colecciones:frontend/src/modules/motif_library/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "006-recursos-actividades",
+      "signature": "GET:/biblioteca-motivos/colecciones",
+      "source_line": 6,
+      "source_path": "frontend/src/modules/motif_library/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_library_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_motif_library.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery-batch.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos/colecciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "005-evaluaciones",
+        "008-calificaciones",
+        "123-motivos-por-area"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/biblioteca-motivos",
+        "backend_contract_candidates": [],
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_motif_library_permissions.py",
+          "frontend/e2e/motif-editors.spec.ts"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/259",
+        "permission_override_reason": "Selector compartido de los tres editores docentes; las imágenes estáticas públicas se sirven por ruta separada."
+      },
+      "id": "frontend_call:GET:/biblioteca-motivos:frontend/src/modules/motif_library/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "006-recursos-actividades",
+      "signature": "GET:/biblioteca-motivos",
+      "source_line": 10,
+      "source_path": "frontend/src/modules/motif_library/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_library_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_motif_library.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_resource_motif_render.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery-batch.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/components/ResourceEditorPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/biblioteca-motivos",
+          "status": "direct",
+          "test_path": "frontend/src/modules/motif_library/motifLibrary.test.ts"
         }
       ]
     },
@@ -30550,6 +31334,18 @@
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         }
       ]
     },
@@ -31035,6 +31831,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -31449,6 +32251,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -31796,6 +32604,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -32543,6 +33357,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -33090,6 +33910,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -33744,6 +34570,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -35187,6 +36019,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -35436,6 +36274,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -35699,6 +36543,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -36010,6 +36860,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -37634,6 +38490,24 @@
           "level": "e2e",
           "reference": "POST:/analytics/evento",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/analytics/evento",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -39010,6 +39884,18 @@
           "reference": "POST:/devoluciones/accesos/{id}/{action}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/devoluciones/accesos/{id}/{action}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/devoluciones/accesos/{id}/{action}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         }
       ]
     },
@@ -39281,6 +40167,12 @@
           "reference": "POST:/evaluaciones/recursos",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/recursos",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "unit",
@@ -39728,6 +40620,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -39952,6 +40850,12 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -40670,6 +41574,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -45809,6 +46719,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_document_preservation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_multipage_recovery.py"
         },
         {
@@ -46176,6 +47092,18 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-library.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-print.spec.ts"
         },
         {
           "level": "e2e",
@@ -46962,6 +47890,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/fixtures/render_motif_samples.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/fixtures/render_visual_export_samples.py"
         },
         {
@@ -47070,6 +48004,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_motif_document_preservation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_multipage_recovery.py"
         },
         {
@@ -47077,6 +48017,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_resource_motif_preservation.py"
         },
         {
           "level": "unit",
@@ -47395,6 +48341,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -48941,6 +49893,18 @@
           "level": "unit",
           "reference": "materiales_generados",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_resource_motif_preservation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materiales_generados",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_material_classroom_assignment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materiales_generados",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_service.py"
         },
         {
@@ -49200,6 +50164,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",
@@ -50703,6 +51673,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
           "level": "e2e",

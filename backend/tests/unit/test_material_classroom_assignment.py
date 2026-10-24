@@ -368,7 +368,10 @@ def test_criteria_only_edit_does_not_rebuild_saved_puzzle(monkeypatch):
     edited["criterios"] = [{"nombre": "Conceptos", "descripcion": "Identifica conceptos mediante pistas."}]
     db = DB()
     asyncio.run(service.update_material(db, material_id, teacher, {"contenido_json": edited}))
-    saved = json.loads(db.executions[0][1]["contenido_json"])
+    assert "FOR UPDATE" in str(db.executions[0][0])
+    updates = [params for statement, params in db.executions if str(statement).startswith("UPDATE materiales_generados")]
+    assert len(updates) == 1
+    saved = json.loads(updates[0]["contenido_json"])
     assert saved["crucigrama"] == content["crucigrama"]
     assert saved["preguntas_horizontales"] == content["preguntas_horizontales"]
 

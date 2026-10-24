@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Field, Input, Modal, Textarea } from '@/components/ui';
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
+import { MotifPicker } from '@/modules/motif_library/MotifPicker';
+import { motifFile } from '@/modules/motif_library/api';
+import type { Motif } from '@/modules/motif_library/types';
 import type { EvaluationVisualChart, EvaluationVisualTable } from '@/types/api';
 import { cancelVisualJob, createStructuredVisual, cropVisual, generateVisual, getVisualProposal, readVisualJob, uploadVisual, type TeacherVisualBlock, type VisualRequest } from '../visualApi';
 
@@ -48,10 +51,11 @@ function StructuredFields({ kind, table, chart, onTable, onChart }: {
   </div>;
 }
 
-export function QuestionVisualEditor({ evaluationId, materiaId, questionId, versionId, generationEnabled = false, existing, onAccept, onRemove, onBegin, pendingJobId, onJobChange }: {
+export function QuestionVisualEditor({ evaluationId, materiaId, questionId, versionId, generationEnabled = false, existing, onAccept, onRemove, onBegin, pendingJobId, onJobChange, suggestedArea }: {
   evaluationId: string; materiaId: string; questionId: string; versionId?: string | null;
   generationEnabled?: boolean; existing?: TeacherVisualBlock; onAccept: (block: TeacherVisualBlock) => void; onRemove?: () => void; onBegin?: () => void;
   pendingJobId?: string; onJobChange?: (id: string | null) => void;
+  suggestedArea?: string | null;
 }) {
   const [open, setOpen] = useState(Boolean(pendingJobId));
   const [kind, setKind] = useState<Kind>(existing?.tipo === 'tabla' || existing?.tipo === 'grafica' || existing?.tipo === 'dibujo' ? existing.tipo : 'imagen');
@@ -62,6 +66,7 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
   const [clean, setClean] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const [jobId, setJobId] = useState<string | null>(pendingJobId || null);
   const [previewReady, setPreviewReady] = useState(false);
+  const [library, setLibrary] = useState(false);
   const jobChangeRef = useRef(onJobChange); jobChangeRef.current = onJobChange;
   function trackJob(id: string | null) { setJobId(id); jobChangeRef.current?.(id); }
   const [region, setRegion] = useState([0, 0, 100, 100]);
@@ -93,9 +98,24 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
   async function close() {
     sequence.current += 1;
     if (jobId) void cancelVisualJob(jobId).catch(() => undefined);
-    trackJob(null); setBusy(false); setOpen(false); setProposal(null); setClean(false); setPreviewReady(false);
+    trackJob(null); setBusy(false); setOpen(false); setProposal(null); setClean(false); setPreviewReady(false); setLibrary(false);
   }
   function change() { sequence.current += 1; setProposal(null); setClean(false); setPreviewReady(false); setError(''); }
+  async function prepareLibrary(item: Motif) {
+    const token = ++sequence.current;
+    setBusy(true); setError(''); setProposal(null); setClean(false); setPreviewReady(false); setLibrary(false);
+    try {
+      const file = await motifFile(item);
+      if (token !== sequence.current) return;
+      const resource = await uploadVisual(scope, file, 'imagen');
+      if (token !== sequence.current) return;
+      const description = `Biblioteca temática: ${item.description}`;
+      setKind('imagen'); setDescription(description);
+      setProposal({ id: crypto.randomUUID(), tipo: 'imagen', orden: 0, pregunta_ids: [questionId], recurso_id: resource.id, descripcion: description, seguridad_contenido: 'pendiente_revision' });
+    } catch {
+      if (token === sequence.current) setError('No pudimos preparar esta ilustración. Puedes elegir otra o subir una imagen; tu evaluación sigue igual.');
+    } finally { if (token === sequence.current) setBusy(false); }
+  }
   async function prepare(mode: 'data' | 'ai' | 'crop', file?: File) {
     const token = ++sequence.current; setBusy(true); setError(''); setProposal(null); setClean(false); setPreviewReady(false);
     try {
@@ -141,6 +161,8 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
           {structured ? <><StructuredFields kind={kind} table={table} chart={chart} onTable={value => { change(); setTable(value); }} onChart={value => { change(); setChart(value); }} />
             <Button onClick={() => { void prepare('data'); }}>Previsualizar datos</Button></> : null}
           <Field label={structured ? 'O subir como imagen (sin celdas ni datos editables)' : 'Subir imagen (PNG, JPEG o WebP)'}><input className="block min-h-11 w-full max-w-full text-base" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; if (file) void prepare('data', file); event.target.value = ''; }} /></Field>
+          <Button variant="outline" onClick={() => setLibrary(value => !value)}>Elegir de la biblioteca</Button>
+          {library && <><p className="text-sm text-muted">Ilustraciones temáticas. Comprueba que la imagen sea adecuada para esta pregunta; no reemplaza un gráfico científico ni una respuesta correcta.</p><MotifPicker suggestedArea={suggestedArea} disabled={busy} onSelect={item => { void prepareLibrary(item); }} onCancel={() => setLibrary(false)} /></>}
           {generationEnabled && <Button variant="outline" onClick={() => { void prepare('ai'); }}>Crear propuesta con IA</Button>}
         </fieldset>
         {(busy || jobId) && <p role="status">Preparando material… Puedes cancelar sin cambiar la evaluación.</p>}
@@ -148,7 +170,7 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
         {job.isError && jobId && <Button variant="outline" onClick={() => { void job.refetch(); }}>Consultar avance</Button>}
         {proposal && <section className="space-y-3 rounded-xl border border-border p-3">
           <ProposalImage key={proposal.recurso_id} id={proposal.recurso_id!} onReady={setPreviewReady} />
-          <label className="flex min-h-11 items-start gap-3 text-sm leading-6"><input type="checkbox" disabled={!previewReady} checked={clean} onChange={event => setClean(event.target.checked)} />He revisado el material: no contiene respuestas de estudiantes ni soluciones que deban ocultarse.</label>
+          <label className="flex min-h-11 items-start gap-3 text-sm leading-6"><input type="checkbox" disabled={!previewReady} checked={clean} onChange={event => setClean(event.target.checked)} />He revisado el material: es adecuado para esta pregunta y no contiene respuestas de estudiantes ni soluciones que deban ocultarse.</label>
           <Button disabled={!previewReady || !clean || busy || Boolean(jobId)} onClick={() => { onAccept({ ...proposal, seguridad_contenido: 'publicable_confirmado' }); void close(); }}>Añadir a la pregunta</Button>
           <Button variant="outline" onClick={() => { setProposal(null); setClean(false); }}>Editar antes de añadir</Button>
         </section>}

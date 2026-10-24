@@ -2,11 +2,14 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 50
+**Superficies propietarias:** 55
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
 | endpoint | `DELETE:/herramientas/{material_id}` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:259` |
+| endpoint | `GET:/biblioteca-motivos` | admin, profesor | covered | `backend/app/modules/motif_library/router.py:33` |
+| endpoint | `GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}` | public | covered | `backend/app/modules/motif_library/router.py:47` |
+| endpoint | `GET:/biblioteca-motivos/colecciones` | admin, profesor | covered | `backend/app/modules/motif_library/router.py:28` |
 | endpoint | `GET:/herramientas` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:53` |
 | endpoint | `GET:/herramientas/catalogo` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:42` |
 | endpoint | `GET:/herramientas/materias/{materia_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:237` |
@@ -43,6 +46,8 @@
 | frontend_route | `/app/materias/{id}/recursos` | authenticated | covered | `frontend/src/modules/materias/MateriaRecursos.tsx:67` |
 | frontend_route | `/app/recursos/{id}` | estudiante | covered | `frontend/src/config/routes.ts:58` |
 | frontend_call | `DELETE:/herramientas/{id}` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:45` |
+| frontend_call | `GET:/biblioteca-motivos/colecciones` | admin, profesor | covered | `frontend/src/modules/motif_library/api.ts:6` |
+| frontend_call | `GET:/biblioteca-motivos` | admin, profesor | covered | `frontend/src/modules/motif_library/api.ts:10` |
 | frontend_call | `GET:/herramientas/catalogo` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:19` |
 | frontend_call | `GET:/herramientas/materias/{materiaId}/recursos` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:30` |
 | frontend_call | `GET:/herramientas/{id}/evaluaciones` | admin, profesor | covered | `frontend/src/modules/herramientas/api.ts:99` |
@@ -59,8 +64,13 @@
 
 ## Decisiones explícitas de permiso
 
+- `backend:GET:/biblioteca-motivos` — El catálogo de selección exige sesión y rol docente o administrador; estudiantes y anónimos están denegados. ([issue](https://github.com/Andres-back/Calificator/issues/259)). Evidencia: `backend/tests/integration/test_motif_library_permissions.py`, `frontend/e2e/motif-editors.spec.ts`.
+- `backend:GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}` — Arte estático curado público por diseño; ID, variante, digest, raíz interna e integridad son comprobados. No sirve imágenes privadas. ([issue](https://github.com/Andres-back/Calificator/issues/259)). Evidencia: `backend/tests/integration/test_motif_library_permissions.py`, `frontend/e2e/motif-editors.spec.ts`.
+- `backend:GET:/biblioteca-motivos/colecciones` — La dependencia de selección valida explícitamente roles docentes; no contiene documentos o datos de alumnos. ([issue](https://github.com/Andres-back/Calificator/issues/259)). Evidencia: `backend/tests/integration/test_motif_library_permissions.py`, `frontend/e2e/motif-editors.spec.ts`.
 - `backend:GET:/herramientas/materias/{materia_id}/recursos` — El servicio valida gestión docente o matrícula activa y filtra recursos publicados para estudiantes. ([issue](https://github.com/Andres-back/Calificator/issues/17)). Evidencia: `backend/tests/unit/test_authorization_contracts.py`.
 - `backend:GET:/herramientas/{material_id}` — El servicio limita profesor y administrador por autor, y estudiante por publicación, asignación y matrícula. ([issue](https://github.com/Andres-back/Calificator/issues/17)). Evidencia: `backend/tests/unit/test_authorization_contracts.py`.
+- `frontend_call:GET:/biblioteca-motivos/colecciones:frontend/src/modules/motif_library/api.ts` — Consulta de colecciones desde contextos de edición docente; el backend vuelve a validar el rol. ([issue](https://github.com/Andres-back/Calificator/issues/259)). Evidencia: `backend/tests/integration/test_motif_library_permissions.py`, `frontend/e2e/motif-editors.spec.ts`.
+- `frontend_call:GET:/biblioteca-motivos:frontend/src/modules/motif_library/api.ts` — Selector compartido de los tres editores docentes; las imágenes estáticas públicas se sirven por ruta separada. ([issue](https://github.com/Andres-back/Calificator/issues/259)). Evidencia: `backend/tests/integration/test_motif_library_permissions.py`, `frontend/e2e/motif-editors.spec.ts`.
 
 ## Hallazgos
 

@@ -3,6 +3,13 @@ import { paginateFeedback } from './printPagination';
 import { feedbackPrintText } from './feedbackSections';
 
 describe('fichas completas y recortables', () => {
+  it('conserva mensajes, ceros y continuaciones cuando hay decoración', () => {
+    const entry = { id: 'a', estudiante: 'Nombre largo del estudiante', evaluacion: 'Lectura', materia: 'Lenguaje', nota: '0', nota_maxima: '5', retroalimentacion: 'Explica con tus palabras la razón del personaje. '.repeat(700) };
+    const pages = paginateFeedback([entry], () => 8, true);
+    expect(pages.flat().map(item => item.text).join('')).toBe(entry.retroalimentacion);
+    expect(pages.flat().every(item => item.nota === '0' && item.estudiante === entry.estudiante)).toBe(true);
+    expect(pages.every(page => page.reduce((sum, item) => sum + item.height, 0) <= 900)).toBe(true);
+  });
   it('conserva todos los caracteres de 30 devoluciones y sus identidades', () => {
     const entries = Array.from({ length: 30 }, (_, index) => ({ id: String(index), estudiante: `Alumno Pérez ${index}`, evaluacion: 'Lectura', materia: 'Lenguaje', nota: '3.5', nota_maxima: '5', retroalimentacion: ('En la pregunta 2 relee el párrafo.\n\n' + 'x'.repeat(180) + ' ').repeat(index % 3 ? 1 : 12) }));
     const pages = paginateFeedback(entries, () => 8);

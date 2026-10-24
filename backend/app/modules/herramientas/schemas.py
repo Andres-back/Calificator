@@ -6,6 +6,7 @@ from typing import Any, Literal, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
+from app.modules.motif_library.schemas import ResourceDecoration
 
 from app.shared.enums import (
     EvaluacionModalidad,
@@ -183,6 +184,7 @@ class MaterialUpdate(BaseModel):
     titulo: str | None = Field(default=None, min_length=2, max_length=220)
     materia_id: UUID | None = None
     contenido_json: ContenidoHerramienta | None = None
+    decoracion: ResourceDecoration | None = None
 
 
 class AsignarMaterialApoyoRequest(BaseModel):

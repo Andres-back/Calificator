@@ -579,19 +579,25 @@ async def update_material(
     """Actualiza campos de un material: titulo, materia_id, contenido_json."""
     import json as _json
     from sqlalchemy import text
+    from app.modules.motif_library.presentation import merge_presentation, UNCHANGED
 
     profesor_id = current_user.id
+    # Serialize edits before reading the current JSON: a decoration-only save
+    # must never replace concurrent academic changes with a stale client copy.
+    locked = await db.execute(text("SELECT id FROM materiales_generados WHERE id=:id AND profesor_id=:p FOR UPDATE"), {"id": str(material_id), "p": str(profesor_id)})
+    if locked.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Material no encontrado")
     existing = await get_material(db, material_id, profesor_id)
     if existing is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Material no encontrado",
         )
-    allowed = {"materia_id", "titulo", "contenido_json"}
+    allowed = {"materia_id", "titulo", "contenido_json", "decoracion"}
     campos = {
         key: value
         for key, value in payload.items()
-        if key in allowed and (value is not None or key == "materia_id")
+        if key in allowed and (value is not None or key in {"materia_id", "decoracion"})
     }
     if not campos:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No hay campos válidos para actualizar")
@@ -608,6 +614,13 @@ async def update_material(
         campos["contenido_json"] = prepare_evaluation_criteria(
             str(existing["tipo"]), campos["contenido_json"], existing.get("input_json") or {}
         )
+
+    selection = campos.pop("decoracion", UNCHANGED)
+    if "contenido_json" in campos or selection is not UNCHANGED:
+        try:
+            campos["contenido_json"] = merge_presentation(existing.get("contenido_json") or {}, academic=campos.get("contenido_json"), decoration=selection)
+        except (ValueError, OSError) as exc:
+            raise HTTPException(status_code=422, detail="Elige un motivo disponible de la biblioteca") from exc
 
     if "materia_id" in campos:
         linked = await _linked_evaluation(db, material_id, profesor_id)
@@ -646,6 +659,8 @@ async def update_material(
             params[k] = v
 
     sql_parts.append("updated_at = NOW()")
+    if "contenido_json" in campos:
+        sql_parts.append("archivo_url = NULL")
     set_clause = ", ".join(sql_parts)
     result = await db.execute(
         text(
@@ -667,6 +682,7 @@ async def update_material(
 async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -> dict | None:
     """Carga un material por id, restringido a su profesor."""
     from sqlalchemy import text
+    from app.modules.motif_library.presentation import presentation_for_read
 
     row = await db.execute(
         text(
@@ -693,7 +709,7 @@ async def get_material(db: AsyncSession, material_id: UUID, profesor_id: UUID) -
         "materia_id": r.materia_id,
         "materia_nombre": r.materia_nombre,
         "input_json": r.input_json,
-        "contenido_json": r.contenido_json,
+        "contenido_json": presentation_for_read(r.contenido_json),
         "archivo_url": r.archivo_url,
         "evaluacion_id": r.evaluacion_id,
         "evaluacion_estado": r.evaluacion_estado,
@@ -828,6 +844,8 @@ async def get_material_for_user(
             material["titulo"],
             material["contenido_json"] if isinstance(material["contenido_json"], dict) else {},
         )["contenido"]
+    from app.modules.motif_library.presentation import merge_presentation, presentation_for_read
+    material["contenido_json"] = presentation_for_read(merge_presentation(row.contenido_json or {}, academic=material["contenido_json"]))
     return material
 
 

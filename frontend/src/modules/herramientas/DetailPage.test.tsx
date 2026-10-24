@@ -81,6 +81,7 @@ describe('resource editing without data loss', () => {
     mocks.editMaterial.mockReturnValue(new Promise(done => { resolve = done; }));
     setup();
     fireEvent.click(await screen.findByRole('button', { name: 'Editar contenido' }));
+    fireEvent.change(screen.getByLabelText('Título del recurso'), { target: { value: 'Fracciones actualizadas' } });
     const save = screen.getByRole('button', { name: 'Guardar cambios' });
     fireEvent.click(save); fireEvent.click(save);
     expect(mocks.editMaterial).toHaveBeenCalledTimes(1);

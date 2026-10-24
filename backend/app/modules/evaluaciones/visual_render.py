@@ -244,7 +244,15 @@ def append_visual_docx(document, item: ResolvedVisualBlock) -> None:
         width = min(12, 10 * metadata['ancho'] / metadata['alto'])
         paragraph = document.add_paragraph()
         paragraph.paragraph_format.keep_with_next = bool(block.pie or block.descripcion)
-        picture = paragraph.add_run().add_picture(BytesIO(item.image_bytes), width=Cm(width))
+        word_image = item.image_bytes
+        if metadata['mime'] == 'image/webp':
+            # OOXML/python-docx cannot embed WebP. Convert only the export copy;
+            # keep the owned source, hash, dimensions and alpha channel intact.
+            converted = BytesIO()
+            with Image.open(BytesIO(word_image)) as source:
+                source.convert('RGBA').save(converted, format='PNG')
+            word_image = converted.getvalue()
+        picture = paragraph.add_run().add_picture(BytesIO(word_image), width=Cm(width))
         picture._inline.docPr.set('descr', block.descripcion or 'Material de la pregunta')
         if block.grafica:
             table = document.add_table(rows=1, cols=1 + len(block.grafica.series))

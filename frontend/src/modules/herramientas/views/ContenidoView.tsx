@@ -5,6 +5,7 @@ import { Button, Badge } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import type { MaterialTipo } from '@/types/api';
 import { StoryContent } from './StoryContent';
+import { ResourceHeaderMotif } from '@/modules/motif_library/ResourceHeaderMotif';
 
 interface GeneratedImageContent {
   is_placeholder?: boolean;
@@ -690,6 +691,10 @@ function MapaConceptualContent({ data }: { data: ToolContent }) {
 }
 
 export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolContent }) {
+  return <><ResourceHeaderMotif content={data} /><MaterialBody tipo={tipo} data={data} /></>;
+}
+
+function MaterialBody({ tipo, data }: { tipo: MaterialTipo; data: ToolContent }) {
   if (tipo === 'examen') return <ExamenContent data={data} />;
   if (tipo === 'rubrica') return <RubricaContent data={data} />;
   if (tipo === 'cuento') return <CuentoContent data={data} />;

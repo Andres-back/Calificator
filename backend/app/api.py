@@ -21,6 +21,7 @@ from app.modules.importacion_estudiantes.router import router as importacion_est
 from app.modules.jobs.router import router as jobs_router
 from app.modules.materias.router import router as materias_router
 from app.modules.matriculas.router import router as matriculas_router
+from app.modules.motif_library.router import router as motif_library_router
 from app.modules.ollama_connector.router import router as ollama_connector_router
 from app.modules.presentaciones.router import router as presentaciones_router
 from app.modules.rag.router import router as rag_router
@@ -49,6 +50,7 @@ api_router.include_router(herramientas_router)
 api_router.include_router(presentaciones_router)
 api_router.include_router(imagenes_router)
 api_router.include_router(imagenes_biblioteca_router)
+api_router.include_router(motif_library_router)
 api_router.include_router(xali_router)
 api_router.include_router(xali_refuerzos_router)
 api_router.include_router(reportes_router)
