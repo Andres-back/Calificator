@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { login } from './fixtures/explainableGrading';
 
 test.describe.configure({ mode: 'parallel' });
+test.use({ reducedMotion: 'reduce', deviceScaleFactor: 1 });
 
 const message = 'Aciertos: identificaste el personaje principal.\nQué mejorar: explica por qué tomó esa decisión.\nSiguiente paso: relee el segundo párrafo y escribe una razón del texto.';
 const publicResult = (index: number) => ({ estudiante: index === 1 ? 'Estudiante Prueba' : `Alumno ${String(index).padStart(3, '0')} María Fernanda López`, evaluacion: 'Lectura sintética', materia: 'Lenguaje', nota: index === 1 ? '0' : '3.5', nota_maxima: '5', retroalimentacion: index === 2 ? (message + '\n').repeat(25) : message, respuestas: [], claves_liberadas: false, alcance: 'summary' });
@@ -12,6 +13,12 @@ async function setup(page: Page, ready = false) {
   const calls: string[] = [];
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
+    const general = ['libro', 'lapices', 'idea', 'cohete', 'planeta', 'microscopio', 'atomo', 'calculadora', 'geometria', 'globo', 'brote', 'origami', 'montana', 'olas', 'brujula', 'cometa', 'musica', 'piezas', 'telescopio', 'arte'];
+    if (path === '/api/biblioteca-motivos/colecciones') return route.fulfill({ json: { catalog_version: 'fixture', collections: [{ id: 'general', label: 'Generales', total: 20 }] } });
+    if (path === '/api/biblioteca-motivos') {
+      const offset = Number(new URL(route.request().url()).searchParams.get('offset') || 0);
+      return route.fulfill({ json: { catalog_version: 'fixture', collection: 'general', total: 20, offset, limit: 12, items: general.slice(offset, offset + 12).map(id => ({ id, collection_id: 'general', label: id[0].toUpperCase() + id.slice(1), description: 'Motivo general', thumbnail_url: `/assets/feedback-motifs/${id}.png`, full_url: `/api/biblioteca-motivos/archivos/${id}/full/${'a'.repeat(64)}`, width: 320, height: 320 })) } });
+    }
     if (path === '/api/devoluciones/disponibilidad') return route.fulfill({ json: { enabled: true } });
     if (path === '/api/evaluaciones/e1/devoluciones/previsualizar') return route.fulfill({ json: { resultados: Array.from({ length: 30 }, (_, index) => ({ calificacion_id: `c${index + 1}`, elegible: published, seleccionable: true, fingerprint: published ? 'f'.repeat(64) : undefined, resultado: published ? publicResult(index + 1) : undefined, borrador_docente: { estado: 'requiere_revision', ...publicResult(index + 1) }, batch_candidate: { source_fingerprint: 'b'.repeat(64), nota: publicResult(index + 1).nota, feedback_text: publicResult(index + 1).retroalimentacion, scope: 'summary', avisos: ['Solo nota y retroalimentación, sin soluciones.'] } })) } });
     if (path === '/api/evaluaciones/e1/devoluciones/aceptar-publicar') {
@@ -68,9 +75,11 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     const decoration = dialog.getByRole('combobox', { name: 'Decoración de las fichas' });
     await expect(decoration.locator('option')).toHaveCount(22);
     await decoration.selectOption('mixed');
-    await dialog.getByText('Ver los 20 motivos', { exact: true }).click();
+    await dialog.getByText('Ver motivos por área', { exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Libro', exact: true })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Siguiente página de motivos' }).click();
     await expect(dialog.getByRole('button', { name: 'Telescopio', exact: true })).toBeVisible();
-    if (width === 1440) await dialog.getByText('Ver los 20 motivos', { exact: true }).locator('..').locator('.grid').screenshot({ path: `../output/playwright/spec122-motifs-${theme}-${browserName}.png` });
+    if (width === 1440) await dialog.getByText('Ver motivos por área', { exact: true }).locator('..').locator('.grid').screenshot({ path: `../output/playwright/spec122-motifs-${theme}-${browserName}.png` });
     const printed = await dialog.locator('.feedback-slip').evaluateAll(elements => elements.map(el => ({ name: el.querySelector('h2')!.textContent!.replace(/^Continuación de /, ''), text: el.querySelector('.feedback-slip-text')!.textContent!, src: el.querySelector('img')?.getAttribute('src') })));
     for (let index = 1; index <= 30; index++) {
       const fragments = printed.filter(fragment => fragment.name === publicResult(index).estudiante);

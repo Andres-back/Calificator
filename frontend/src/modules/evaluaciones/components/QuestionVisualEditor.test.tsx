@@ -2,6 +2,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { QuestionVisualEditor } from './QuestionVisualEditor';
+import { motifFile } from '@/modules/motif_library/api';
+
+vi.mock('@/modules/motif_library/api', () => ({ motifFile: vi.fn() }));
+vi.mock('@/modules/motif_library/MotifPicker', () => ({ MotifPicker: ({ onSelect }: { onSelect: (motif: object) => void }) => <button onClick={() => onSelect({ id: 'naturales-001', label: 'Semilla', description: 'Semilla germinando' })}>Elegir semilla de prueba</button> }));
 
 const mocks = vi.hoisted(() => ({ structured: vi.fn(), upload: vi.fn(), generate: vi.fn(), job: vi.fn(), cancel: vi.fn(), preview: vi.fn() }));
 vi.mock('../visualApi', () => ({ createStructuredVisual: mocks.structured, uploadVisual: mocks.upload,
@@ -11,7 +15,33 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.structured.mockResolvedValue({ bloque: block });
   mocks.preview.mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
+  vi.mocked(motifFile).mockResolvedValue(new File(['png'], 'naturales-001.png', { type: 'image/png' }));
   vi.stubGlobal('URL', { ...URL, createObjectURL: vi.fn(() => 'blob:fixture'), revokeObjectURL: vi.fn() });
+});
+it('stages a library image but requires the same preview and teacher confirmation', async () => {
+  mocks.upload.mockResolvedValue({ id: 'curated-copy' });
+  const accept = setup();
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir de la biblioteca' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir semilla de prueba' }));
+  const checkbox = await screen.findByRole('checkbox', { name: /no contiene respuestas/i });
+  expect(accept).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Añadir a la pregunta' })).toBeDisabled();
+  fireEvent.load(await screen.findByAltText('Vista previa del material propuesto'));
+  fireEvent.click(checkbox);
+  fireEvent.click(screen.getByRole('button', { name: 'Añadir a la pregunta' }));
+  expect(mocks.upload).toHaveBeenCalledWith(expect.objectContaining({ materia_id: 'm', evaluacion_id: 'e' }), expect.any(File), 'imagen');
+  expect(accept).toHaveBeenCalledWith(expect.objectContaining({ recurso_id: 'curated-copy', seguridad_contenido: 'publicable_confirmado', descripcion: expect.stringContaining('Biblioteca temática') }));
+  expect(mocks.generate).not.toHaveBeenCalled();
+});
+it('cancels a library proposal without accepting a changed evaluation', async () => {
+  mocks.upload.mockResolvedValue({ id: 'curated-copy' });
+  const accept = setup();
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir de la biblioteca' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Elegir semilla de prueba' }));
+  await screen.findByRole('checkbox', { name: /no contiene respuestas/i });
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  expect(accept).not.toHaveBeenCalled();
+  expect(mocks.generate).not.toHaveBeenCalled();
 });
 function setup() {
   const accept = vi.fn();

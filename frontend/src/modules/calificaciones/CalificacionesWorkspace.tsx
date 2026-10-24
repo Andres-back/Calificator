@@ -589,6 +589,7 @@ export function IncidenciasSection({ calificacionId, active, onToggle, onDirtyCh
 /* ─── Sub-componente: PanelDetalle ─── */
 function PanelDetalle({
   cal,
+  suggestedArea,
   notaMaxima,
   studentMap,
   onConfirm,
@@ -608,6 +609,7 @@ function PanelDetalle({
   publishPending,
 }: {
   cal: CalificacionDetalle;
+  suggestedArea?: string | null;
   notaMaxima: number | undefined;
   studentMap: Map<string, { nombre: string; email?: string }>;
   onConfirm: (id: string, nota: number) => void;
@@ -1062,7 +1064,7 @@ function PanelDetalle({
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
         {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
         <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
-        {mobileTab === 'retroalimentacion' && <div className="flex min-w-0 flex-wrap gap-2"><FeedbackToolsButton evaluationId={cal.evaluacion_id} gradeId={cal.id} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty || presentation.processing} /></div>}
+        {mobileTab === 'retroalimentacion' && <div className="flex min-w-0 flex-wrap gap-2"><FeedbackToolsButton evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty || presentation.processing} /></div>}
         {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
           onAccepted={(grade) => {
             const jobId = grade.resultado_json?.job_id;
@@ -2164,7 +2166,7 @@ function GradingCenter() {
             {mobileMoreActionsOpen && <div id="grading-more-actions" className="absolute right-0 top-full z-20 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg">
               {materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
               {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
-              {evalId && <FeedbackToolsButton evaluationId={evalId} disabled={mobileDirty} />}
+              {evalId && <FeedbackToolsButton evaluationId={evalId} suggestedArea={selectedMateria?.area} disabled={mobileDirty} />}
               {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
               {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
             </div>}
@@ -2367,6 +2369,7 @@ function GradingCenter() {
                   <PanelDetalle
                     key={`${selectedId}-${discardVersion}`}
                     cal={detalleQuery.data}
+                    suggestedArea={selectedMateria?.area}
                     onBackToList={() => setSelectedId(null)}
                     notaMaxima={notaMaxima}
                     studentMap={studentMap}

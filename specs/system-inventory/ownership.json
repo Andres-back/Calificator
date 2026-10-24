@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "rules": [
+    {"spec":"006-recursos-actividades","priority":95,"source_patterns":["backend/app/modules/motif_library/**","frontend/src/modules/motif_library/**"],"consumers":["005-evaluaciones","008-calificaciones","123-motivos-por-area"]},
     {"spec":"008-calificaciones","priority":85,"kinds":["endpoint","frontend_call"],"signature_patterns":["*/devoluciones/aceptar-publicar","*/devoluciones/lotes/*","*/devoluciones/accesos/copiar"],"consumers":["122-retroalimentacion-lote-visual"]},
     {"spec":"008-calificaciones","priority":85,"kinds":["table"],"signature_patterns":["feedback_delivery_batches"],"consumers":["122-retroalimentacion-lote-visual"]},
     {"spec":"021-configuracion-ia-docente","priority":85,"source_patterns":["backend/app/services/ai_api_*.py","frontend/src/modules/admin/ai/sections/CompatibleAPISection.tsx"],"consumers":["116-api-modelos-configurables"]},

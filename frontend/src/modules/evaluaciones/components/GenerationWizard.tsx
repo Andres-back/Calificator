@@ -747,12 +747,14 @@ export function GenerationWizard({
                               visualEditor={visualCapabilities.data?.editor && state.generatedEvaluationId ? <div className="min-w-0 space-y-3">
                                 {state.contenidoVisual?.bloques.filter(block => block.pregunta_ids.includes(question.contenidoId || '')).map(block => <QuestionVisualEditor
                                   key={block.id} existing={block} evaluationId={state.generatedEvaluationId!} materiaId={state.materiaId} questionId={question.contenidoId!}
+                                  suggestedArea={selectedMateria?.area}
                                   versionId={state.contenidoVersionId} generationEnabled={visualCapabilities.data.generacion}
                                   pendingJobId={state.visualJobs?.[`${question.contenidoId}:${block.id}`]}
                                   onJobChange={jobId => setState(current => { const visualJobs = { ...current.visualJobs }; const key = `${question.contenidoId}:${block.id}`; if (jobId) visualJobs[key] = jobId; else delete visualJobs[key]; return { ...current, visualJobs }; })}
                                   onAccept={value => setState(current => updateQuestionVisual(current, question.contenidoId!, value, block.id))}
                                   onRemove={() => setState(current => updateQuestionVisual(current, question.contenidoId!, null, block.id))} />)}
                                 <QuestionVisualEditor evaluationId={state.generatedEvaluationId} materiaId={state.materiaId} questionId={question.contenidoId || ''}
+                                  suggestedArea={selectedMateria?.area}
                                   pendingJobId={state.visualJobs?.[`${question.contenidoId}:new`]}
                                   onJobChange={jobId => setState(current => { const visualJobs = { ...current.visualJobs }; const key = `${question.contenidoId}:new`; if (jobId) visualJobs[key] = jobId; else delete visualJobs[key]; return { ...current, visualJobs }; })}
                                   onBegin={() => setState(current => ({ ...current, questions: current.questions.map(item => ({ ...item, contenidoId: item.contenidoId || crypto.randomUUID() })) }))}

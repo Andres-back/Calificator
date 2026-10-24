@@ -2,6 +2,70 @@
   "schema_version": 1,
   "permission_overrides": [
     {
+      "surface_id": "backend:GET:/biblioteca-motivos",
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "reason": "El catálogo de selección exige sesión y rol docente o administrador; estudiantes y anónimos están denegados.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ]
+    },
+    {
+      "surface_id": "backend:GET:/biblioteca-motivos/colecciones",
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "reason": "La dependencia de selección valida explícitamente roles docentes; no contiene documentos o datos de alumnos.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ]
+    },
+    {
+      "surface_id": "backend:GET:/biblioteca-motivos/archivos/{motif_id}/{variant}/{digest}",
+      "actors": [
+        "public"
+      ],
+      "reason": "Arte estático curado público por diseño; ID, variante, digest, raíz interna e integridad son comprobados. No sirve imágenes privadas.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ]
+    },
+    {
+      "surface_id": "frontend_call:GET:/biblioteca-motivos:frontend/src/modules/motif_library/api.ts",
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "reason": "Selector compartido de los tres editores docentes; las imágenes estáticas públicas se sirven por ruta separada.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ]
+    },
+    {
+      "surface_id": "frontend_call:GET:/biblioteca-motivos/colecciones:frontend/src/modules/motif_library/api.ts",
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "reason": "Consulta de colecciones desde contextos de edición docente; el backend vuelve a validar el rol.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/259",
+      "evidence": [
+        "backend/tests/integration/test_motif_library_permissions.py",
+        "frontend/e2e/motif-editors.spec.ts"
+      ]
+    },
+    {
       "surface_id": "backend:POST:/evaluaciones/recursos/estructurado",
       "actors": ["admin", "profesor"],
       "reason": "_proposal_scope exige evaluations.create/update y gestión de la materia/evaluación; no basta estar autenticado.",

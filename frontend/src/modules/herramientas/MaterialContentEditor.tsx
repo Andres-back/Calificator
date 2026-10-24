@@ -154,7 +154,7 @@ function ObjectList({ fieldKey, values, onChange }: { fieldKey: string; values: 
 }
 
 export function MaterialContentEditor({ value, onChange }: { value: Record<string, unknown>; onChange: (value: Record<string, unknown>) => void }) {
-  const fields = Object.entries(value).filter(([key]) => !HIDDEN_FIELDS.has(key));
+  const fields = Object.entries(value).filter(([key]) => !HIDDEN_FIELDS.has(key) && key !== '_presentacion');
   return (
     <div className="space-y-4">
       {fields.map(([key, fieldValue]) => {

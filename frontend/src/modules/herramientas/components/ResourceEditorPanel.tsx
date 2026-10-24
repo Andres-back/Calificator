@@ -8,10 +8,16 @@ import { MaterialContentEditor } from '../MaterialContentEditor';
 import { editMaterial } from '../api';
 import type { Material } from '@/types/api';
 import toast from 'react-hot-toast';
+import { MotifPicker } from '@/modules/motif_library/MotifPicker';
+import { ResourceHeaderMotif } from '@/modules/motif_library/ResourceHeaderMotif';
+import { readDecoration, readDecorationUrl } from '@/modules/motif_library/resourceDecoration';
 
 export function ResourceEditorPanel({ material, onClose, criteria = false }: { material: Material; onClose: () => void; criteria?: boolean }) {
   const [title, setTitle] = useState(material.titulo);
   const [content, setContent] = useState(() => structuredClone(material.contenido_json));
+  const [decoration, setDecoration] = useState(() => readDecoration(material.contenido_json));
+  const [decorationUrl, setDecorationUrl] = useState(() => readDecorationUrl(material.contenido_json));
+  const [library, setLibrary] = useState(false);
   const [saving, setSaving] = useState(false);
   const [discard, setDiscard] = useState(false);
   const [error, setError] = useState('');
@@ -19,7 +25,9 @@ export function ResourceEditorPanel({ material, onClose, criteria = false }: { m
   const scope = useRef<HTMLDivElement>(null);
   const active = useRef(true);
   const savingRef = useRef(false);
-  const dirty = title !== material.titulo || JSON.stringify(content) !== JSON.stringify(material.contenido_json);
+  const contentChanged = JSON.stringify(content) !== JSON.stringify(material.contenido_json);
+  const decorationChanged = JSON.stringify(decoration) !== JSON.stringify(readDecoration(material.contenido_json));
+  const dirty = title !== material.titulo || contentChanged || decorationChanged;
   const dirtyRef = useRef(dirty);
   dirtyRef.current = dirty;
   const client = useQueryClient();
@@ -48,7 +56,11 @@ export function ResourceEditorPanel({ material, onClose, criteria = false }: { m
     savingRef.current = true; setSaving(true); setError('');
     try {
       const nextTitle = title.trim() || material.titulo;
-      await editMaterial(material.id, { titulo: nextTitle, contenido_json: { ...content, titulo: nextTitle } });
+      const payload: Parameters<typeof editMaterial>[1] = {};
+      if (nextTitle !== material.titulo) payload.titulo = nextTitle;
+      if (contentChanged || nextTitle !== material.titulo) payload.contenido_json = { ...content, titulo: nextTitle };
+      if (decorationChanged) payload.decoracion = decoration;
+      if (Object.keys(payload).length) await editMaterial(material.id, payload);
       if (!active.current) return;
       dirtyRef.current = false;
       await Promise.all([client.invalidateQueries({ queryKey: ['material', material.id] }), client.invalidateQueries({ queryKey: ['materials'] }), client.invalidateQueries({ queryKey: ['materia-resources'] })]);
@@ -73,6 +85,14 @@ export function ResourceEditorPanel({ material, onClose, criteria = false }: { m
         {material.publicado_estudiantes && <p className="text-sm text-amber-700 dark:text-amber-200">Al guardar, los estudiantes verán el contenido actualizado.</p>}
         <fieldset disabled={saving} className="min-w-0 space-y-4">
           <Field label="Título del recurso"><Input value={title} onChange={event => setTitle(event.target.value)} /></Field>
+          <section className="space-y-2 rounded-xl border border-border p-3" aria-label="Decoración de cabecera">
+            <h3 className="font-semibold">Decoración de cabecera</h3>
+            <p className="text-sm text-muted">Opcional. No sustituye la ilustración ni cambia las preguntas.</p>
+            <ResourceHeaderMotif content={{ _presentacion: { decoracion: decoration && { ...decoration, asset_url: decorationUrl } } }} />
+            <Button variant="outline" onClick={() => setLibrary(value => !value)}>{decoration ? 'Cambiar decoración' : 'Elegir decoración'}</Button>
+            {decoration && <Button variant="ghost" onClick={() => { setDecoration(null); setDecorationUrl(null); }}>Sin decoración</Button>}
+            {library && <MotifPicker disabled={saving} onSelect={motif => { setDecoration({ motif_id: motif.id, placement: 'header' }); setDecorationUrl(motif.full_url); setLibrary(false); }} onCancel={() => setLibrary(false)} />}
+          </section>
           <MaterialContentEditor value={content} onChange={setContent} />
         </fieldset>
       </div>

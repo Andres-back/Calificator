@@ -50,7 +50,7 @@ export async function updateMaterial(id: string, payload: { materia_id?: string 
   return data;
 }
 
-export async function editMaterial(id: string, payload: { titulo?: string; contenido_json?: Record<string, unknown> }): Promise<Material> {
+export async function editMaterial(id: string, payload: { titulo?: string; contenido_json?: Record<string, unknown>; decoracion?: import('@/modules/motif_library/types').ResourceDecoration | null }): Promise<Material> {
   const { data } = await api.patch<Material>(`${BASE}/${id}`, payload);
   return data;
 }

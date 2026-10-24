@@ -18,12 +18,12 @@ import { queryClient } from '@/lib/queryClient';
 type Row = ReviewStudent & { preview?: FeedbackPreview };
 interface Link { id: string; estudiante: string; url: string; expires_at?: string }
 
-export function ShareFeedbackDialog(props: { evaluationId: string; initialGradeId?: string; onClose: () => void; onReview: (gradeId: string) => void }) {
+export function ShareFeedbackDialog(props: { evaluationId: string; initialGradeId?: string; suggestedArea?: string | null; onClose: () => void; onReview: (gradeId: string) => void }) {
   // Replacing the evaluation unmounts all private state, including copied credentials.
   return <FeedbackDialogContent key={props.evaluationId+'-'+(props.initialGradeId??'group')} {...props} />;
 }
 
-function FeedbackDialogContent({ evaluationId, initialGradeId, onClose, onReview }: { evaluationId: string; initialGradeId?: string; onClose: () => void; onReview: (gradeId: string) => void }) {
+function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, onClose, onReview }: { evaluationId: string; initialGradeId?: string; suggestedArea?: string | null; onClose: () => void; onReview: (gradeId: string) => void }) {
   const user = useAuth(state => state.user);
   const [owner] = useState(user);
   const permitted = Boolean(owner) && user === owner && ['profesor', 'admin'].includes(user?.rol ?? '') && Boolean(user?.permissions?.includes('grading.read'));
@@ -166,7 +166,7 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, onClose, onReview
   const canClose = () => !busy;
   const visible = rows.filter(row => row.nombre.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es')));
   return <Modal open onClose={() => { if (canClose()) onClose(); }} closeOnBackdrop={!busy} closeOnEscape={!busy} title={initialGradeId?'Devolución del estudiante':'Retroalimentaciones'} className="max-w-6xl [overflow-wrap:anywhere]" description="Prepara las notas, imprime las fichas o comparte enlaces individuales.">
-    {printEntries ? <FeedbackPrintSheet entries={printEntries} onClose={() => setPrintEntries(null)} /> : loading ? <p role="status">Cargando estudiantes y retroalimentaciones…</p> : reviewRow?.preview?.revision_docente ? <FeedbackDeliveryReview
+    {printEntries ? <FeedbackPrintSheet entries={printEntries} suggestedArea={suggestedArea} onClose={() => setPrintEntries(null)} /> : loading ? <p role="status">Cargando estudiantes y retroalimentaciones…</p> : reviewRow?.preview?.revision_docente ? <FeedbackDeliveryReview
       key={reviewRow.calificacion_id} evaluationId={evaluationId} name={reviewRow.nombre} preview={reviewRow.preview}
       signal={controller.current.signal} valid={valid} onApproved={approved} onBusy={setBusy} onCancel={() => setReviewing(null)} /> : <div className="space-y-4">
       {error && <div role="alert" className="space-y-2 rounded-xl border border-amber-400 p-3"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => setReload(value => value + 1)}>Actualizar lista</Button></div>}

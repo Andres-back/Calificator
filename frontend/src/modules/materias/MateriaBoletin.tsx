@@ -155,7 +155,7 @@ function TeacherGradebook() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-xl font-extrabold">Boletines</h2>
         {canReadGrades && trackedEvaluations.length > 0 && <Button variant="outline" className="min-h-11" onClick={() => { setSelection(null); setExportOpen(true); }}>Exportar notas</Button>}
-        {canReadGrades && selectedEvaluation && <FeedbackToolsButton evaluationId={selectedEvaluation.id} />}
+        {canReadGrades && selectedEvaluation && <FeedbackToolsButton evaluationId={selectedEvaluation.id} suggestedArea={materia.area} />}
       </div>
       <div className="mt-2">
         <label className="block min-w-0"><span className="text-sm font-semibold">Buscar estudiante</span>

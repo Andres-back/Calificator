@@ -2,6 +2,7 @@ from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import UUID
+from zipfile import ZipFile
 
 from docx import Document
 from PIL import Image
@@ -78,3 +79,28 @@ def test_incomplete_or_unconfirmed_visual_context_never_exports_as_complete():
         visual_render.ResolvedVisualBlock(block, b'not-png')
     with pytest.raises(ValueError, match='(?i)divid'):
         visual_render.render_structured_visual(VisualTable(encabezados=['A'] * 50, filas=[['0'] * 50]))
+
+
+def test_webp_export_converts_only_word_copy_and_preserves_transparency():
+    payload = manifest_payload()
+    original = VisualManifest.model_validate(payload).bloques[0]
+    block = original.model_copy(update={'tipo': 'imagen', 'tabla': None})
+    buffer = BytesIO()
+    source = Image.new('RGBA', (12, 8), (0, 0, 0, 0))
+    source.putpixel((6, 4), (20, 100, 180, 255))
+    source.save(buffer, format='WEBP', lossless=True)
+    webp = buffer.getvalue()
+    resolved = visual_render.ResolvedVisualBlock(block, webp)
+    document = Document()
+    visual_render.append_visual_docx(document, resolved)
+    target = BytesIO()
+    document.save(target)
+    with ZipFile(BytesIO(target.getvalue())) as package:
+        media = [name for name in package.namelist() if name.startswith('word/media/')]
+        assert len(media) == 1 and media[0].endswith('.png')
+        with Image.open(BytesIO(package.read(media[0]))) as converted:
+            assert converted.mode == 'RGBA' and converted.size == (12, 8)
+            assert converted.getpixel((0, 0))[3] == 0
+            assert converted.getpixel((6, 4)) == (20, 100, 180, 255)
+    assert resolved.image_bytes == webp
+    assert 'data:image/webp;base64,' in visual_render.visual_block_html(resolved)

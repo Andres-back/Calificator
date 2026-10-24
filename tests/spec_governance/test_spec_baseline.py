@@ -118,6 +118,7 @@ ALL_SPECS = {
     "119-calificacion-lotes-resiliente",
     "120-retroalimentacion-entrega-clara",
     "122-retroalimentacion-lote-visual",
+    "123-motivos-por-area",
 }
 OWNED_SPECS = {
     name
