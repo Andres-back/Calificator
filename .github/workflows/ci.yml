@@ -184,18 +184,22 @@ jobs:
       - name: Run unit tests
         run: npm run test:run
 
+      - name: Verify complete and non-overlapping E2E partitions
+        run: node scripts/verify-e2e-shards.mjs 4
+
       - name: Build production bundle
         run: npm run build
 
-  frontend-e2e:
-    name: Frontend E2E (${{ matrix.suite }})
+  frontend-e2e-general:
+    name: Frontend general shard (${{ matrix.shard }}/4)
     needs: frontend-quality
     runs-on: ubuntu-22.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
-        suite: [general, contextual]
+        shard: [1, 2, 3, 4]
     defaults:
       run:
         working-directory: frontend
@@ -220,12 +224,50 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       - name: Run general end-to-end tests
-        if: matrix.suite == 'general'
         timeout-minutes: 30
-        run: npm run test:e2e -- --reporter=line
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line
+
+      - name: Upload general E2E diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics-general-${{ matrix.shard }}
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+            output/playwright/
+
+  frontend-e2e-contextual:
+    name: Frontend contextual regressions
+    needs: frontend-quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Use supported npm client
+        run: npm install --global npm@${{ env.NPM_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Run contextual teacher flow regressions
-        if: matrix.suite == 'contextual'
         timeout-minutes: 25
         run: npm run test:mock -- grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts --reporter=line
 
@@ -233,13 +275,37 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-diagnostics-${{ matrix.suite }}
+          name: playwright-diagnostics-contextual
           if-no-files-found: ignore
           retention-days: 7
           path: |
             frontend/test-results/
             frontend/playwright-report/
             output/playwright/
+
+  frontend-e2e:
+    name: Frontend E2E (${{ matrix.suite }})
+    needs: [frontend-e2e-general, frontend-e2e-contextual]
+    if: always()
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [general, contextual]
+    steps:
+      - name: Require the complete suite
+        env:
+          SUITE: ${{ matrix.suite }}
+          GENERAL: ${{ needs.frontend-e2e-general.result }}
+          CONTEXTUAL: ${{ needs.frontend-e2e-contextual.result }}
+        run: |
+          set -eu
+          case "$SUITE" in
+            general) test "$GENERAL" = success ;;
+            contextual) test "$CONTEXTUAL" = success ;;
+            *) exit 1 ;;
+          esac
 
   frontend:
     name: Frontend quality, build and E2E

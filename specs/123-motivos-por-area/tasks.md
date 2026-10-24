@@ -93,3 +93,7 @@ Primer incremento comprobable: catálogo común y selector de Historia1. No se p
 ## Phase 6: Convergence
 
 - [x] T035 Estabilizar y demostrar las regresiones existentes de publicación, copia e impresión en WebKit de escritorio en `frontend/e2e/feedback-delivery-batch.spec.ts`, manteniendo clics reales, aserciones y tiempos originales; documentar el resultado de la suite completa en `specs/123-motivos-por-area/quickstart.md` antes del PR, per FR-010, FR-012, SC-005 y T031 (partial, MEDIUM).
+
+## Phase 7: Convergence
+
+- [x] T036 Implementar y validar localmente la partición de las406pruebas E2E dentro del presupuesto de CI en `.github/workflows/ci.yml`; preservar los contextos requeridos general/contextual y el agregado final, sin aumentar timeouts, omitir casos ni aceptar particiones fallidas/saltadas; ampliar `tests/spec_governance/test_visual_ci_gates.py` y demostrar que las particiones cubren el conjunto completo sin duplicados. Registrar el diagnóstico y la validación en `specs/123-motivos-por-area/quickstart.md`, per Constitution VII, T031 y T034 (partial, HIGH). Reparación autorizada el2026-10-24; la ejecución remota completa sigue siendo condición obligatoria de fusión, no se sustituye por la enumeración local.

@@ -7,7 +7,7 @@
 - Issue #259, Spec123 y rama `codex/123-motivos-por-area`. Alcance, plan y las listas de requisitos recibieron aprobación antes de implementar.
 - Treinta diseños nuevos por cada una de diez áreas; trescientos nuevos, más veinte generales conservados. No son ilustraciones académicas validadas ni premios por desempeño.
 - Una biblioteca sirve a fichas de retroalimentación, imágenes revisadas de preguntas y cabeceras opcionales de recursos. Insertar en una pregunta conserva preparación, consentimiento, guardado y versionado; decorar un recurso no reconstruye preguntas, criterios, rúbrica o evaluación vinculada.
-- La rama parte del commit `fd52380113b78bb140e32d5a7eb8960f5797fd0c` del PR258. Ese PR sigue abierto en la comprobación de esta ejecución. No se modifica su rama ni se presume autorización para fusionarlo. La entrega de Spec123 debe indicar esta dependencia.
+- La rama parte del commit `fd52380113b78bb140e32d5a7eb8960f5797fd0c` del PR258. Con autorización expresa de fusionar primero258 y después260, ambos con CI verde, el PR258 se fusionó por squash el2026-10-24 en `069aa818e22dc2d031f4c4be0e9b0093c5db9d73` y cerró el issue257. Se comprobó que el árbol de ese squash coincide exactamente con la dependencia revisada antes de reconciliar `main` en260; no se descartaron cambios nuevos de `main` ni se incluyeron borradores ajenos.
 
 ## Creación, revisión y presupuestos
 
@@ -109,4 +109,12 @@ Converge añadió T035 para cerrar una regresión visual de WebKit: la ejecució
 
 Converge final revisó16 requisitos,6 criterios de éxito,12 escenarios de aceptación,7 decisiones del plan y8 principios de la constitución: cero brechas funcionales restantes tras T035, sin nuevas tareas ni cambios durante la revisión. La base PostgreSQL sintética propia se retiró tras verificar ID y etiqueta; los originales y documentos de prueba siguen disponibles, sin tocar otros contenedores.
 
-La entrega es un PR propio en borrador hacia `main`, con dependencia explícita del PR258, para ejecutar los workflows actuales sin modificar sus filtros ni simular controles verdes. Comprobar el estado vigente del CI del mismo HEAD antes de cualquier fusión. No se autoriza fusionar ni desplegar ninguno de los dos PR y no se declara producción actualizada.
+La entrega es el PR260 hacia `main`, con dependencia explícita del PR258 ya fusionado. El usuario autorizó su reparación de CI y la fusión por squash únicamente con todos los controles verdes del HEAD final. No se autorizan bypass, push directo a `main` ni despliegues manuales, y no se declara producción actualizada.
+
+### Reparación del presupuesto de CI (T036)
+
+La ejecución40127256341 del PR260 agotó los30minutos de la suite general cuando había alcanzado343 de406casos. Calidad frontend, backend, contenedores y suite contextual habían pasado; el agregado frontend falló correctamente. No se incrementan timeouts ni se reducen casos.
+
+Se implementaron cuatro particiones Playwright en runners independientes, conservando los contextos requeridos `Frontend E2E (general)`, `Frontend E2E (contextual)` y el agregado final. Todos rechazan resultados fallidos, saltados o cancelados. Los artefactos de diagnóstico tienen nombres distintos por partición.
+
+`node scripts/verify-e2e-shards.mjs 4` enumeró406casos repartidos en112,103,90y101, sin omisiones, ajenos ni duplicados. La enumeración verifica cobertura, no equivale a ejecutar ni aprobar los406casos. Las17pruebas locales de los controles de CI pasaron; también pasó la gobernanza completa58/58 en29.30s desde un árbol limpio. Inventario643, Ruff, lint frontend, auditoría de acciones, sintaxis Node y `git diff --check` pasaron. La ejecución completa remota del HEAD reparado sigue siendo obligatoria antes de fusionar. La reparación no modifica código de producción ni expectativas de los tests E2E.
