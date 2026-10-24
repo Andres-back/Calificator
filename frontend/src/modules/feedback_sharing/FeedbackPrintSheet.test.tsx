@@ -35,6 +35,6 @@ describe('fichas completas y recortables', () => {
     const entry = { id: '1', estudiante: 'Ana', evaluacion: 'Lectura', materia: 'Lenguaje', nota: '3', nota_maxima: '5', retroalimentacion: 'Explica una razón. '.repeat(250) };
     const pages = paginateFeedback([entry], measure);
     expect(pages.flat().map(part => part.text).join('')).toBe(entry.retroalimentacion);
-    expect(measure.mock.calls.length).toBe(new Set(entry.estudiante + entry.evaluacion + ' · ' + entry.materia + entry.retroalimentacion).size);
+    expect(measure.mock.calls.length).toBe(new Set('Continuación de ' + entry.estudiante + entry.evaluacion + ' · ' + entry.materia + entry.retroalimentacion).size);
   });
 });

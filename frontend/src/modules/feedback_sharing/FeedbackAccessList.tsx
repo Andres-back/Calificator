@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui';
 import type { FeedbackAccess, FeedbackPreview, IssuedFeedbackAccess } from './api';
 import { changeFeedbackAccess } from './api';
+import { FeedbackLinkActions } from './FeedbackLinkActions';
 
 const labels = { active: 'Activo', expired: 'Vencido', disabled: 'Desactivado', suspended: 'Necesita nueva autorización' };
-export function FeedbackAccessList({ accesses, previews, signal, valid, onChanged, onIssued }: {
+export function FeedbackAccessList({ evaluationId, accesses, previews, signal, valid, onChanged, onIssued }: {
+  evaluationId?: string;
   accesses: FeedbackAccess[]; previews: FeedbackPreview[]; signal: AbortSignal;
   valid: () => boolean; onChanged: () => Promise<void>;
   onIssued: (result: IssuedFeedbackAccess, name: string) => void;
@@ -38,6 +40,7 @@ export function FeedbackAccessList({ accesses, previews, signal, valid, onChange
     <ul className="space-y-3">{accesses.map(access => <li key={access.id} className="min-w-0 rounded-xl border border-border p-3">
       <p className="break-words font-bold">{access.estudiante}</p>
       <p className="mt-1 text-sm">{labels[access.estado]} · Vence: {new Date(access.expires_at).toLocaleString()}</p>
+      {evaluationId && <FeedbackLinkActions evaluationId={evaluationId} accesses={[access]} selectedIds={[access.calificacion_id]} signal={signal} valid={valid} disabled={busy} onBusy={setBusy} compact />}
       <div className="mt-2 flex flex-wrap gap-2">
         {access.estado === 'active' ? <Button variant="outline" disabled={busy} onClick={() => { setPending({ access, action: 'desactivar', requestId: crypto.randomUUID() }); setError(''); }}>Desactivar</Button>
           : <Button variant="outline" disabled={busy || !previews.some(item => item.calificacion_id === access.calificacion_id && item.elegible)} onClick={() => { setPending({ access, action: 'reactivar', requestId: crypto.randomUUID() }); setDays(3); setError(''); }}>Reactivar</Button>}

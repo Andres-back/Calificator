@@ -1,0 +1,108 @@
+{
+  "tool": "image_gen.imagegen (built-in)",
+  "transparent_background": true,
+  "common_prompt": "Use case: illustration-story. Asset type: one standalone small educational decorative cutout for the corner of a printable feedback slip. Subject: SUBJECT. Style: simple friendly editorial line illustration, crisp dark outlines, sparse muted blue and teal accents, few details, little ink coverage, readable at 20 mm and in grayscale. Complete centered silhouette with transparent margins. Genuinely transparent alpha background; pixels outside the illustrated objects must have zero alpha. Flat illustration only, NO glow, halo, vignette, gradient, shadow, background color, white rectangle or drawn checkerboard. No text, numbers, letters, faces, logos, watermark, trophies, scores or grades. Not a UI, full card, worksheet or page. Only the requested objects.",
+  "assets": [
+    {
+      "id": "arte",
+      "subject": "a paintbrush and a small painter's palette, no letters",
+      "source": "exec-89e8088a-b585-4475-b624-9fb2ca4923b1.png"
+    },
+    {
+      "id": "atomo",
+      "subject": "a simple decorative atom symbol with three orbital loops, not a scientific teaching diagram",
+      "source": "exec-4f3c81df-3403-476a-a532-3d1c79d45daf.png"
+    },
+    {
+      "id": "brote",
+      "subject": "a small sprout with two leaves",
+      "source": "exec-7384840f-16d1-4bc6-86ab-acbe0b8821ef.png"
+    },
+    {
+      "id": "brujula",
+      "subject": "a compact compass with a needle, no letters",
+      "source": "exec-e4cf7d1e-0c29-4aa7-adaf-10288e6aa5e7.png"
+    },
+    {
+      "id": "calculadora",
+      "subject": "a small calculator with blank keys and blank display, absolutely no digits or letters",
+      "source": "exec-08491c41-40f6-4597-b5a9-da650c86bae3.png"
+    },
+    {
+      "id": "cohete",
+      "subject": "one small school-style rocket without insignia",
+      "source": "exec-f472da07-1b93-42aa-8737-29de574d35df.png"
+    },
+    {
+      "id": "cometa",
+      "subject": "one paper kite with a short tail",
+      "source": "exec-0381011c-0dfe-4f35-80dd-f41c789d123a.png"
+    },
+    {
+      "id": "geometria",
+      "subject": "a ruler and a drawing compass, no printed numerals",
+      "source": "exec-8b87b5e1-6824-4484-b475-8dbdf7205724.png"
+    },
+    {
+      "id": "globo",
+      "subject": "a small classroom globe on a stand, simplified land shapes, no labels",
+      "source": "exec-aa53fb22-48a7-4edb-b6c1-d8edec271dcf.png"
+    },
+    {
+      "id": "idea",
+      "subject": "one light bulb with three short simple light rays",
+      "source": "exec-65bea63d-a8da-4fc3-b00f-c6a734b12f70.png"
+    },
+    {
+      "id": "lapices",
+      "subject": "two pencils crossed next to a small eraser",
+      "source": "exec-6aa9c573-9c8b-492d-ab8d-61b215b763a7.png"
+    },
+    {
+      "id": "libro",
+      "subject": "an open book with one small ribbon bookmark",
+      "prompt": "Use case: illustration-story. Asset type: one small decorative educational cutout for the corner of a printable feedback slip for primary and secondary school. Subject: an open book with one small ribbon bookmark. Style: clean friendly hand-drawn editorial illustration with crisp dark outlines, restrained muted blue/teal accents, little ink coverage, simple enough to remain readable at 20 mm and in black and white. Composition: single isolated centered motif, complete silhouette with generous transparent margins. Background: genuinely transparent alpha, including all space outside the subject. No opaque rectangle, no white backdrop, no gradient, no ground shadow, no checkerboard drawn into the image. No words, letters, numerals, logos, watermark, stars as rewards, faces, trophies or grades. This is a standalone illustration, not a page, UI, card, border or full worksheet.",
+      "source": "exec-0e9d6bff-7ffc-4a01-ab33-1dcf2debf16c.png"
+    },
+    {
+      "id": "microscopio",
+      "subject": "a simple tabletop microscope",
+      "source": "exec-6ee671f0-6553-4d76-b8d4-4a4f214c0b30.png"
+    },
+    {
+      "id": "montana",
+      "subject": "two simple mountain peaks and one small sun",
+      "source": "exec-e0b1f744-2632-477c-b341-6bce31972782.png"
+    },
+    {
+      "id": "musica",
+      "subject": "two musical notes and one small curved line",
+      "source": "exec-a1e99546-a44c-4b13-93e7-aaf45336d8af.png"
+    },
+    {
+      "id": "olas",
+      "subject": "three simple wave curves and one tiny fish",
+      "source": "exec-20f0102e-61e5-4df6-8a91-8ec5bb0cc051.png"
+    },
+    {
+      "id": "origami",
+      "subject": "one folded paper crane",
+      "source": "exec-b3bc5931-fb53-4ced-ae3d-da88ca3a8c06.png"
+    },
+    {
+      "id": "piezas",
+      "subject": "two connected jigsaw puzzle pieces",
+      "source": "exec-5373e8f0-2013-42b2-acf0-6064852d1b74.png"
+    },
+    {
+      "id": "planeta",
+      "subject": "one ringed planet with a tiny distant star (astronomy, not a reward)",
+      "source": "exec-baedb398-16bd-4fd5-bd9f-cab0e0dc0948.png"
+    },
+    {
+      "id": "telescopio",
+      "subject": "a simple telescope on a tripod",
+      "source": "exec-62e308f0-d824-4839-9ecb-96ac21c858fc.png"
+    }
+  ]
+}

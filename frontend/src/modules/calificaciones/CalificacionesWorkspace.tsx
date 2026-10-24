@@ -1062,6 +1062,7 @@ function PanelDetalle({
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
         {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
         <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
+        {mobileTab === 'retroalimentacion' && <div className="flex min-w-0 flex-wrap gap-2"><FeedbackToolsButton evaluationId={cal.evaluacion_id} gradeId={cal.id} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty || presentation.processing} /></div>}
         {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
           onAccepted={(grade) => {
             const jobId = grade.resultado_json?.job_id;
