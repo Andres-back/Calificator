@@ -16,8 +16,8 @@ from app.modules.authorization.service import effective_permissions
 from app.modules.calificaciones.breakdown_service import get_active_breakdown
 from app.modules.calificaciones.models import Calificacion, Entrega
 from app.modules.evaluaciones.models import Evaluacion
-from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackPublication
-from app.modules.feedback_sharing.projection import Projection, build_projection
+from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackDeliveryReview, FeedbackPublication
+from app.modules.feedback_sharing.projection import Projection, build_projection, build_review_projection, review_source_fingerprint
 from app.modules.materias.models import Materia
 from app.modules.users.models import User
 
@@ -45,10 +45,12 @@ class Source:
     student: User
     breakdown: object
     delivery: Entrega | None
-    projection: Projection
+    projection: Projection | None
+    evidence_identity: dict | None = None
+    source_fingerprint: str | None = None
 
 
-async def load_source(db, grade_id: UUID, *, lock: bool = False) -> Source:
+async def load_source(db, grade_id: UUID, *, lock: bool = False, prepare_only: bool = False) -> Source:
     query = select(Calificacion).where(Calificacion.id == grade_id).execution_options(populate_existing=True)
     if lock:
         query = query.with_for_update()
@@ -75,8 +77,21 @@ async def load_source(db, grade_id: UUID, *, lock: bool = False) -> Source:
     if delivery and (delivery.estudiante_id != grade.estudiante_id or delivery.evaluacion_id != grade.evaluacion_id or delivery.materia_id != grade.materia_id):
         raise HTTPException(409, "La evidencia no corresponde a este resultado.")
     evidence_identity = {"archivo": delivery.archivo_url, "metadata": delivery.visual_text_json} if delivery else None
-    projection = build_projection(grade, evaluation, student.nombre, subject.nombre, breakdown, evidence_identity=evidence_identity)
-    return Source(grade, evaluation, subject, student, breakdown, delivery, projection)
+    fingerprint = review_source_fingerprint(grade, evaluation, student.nombre, subject.nombre, breakdown, evidence_identity=evidence_identity)
+    source = Source(grade, evaluation, subject, student, breakdown, delivery, None, evidence_identity, fingerprint)
+    if not prepare_only:
+        source.projection = await project_source(db, source)
+    return source
+
+
+async def project_source(db, source: Source) -> Projection:
+    review = await db.scalar(select(FeedbackDeliveryReview).where(
+        FeedbackDeliveryReview.calificacion_id == source.grade.id,
+    ).order_by(FeedbackDeliveryReview.authorized_at.desc(), FeedbackDeliveryReview.id.desc()).limit(1))
+    args = (source.grade, source.evaluation, source.student.nombre, source.subject.nombre, source.breakdown)
+    if review and review.source_fingerprint == source.source_fingerprint:
+        return build_review_projection(*args, review, evidence_identity=source.evidence_identity)
+    return build_projection(*args, evidence_identity=source.evidence_identity)
 
 
 async def authorize_teacher(db, actor: User, source: Source, permission: str = "grading.publish") -> None:

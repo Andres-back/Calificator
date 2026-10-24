@@ -3,6 +3,7 @@ import { createPublicFeedbackClient, FeedbackAccessError, type PublicFeedback } 
 import { PublicFeedbackChat } from './PublicFeedbackChat';
 import { installFeedbackPrivacy } from './privacy';
 import { PublicFeedbackEvidence } from './PublicFeedbackEvidence';
+import { FeedbackMessage } from './FeedbackMessage';
 
 function tokenFromHash() { return window.location.hash.slice(1); }
 function showNumber(value: string | null) {
@@ -88,7 +89,7 @@ function FeedbackSession({ token }: { token: string }) {
     {result.evidencia_disponible && <PublicFeedbackEvidence client={client} onUnavailable={close} />}
     <section aria-labelledby="shared-feedback" className="space-y-3 rounded-2xl border border-border bg-surface p-5">
       <h2 id="shared-feedback" className="font-bold">Qué lograste y cómo seguir</h2>
-      <p className="whitespace-pre-wrap leading-7">{data.retroalimentacion}</p>
+      <FeedbackMessage text={data.retroalimentacion} />
     </section>
     {data.respuestas.length > 0 && <details className="rounded-2xl border border-border bg-surface p-5">
       <summary className="min-h-11 cursor-pointer font-bold">Ver respuestas y puntajes</summary>

@@ -14,8 +14,8 @@ from app.modules.calificaciones.models import Calificacion
 from app.modules.feedback_sharing.access_policy import authorize_evaluation, db_now, guard_access
 from app.modules.feedback_sharing.http_policy import PrivateRoute
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackPublication
-from app.modules.feedback_sharing.schemas import AccessAction, AccessCreate, PreviewInput, ReactivateInput, RenewInput, SelectedInput
-from app.modules.feedback_sharing.service import create_access, manage_access, preview_grade
+from app.modules.feedback_sharing.schemas import AccessAction, AccessCreate, DeliveryReviewInput, PreviewInput, ReactivateInput, RenewInput, SelectedInput
+from app.modules.feedback_sharing.service import approve_delivery_review, create_access, manage_access, prepare_grade_preview, preview_grade
 from app.modules.users.models import User
 
 router = APIRouter(tags=["devoluciones"], route_class=PrivateRoute)
@@ -57,9 +57,11 @@ async def preview(evaluation_id: UUID, payload: PreviewInput, actor: User = Depe
     results = []
     for grade_id in payload.calificacion_ids:
         try:
-            projection = await preview_grade(db, actor, evaluation_id, grade_id)
-            results.append({"calificacion_id": grade_id, "elegible": True, "fingerprint": projection.fingerprint, "resultado": projection.payload,
-                            "revision_retroalimentacion": assess_feedback_usefulness(projection.payload["retroalimentacion"], projection.payload["respuestas"])})
+            item = await prepare_grade_preview(db, actor, evaluation_id, grade_id)
+            if item.get('resultado'):
+                projection = item['resultado']
+                item['revision_retroalimentacion'] = assess_feedback_usefulness(projection['retroalimentacion'], projection['respuestas'])
+            results.append(item)
         except HTTPException as exc:
             item = {"calificacion_id": grade_id, "elegible": False, "motivo": exc.detail}
             grade = await db.get(Calificacion, grade_id)
@@ -75,6 +77,16 @@ async def preview(evaluation_id: UUID, payload: PreviewInput, actor: User = Depe
                 }
             results.append(item)
     return {"resultados": results}
+
+
+@router.post('/evaluaciones/{evaluation_id}/devoluciones/revisar')
+async def review_delivery(evaluation_id: UUID, payload: DeliveryReviewInput, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    await authorize_evaluation(db, actor, evaluation_id)
+    projection = await approve_delivery_review(db, actor, evaluation_id, payload)
+    await db.commit()
+    return {'calificacion_id': payload.calificacion_id, 'elegible': True,
+        'seleccionable': True, 'preparacion': 'ready', 'fingerprint': projection.fingerprint,
+        'resultado': projection.payload}
 
 
 @router.post("/evaluaciones/{evaluation_id}/devoluciones/accesos")

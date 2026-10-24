@@ -116,6 +116,7 @@ ALL_SPECS = {
     "117-foto-entrega-completa",
     "118-calificacion-salida-completa",
     "119-calificacion-lotes-resiliente",
+    "120-retroalimentacion-entrega-clara",
 }
 OWNED_SPECS = {
     name

@@ -9,6 +9,7 @@ export interface FeedbackAnswer {
 export interface FeedbackResult {
   estudiante: string; evaluacion: string; materia: string; nota: string; nota_maxima: string;
   explicacion: string; retroalimentacion: string; respuestas: FeedbackAnswer[]; claves_liberadas: boolean;
+  alcance?: 'summary' | 'detail';
 }
 export interface PublicFeedback {
   resultado: FeedbackResult; expires_at: string; server_now: string;

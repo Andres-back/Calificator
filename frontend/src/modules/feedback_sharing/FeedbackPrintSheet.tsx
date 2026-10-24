@@ -4,6 +4,7 @@ import { Button } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
 import { paginateFeedback, type FeedbackPrintEntry } from './printPagination';
 import './feedback-print.css';
+import { feedbackPrintText } from './feedbackSections';
 
 export function FeedbackPrintSheet({ entries, onClose }: { entries: FeedbackPrintEntry[]; onClose: () => void }) {
   const user = useAuth(state => state.user);
@@ -16,7 +17,7 @@ export function FeedbackPrintSheet({ entries, onClose }: { entries: FeedbackPrin
     const context = canvas.getContext('2d');
     if (!context) return null;
     context.font = '16px Arial';
-    return paginateFeedback(entries, text => context.measureText(text).width);
+    return paginateFeedback(entries.map(entry => ({ ...entry, retroalimentacion: feedbackPrintText(entry.retroalimentacion) })), text => context.measureText(text).width);
   }, [entries]);
   useEffect(() => {
     const done = () => { document.body.classList.remove('feedback-printing'); setPrinting(false); };

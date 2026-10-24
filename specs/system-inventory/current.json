@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 536,
+      "covered": 538,
       "missing": 96
     },
     "by_kind": {
-      "endpoint": 297,
+      "endpoint": 298,
       "frontend_call": 199,
       "frontend_route": 38,
       "integration": 7,
       "job": 24,
-      "table": 67
+      "table": 68
     },
-    "total": 632
+    "total": 634
   },
   "exceptions": [],
   "findings": [
@@ -479,7 +479,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "3a044956794841828e3f8887ed7dd371fef9ff7c617c2ebf59b3e2d26de439e3",
+  "source_digest": "b84e593f6b4f3ff3673b804e4d8fa0d18b5eecbe9397474444197d0d48d7275b",
   "surfaces": [
     {
       "actors": [
@@ -765,6 +765,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -820,6 +826,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -4174,6 +4186,12 @@
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "domain",
           "test_path": "backend/tests/unit/test_feedback_sharing_worker.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         }
       ]
     },
@@ -4466,6 +4484,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -4521,6 +4545,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -5197,7 +5227,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluation_id}/devoluciones/accesos",
-      "source_line": 95,
+      "source_line": 107,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
       "states": [],
       "tests": [
@@ -7898,6 +7928,12 @@
         {
           "level": "unit",
           "reference": "GET:/public/devolucion",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/public/devolucion",
           "status": "domain",
           "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
         },
@@ -7996,6 +8032,12 @@
           "reference": "GET:/public/devolucion",
           "status": "domain",
           "test_path": "backend/tests/unit/test_feedback_sharing_worker.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/public/devolucion",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -9753,6 +9795,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -9808,6 +9856,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -14044,6 +14098,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -14099,6 +14159,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -15194,7 +15260,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/accesos",
-      "source_line": 80,
+      "source_line": 92,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
       "states": [],
       "tests": [
@@ -15320,7 +15386,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/fichas",
-      "source_line": 118,
+      "source_line": 130,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
       "states": [],
       "tests": [
@@ -15549,6 +15615,132 @@
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/previsualizar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_worker.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "review_delivery",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+      "source_line": 82,
+      "source_path": "backend/app/modules/feedback_sharing/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_chat.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_quota.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_regression.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_retention.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_chat_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_feature_flag.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_headers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_projection.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_feedback_sharing_worker.py"
         }
@@ -18751,6 +18943,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_chat.py"
         },
         {
@@ -19375,6 +19573,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
@@ -19981,6 +20185,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/FeedbackMessage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/FeedbackPrintSheet.test.tsx"
         },
         {
@@ -20018,6 +20228,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/ShareFeedbackDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackSections.test.ts"
         },
         {
           "level": "unit",
@@ -20473,6 +20689,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -21750,6 +21972,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -24937,6 +25165,12 @@
           "level": "unit",
           "reference": "/devolucion",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/devolucion",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_chat.py"
         },
         {
@@ -24968,6 +25202,12 @@
           "reference": "/devolucion",
           "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_sharing_headers.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/devolucion",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "unit",
@@ -26122,6 +26362,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -26177,6 +26423,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -29611,7 +29863,7 @@
       "kind": "frontend_call",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "GET:/devoluciones/disponibilidad",
-      "source_line": 22,
+      "source_line": 28,
       "source_path": "frontend/src/modules/feedback_sharing/api.ts",
       "states": [],
       "tests": [
@@ -29716,6 +29968,12 @@
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "domain",
           "test_path": "backend/tests/unit/test_feedback_sharing_worker.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         }
       ]
     },
@@ -30099,6 +30357,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -30154,6 +30418,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -30483,6 +30753,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -30538,6 +30814,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -34191,6 +34473,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -34246,6 +34534,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -37963,7 +38257,7 @@
       "kind": "frontend_call",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "POST:/devoluciones/accesos/{id}/{action}",
-      "source_line": 51,
+      "source_line": 61,
       "source_path": "frontend/src/modules/feedback_sharing/api.ts",
       "states": [],
       "tests": [
@@ -38068,6 +38362,12 @@
           "reference": "POST:/devoluciones/accesos/{id}/{action}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_feedback_sharing_worker.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/devoluciones/accesos/{id}/{action}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         }
       ]
     },
@@ -38684,6 +38984,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -38739,6 +39045,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -44759,6 +45071,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
         },
         {
@@ -45150,6 +45468,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
         },
         {
           "level": "e2e",
@@ -46026,6 +46350,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
         },
         {
@@ -46344,6 +46674,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
@@ -46599,7 +46935,7 @@
       "kind": "table",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "feedback_accesses",
-      "source_line": 39,
+      "source_line": 58,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
       "states": [
         "active",
@@ -46744,7 +47080,7 @@
       "kind": "table",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "feedback_chat_quotas",
-      "source_line": 63,
+      "source_line": 82,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
       "states": [],
       "tests": [
@@ -46894,7 +47230,7 @@
       "kind": "table",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "feedback_chat_requests",
-      "source_line": 71,
+      "source_line": 90,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
       "states": [
         "closed",
@@ -47017,6 +47353,163 @@
       "coverage": "covered",
       "details": {
         "active": true,
+        "class": "FeedbackDeliveryReview",
+        "constraints": [
+          "length(feedback_text) BETWEEN 1 AND 6000",
+          "scope IN ('summary','detail')"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [
+          "authorized_at",
+          "calificacion_id"
+        ],
+        "migrations": [
+          "backend/alembic/versions/202610230002_feedback_delivery_reviews.py"
+        ],
+        "relationships": [
+          "calificaciones.id",
+          "users.id"
+        ],
+        "unique": [
+          "authorized_by",
+          "calificacion_id",
+          "request_id"
+        ]
+      },
+      "id": "table:feedback_delivery_reviews",
+      "kind": "table",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "feedback_delivery_reviews",
+      "source_line": 14,
+      "source_path": "backend/app/modules/feedback_sharing/models.py",
+      "states": [
+        "detail",
+        "summary"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_chat.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_print.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_quota.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_regression.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_retention.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_chat_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_feature_flag.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_headers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_projection.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_delivery_reviews",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_feedback_sharing_worker.py"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "active": true,
         "class": "FeedbackPublication",
         "constraints": [
           "revision >= 1",
@@ -47050,7 +47543,7 @@
       "kind": "table",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "feedback_publications",
-      "source_line": 14,
+      "source_line": 33,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
       "states": [
         "authorized",
@@ -48116,6 +48609,12 @@
           "level": "unit",
           "reference": "matriculas",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
+        },
+        {
+          "level": "unit",
+          "reference": "matriculas",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
         },
         {
@@ -49130,6 +49629,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_delivery_review.py"
         },
         {
           "level": "unit",

@@ -2,22 +2,22 @@
 from datetime import timedelta
 import json
 import secrets
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import func, select, text
 
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
-from app.modules.feedback_sharing.access_policy import authorize_owner, authorize_teacher, credential_digest, db_now, enabled, load_source
-from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackPublication
-from app.modules.feedback_sharing.projection import digest
+from app.modules.feedback_sharing.access_policy import authorize_owner, authorize_teacher, credential_digest, db_now, enabled, load_source, project_source
+from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackDeliveryReview, FeedbackPublication
+from app.modules.feedback_sharing.projection import build_review_projection, confirmed_score, digest
 from app.modules.materias.models import Materia
 
 
-async def audit_control(db, action: str, access_id: UUID, actor_id: UUID | None, metadata: dict | None = None):
+async def audit_control(db, action: str, access_id: UUID, actor_id: UUID | None, metadata: dict | None = None, *, entity_type: str = 'feedback_access'):
     # Misma transacción; nunca usar el helper best-effort para estas decisiones.
-    await db.execute(text("INSERT INTO audit_events (actor_id,event,entity_type,entity_id,metadata) VALUES (:actor,:event,'feedback_access',:id,CAST(:metadata AS jsonb))"), {"actor": actor_id, "event": f"feedback_{action}", "id": str(access_id), "metadata": json.dumps(metadata or {})})
+    await db.execute(text("INSERT INTO audit_events (actor_id,event,entity_type,entity_id,metadata) VALUES (:actor,:event,:entity_type,:id,CAST(:metadata AS jsonb))"), {"actor": actor_id, "event": f"feedback_{action}", "entity_type": entity_type, "id": str(access_id), "metadata": json.dumps(metadata or {})})
 
 
 async def preview_grade(db, actor, evaluation_id: UUID, grade_id: UUID):
@@ -27,6 +27,79 @@ async def preview_grade(db, actor, evaluation_id: UUID, grade_id: UUID):
         raise HTTPException(403, "Este resultado no pertenece a la evaluación seleccionada.")
     await authorize_teacher(db, actor, source, "grading.read")
     return source.projection
+
+
+async def prepare_grade_preview(db, actor, evaluation_id, grade_id):
+    enabled()
+    source = await load_source(db, grade_id, prepare_only=True)
+    if source.evaluation.id != evaluation_id:
+        raise HTTPException(403, 'Este resultado no pertenece a la evaluación seleccionada.')
+    await authorize_teacher(db, actor, source, 'grading.read')
+    grade = source.grade
+    processing = grade.estado in {'en_cola', 'procesando'}
+    score = None if processing else grade.nota_confirmada if grade.nota_confirmada is not None else grade.nota_sugerida
+    result = {'calificacion_id': grade.id, 'elegible': False, 'seleccionable': score is not None,
+        'preparacion': 'needs_review', 'borrador_docente': {
+            'estado': grade.estado, 'nota': str(score) if score is not None else None,
+            'nota_maxima': str(source.evaluation.nota_maxima),
+            'retroalimentacion': '' if processing else grade.feedback or '',
+        }}
+    try:
+        projection = await project_source(db, source)
+        result.update(elegible=True, preparacion='ready', fingerprint=projection.fingerprint, resultado=projection.payload)
+    except HTTPException as exc:
+        result['motivo'] = exc.detail
+    try:
+        note, _ = confirmed_score(grade, source.evaluation)
+    except HTTPException:
+        result['preparacion'] = 'no_grade'
+    else:
+        breakdown = source.breakdown
+        result['revision_docente'] = {
+            'source_fingerprint': source.source_fingerprint,
+            'feedback_text': (result.get('resultado') or {}).get('retroalimentacion', grade.feedback or ''),
+            'detail_available': bool(breakdown and breakdown.cobertura_estado == 'completa'
+                and not breakdown.requiere_revision and breakdown.nota_final == note),
+        }
+    return result
+
+
+async def approve_delivery_review(db, actor, evaluation_id, payload):
+    """Store an immutable delivery decision, never change the academic grade."""
+    enabled()
+    source = await load_source(db, payload.calificacion_id, lock=True, prepare_only=True)
+    if source.evaluation.id != evaluation_id:
+        raise HTTPException(403, 'Este resultado no pertenece a la evaluación seleccionada.')
+    await authorize_teacher(db, actor, source)
+    if source.source_fingerprint != payload.source_fingerprint:
+        raise HTTPException(409, 'La devolución cambió. Actualiza la lista y revísala antes de aprobar.')
+    request_fingerprint = digest([payload.source_fingerprint, payload.scope, payload.feedback_text])
+    previous = await db.scalar(select(FeedbackDeliveryReview).where(
+        FeedbackDeliveryReview.calificacion_id == source.grade.id,
+        FeedbackDeliveryReview.authorized_by == actor.id,
+        FeedbackDeliveryReview.request_id == payload.request_id,
+    ))
+    if previous:
+        if previous.request_fingerprint != request_fingerprint:
+            raise HTTPException(409, 'Esta solicitud ya se utilizó con otra devolución.')
+        projection = await project_source(db, source)
+        expected = build_review_projection(source.grade, source.evaluation, source.student.nombre,
+            source.subject.nombre, source.breakdown, previous, evidence_identity=source.evidence_identity)
+        if projection.fingerprint != expected.fingerprint:
+            raise HTTPException(409, 'Hay una revisión más reciente. Actualiza la lista.')
+        return projection
+    review = FeedbackDeliveryReview(id=uuid4(), calificacion_id=source.grade.id,
+        authorized_by=actor.id, source_fingerprint=source.source_fingerprint,
+        scope=payload.scope, feedback_text=payload.feedback_text,
+        request_id=payload.request_id, request_fingerprint=request_fingerprint)
+    projection = build_review_projection(source.grade, source.evaluation, source.student.nombre,
+        source.subject.nombre, source.breakdown, review, evidence_identity=source.evidence_identity)
+    from app.modules.feedback_sharing.invalidations import suspend_grade_publications
+    await suspend_grade_publications(db, source.grade.id)
+    db.add(review)
+    await db.flush()
+    await audit_control(db, 'delivery_reviewed', review.id, actor.id, {'scope': review.scope}, entity_type='feedback_delivery_review')
+    return projection
 
 
 async def new_publication(db, source, actor, evidence: bool):
