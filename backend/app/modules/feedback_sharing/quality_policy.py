@@ -1,6 +1,7 @@
 """Puerta de publicación: no sustituye la revisión académica del docente."""
 from decimal import Decimal
 from uuid import UUID
+import unicodedata
 
 from fastapi import HTTPException
 
@@ -29,7 +30,8 @@ def quality_review_record(review: dict, evaluator_id: str, severe_incidents: lis
 
 def ensure_feedback_coherence(grade, components: list[dict]) -> None:
     feedback = (grade.feedback or "").strip()
-    if feedback.casefold().startswith("retroalimentación provisional"):
+    normalized = ''.join(char for char in unicodedata.normalize('NFKD', feedback.casefold()) if not unicodedata.combining(char))
+    if normalized.startswith('retroalimentacion provisional'):
         raise HTTPException(409, "Revisa y edita la retroalimentación provisional antes de compartirla.")
     # No comparar contra la sugerencia antigua: el docente pudo ajustar la nota.
     # El cálculo oficial/desglose se valida aparte; aquí solo coherencia textual.

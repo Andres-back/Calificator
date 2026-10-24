@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 46
+**Superficies propietarias:** 47
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -30,8 +30,8 @@
 | frontend_route | `/app/cambiar-clave-inicial` | authenticated | covered | `frontend/src/config/routes.ts:18` |
 | frontend_route | `/devolucion` | ambiguous | covered | `frontend/src/router.tsx:59` |
 | frontend_route | `/registro` | public | covered | `frontend/src/config/routes.ts:10` |
-| frontend_call | `GET:/devoluciones/disponibilidad` | ambiguous | covered | `frontend/src/modules/feedback_sharing/api.ts:22` |
-| frontend_call | `POST:/devoluciones/accesos/{id}/{action}` | ambiguous | covered | `frontend/src/modules/feedback_sharing/api.ts:51` |
+| frontend_call | `GET:/devoluciones/disponibilidad` | ambiguous | covered | `frontend/src/modules/feedback_sharing/api.ts:28` |
+| frontend_call | `POST:/devoluciones/accesos/{id}/{action}` | ambiguous | covered | `frontend/src/modules/feedback_sharing/api.ts:61` |
 | integration | `cloudflare` | system | covered | `backend/app/core/config.py:1` |
 | integration | `open_code` | system | covered | `backend/app/core/config.py:1` |
 | integration | `redis` | system | covered | `backend/app/core/config.py:1` |
@@ -45,10 +45,11 @@
 | table | `ai_usage_logs` | system | missing | `backend/alembic/versions/202606290002_phases_3_to_8.py:193` |
 | table | `chat_messages` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:158` |
 | table | `evaluation_blueprints` | system | missing | `backend/alembic/versions/202606290001_initial_phase_1_2.py:121` |
-| table | `feedback_accesses` | system | covered | `backend/app/modules/feedback_sharing/models.py:39` |
-| table | `feedback_chat_quotas` | system | covered | `backend/app/modules/feedback_sharing/models.py:63` |
-| table | `feedback_chat_requests` | system | covered | `backend/app/modules/feedback_sharing/models.py:71` |
-| table | `feedback_publications` | system | covered | `backend/app/modules/feedback_sharing/models.py:14` |
+| table | `feedback_accesses` | system | covered | `backend/app/modules/feedback_sharing/models.py:58` |
+| table | `feedback_chat_quotas` | system | covered | `backend/app/modules/feedback_sharing/models.py:82` |
+| table | `feedback_chat_requests` | system | covered | `backend/app/modules/feedback_sharing/models.py:90` |
+| table | `feedback_delivery_reviews` | system | covered | `backend/app/modules/feedback_sharing/models.py:14` |
+| table | `feedback_publications` | system | covered | `backend/app/modules/feedback_sharing/models.py:33` |
 | table | `importacion_estudiantes_filas` | system | missing | `backend/app/modules/importacion_estudiantes/models.py:33` |
 | table | `importacion_estudiantes_lotes` | system | missing | `backend/app/modules/importacion_estudiantes/models.py:11` |
 | table | `materiales_generados` | system | covered | `backend/alembic/versions/202606290002_phases_3_to_8.py:121` |

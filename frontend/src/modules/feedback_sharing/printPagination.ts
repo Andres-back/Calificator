@@ -15,11 +15,15 @@ export function paginateFeedback(entries: FeedbackPrintEntry[], measure: (text: 
   const width = 630;
   const pageHeight = 900;
   const lineHeight = 24;
+  // The font is fixed for one pagination. Measuring every repeated character
+  // again can block a low-end phone when preparing a whole class of slips.
+  const widths = new Map<string, number>();
   const wrap = (text: string) => {
     const ends: number[] = [];
     let start = 0, lineWidth = 0;
     for (const character of text) {
-      const size = measure(character);
+      let size = widths.get(character);
+      if (size === undefined) { size = measure(character); widths.set(character, size); }
       if (character !== '\n' && lineWidth + size > width && start > (ends.at(-1) ?? 0)) { ends.push(start); lineWidth = 0; }
       start += character.length;
       lineWidth += size;

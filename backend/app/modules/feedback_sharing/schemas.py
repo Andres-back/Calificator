@@ -1,5 +1,6 @@
 """Entradas estrictas; el visitante nunca elige identidad ni alcance."""
 from uuid import UUID
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator
 
@@ -22,6 +23,14 @@ class PreviewInput(Input):
 class Selection(Input):
     calificacion_id: UUID
     fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class DeliveryReviewInput(Input):
+    calificacion_id: UUID
+    source_fingerprint: str = Field(pattern=r'^[a-f0-9]{64}$')
+    scope: Literal['summary', 'detail'] = 'summary'
+    feedback_text: str = Field(min_length=1, max_length=6000)
+    request_id: UUID
 
 
 class SelectedInput(Input):

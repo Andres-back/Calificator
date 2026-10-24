@@ -67,11 +67,56 @@ describe('devoluciones por evaluación', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/No pudimos cargar/);
     expect(screen.queryByText('Ana Pérez')).toBeNull();
   });
+  it('permite seleccionar una nota confirmada pendiente y aprobar su resumen sin perder la selección', async () => {
+    vi.mocked(teacherApi.previewFeedback).mockResolvedValue([{ calificacion_id: 'g1', elegible: false,
+      seleccionable: true, preparacion: 'needs_review', motivo: 'Revisa los puntajes por pregunta.',
+      revision_docente: { source_fingerprint: 'a'.repeat(64), feedback_text: result.retroalimentacion, detail_available: false },
+      borrador_docente: { estado: 'publicada', nota: '3.5', nota_maxima: '5', retroalimentacion: result.retroalimentacion } }]);
+    vi.mocked(teacherApi.approveFeedbackReview).mockResolvedValue({ calificacion_id: 'g1', elegible: true,
+      seleccionable: true, preparacion: 'ready', fingerprint: 'f'.repeat(64), resultado: { ...result, alcance: 'summary' } });
+    render(<ShareFeedbackDialog evaluationId="e1" onClose={() => {}} onReview={() => {}} />);
+    const checkbox = await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' });
+    expect(checkbox).toBeEnabled();
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar devolución de Ana Pérez' }));
+    expect(await screen.findByText(/Solo nota y retroalimentación/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    await waitFor(() => expect(teacherApi.approveFeedbackReview).toHaveBeenCalledWith('e1', expect.objectContaining({ calificacion_id: 'g1', scope: 'summary' }), expect.any(AbortSignal)));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Preparar impresión' })).toBeEnabled());
+    expect(screen.getByRole('checkbox', { name: 'Seleccionar Ana Pérez' })).toBeChecked();
+    expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+  });
   it('limpia el contenido al perder la sesión', async () => {
     const { rerender } = render(<ShareFeedbackDialog evaluationId="e1" onClose={() => {}} onReview={() => {}} />);
     await screen.findByText(result.retroalimentacion);
     useAuth.setState({ user: null });
     rerender(<ShareFeedbackDialog evaluationId="e1" onClose={() => {}} onReview={() => {}} />);
     expect(screen.queryByText(result.retroalimentacion)).toBeNull();
+  });
+  it('no omite pendientes silenciosamente al entregar una selección mixta', async () => {
+    vi.mocked(getEvaluationReview).mockResolvedValue({ alumnos: [{ estudiante_id: 'a', nombre: 'Ana Pérez', calificacion_id: 'g1' }, { estudiante_id: 'b', nombre: 'Luis Pérez', calificacion_id: 'g2' }], siguiente_cursor: null } as never);
+    vi.mocked(teacherApi.previewFeedback).mockResolvedValue([
+      { calificacion_id: 'g1', elegible: true, fingerprint: 'f'.repeat(64), resultado: result },
+      { calificacion_id: 'g2', elegible: false, seleccionable: true, preparacion: 'needs_review', motivo: 'Revisa el mensaje.' },
+    ]);
+    render(<ShareFeedbackDialog evaluationId="e1" onClose={() => {}} onReview={() => {}} />);
+    await screen.findByText(result.retroalimentacion);
+    fireEvent.click(screen.getByRole('button', { name: 'Todos con nota' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar impresión' }));
+    expect(screen.getByText(/1 devoluciones seleccionadas necesitan revisión/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Entregar solo 1 lista' })).toBeInTheDocument();
+    expect(teacherApi.prepareFeedbackPrint).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.getByRole('checkbox', { name: 'Seleccionar Luis Pérez' })).toBeChecked();
+  });
+  it('actualizar conserva la selección y no emite ni imprime por su cuenta', async () => {
+    render(<ShareFeedbackDialog evaluationId="e1" onClose={() => {}} onReview={() => {}} />);
+    await screen.findByText(result.retroalimentacion);
+    fireEvent.click(screen.getByRole('button', { name: 'Ninguno' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar estudiantes y devoluciones' }));
+    await waitFor(() => expect(teacherApi.previewFeedback).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' })).not.toBeChecked();
+    expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+    expect(teacherApi.prepareFeedbackPrint).not.toHaveBeenCalled();
   });
 });

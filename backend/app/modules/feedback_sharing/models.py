@@ -11,6 +11,25 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 
+class FeedbackDeliveryReview(Base):
+    __tablename__ = 'feedback_delivery_reviews'
+    __table_args__ = (
+        UniqueConstraint('authorized_by', 'calificacion_id', 'request_id', name='uq_feedback_delivery_review_request'),
+        CheckConstraint("scope IN ('summary','detail')", name='ck_feedback_delivery_review_scope'),
+        CheckConstraint('length(feedback_text) BETWEEN 1 AND 6000', name='ck_feedback_delivery_review_text'),
+        Index('ix_feedback_delivery_review_grade', 'calificacion_id', 'authorized_at'),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    calificacion_id: Mapped[UUID] = mapped_column(ForeignKey('calificaciones.id'))
+    authorized_by: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    authorized_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.clock_timestamp())
+    source_fingerprint: Mapped[str] = mapped_column(String(64))
+    scope: Mapped[str] = mapped_column(String(20))
+    feedback_text: Mapped[str] = mapped_column(Text)
+    request_id: Mapped[UUID] = mapped_column()
+    request_fingerprint: Mapped[str] = mapped_column(String(64))
+
+
 class FeedbackPublication(Base):
     __tablename__ = "feedback_publications"
     __table_args__ = (

@@ -163,6 +163,8 @@ Precisión de FR-004 autorizada por el usuario el 2026-10-20: «podemos hacer ot
 
 ### Entidades clave
 
+Precisión de entrega aprobada el 2026-10-23, issue #255 y [Spec120](../120-retroalimentacion-entrega-clara/spec.md): FR-003/004/006/018 distinguen nota oficial de autorización de la devolución. Un docente puede autorizar explícitamente un resumen revisado (nota y mensaje) conservando privados los avisos originales y omitiendo todo desglose incompleto o no validado, también del contexto de Xali. Esto no publica automáticamente preguntas pendientes ni altera la nota. La revisión queda ligada a la fuente vigente e invalidada por sus cambios. Se conserva la vía coherente previa y las reglas de acceso, privacidad y cuota; SC-002/003 no se interpretan como impedimento para compartir un resumen humano que no certifica el desglose. La validación pedagógica independiente sigue pendiente en #236.
+
 - **Configuración de valoración**: selección por etapa, versión, evidencia de evaluación y estado de habilitación; no equivale al nombre de un único modelo para toda la aplicación.
 - **Revisión compartible de resultado**: nota y desglose autorizados, retroalimentación revisada, reglas de evidencia/soluciones y fecha de la decisión docente.
 - **Acceso temporal**: emisor, estudiante/evaluación y resultado permitidos, vigencia, estado y revisión autorizada; no representa una familia ni contiene una contraseña de cuenta.
