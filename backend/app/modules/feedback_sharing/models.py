@@ -69,6 +69,7 @@ class FeedbackAccess(Base):
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     creation_request_id: Mapped[UUID] = mapped_column()
     credential_digest: Mapped[str] = mapped_column(String(64), unique=True)
+    credential_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     credential_generation: Mapped[int] = mapped_column(Integer, default=1)
     version: Mapped[int] = mapped_column(Integer, default=1)
     state: Mapped[str] = mapped_column(String(20), default="active")
@@ -77,6 +78,23 @@ class FeedbackAccess(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     operations_json: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+
+class FeedbackDeliveryBatch(Base):
+    __tablename__ = 'feedback_delivery_batches'
+    __table_args__ = (
+        UniqueConstraint('actor_id', 'evaluacion_id', 'request_id', name='uq_feedback_delivery_batch_request'),
+        CheckConstraint("state IN ('completed','partial','failed')", name='ck_feedback_delivery_batch_state'),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    actor_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    evaluacion_id: Mapped[UUID] = mapped_column(ForeignKey('evaluaciones.id'))
+    request_id: Mapped[UUID] = mapped_column()
+    request_fingerprint: Mapped[str] = mapped_column(String(64))
+    results_json: Mapped[dict] = mapped_column(JSONB, default=dict)
+    state: Mapped[str] = mapped_column(String(20), default='completed')
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.clock_timestamp())
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.clock_timestamp())
 
 
 class FeedbackChatQuota(Base):

@@ -10,8 +10,8 @@ const result = (index: number) => ({ estudiante: index === 1 ? 'Estudiante Prueb
   respuestas: [], claves_liberadas: false, alcance: 'summary',
 });
 
-async function installFeedback(page: Page) {
-  let approved = false;
+async function installFeedback(page: Page, initiallyApproved = false) {
+  let approved = initiallyApproved;
   let previewCalls = 0;
   const operations: string[] = [];
   await page.route('**/api/**', async route => {
@@ -90,6 +90,21 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await expect(dialog.getByRole('button', { name: 'Copiar enlace de Estudiante Prueba' })).toBeVisible();
     expect(state.operations).toEqual(['review', 'issue']);
     await dialog.getByRole('button', { name: 'Todos los listos', exact: true }).click();
+    await expect(dialog.getByText('30 estudiantes · 30 listos para entregar · 30 seleccionados')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Preparar impresión', exact: true })).toBeEnabled();
+  });
+
+  test(`120 impresión completa y devolución privada ${width}px ${theme}`, async ({ page, browserName }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width, height: 850 });
+    await login(page, 'profesor', { rosterSize: 30 });
+    await installFeedback(page, true);
+    await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
+    await page.evaluate(theme => { document.documentElement.classList.toggle('dark', theme === 'dark'); }, theme);
+    await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
+    await page.getByRole('button', { name: 'Retroalimentaciones', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Retroalimentaciones' });
+    await expect(dialog.getByText('30 estudiantes · 30 listos para entregar · 30 seleccionados')).toBeVisible();
     await dialog.getByRole('button', { name: 'Preparar impresión', exact: true }).click();
     await expect(dialog.getByRole('heading', { name: '30 fichas para entregar individualmente' })).toBeVisible();
     expect(await dialog.locator('.feedback-slip').count()).toBeGreaterThan(30);
@@ -109,6 +124,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
         // Chromium dispatches afterprint after each PDF and clears the private
         // print portal, as it should for a real print dialog. Reopen each time.
         await dialog.getByRole('button', { name: 'Imprimir fichas', exact: true }).click();
+        await expect(page.locator('#feedback-private-print')).toHaveAttribute('data-ready', 'true');
         await page.pdf({ path: `../output/pdf/spec120-${format}.pdf`, format, printBackground: false });
       }
       await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));

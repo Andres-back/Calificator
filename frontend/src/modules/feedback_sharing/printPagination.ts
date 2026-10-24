@@ -8,7 +8,7 @@ export interface FeedbackPrintFragment extends FeedbackPrintEntry { text: string
  * Keep exact character slices; even very long words and blank lines survive.
  * A measured glyph width (12 pt Arial) avoids character-count pagination.
  */
-export function paginateFeedback(entries: FeedbackPrintEntry[], measure: (text: string) => number): FeedbackPrintFragment[][] {
+export function paginateFeedback(entries: FeedbackPrintEntry[], measure: (text: string) => number, decorated = false): FeedbackPrintFragment[][] {
   const pages: FeedbackPrintFragment[][] = [];
   let page: FeedbackPrintFragment[] = [];
   let used = 0;
@@ -18,13 +18,13 @@ export function paginateFeedback(entries: FeedbackPrintEntry[], measure: (text: 
   // The font is fixed for one pagination. Measuring every repeated character
   // again can block a low-end phone when preparing a whole class of slips.
   const widths = new Map<string, number>();
-  const wrap = (text: string) => {
+  const wrap = (text: string, availableWidth = width) => {
     const ends: number[] = [];
     let start = 0, lineWidth = 0;
     for (const character of text) {
       let size = widths.get(character);
       if (size === undefined) { size = measure(character); widths.set(character, size); }
-      if (character !== '\n' && lineWidth + size > width && start > (ends.at(-1) ?? 0)) { ends.push(start); lineWidth = 0; }
+      if (character !== '\n' && lineWidth + size > availableWidth && start > (ends.at(-1) ?? 0)) { ends.push(start); lineWidth = 0; }
       start += character.length;
       lineWidth += size;
       if (character === '\n') { ends.push(start); lineWidth = 0; }
@@ -33,8 +33,12 @@ export function paginateFeedback(entries: FeedbackPrintEntry[], measure: (text: 
     return ends;
   };
   for (const entry of entries) {
-    const identityLines = wrap(entry.estudiante).length + wrap(entry.evaluacion + ' · ' + entry.materia).length;
-    const overhead = (identityLines + 3) * lineHeight + 32;
+    // Name is bold in print; keep a conservative width and include the
+    // continuation label in every fragment's estimate, not only page one.
+    const headerWidth = decorated ? 510 : 600;
+    const identityLines = wrap('Continuación de ' + entry.estudiante, headerWidth / 1.12).length + wrap(entry.evaluacion + ' · ' + entry.materia, headerWidth).length;
+    const headerHeight = Math.max((identityLines + 2) * lineHeight, decorated ? 88 : 0);
+    const overhead = headerHeight + lineHeight + 32;
     const lineCapacity = Math.max(1, Math.floor((pageHeight - overhead) / lineHeight));
     let offset = 0, continuation = 1;
     while (offset < entry.retroalimentacion.length) {

@@ -68,3 +68,33 @@ class RenewInput(AccessAction):
 class QuestionInput(Input):
     request_id: UUID
     mensaje: str = Field(min_length=1, max_length=2000)
+
+
+class BatchSelection(Input):
+    calificacion_id: UUID
+    source_fingerprint: str = Field(pattern=r'^[a-f0-9]{64}$')
+    feedback_text: str = Field(min_length=1, max_length=6000)
+    scope: Literal['summary', 'detail'] = 'summary'
+
+
+class BatchPublishInput(Input):
+    request_id: UUID
+    selecciones: list[BatchSelection] = Field(min_length=1, max_length=25)
+
+    @field_validator('selecciones')
+    @classmethod
+    def unique_grades(cls, values):
+        if len({item.calificacion_id for item in values}) != len(values):
+            raise ValueError('Selecciona cada estudiante una sola vez')
+        return values
+
+
+class AccessCopiesInput(Input):
+    access_ids: list[UUID] = Field(min_length=1, max_length=100)
+
+    @field_validator('access_ids')
+    @classmethod
+    def unique_accesses(cls, values):
+        if len(set(values)) != len(values):
+            raise ValueError('Selecciona cada enlace una sola vez')
+        return values
