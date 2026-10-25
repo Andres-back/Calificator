@@ -60,6 +60,7 @@ Prueba independiente: biblioteca sin gasto, tabla/gráfico determinista, propues
 - [x] T028 Verificar visualmente móvil/computador, claro/oscuro, Chromium/WebKit y exportaciones sin llamadas reales en `output/playwright/` y `output/pdf/`; registrar límites de prueba en `specs/125-edicion-impresion-evaluaciones/quickstart.md` (SC-001–SC-007).
 - [x] T029 Ejecutar Converge, gobernanza, auditorías y builds aplicables; actualizar `specs/125-edicion-impresion-evaluaciones/tasks.md`, `quickstart.md` y `specs/README.md` sin certificar CI pendiente.
 - [x] T030 Preparar PR enlazado a262 con todos los cambios revisados y CI requerido en verde antes de entrega; no fusionar ni desplegar sin autorización y registrar enlace en `specs/125-edicion-impresion-evaluaciones/quickstart.md`.
+- [x] T031 [US3] Corregir la sincronización visor→lista→editor del issue264 en `EvaluationPrintPanel.tsx` e incluir una regresión con ambas claves reales de consultas en `EvaluationPrintPanel.test.tsx`, sin invalidar ni modificar calificaciones (FR-006, FR-007).
 
 ## Dependencias y ejecución
 
@@ -67,4 +68,4 @@ T001→T002→pruebas T003/T004. US1 T005→T006→T007; US2 T008→T009→T010;
 
 Oportunidades de ejecución simultánea sin agentes: prueba de cálculoT003 y contratoT011 están en archivos distintos; US1 y fundamentos backend de US3 pueden comprobarse separadamente; lectura de documentaciónT022 no requiere despliegue. No modificar un archivo compartido simultáneamente.
 
-MVP verificable: US1 visor/material ampliable. Se entrega primero localmente; no declarar completa la función125 hasta cerrar las cuatro historias. Los treinta ítems siguen el formato ID/ruta/historia y mantienen pendientes los trabajos no implementados.
+MVP verificable: US1 visor/material ampliable. Se entrega primero localmente; no declarar completa la función125 hasta cerrar las cuatro historias. Los ítems siguen el formato ID/ruta/historia y mantienen pendientes los trabajos no implementados.

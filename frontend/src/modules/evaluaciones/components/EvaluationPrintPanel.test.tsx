@@ -1,6 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/config/queryKeys';
 import type { Evaluacion } from '@/types/api';
 import { EvaluationPrintPanel } from './EvaluationPrintPanel';
 import { defaultPrintSettings } from '../printSettings';
@@ -11,6 +13,39 @@ vi.mock('../api', () => ({ updateEvaluacion: mocks.update }));
 vi.mock('../printApi', () => ({ preparePrint: mocks.prepare, readPrintJob: mocks.read, preparedPrintPdf: mocks.pdf, cancelPrint: mocks.cancel }));
 const evaluation = { id: 'test', materia_id: 'subject', contenido_version_id: 'version-1', updated_at: '2026-10-24T12:00:00Z', configuracion_impresion: null } as unknown as Evaluacion;
 beforeEach(() => vi.clearAllMocks());
+
+it('refreshes both subject and general lists so reopening the editor gets the saved format', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+  const legacyKey = ['evaluaciones', evaluation.materia_id];
+  const standardKey = queryKeys.evaluaciones.list(evaluation.materia_id);
+  const unchangedGrades = { nota: 3.5, evidencia: 'unchanged-test-evidence' };
+  client.setQueryData(legacyKey, evaluation);
+  client.setQueryData(standardKey, evaluation);
+  client.setQueryData(['calificaciones'], unchangedGrades);
+  let persisted = evaluation;
+  const subjectList = vi.fn(async () => persisted);
+  const generalList = vi.fn(async () => persisted);
+  const updated = { ...evaluation, updated_at: '2026-10-24T12:01:00Z',
+    configuracion_impresion: { ...defaultPrintSettings(), distribucion: 'amplia' as const } };
+  mocks.update.mockImplementation(async () => { persisted = updated; return updated; });
+  function Lists() {
+    const subject = useQuery({ queryKey: legacyKey, queryFn: subjectList });
+    const general = useQuery({ queryKey: standardKey, queryFn: generalList });
+    return <><output aria-label="Editor desde materia">{subject.data?.configuracion_impresion?.distribucion ?? 'anterior'}</output>
+      <output aria-label="Editor desde lista general">{general.data?.configuracion_impresion?.distribucion ?? 'anterior'}</output></>;
+  }
+  render(<QueryClientProvider client={client}><Lists /><EvaluationPrintPanel evaluation={evaluation} onSaved={vi.fn()} /></QueryClientProvider>);
+  await userEvent.click(screen.getByText('Formato de impresión'));
+  await userEvent.click(screen.getByRole('button', { name: 'Personalizar impresión' }));
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Distribución' }), 'amplia');
+  await userEvent.click(screen.getByRole('button', { name: 'Guardar formato y actualizar vista' }));
+  await waitFor(() => expect(screen.getByLabelText('Editor desde materia')).toHaveTextContent('amplia'));
+  expect(screen.getByLabelText('Editor desde lista general')).toHaveTextContent('amplia');
+  expect(subjectList).toHaveBeenCalledTimes(1);
+  expect(generalList).toHaveBeenCalledTimes(1);
+  expect(client.getQueryData(['calificaciones'])).toEqual(unchangedGrades);
+  client.clear();
+});
 
 it('saves only explicit presentation and concurrency guards, never academic content', async () => {
   mocks.update.mockResolvedValue({ ...evaluation, updated_at: '2026-10-24T12:01:00Z', configuracion_impresion: defaultPrintSettings() });

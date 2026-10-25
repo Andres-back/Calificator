@@ -545,7 +545,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b761ba389768c66595dac6de74d66062219ee31f272daa9c141eb0a363aed85d",
+  "source_digest": "01a3523b7e3afaa796d6aab9ea20af0d6fc13df657ae65d0c2540adf5cbfc1dc",
   "surfaces": [
     {
       "actors": [
@@ -47732,6 +47732,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationPrintPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/ShareFeedbackDialog.test.tsx"
         },
         {
@@ -49012,6 +49018,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationPrintPanel.test.tsx"
         },
         {
           "level": "unit",
