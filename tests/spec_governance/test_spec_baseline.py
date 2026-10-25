@@ -120,6 +120,7 @@ ALL_SPECS = {
     "122-retroalimentacion-lote-visual",
     "123-motivos-por-area",
     "125-edicion-impresion-evaluaciones",
+    "126-retroalimentacion-unificada-chat",
 }
 OWNED_SPECS = {
     name
