@@ -46,8 +46,10 @@ for (const format of ['A4', 'Letter'] as const) for (const mode of ['fixed', 'mi
     });
     await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
     await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
-    await page.getByRole('button', { name: 'Retroalimentaciones', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'Retroalimentaciones', exact: true });
+    await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
+    await expect(dialog.getByRole('button', { name: 'Preparar impresión', exact: true })).toBeDisabled();
+    await dialog.getByRole('button', { name: 'Todos los listos', exact: true }).click();
     await dialog.getByRole('button', { name: 'Preparar impresión', exact: true }).click();
     if (mode !== 'none') {
       await dialog.getByText('Ver motivos por área', { exact: true }).click();

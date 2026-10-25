@@ -63,3 +63,7 @@ FR-001/FR-002 → T005–008; FR-003 → T006–007 y prueba de guardado de mens
 - [x] T023 Cubrir selección previa de tres estudiantes al abrir el grupo en frontend/e2e/feedback-delivery.spec.ts según FR-004/US1-AC2/T008 (partial).
 - [x] T024 Cubrir almacenamiento de continuidad bloqueado y servidor legacy sin scope en frontend/e2e/feedback-chat-history.spec.ts según FR-010/T014 (partial).
 - [x] T025 Cubrir el composer con altura móvil reducida y controles accesibles en frontend/e2e/feedback-chat-history.spec.ts según FR-014/SC-006/T018 (partial).
+
+## Corrección de CI 2026-10-25
+
+- [x] T026 Actualizar los recorridos de biblioteca e impresión de motivos en frontend/e2e/motif-library.spec.ts y motif-print.spec.ts al nombre «Retroalimentación del grupo» y selección explícita aprobados (FR-004/FR-014, T008/T020); conservar todas las aserciones de contenido, motivos y PDF, ejecutar los 24 casos afectados y regresiones126, registrar resultados y preparar el ajuste para el PR267 sin fusionar ni desplegar.
