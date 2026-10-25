@@ -10,9 +10,11 @@ const result = (index: number) => ({ estudiante: index === 1 ? 'Estudiante Prueb
   respuestas: [], claves_liberadas: false, alcance: 'summary',
 });
 
-async function installFeedback(page: Page, initiallyApproved = false) {
+async function installFeedback(page: Page, initiallyApproved = false, { deferApprovalRefresh = false } = {}) {
   let approved = initiallyApproved;
   let previewCalls = 0;
+  let releaseApprovalRefresh = () => {};
+  const approvalRefresh = new Promise<void>(resolve => { releaseApprovalRefresh = resolve; });
   const operations: string[] = [];
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
@@ -21,6 +23,7 @@ async function installFeedback(page: Page, initiallyApproved = false) {
     if (path === '/api/public/devolucion') return json({ resultado: result(1), server_now: '2026-10-23T12:00:00Z', expires_at: '2026-10-26T12:00:00Z', cupo: { restantes: 5, retry_after_seconds: 0 }, evidencia_disponible: false });
     if (path === '/api/evaluaciones/e1/devoluciones/previsualizar') {
       previewCalls++;
+      if (approved && deferApprovalRefresh) await approvalRefresh;
       return json({ resultados: Array.from({ length: 30 }, (_, offset) => {
         const index = offset + 1;
         const ready = index !== 1 || approved;
@@ -49,7 +52,7 @@ async function installFeedback(page: Page, initiallyApproved = false) {
     }
     return route.fallback();
   });
-  return { operations, previewCalls: () => previewCalls };
+  return { operations, previewCalls: () => previewCalls, releaseApprovalRefresh };
 }
 
 test('126 conserva tres seleccionados al abrir el grupo sin publicar', async ({ page }) => {
@@ -96,7 +99,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     test.setTimeout(60_000);
     await page.setViewportSize({ width, height: 850 });
     await login(page, 'profesor', { rosterSize: 30 });
-    const state = await installFeedback(page);
+    const state = await installFeedback(page, false, { deferApprovalRefresh: true });
     await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
     await page.evaluate(theme => { document.documentElement.classList.toggle('dark', theme === 'dark'); }, theme);
     await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
@@ -113,7 +116,15 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     expect((await dialog.getByRole('textbox', { name: 'Mensaje para el estudiante' }).boundingBox())!.height).toBeGreaterThanOrEqual(224);
     await expect(dialog.getByRole('combobox')).toContainText('Solo nota y retroalimentación');
     await page.screenshot({ path: `../output/playwright/spec120-review-${width}-${theme}-${browserName}.png` });
+    const callsBeforeApproval = state.previewCalls();
+    const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/evaluaciones/e1/devoluciones/previsualizar' && response.ok());
     await dialog.getByRole('button', { name: 'Aprobar devolución', exact: true }).click();
+    // Approval intentionally revalidates the list. Hold that response so the
+    // test observes loading instead of racing the optimistic ready state.
+    await expect(dialog.getByText('Cargando estudiantes y retroalimentaciones…', { exact: true })).toBeVisible();
+    await expect.poll(state.previewCalls).toBe(callsBeforeApproval + 1);
+    state.releaseApprovalRefresh();
+    await (await refreshed).finished();
     await expect(selected).toBeChecked();
     await expect(dialog.getByText('30 estudiantes · 30 listos para entregar · 1 seleccionados')).toBeVisible();
     const calls = state.previewCalls();

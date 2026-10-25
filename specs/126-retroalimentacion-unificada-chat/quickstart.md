@@ -44,6 +44,15 @@ Desde `backend/`, usando el Python/entorno del proyecto: `python -m pytest tests
 - La ejecución remota40169705538 sobre8828cdf aprobó todos los controles de frontend (cuatro particiones, contextuales y agregados), backend y contenedores. La gobernanza40169705493 falló únicamente al validar el inventario: su huella todavía correspondía a las pruebas anteriores. T027 regenera mediante el script oficial; el diff de current.json cambia solo source_digest y conserva653 superficies, permisos y cobertura. No se debilitan validaciones ni se modifican fuentes de la aplicación.
 - Cierre local de T027: inventario vigente653/653,58/58 pruebas de gobernanza aprobadas y validador del PR aprobado con rama, etiquetas y cuerpo reales consultados en GitHub. Diff sin errores; sin cambios funcionales, datos académicos, modelos o producción. El nuevo CI remoto debe confirmar estos resultados antes de cualquier fusión autorizada.
 
+## Estabilidad de aprobación 2026-10-25
+
+- En40171772848 solo falló el caso WebKit390px oscuro que compara peticiones antes/después de buscar. El contador se tomó entre la actualización optimista y la revalidación legítima posterior a aprobar (esperaba1, recibió2). Gobernanza e inventario ya estaban verdes.
+- T028 retiene explícitamente esa respuesta de previsualización mediante una promesa de la fixture, comprueba el estado de carga, exige una única revalidación y la libera antes de comprobar selección y búsqueda. Se conserva la aserción de que filtrar no consulta al servidor. No se añaden esperas arbitrarias, reintentos de CI ni cambios de producto/workflows.
+- Estrés local: el caso390px oscuro pasó cinco repeticiones por motor (10/10,1,5min) con `npx playwright test e2e/feedback-delivery.spec.ts --project=chromium --project=webkit --grep '120 devolución seleccionable y legible 390px dark' --repeat-each=5 --workers=2 --reporter=line`.
+- También aprobaron77 pruebas unitarias de retroalimentación, TypeScript y lint estricto. Inventario regenerado/vigente653 superficies; solo cambió su huella por el ajuste de pruebas. Pruebas sintéticas, sin llamadas a IA, evidencias reales ni modificaciones de producción.
+- La suite completa de aprobación/selección/enlaces pasó16/16 en3,7min:360/390/768/1440px, claro/oscuro y Chromium/WebKit, con el mismo archivo y sin reintentos. El CI completo verifica aparte impresión, lote, chat y el resto del sistema; no se declara listo hasta obtener sus controles vigentes en verde.
+- Cierre local de T028:58/58 pruebas de gobernanza, validador del PR con contexto real e inventario vigente653 superficies aprobados. La publicación del ajuste mantiene todos los workflows y controles originales; no incluye fusión ni despliegue.
+
 ## Puerta de entrega
 
 Registrar resultados reales y limitaciones en tareas; Converge y CI completos antes de declarar listo el PR. La planificación no autoriza fusión, despliegue ni prueba pagada/real adicional. Una comprobación posterior en producción será con demo autorizada, sin publicar notas o accesos reales por defecto, y nunca presentará emulación como cámara/teléfono físico verificado.
