@@ -12,8 +12,8 @@
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1179` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas/archivo` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1270` |
 | frontend_route | `/app/evaluaciones/{id}/resolver` | estudiante | covered | `frontend/src/config/routes.ts:44` |
-| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas/archivo` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:197` |
-| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:122` |
+| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas/archivo` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:199` |
+| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:124` |
 
 ## Decisiones explícitas de permiso
 

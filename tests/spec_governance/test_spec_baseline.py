@@ -119,6 +119,7 @@ ALL_SPECS = {
     "120-retroalimentacion-entrega-clara",
     "122-retroalimentacion-lote-visual",
     "123-motivos-por-area",
+    "125-edicion-impresion-evaluaciones",
 }
 OWNED_SPECS = {
     name

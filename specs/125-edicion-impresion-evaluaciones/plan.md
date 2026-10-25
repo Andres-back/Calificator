@@ -2,7 +2,7 @@
 
 **Rama**: `codex/125-edicion-impresion-evaluaciones` | **Fecha**: 2026-10-24 | **Spec**: [spec.md](./spec.md) | **Issue**: [#262](https://github.com/Andres-back/Calificator/issues/262)
 
-**Estado**: aprobado por el usuario el2026-10-24; revisión de calidad autorizada y realizada8/8. Implementación local por fases; producción intacta.
+**Estado**: aprobado por el usuario el2026-10-24; revisión de calidad autorizada y realizada8/8. Autorización posterior para entrega en producción con PR/CI verde; implementación y validación local antes de desplegar.
 
 ## Resumen
 
@@ -43,7 +43,7 @@ Revisión de diseño posterior: no hay excepción constitucional propuesta; las 
 
 1. **Visor y edición**: página completa en escritorio, ancho en celular; navegación de pregunta única, controles progresivos, material ampliable y conservación de borrador. Sin migración para esta primera parte.
 2. **Presentación persistente**: contrato/migración, bloqueo optimista y compatibilidad legacy/versionada antes de mostrar «Guardar presentación». El formato no crea por sí solo la primera versión académica de una evaluación antigua.
-3. **Impresión**: resolver común de letra, espacio, columnas y blanco/negro para PDF/Word; preparación de borrador y búsqueda acotada de meta de hojas. PDF autoritativo para el conteo; Word puede repaginar.
+3. **Impresión**: resolver común de distribución compacta/media/amplia, letra, espacio, columnas y color independiente para PDF/Word; preparación de borrador y búsqueda acotada de meta de hojas. PDF autoritativo para el conteo; Word puede repaginar. Trabajo `evaluacion_impresion` en cola existente `presentations`, con presupuesto durable de cuatro renders y caducidad24h, sin IA.
 4. **Materiales**: biblioteca primero; propuesta de figura aislada, revisión de transparencia real y derivados para impresión, sin alterar el original ni transformar información académica sin decisión docente.
 5. **Cierre**: pruebas sintéticas, migración en base aislada, visuales en ambas pantallas y formatos, CI completo y revisión/merge autorizados. Verificación posterior con demo, sin modificar evaluaciones reales.
 
@@ -52,6 +52,7 @@ Revisión de diseño posterior: no hay excepción constitucional propuesta; las 
 - **Presentación separada del contenido académico**: campo tipado de raíz, no `reglas_feedback`, respuestas ni bloques científicos. En evaluaciones con versiones, se crea una revisión inmutable copiando el snapshot anterior y cambiando solo presentación bajo bloqueo; no se fabrican manifiestos visuales, se invalidan claves ni se reasignan entregas. En legacy sin versión, solo se actualiza el campo raíz con control de concurrencia. Véase [data-model.md](./data-model.md).
 - **No garantizar «cabe en dos hojas»**: se prueban como máximo cuatro composiciones, sin borrar contenido, cambiar orden o bajar de10pt. El docente ve hojas reales y ajustes propuestos antes de aceptar. El perfil compacto reduce cabeceras decorativas, no lecturas o explicaciones necesarias.
 - **Columnas conservadoras**: reutilizar `option_columns` y ampliar mediante reglas compartidas para grupos consecutivos de preguntas cerradas cortas. Lectura y numeración de arriba abajo y luego siguiente columna, nunca reordenar por tamaño ni separar figura de pregunta. Si no cabe un bloque, pasa a ancho completo o a la siguiente página.
+- **Figura lateral acotada**: ofrecer disposición apilada o lateral dentro de una pregunta, con ancho proporcional y conservación de relación de aspecto. Un bloque de dos celdas mantiene juntos enunciado/espacio y figura sin envolver texto alrededor de siluetas. No aplicar automáticamente a tablas extensas, hojas completas o figuras cuyos rótulos requieran mayor ancho. La muestra de alimentos permite contrastar menor tamaño y cabecera compacta antes de integrar los controles persistentes.
 - **Espacios explícitos**: normalizar los actuales `lineas_respuesta` y la nueva preferencia por pregunta en el resolvedor; prioridad al ajuste docente. Acabar con la discrepancia de dos líneas fijas de PDF frente al Word, pero solo en evaluaciones con configuración explícita para no reformatear automáticamente las existentes.
 - **Blanco y negro no equivale a transparencia**: el primero es una presentación derivada; la segunda requiere alpha real. Las imágenes originales y sus hashes no cambian. Si el color contiene información académica, pedir confirmación o conservarlo con advertencia.
 - **Sin gasto escondido**: reutilizar320 motivos existentes. Alinear el prompt de nueva ilustración con una figura, no una hoja completa; verificar documentación oficial/capacidades del destino antes de programar parámetros. Si no soporta transparencia, explicar la limitación y ofrecer biblioteca/subida; no cambiar silenciosamente de proveedor ni hacer llamadas adicionales.

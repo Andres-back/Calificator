@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 test.use({ reducedMotion: 'reduce' });
 test.setTimeout(60_000);
 
-const teacher = { id: 'teacher', nombre: 'Docente prueba', email: 'preview@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read'] };
+const teacher = { id: 'teacher', nombre: 'Docente prueba', email: 'preview@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'evaluations.read', 'evaluations.update'] };
 const subject = { id: 'preview-subject', profesor_id: teacher.id, nombre: 'Lectura', area: 'Lenguaje', grado: '4', descripcion: null, estado: 'activa', estudiantes: [], codigo_activo: true, codigo_matricula: 'DEMO', requiere_aprobacion: false, created_at: '2026-10-04', updated_at: '2026-10-04' };
 const evaluation = { id: 'preview-evaluation', materia_id: subject.id, profesor_id: teacher.id, nombre: 'Comprensión lectora y operaciones', descripcion: 'Lee y responde.', tipo_origen: 'nativa', modalidad: 'fisica', nota_maxima: 5, estado: 'borrador', preguntas: [{ numero: 1, enunciado: '¿Cuánto es 3 × 4?', puntaje: 5 }], respuestas_esperadas: [{ numero: 1, respuesta: '12' }], criterios: [], dba_ids: [], dba_personalizado_ids: [], metas_profesor: [], created_at: '2026-10-04', updated_at: '2026-10-04' };
 
@@ -66,6 +66,55 @@ async function mockApp(page: Page, student = false, pages = 2) {
     return json([]);
   });
   return requests;
+}
+
+for (const width of [360, 390, 768, 1440, 1920]) {
+  test(`125 formato compacto medio amplio con guardado explícito en ${width}px`, async ({ page, browserName }, testInfo) => {
+    const activate = async (control: Locator) => {
+      await expect(control).toBeVisible();
+      await expect(control).toBeEnabled();
+      if (browserName === 'webkit' && width >= 768) await control.press('Enter'); else await control.click();
+    };
+    await page.setViewportSize({ width, height: width < 768 ? 844 : 1000 });
+    if ([390, 1440].includes(width)) await page.addInitScript(() => localStorage.setItem('xc-theme', JSON.stringify({ state: { mode: 'dark' }, version: 0 })));
+    const requests = await mockApp(page);
+    let saved: Record<string, unknown> | null = null;
+    await page.route(`**/api/evaluaciones/${evaluation.id}`, async route => {
+      if (route.request().method() !== 'PATCH') return route.fulfill({ json: evaluation });
+      saved = route.request().postDataJSON();
+      return route.fulfill({ json: { ...evaluation, ...saved, updated_at: '2026-10-24T12:01:00Z' } });
+    });
+    await page.route('**/api/evaluaciones/impresion/preparar', async route => {
+      expect(route.request().postDataJSON()).not.toHaveProperty('soluciones');
+      return route.fulfill({ json: { job_id: 'print-job' } });
+    });
+    await page.route('**/api/jobs/print-job', route => route.fulfill({ json: { estado: 'success', resultado_json: { paginas_reales: 2, configuracion: { schema_version: 1, distribucion: 'media', blanco_negro: false, respuestas: {}, materiales: {} }, advertencias: [] } } }));
+    await page.route('**/api/evaluaciones/impresion/print-job/pdf', route => route.fulfill({ contentType: 'application/pdf', body: pdfFixture() }));
+    await page.goto(`/app/materias/${subject.id}/evaluaciones`);
+    await activate(page.getByRole('button', { name: 'Visualizar' }));
+    await expect(page.locator('[data-pdf-page="1"] canvas')).toHaveAttribute('data-rendered', 'true');
+    await activate(page.getByRole('button', { name: 'Opciones' }));
+    await activate(page.getByText('Formato de impresión', { exact: true }));
+    await activate(page.getByRole('button', { name: 'Personalizar impresión' }));
+    const mode = page.getByRole('combobox', { name: 'Distribución' });
+    for (const value of ['amplia', 'compacta', 'media']) { await mode.selectOption(value); await expect(mode).toHaveValue(value); }
+    await page.getByRole('combobox', { name: 'Color de impresión' }).selectOption('color');
+    expect(saved).toBeNull();
+    await activate(page.getByRole('button', { name: 'Previsualizar sin guardar' }));
+    await expect(page.getByText('2 páginas en el PDF')).toBeVisible();
+    expect(saved).toBeNull();
+    await activate(page.getByRole('button', { name: 'Ver vista preparada' }));
+    const prepared = page.getByRole('dialog', { name: 'Vista preparada · Sin guardar' });
+    await expect(prepared.locator('[data-pdf-page="1"] canvas')).toHaveAttribute('data-rendered', 'true');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await activate(prepared.getByRole('button', { name: 'Cerrar diálogo', exact: true }));
+    await activate(page.getByRole('button', { name: 'Guardar formato y actualizar vista' }));
+    await expect.poll(() => saved).toMatchObject({ configuracion_impresion: { distribucion: 'media', blanco_negro: false }, expected_updated_at: evaluation.updated_at, expected_content_version_id: null });
+    expect(Object.keys(saved!)).toEqual(expect.arrayContaining(['configuracion_impresion', 'expected_updated_at', 'expected_content_version_id']));
+    expect(Object.keys(saved!)).toHaveLength(3);
+    await page.screenshot({ path: testInfo.outputPath('print-settings.png') });
+    expect(requests.filter(item => item.method !== 'GET' && item.path !== '/analytics/evento')).toHaveLength(0);
+  });
 }
 
 for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {

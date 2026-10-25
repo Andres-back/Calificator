@@ -39,6 +39,7 @@ def build_evaluation_material(evaluation, *, soluciones: bool, visual_blocks: li
     for index, raw in enumerate(evaluation.preguntas or [], 1):
         raw = raw if isinstance(raw, dict) else {'enunciado': str(raw)}
         clean = sanitize_student_payload(deepcopy(raw))
+        clean = {key: value for key, value in clean.items() if not key.startswith('_print_')}
         number = raw.get('numero', index)
         clean['numero'] = number
         clean['opciones'] = [_text(option) for option in clean.get('opciones') or []]
@@ -64,6 +65,8 @@ def build_evaluation_material(evaluation, *, soluciones: bool, visual_blocks: li
         raise ValueError('Revisa a qué preguntas pertenece el material antes de descargar la evaluación.')
     return {'tipo': 'examen', 'titulo': evaluation.nombre, 'created_at': evaluation.created_at,
             'contenido_json': {'titulo': evaluation.nombre,
+                              **({'configuracion_impresion': evaluation.configuracion_impresion}
+                                 if getattr(evaluation, 'configuracion_impresion', None) is not None else {}),
                               'texto': evaluation_reading(evaluation), 'impresion_compacta': True,
                               'instrucciones': evaluation.descripcion or 'Lee y responde cada punto.',
                               'preguntas': questions, 'total_puntaje': evaluation.nota_maxima}}
@@ -110,6 +113,10 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
     from docx import Document
     from docx.oxml.ns import qn
     from docx.shared import Cm, Pt, RGBColor
+    from app.modules.evaluaciones.print_layout import prepare_print_material
+    from app.modules.evaluaciones.print_settings import resolve_print_settings
+
+    material = prepare_print_material(material)
 
     kind = material.get('tipo')
     if kind not in WORD_TYPES:
@@ -145,15 +152,29 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
     normal.font.size = Pt(11)
     normal.paragraph_format.space_after = Pt(7)
     normal.paragraph_format.line_spacing = 1.15
+    print_settings = resolve_print_settings(content.get('configuracion_impresion'))
     compact = bool(content.get('impresion_compacta'))
     if compact:
         normal.paragraph_format.space_after = Pt(4)
         normal.paragraph_format.line_spacing = 1.05
+    if print_settings:
+        normal.font.size = Pt(print_settings.fuente_pt)
+        normal.paragraph_format.space_after = Pt({'compacta': 2, 'media': 5, 'amplia': 8}[print_settings.distribucion])
+        document.styles['Title'].font.size = Pt(print_settings.fuente_pt + 5.5)
+        document.styles['Title'].paragraph_format.space_after = Pt(3)
+        if not print_settings.blanco_negro:
+            document.styles['Title'].font.color.rgb = RGBColor.from_string('4338CA')
+        section.page_width, section.page_height = Cm(21.59), Cm(27.94)
+        section.left_margin = section.right_margin = Cm(1.4)
+        section.top_margin, section.bottom_margin = Cm(1.2), Cm(1.3)
     document.core_properties.author = 'XCalificator'
     document.core_properties.last_modified_by = 'XCalificator'
     title = _text(content.get('titulo') or material.get('titulo') or 'Evaluación')
     document.add_paragraph(title, 'Title')
-    document.add_paragraph('Solucionario docente' if soluciones else 'Evaluación para estudiantes')
+    if soluciones or not print_settings:
+        document.add_paragraph('Solucionario docente' if soluciones else 'Evaluación para estudiantes')
+    if '_print_common_score' in content:
+        document.add_paragraph(f'Cada pregunta vale {content["_print_common_score"]} puntos')
     document.add_paragraph('Nombre: __________________________________   Grado: __________')
     document.add_paragraph('Fecha: __________________   Nota: __________')
     for key, label in (('objetivo', 'Objetivo'), ('instrucciones', 'Instrucciones'), ('estrategia_lectora', 'Estrategia')):
@@ -170,17 +191,44 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
         safe = sanitize_student_payload(raw)
         number = raw.get('numero', index)
         score = raw.get('puntaje')
-        suffix = f' ({score} puntos)' if score is not None else ''
-        paragraph = document.add_paragraph()
+        suffix = f' ({score} puntos)' if score is not None and '_print_common_score' not in content else ''
+        target, image_target = document, document
+        available_cm = (section.page_width - section.left_margin - section.right_margin) / 360000
+        if raw.get('_print_lateral'):
+            layout = next(iter(raw['_print_visual_layouts'].values()))
+            width = available_cm * layout['ancho_porcentaje'] / 100
+            frame = document.add_table(rows=1, cols=2)
+            frame.autofit = False
+            frame.columns[0].width, frame.columns[1].width = Cm(available_cm - width), Cm(width)
+            target, image_target = frame.rows[0].cells
+            target.width, image_target.width = Cm(available_cm - width), Cm(width)
+            from docx.oxml import OxmlElement
+            for cell in (target, image_target):
+                margins = OxmlElement('w:tcMar')
+                for edge in ('top', 'bottom', 'left', 'right'):
+                    margin = OxmlElement('w:' + edge)
+                    margin.set(qn('w:w'), '0')
+                    margin.set(qn('w:type'), 'dxa')
+                    margins.append(margin)
+                cell._tc.get_or_add_tcPr().append(margins)
+        paragraph = target.paragraphs[0] if target is not document else document.add_paragraph()
         paragraph.paragraph_format.keep_with_next = True
         paragraph.add_run(f'{number}. {_text(safe.get("enunciado"))}{suffix}').bold = True
         for visual in raw.get('_evaluation_visuals') or []:
             if not isinstance(visual, ResolvedVisualBlock):
                 raise ValueError('El material visual necesita revisión antes de descargar.')
-            append_visual_docx(document, visual)
+            layout = (raw.get('_print_visual_layouts') or {}).get(str(visual.block.id))
+            append_visual_docx(image_target, visual,
+                width_cm=max(1, available_cm * layout['ancho_porcentaje'] / 100 - (0.3 if raw.get('_print_lateral') else 0)) if layout else None,
+                alignment=layout['alineacion'] if layout else None,
+                include_caption=not raw.get('_print_lateral'))
+            if raw.get('_print_lateral') and (visual.block.pie or visual.block.descripcion):
+                caption = document.add_paragraph(visual.block.pie or visual.block.descripcion)
+                caption.paragraph_format.space_after = Pt(2)
         options = [re.sub(r'^\s*[A-Za-z][).]\s*', '', _text(option)) for option in safe.get('opciones') or []]
-        if compact and option_columns(options) == 2:
-            table = document.add_table(rows=(len(options) + 1) // 2, cols=2)
+        columns = raw.get('_print_option_columns', option_columns(options) if compact else 1)
+        if columns == 2:
+            table = target.add_table(rows=(len(options) + 1) // 2, cols=2)
             for index_option, option in enumerate(options):
                 paragraph = table.cell(index_option // 2, index_option % 2).paragraphs[0]
                 paragraph.text = f'{chr(65 + index_option)}) {option}'
@@ -188,24 +236,47 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
                 paragraph.paragraph_format.keep_with_next = index_option < len(options) - 1
         else:
             for option_index, option in enumerate(options):
-                p = document.add_paragraph(f'{chr(65 + option_index)}) {option}')
+                p = target.add_paragraph(f'{chr(65 + option_index)}) {option}')
                 p.paragraph_format.left_indent = Cm(0.5)
         if soluciones:
             answer = next((raw[k] for k in ('respuesta_correcta', 'respuesta_esperada', 'respuesta')
                            if raw.get(k) not in (None, '', [])), MISSING_ANSWER)
-            document.add_paragraph(f'Respuesta: {_text(answer)}')
+            target.add_paragraph(f'Respuesta: {_text(answer)}')
             for key, label in (('evidencia_textual', 'Evidencia'), ('justificacion', 'Por qué'), ('criterio_logro', 'Criterio')):
                 if raw.get(key):
-                    document.add_paragraph(f'{label}: {_text(raw[key])}')
+                    target.add_paragraph(f'{label}: {_text(raw[key])}')
         elif not safe.get('opciones'):
             try:
                 lines = max(1, min(8, int(raw.get('lineas_respuesta') or (3 if kind in {'taller', 'lectura_comprensiva'} else 2))))
             except (TypeError, ValueError):
                 lines = 3
+            lines = raw.get('_print_lines', lines)
             for line in range(lines):
-                paragraph = document.add_paragraph('________________________________________________________________')
+                paragraph = target.add_paragraph('' if print_settings else '________________________________________________________________')
+                if print_settings:
+                    from docx.oxml import OxmlElement
+                    from docx.oxml.ns import qn
+                    paragraph.paragraph_format.space_after = Pt(0)
+                    paragraph.paragraph_format.line_spacing = Pt(17 if compact else 23)
+                    borders = OxmlElement('w:pBdr')
+                    bottom = OxmlElement('w:bottom')
+                    for key, value in [('val', 'single'), ('sz', '4'), ('color', '777777')]:
+                        bottom.set(qn('w:' + key), value)
+                    borders.append(bottom)
+                    between = OxmlElement('w:between')
+                    for key, value in [('val', 'single'), ('sz', '4'), ('color', '777777')]:
+                        between.set(qn('w:' + key), value)
+                    borders.append(between)
+                    paragraph._p.get_or_add_pPr().append(borders)
                 paragraph.paragraph_format.keep_with_next = line < lines - 1
-        if compact:
+            if raw.get('_print_drawing_mm'):
+                from docx.enum.table import WD_ROW_HEIGHT_RULE
+                box = (target.add_table(rows=1, cols=1, width=Cm(available_cm / 2))
+                    if target is not document else target.add_table(rows=1, cols=1))
+                box.style = 'Table Grid'
+                box.rows[0].height = Cm(raw['_print_drawing_mm'] / 10)
+                box.rows[0].height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+        if compact or print_settings:
             _keep_short_word_question(document, question_start, raw)
     if soluciones and content.get('criterios_revision'):
         document.add_paragraph('Criterios de revisión', 'Heading 1')

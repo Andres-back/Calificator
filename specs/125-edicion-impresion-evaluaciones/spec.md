@@ -43,12 +43,13 @@ Como docente quiero ajustar el tamaño de letra impresa, el espacio para contest
 **Prueba independiente**: preparar una evaluación mixta con lectura, ABCD, verdadero/falso, respuesta corta, respuesta larga y dibujo; comparar su vista final, PDF y Word antes y después de ajustar la presentación.
 
 **Aceptación**:
-1. **Dada** una evaluación, **cuando** se abre «Preparar impresión», **entonces** se elige un perfil compacto, normal o letra grande y se ajusta la letra entre 10 y 18 puntos; ese control cambia el documento, no el tamaño de los controles de la aplicación.
+1. **Dada** una evaluación, **cuando** se abre «Formato de impresión», **entonces** se elige distribución compacta, media o amplia y, por separado, blanco y negro o color. Se ajusta opcionalmente la letra entre10 y18 puntos; ese control cambia el documento, no el tamaño de los controles de la aplicación.
 2. **Dadas** preguntas con diferentes respuestas esperadas, **cuando** se elige el espacio para responder, **entonces** puede dejarse automático por tipo o ajustarse por pregunta; las preguntas abiertas y de dibujo conservan espacio útil.
 3. **Dadas** opciones o preguntas cerradas cortas, **cuando** se usa el perfil compacto, **entonces** pueden distribuirse en dos columnas cuando quepan, conservando el orden de lectura, numeración y letras de opciones; los bloques largos se mantienen a ancho completo.
 4. **Dada** una meta de hojas, **cuando** se solicita ajustar, **entonces** se muestra la cantidad real obtenida en el PDF y las decisiones de presentación propuestas antes de aplicarlas; nunca se cambia el contenido ni se reduce letra o espacio por debajo de los mínimos permitidos.
 5. **Dada** una meta imposible, **cuando** no cabe el contenido, **entonces** se informa cuántas hojas necesita y se permite cambiar la meta o los ajustes; no se promete una cantidad falsa ni se recortan lectura, figuras o preguntas.
 6. **Dada** una configuración guardada, **cuando** se reabre o exporta, **entonces** se conserva; una versión anterior usa su propia presentación. Word conserva contenido y ajustes, indicando que su paginación puede variar según el programa con que se abra.
+7. **Dada** una figura sencilla con rótulos legibles a tamaño reducido, **cuando** el docente elige composición lateral, **entonces** la pregunta y su espacio de respuesta pueden colocarse al lado de la figura sin recortarla, estirarla ni perder su asociación; las figuras detalladas conservan una alternativa a ancho completo.
 
 ### Historia 4 - Añadir una ilustración útil sin desperdiciar tinta (Prioridad: P2)
 
@@ -85,8 +86,8 @@ Como docente quiero reutilizar los motivos disponibles o pedir una ilustración 
 - **FR-002**: La revisión de material DEBE permitir ampliarlo con controles accesibles y distinguir material de una pregunta, decoración y vista final de la evaluación.
 - **FR-003**: El editor DEBE concentrar la edición en una pregunta, ofrecer navegación directa y anterior/siguiente, conservar el borrador y separar controles principales de opciones avanzadas sin eliminar funciones existentes.
 - **FR-004**: Editor, visor y preparación de impresión DEBEN funcionar desde 360 px, en claro y oscuro, con teclado móvil, objetivos táctiles de al menos 44 × 44 px y sin desbordamiento horizontal de la interfaz; el texto de entrada móvil DEBE evitar ampliaciones involuntarias al enfocar.
-- **FR-005**: La configuración imprimible DEBE permitir perfiles compacto, normal y letra grande, tamaño entre 10 y 18 puntos y espacio de respuesta automático o por pregunta, sin modificar el contenido académico.
-- **FR-006**: La composición compacta DEBE aprovechar dos columnas para opciones o preguntas cerradas cortas solo cuando sean legibles; DEBE mantener el orden lógico, numeración, identidad y correspondencia de soluciones y reservar ancho/espacio suficiente para lectura, figuras, respuestas abiertas y dibujos.
+- **FR-005**: La configuración imprimible DEBE permitir exactamente tres distribuciones —compacta, media y amplia—, color independiente, tamaño entre10 y18 puntos y espacio de respuesta automático o por pregunta, sin modificar el contenido académico.
+- **FR-006**: La composición compacta DEBE aprovechar dos columnas para opciones o preguntas cerradas cortas solo cuando sean legibles; DEBE permitir una figura de tamaño acotado al lado del enunciado y su respuesta cuando sus detalles sigan siendo legibles, con alternativa apilada a ancho completo. DEBE mantener proporción de la figura, orden lógico, numeración, identidad y correspondencia de soluciones y reservar ancho/espacio suficiente para lectura, respuestas abiertas y dibujos. Aprovechar espacio no autoriza recortar contenido ni reducir las áreas útiles de respuesta.
 - **FR-007**: El docente DEBE poder indicar una meta de entre 1 y 20 hojas y previsualizar el resultado. El sistema DEBE informar el número real de hojas del PDF, respetar los mínimos de legibilidad y explicar cuando no puede alcanzar la meta sin pérdida; aplicar una propuesta requiere confirmación explícita.
 - **FR-008**: La presentación guardada DEBE persistir por evaluación y por versión y aplicarse de forma coherente al visor, PDF y Word. La ausencia de configuración DEBE conservar el comportamiento anterior; no se garantiza paginación idéntica en distintos programas de Word.
 - **FR-009**: El flujo de material DEBE reutilizar la biblioteca existente, aceptar archivos y diferenciar decoración de material necesario para responder; cambiar presentación o elegir biblioteca NO DEBE generar gastos de IA.
@@ -116,9 +117,9 @@ Como docente quiero reutilizar los motivos disponibles o pedir una ilustración 
 
 ## Supuestos y límites
 
-- Es una propuesta que requiere aprobación del alcance y del plan antes de programar. No autoriza despliegue, modificaciones de evaluaciones reales ni llamadas pagadas de prueba.
+- Alcance, plan y revisión de requisitos aprobados. La solicitud posterior del usuario autoriza llevar esta función a producción mediante PR, todos los controles verdes y despliegue reproducible desde main. No autoriza modificar evaluaciones reales ni llamadas pagadas de prueba.
 - La meta cuenta caras/páginas del PDF, no hojas físicas impresas a doble cara; el papel conserva el formato ya soportado por el exportador de evaluaciones. Añadir otros tamaños de papel queda fuera de esta entrega.
-- Los perfiles propuestos usan 11 puntos para compacto, 12 para normal y 14 para letra grande; se permite ajuste manual dentro del rango. No se aplica un perfil nuevo a evaluaciones antiguas sin confirmación.
+- Las distribuciones usan10,5 puntos para compacta,12 para media y14 para amplia; se permite ajuste manual dentro del rango. No se aplica un formato nuevo a evaluaciones antiguas sin confirmación.
 - Se limita esta entrega a composición por bloques y navegación enfocada, no a un editor libre con capas, texto alrededor de siluetas o maquetación de revista.
 - No se regenera ni reemplaza automáticamente una figura existente. La reproducción fiel de originales y la separación de elementos al digitalizar siguen en Spec124 / issue #261; esta especificación es propietaria de la presentación y composición posteriores.
 - La biblioteca entregada en Spec123 se reutiliza, no se amplía con cientos de imágenes nuevas. Las figuras académicas no son intercambiables con motivos decorativos.
@@ -127,3 +128,7 @@ Como docente quiero reutilizar los motivos disponibles o pedir una ilustración 
 ## Aprobación y aclaración
 
 El usuario aprobó el plan y autorizó revisar los ocho requisitos y continuar el2026-10-24: «sí porque actualmente si genero una evaluación me da solo texto y ya». Los apoyos se deben poder añadir también al borrador recién generado, con biblioteca, tabla/gráfico o ilustración revisada. No implica generar imágenes pagadas automáticamente para cada pregunta ni sustituir enunciados por imágenes de hojas completas.
+
+El2026-10-24, tras revisar la muestra de alimentos, el usuario precisó que la figura debía ocupar menos espacio y compartir fila con la pregunta para aprovechar mejor cada hoja. Es composición lateral de bloques dentro de la historia3, no un editor libre ni un cambio de contenido, orden o puntajes. Primero se contrastará una muestra local conservando las respuestas abiertas; no se declara desplegado este formato por generar el PDF de ejemplo.
+
+Después pidió expresamente tres modos «compacta, media o amplia» y que las mejoras se reflejen en producción para dejar de generar evaluaciones solo con texto. El flujo permite añadir biblioteca, subida, tabla/gráfica o propuesta de ilustración al borrador recién generado, con revisión docente y sin imágenes de pago automáticas. Blanco y negro/color es una decisión independiente y persistente, no dos plantillas desconectadas del visor.

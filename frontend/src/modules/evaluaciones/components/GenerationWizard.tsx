@@ -21,6 +21,8 @@ import { EvaluationCriteriaEditor } from './EvaluationCriteriaEditor';
 import { EvaluationSourceReview } from './EvaluationSourceReview';
 import { QuestionVisualEditor } from './QuestionVisualEditor';
 import { QuestionNavigator } from './QuestionNavigator';
+import { EvaluationPrintSettings, QuestionPrintSettings } from './EvaluationPrintSettings';
+import { EvaluationPrintPreparation } from './EvaluationPrintPreparation';
 import { getVisualCapabilities } from '../visualApi';
 import { PasosGuia } from './PasosGuia';
 import {
@@ -335,6 +337,8 @@ export function GenerationWizard({
         step: 5,
         generatedEvaluationId: evaluation.id,
         generatedUpdatedAt: evaluation.updated_at,
+        printSettings: evaluation.configuracion_impresion ?? null,
+        contenidoVersionId: evaluation.contenido_version_id ?? null,
         generationWarnings: evaluation.blueprint?.reglas_feedback?.trazabilidad?.advertencias ?? [],
         generatedCriteria: normalizeRubricCriteria((evaluation.criterios ?? []) as Record<string, unknown>[]),
         questions: evaluationToEditableQuestions(evaluation),
@@ -547,6 +551,7 @@ export function GenerationWizard({
     generationOwner.current = { userId, materiaId: state.materiaId };
     generate.mutate({
       materia_id: state.materiaId,
+      configuracion_impresion: state.printSettings,
       nombre: state.nombre.trim(),
       tema: state.descripcion.trim() || state.nombre.trim(),
       descripcion: state.descripcion.trim() || undefined,
@@ -613,6 +618,7 @@ export function GenerationWizard({
   function evaluationPayload(current: WizardState) {
     return {
       nombre: current.nombre.trim(), descripcion: current.descripcion.trim() || undefined,
+      ...(current.printSettings !== undefined ? { configuracion_impresion: current.printSettings } : {}),
       ...(current.lectura !== undefined ? { lectura: current.lectura.trim() || null } : {}),
       modalidad: current.modalidad, nota_maxima: current.notaMaxima,
       fecha_limite_entrega: current.fechaLimiteEntrega ? new Date(current.fechaLimiteEntrega).toISOString() : null,
@@ -734,6 +740,14 @@ export function GenerationWizard({
                             <p className="pb-3 leading-6">Se conservan las entregas y notas anteriores. Si cambias criterios, puntajes o respuestas correctas, revisa las calificaciones afectadas.</p>
                           </details>
                         )}
+                        <details className="writing-secondary rounded-lg border border-border p-3"><summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Formato de impresión</summary>
+                          <EvaluationPrintSettings value={state.printSettings} onChange={printSettings => patch({ printSettings })} />
+                          {state.printSettings && savedEvaluation.current && <EvaluationPrintPreparation evaluation={savedEvaluation.current} settings={state.printSettings}
+                            draft={{ nombre: state.nombre.trim(), descripcion: state.descripcion,
+                              ...(state.lectura !== undefined ? { lectura: state.lectura } : {}), preguntas: questionsToUpdatePayload(state.questions).preguntas,
+                              ...(state.contenidoVisual ? { contenido_visual: state.contenidoVisual } : {}) }}
+                            onApply={printSettings => patch({ printSettings })} />}
+                        </details>
                         <div className="grid min-w-0 gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
                         <QuestionNavigator questions={state.questions} activeIndex={activeQuestionIndex} onSelect={selectQuestion} />
                         <div role="list" aria-label="Preguntas editables" className="min-w-0 space-y-4">
@@ -743,6 +757,7 @@ export function GenerationWizard({
                             onChange={visualCapabilities.data?.editor ? contenidoVisual => patch({ contenidoVisual, visualKeysReviewed: [], visualKeysPending: contenidoVisual.pregunta_ids }) : undefined}
                             questions={state.questions.filter(question => question.contenidoId).map(question => ({ id: question.contenidoId!, label: `Pregunta ${question.numero}` }))} />}
                           {state.questions.map((question, index) => index === activeQuestionIndex && (
+                            <div key={question.clientId} className="min-w-0 space-y-3">
                             <QuestionCard
                               key={question.clientId}
                               question={question}
@@ -750,15 +765,18 @@ export function GenerationWizard({
                               total={state.questions.length}
                               evaluationModality={state.modalidad}
                               visualEditor={visualCapabilities.data?.editor && state.generatedEvaluationId ? <div className="min-w-0 space-y-3">
+                                <p className="text-sm font-semibold">Añade una figura, tabla o gráfica a esta pregunta</p>
                                 {state.contenidoVisual?.bloques.filter(block => block.pregunta_ids.includes(question.contenidoId || '')).map(block => <QuestionVisualEditor
                                   key={block.id} existing={block} evaluationId={state.generatedEvaluationId!} materiaId={state.materiaId} questionId={question.contenidoId!}
                                   suggestedArea={selectedMateria?.area}
+                                  blackAndWhiteDefault={state.printSettings?.blanco_negro ?? true}
                                   versionId={state.contenidoVersionId} generationEnabled={visualCapabilities.data.generacion}
                                   pendingJobId={state.visualJobs?.[`${question.contenidoId}:${block.id}`]}
                                   onJobChange={jobId => setState(current => { const visualJobs = { ...current.visualJobs }; const key = `${question.contenidoId}:${block.id}`; if (jobId) visualJobs[key] = jobId; else delete visualJobs[key]; return { ...current, visualJobs }; })}
                                   onAccept={value => setState(current => updateQuestionVisual(current, question.contenidoId!, value, block.id))}
                                   onRemove={() => setState(current => updateQuestionVisual(current, question.contenidoId!, null, block.id))} />)}
                                 <QuestionVisualEditor evaluationId={state.generatedEvaluationId} materiaId={state.materiaId} questionId={question.contenidoId || ''}
+                                  blackAndWhiteDefault={state.printSettings?.blanco_negro ?? true}
                                   suggestedArea={selectedMateria?.area}
                                   pendingJobId={state.visualJobs?.[`${question.contenidoId}:new`]}
                                   onJobChange={jobId => setState(current => { const visualJobs = { ...current.visualJobs }; const key = `${question.contenidoId}:new`; if (jobId) visualJobs[key] = jobId; else delete visualJobs[key]; return { ...current, visualJobs }; })}
@@ -774,6 +792,10 @@ export function GenerationWizard({
                               onDuplicate={() => { const next = duplicateQuestion(state.questions, index); setActiveQuestionId(next[index + 1].clientId); patch(reconcileVisualQuestions(state, next, question.contenidoId)); }}
                               onMove={(direction) => patch(reconcileVisualQuestions(state, moveQuestion(state.questions, index, direction)))}
                             />
+                            <QuestionPrintSettings value={state.printSettings} questionId={question.contenidoId}
+                              blocks={(state.contenidoVisual?.bloques ?? []).filter(block => block.pregunta_ids.includes(question.contenidoId ?? ''))}
+                              onChange={printSettings => patch({ printSettings })} />
+                            </div>
                           ))}
                         </div>
                         </div>

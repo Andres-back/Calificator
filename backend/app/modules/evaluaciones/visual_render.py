@@ -186,7 +186,7 @@ async def resolve_visual_material(db, evaluation_id: UUID, revision) -> list[Res
     return resolved
 
 
-def visual_block_html(item: ResolvedVisualBlock) -> str:
+def visual_block_html(item: ResolvedVisualBlock, *, include_caption: bool = True) -> str:
     block = item.block
     description = escape(block.descripcion)
     if block.tipo == 'texto':
@@ -205,11 +205,11 @@ def visual_block_html(item: ResolvedVisualBlock) -> str:
             for index, category in enumerate(block.grafica.categorias):
                 body += '<tr><td>' + escape(category) + '</td>' + ''.join(f'<td>{series.valores[index]}</td>' for series in block.grafica.series) + '</tr>'
             body += '</tbody></table>'
-    caption = escape(block.pie or block.descripcion)
+    caption = escape(block.pie or block.descripcion) if include_caption else ''
     return '<figure style="margin:12px 0;break-inside:avoid">' + body + (f'<figcaption>{caption}</figcaption>' if caption else '') + '</figure>'
 
 
-def append_visual_docx(document, item: ResolvedVisualBlock) -> None:
+def append_visual_docx(document, item: ResolvedVisualBlock, *, width_cm: float | None = None, alignment: str | None = None, include_caption: bool = True) -> None:
     from docx.oxml import OxmlElement
     from docx.shared import Cm
 
@@ -241,8 +241,12 @@ def append_visual_docx(document, item: ResolvedVisualBlock) -> None:
             document.add_paragraph('Unidad: ' + block.tabla.unidad)
     else:
         metadata = inspect_resource_bytes(item.image_bytes, clase='imagen')
-        width = min(12, 10 * metadata['ancho'] / metadata['alto'])
-        paragraph = document.add_paragraph()
+        width = min(width_cm if width_cm is not None else 12,
+            (20 if width_cm is not None else 10) * metadata['ancho'] / metadata['alto'])
+        paragraph = (document.paragraphs[0] if getattr(document, '_tc', None) is not None
+            and not document.paragraphs[0].text else document.add_paragraph())
+        if alignment is not None:
+            paragraph.alignment = {'inicio': 0, 'centro': 1, 'fin': 2}[alignment]
         paragraph.paragraph_format.keep_with_next = bool(block.pie or block.descripcion)
         word_image = item.image_bytes
         if metadata['mime'] == 'image/webp':
@@ -263,6 +267,6 @@ def append_visual_docx(document, item: ResolvedVisualBlock) -> None:
             for index, category in enumerate(block.grafica.categorias):
                 for cell, text in zip(table.add_row().cells, [category, *(str(series.valores[index]) for series in block.grafica.series)]):
                     cell.text = text
-    if block.pie or block.descripcion:
+    if include_caption and (block.pie or block.descripcion):
         paragraph = document.add_paragraph(block.pie or block.descripcion)
         paragraph.paragraph_format.keep_with_next = True

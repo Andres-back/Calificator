@@ -821,6 +821,7 @@ export function EvaluacionesPage() {
 
       {previewEval && (
         <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
+          canEditPresentation={canUpdate}
           canViewSolutions={user?.rol === 'admin' || previewEval.profesor_id === user?.id} />
       )}
       {canCreate && digitalizeOpen && materias?.some(item => item.id === materiaId) && <DigitalizarEvaluacionModal open onClose={() => setDigitalizeOpen(false)} materiaId={materiaId} onCompleted={() => { queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(materiaId) }); setDigitalizeOpen(false); }} />}

@@ -210,7 +210,18 @@ export interface StudentEvaluationVisualContent {
   schema_version: 1;
   bloques: EvaluationVisualBlock[];
 }
+export interface EvaluationPrintSettings {
+  schema_version: 1;
+  distribucion: 'compacta' | 'media' | 'amplia';
+  fuente_pt?: number | null;
+  blanco_negro: boolean;
+  meta_paginas?: number | null;
+  respuestas: Record<string, { lineas?: number | null; dibujo_mm?: number | null }>;
+  materiales: Record<string, { ancho_porcentaje: number; disposicion: 'apilada' | 'lateral';
+    alineacion: 'inicio' | 'centro' | 'fin'; convertir_color_confirmado: boolean }>;
+}
 export interface Evaluacion {
+  configuracion_impresion?: EvaluationPrintSettings | null;
   lectura?: string | null;
   claves_visuales_pendientes?: string[];
   id: string;

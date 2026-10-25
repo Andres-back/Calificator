@@ -446,7 +446,7 @@ describe('GenerationWizard', () => {
     renderWizard();
     await user.click(await screen.findByRole('button', { name: 'Continuar' }));
     expect(screen.getByText('Grado 7 · Área: Matemáticas')).toBeInTheDocument();
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /Materia/ })).not.toBeInTheDocument();
     const options = screen.getByText('Personalizar', { exact: true }).closest('details');
     expect(options).not.toHaveAttribute('open');
     expect(screen.getByLabelText(/Qué quieres evaluar/)).toHaveValue('Fracciones');
@@ -472,7 +472,7 @@ describe('GenerationWizard', () => {
 
   it('keeps authorized subject selection in the general creator', () => {
     renderWizard(vi.fn(), null, materia, false);
-    expect(screen.getByRole('combobox')).toHaveValue(materia.id);
+    expect(screen.getByRole('combobox', { name: /Materia/ })).toHaveValue(materia.id);
     expect(mocks.listDba).not.toHaveBeenCalled();
   });
 

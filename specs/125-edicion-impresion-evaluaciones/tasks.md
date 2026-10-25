@@ -1,6 +1,6 @@
 # Tareas: edición e impresión de evaluaciones claras
 
-Issue262. Alcance/plan y revisión8/8 aprobados el2026-10-24. Las marcas indican trabajo implementado y comprobado, no intención. Sin autorización de despliegue ni llamadas pagadas en esta entrega.
+Issue262. Alcance/plan y revisión8/8 aprobados el2026-10-24. El usuario autorizó después llevar los tres modos y materiales a producción con PR/CI verde. Las marcas indican trabajo implementado y comprobado, no intención. No incluye llamadas pagadas de prueba ni cambios de datos académicos reales.
 
 ## Fase 1: preparación
 
@@ -32,17 +32,17 @@ Prueba independiente: veinte preguntas, ir directamente a cualquiera, cambiar/vo
 
 Prueba independiente: evaluación mixta, letra/espacios/columnas, meta posible/imposible, persistencia y exportación histórica.
 
-- [ ] T011 [US3] Añadir pruebas del contrato y resolución en `backend/tests/unit/test_evaluation_print_settings.py` (FR-005–FR-008).
-- [ ] T012 [US3] Definir contrato tipado y migración nullable en `backend/app/modules/evaluaciones/print_settings.py`, `schemas.py`, `models.py` y `backend/alembic/versions/` (FR-005, FR-008).
-- [ ] T013 [US3] Probar guardado, concurrencia y versiones legacy en `backend/tests/integration/test_evaluation_print_settings.py`, incluida recalificación con dobles (FR-008, FR-012, FR-013, FR-015).
-- [ ] T014 [US3] Implementar guardado limitado/versionado y snapshot explícito en `backend/app/modules/evaluaciones/service.py` y `visual_service.py`, sin recrear manifiestos ni invalidar claves (FR-008, FR-012, FR-015).
-- [ ] T015 [US3] Implementar resolución de espacios/columnas e impresión monocroma conservadora en `backend/app/modules/evaluaciones/print_layout.py` y sus pruebas (FR-005, FR-006, FR-011).
-- [ ] T016 [US3] Aplicar resolución a PDF/Word en `backend/app/modules/evaluaciones/export_service.py` y `backend/app/modules/herramientas/pdf_render.py`, preservando salida legacy (FR-005, FR-006, FR-008).
-- [ ] T017 [US3] Añadir preparación privada idempotente de borrador con máximo cuatro renders, conteo PDF real, cancelación/expiración y validación de base en `backend/app/modules/evaluaciones/print_preparation.py`, `router.py` y registro de trabajos existente (FR-007, FR-013, FR-014, FR-015).
-- [ ] T018 [US3] Cubrir permisos, caché aislada, errores y meta imposible en `backend/tests/integration/test_evaluation_print_preparation.py` (FR-007, FR-012–FR-015, SC-004, SC-007).
-- [ ] T019 [US3] Integrar tipos/cliente/hook de configuración y preparación en `frontend/src/modules/evaluaciones/` reutilizando API/trabajos actuales, sin guardado implícito (FR-008, FR-014, FR-015).
-- [ ] T020 [US3] Crear panel de ajustes en `frontend/src/modules/evaluaciones/components/EvaluationPrintSettings.tsx` y entradas en visor/editor, previsualización y guardado explícito (FR-005–FR-008, SC-004).
-- [ ] T021 [US3] Verificar migración PostgreSQL, versiones anteriores, PDF/Word renderizados y fixture mixta, documentando evidencia en `specs/125-edicion-impresion-evaluaciones/quickstart.md` (SC-003–SC-005, SC-007).
+- [x] T011 [US3] Añadir pruebas del contrato y resolución en `backend/tests/unit/test_evaluation_print_settings.py` (FR-005–FR-008).
+- [x] T012 [US3] Definir contrato tipado y migración nullable en `backend/app/modules/evaluaciones/print_settings.py`, `schemas.py`, `models.py` y `backend/alembic/versions/` (FR-005, FR-008).
+- [x] T013 [US3] Probar guardado, concurrencia y versiones legacy en `backend/tests/integration/test_evaluation_print_settings.py`, incluida recalificación con dobles (FR-008, FR-012, FR-013, FR-015).
+- [x] T014 [US3] Implementar guardado limitado/versionado y snapshot explícito en `backend/app/modules/evaluaciones/service.py` y `visual_service.py`, sin recrear manifiestos ni invalidar claves (FR-008, FR-012, FR-015).
+- [x] T015 [US3] Implementar resolución de espacios/columnas, figura lateral acotada con alternativa apilada e impresión monocroma conservadora en `backend/app/modules/evaluaciones/print_layout.py` y sus pruebas (FR-005, FR-006, FR-011).
+- [x] T016 [US3] Aplicar resolución a PDF/Word en `backend/app/modules/evaluaciones/export_service.py` y `backend/app/modules/herramientas/pdf_render.py`, incluidos tamaño proporcional y pregunta/figura en la misma fila cuando sean legibles, preservando salida legacy (FR-005, FR-006, FR-008).
+- [x] T017 [US3] Añadir preparación privada idempotente de borrador con máximo cuatro renders, conteo PDF real, cancelación/expiración y validación de base en `backend/app/modules/evaluaciones/print_preparation.py`, `router.py` y registro de trabajos existente (FR-007, FR-013, FR-014, FR-015).
+- [x] T018 [US3] Cubrir permisos, caché aislada, errores y meta imposible en `backend/tests/integration/test_evaluation_print_preparation.py` (FR-007, FR-012–FR-015, SC-004, SC-007).
+- [x] T019 [US3] Integrar tipos/cliente/hook de configuración y preparación en `frontend/src/modules/evaluaciones/` reutilizando API/trabajos actuales, sin guardado implícito (FR-008, FR-014, FR-015).
+- [x] T020 [US3] Crear panel de ajustes en `frontend/src/modules/evaluaciones/components/EvaluationPrintSettings.tsx` y entradas en visor/editor, previsualización y guardado explícito (FR-005–FR-008, SC-004).
+- [x] T021 [US3] Verificar migración PostgreSQL, versiones anteriores, PDF/Word renderizados y fixture mixta, documentando evidencia en `specs/125-edicion-impresion-evaluaciones/quickstart.md` (SC-003–SC-005, SC-007).
 
 ## Fase 6: historia4 — materiales útiles
 
@@ -52,13 +52,13 @@ Prueba independiente: biblioteca sin gasto, tabla/gráfico determinista, propues
 - [x] T023 [US4] Añadir tests de propósito, figura aislada, alpha y ruta sin capacidad en `backend/tests/unit/test_evaluation_visual_generation.py` (FR-009–FR-011, FR-014).
 - [x] T024 [US4] Implementar propósito/estilo y validación honesta en `backend/app/modules/evaluaciones/visual_generation.py`, contrato visual y adaptador de imágenes existente, sin modelos hardcodeados ni reintentos ocultos (FR-010–FR-012, FR-014).
 - [x] T025 [US4] Mostrar biblioteca/tabla/gráfico/figura y controles de propósito en borrador generado y edición mediante `QuestionVisualEditor.tsx`/`GenerationWizard.tsx`, conservando revisión de asociaciones (FR-009, FR-010, SC-006).
-- [ ] T026 [US4] Cubrir biblioteca, capacidad ausente y conservación del material con pruebas sintéticas en suites visuales frontend/backend existentes y `specs/125-edicion-impresion-evaluaciones/quickstart.md` (FR-009–FR-014, SC-006, SC-007).
+- [x] T026 [US4] Cubrir biblioteca, capacidad ausente y conservación del material con pruebas sintéticas en suites visuales frontend/backend existentes y `specs/125-edicion-impresion-evaluaciones/quickstart.md` (FR-009–FR-014, SC-006, SC-007).
 
 ## Fase final: validación
 
-- [ ] T027 Ejecutar typecheck/lint/Vitest/pytest y regresiones de generación, lectura, digitalización, motivos, visuales y calificación; registrar comandos/resultados en `specs/125-edicion-impresion-evaluaciones/quickstart.md`.
-- [ ] T028 Verificar visualmente móvil/computador, claro/oscuro, Chromium/WebKit y exportaciones sin llamadas reales en `output/playwright/` y `output/pdf/`; registrar límites de prueba en `specs/125-edicion-impresion-evaluaciones/quickstart.md` (SC-001–SC-007).
-- [ ] T029 Ejecutar Converge, gobernanza, auditorías y builds aplicables; actualizar `specs/125-edicion-impresion-evaluaciones/tasks.md`, `quickstart.md` y `specs/README.md` sin certificar CI pendiente.
+- [x] T027 Ejecutar typecheck/lint/Vitest/pytest y regresiones de generación, lectura, digitalización, motivos, visuales y calificación; registrar comandos/resultados en `specs/125-edicion-impresion-evaluaciones/quickstart.md`.
+- [x] T028 Verificar visualmente móvil/computador, claro/oscuro, Chromium/WebKit y exportaciones sin llamadas reales en `output/playwright/` y `output/pdf/`; registrar límites de prueba en `specs/125-edicion-impresion-evaluaciones/quickstart.md` (SC-001–SC-007).
+- [x] T029 Ejecutar Converge, gobernanza, auditorías y builds aplicables; actualizar `specs/125-edicion-impresion-evaluaciones/tasks.md`, `quickstart.md` y `specs/README.md` sin certificar CI pendiente.
 - [ ] T030 Preparar PR enlazado a262 con todos los cambios revisados y CI requerido en verde antes de entrega; no fusionar ni desplegar sin autorización y registrar enlace en `specs/125-edicion-impresion-evaluaciones/quickstart.md`.
 
 ## Dependencias y ejecución

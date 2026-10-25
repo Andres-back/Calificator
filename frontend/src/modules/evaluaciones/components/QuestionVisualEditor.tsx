@@ -58,11 +58,12 @@ function StructuredFields({ kind, table, chart, onTable, onChart }: {
   </div>;
 }
 
-export function QuestionVisualEditor({ evaluationId, materiaId, questionId, versionId, generationEnabled = false, existing, onAccept, onRemove, onBegin, pendingJobId, onJobChange, suggestedArea }: {
+export function QuestionVisualEditor({ evaluationId, materiaId, questionId, versionId, generationEnabled = false, existing, onAccept, onRemove, onBegin, pendingJobId, onJobChange, suggestedArea, blackAndWhiteDefault = true }: {
   evaluationId: string; materiaId: string; questionId: string; versionId?: string | null;
   generationEnabled?: boolean; existing?: TeacherVisualBlock; onAccept: (block: TeacherVisualBlock) => void; onRemove?: () => void; onBegin?: () => void;
   pendingJobId?: string; onJobChange?: (id: string | null) => void;
   suggestedArea?: string | null;
+  blackAndWhiteDefault?: boolean;
 }) {
   const [open, setOpen] = useState(Boolean(pendingJobId));
   const [kind, setKind] = useState<Kind>(existing?.tipo === 'tabla' || existing?.tipo === 'grafica' || existing?.tipo === 'dibujo' ? existing.tipo : 'imagen');
@@ -75,7 +76,7 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
   const [previewReady, setPreviewReady] = useState(false);
   const [library, setLibrary] = useState(false);
   const [purpose, setPurpose] = useState<'academico' | 'decoracion'>('academico');
-  const [blackAndWhite, setBlackAndWhite] = useState(true);
+  const [blackAndWhite, setBlackAndWhite] = useState(blackAndWhiteDefault);
   const [transparent, setTransparent] = useState(false);
   const jobChangeRef = useRef(onJobChange); jobChangeRef.current = onJobChange;
   function trackJob(id: string | null) { setJobId(id); jobChangeRef.current?.(id); }

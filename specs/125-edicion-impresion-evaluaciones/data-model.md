@@ -9,13 +9,12 @@ Contrato propuesto de configuración versión1:
 | Campo | Regla |
 | --- | --- |
 | `schema_version` | Literal1, independiente del esquema de contenido |
-| `perfil` | compacto / normal / letra_grande / personalizado |
-| `fuente_pt` | Número finito10–18; presets11/12/14 |
-| `composicion` | una_columna / compacta; nunca reordena preguntas |
+| `distribucion` | compacta / media / amplia; exactamente tres modos |
+| `fuente_pt` | Número finito10–18 o null; presets10,5/12/14 independientes del color |
 | `blanco_negro` | Preferencia booleana; color significativo requiere decisión explícita |
 | `meta_paginas` | Entero1–20 o null; objetivo, no promesa |
 | `respuestas` | Overrides por identidad estable de pregunta: líneas1–12 o altura de dibujo30–100mm; auto conserva semántica y ajuste docente existente |
-| `materiales` | Overrides por bloque estable: ancho25–100%, alineación inicio/centro/fin, uso decorativo/académico y confirmación de conversión cuando el color sea significativo |
+| `materiales` | Overrides por bloque estable: ancho25–100%, alineación inicio/centro/fin, disposición apilada/lateral, uso decorativo/académico y confirmación de conversión cuando el color sea significativo. La disposición lateral se limita a un bloque de pregunta; no altera el orden académico ni recorta el original |
 
 Los límites se validan en servidor y cliente. Identidades inexistentes o duplicadas no se reasignan por coincidencia de posición; devolver error conservando borrador. Si una evaluación legacy carece de identidad estable, normalizarla con el mecanismo existente al editar contenido, no introducir identificadores nuevos en preguntas durante un guardado de solo impresión; hasta entonces permitir ajustes globales y los campos de espacio ya existentes.
 
@@ -31,6 +30,8 @@ Los límites se validan en servidor y cliente. Identidades inexistentes o duplic
 ## Propuestas y derivados
 
 Una propuesta de composición es temporal y privada: revisión/base o huella del borrador, configuración candidata, hash, páginas PDF reales y advertencias. Caduca, no se convierte en evaluación guardada por previsualizarla y no contiene soluciones en la versión para estudiante.
+
+Se registra como `evaluacion_impresion` en `ai_jobs`, sin configuración ni llamadas de IA. La huella incluye usuario, evaluación, fecha/versión base, borrador y ajustes. Se reserva antes de cada render un presupuesto durable máximo de cuatro incluso después de reinicios; la vigencia es24 horas. La descarga privada vuelve a comprobar propietario, permisos, base, estado y vigencia. El borrador solo acepta campos de evaluación, hasta500 preguntas y300.000 caracteres serializados; no acepta HTML ni URL de recursos. Los recursos deben pertenecer a la evaluación/materia/docente y su confirmación se comprueba sin publicarlos ni asociarlos. La búsqueda puede cambiar distribución/letra, nunca los ajustes explícitos por pregunta o los originales.
 
 Derivados de imagen para impresión son regenerables desde original+parámetros, con caché privada y autorización del recurso original. No sustituyen bytes, hash o procedencia del original; una imagen que falla sigue disponible en su formato original con advertencia. El uso decorativo no altera el contrato académico del material ni se utiliza para deducir respuestas.
 

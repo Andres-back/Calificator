@@ -397,6 +397,7 @@ export function MateriaEvaluaciones() {
 
       {previewEval && (
         <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
+          canEditPresentation={canUpdateEvaluation}
           canViewSolutions={user?.rol === 'admin' || previewEval.profesor_id === user?.id} />
       )}
       {canUpdateEvaluation && criteriaEval && <EvaluationCriteriaEditor evaluation={criteriaEval} onClose={() => setCriteriaEval(null)} onCompleted={() => { setCriteriaEval(null); refresh(); toast.success('Criterios actualizados; las notas anteriores se conservan'); }} />}

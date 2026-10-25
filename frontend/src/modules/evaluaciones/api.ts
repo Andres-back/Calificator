@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { EvaluationVisualManifest, DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {
+  configuracion_impresion?: import('@/types/api').EvaluationPrintSettings | null;
   materia_id: string;
   nombre: string;
   descripcion?: string;
@@ -20,6 +21,7 @@ export interface EvaluacionCreate {
 }
 
 export interface EvaluacionGenerarRequest {
+  configuracion_impresion?: import('@/types/api').EvaluationPrintSettings | null;
   materia_id: string;
   nombre: string;
   tema: string;

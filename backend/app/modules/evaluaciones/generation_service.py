@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 from pydantic import ValidationError
@@ -351,6 +351,11 @@ async def generate_evaluation_draft(
     request: EvaluacionGenerarRequest,
     current_user: User,
 ) -> Evaluacion:
+    from app.modules.evaluaciones.print_settings import validate_print_scope
+    try:
+        validate_print_scope(request.configuracion_impresion, [], None)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     materia = await ensure_can_manage_materia(db, request.materia_id, current_user)
     official = await get_dba_records(db, request.dba_ids)
     custom = await get_dba_personalizado_records_for_evaluation(
@@ -416,6 +421,7 @@ async def generate_evaluation_draft(
         source_ids = _uuid_strings(question.fuente_contexto_ids)
         questions.append({
             "numero": question.numero,
+            **({'contenido_id': str(uuid4())} if request.configuracion_impresion is not None else {}),
             "tipo": question.tipo,
             "enunciado": question.enunciado,
             "opciones": question.opciones,
@@ -483,6 +489,7 @@ async def generate_evaluation_draft(
         criterios=criteria,
         preguntas=questions,
         respuestas_esperadas=expected_answers,
+        configuracion_impresion=request.configuracion_impresion.model_dump(mode='json') if request.configuracion_impresion else None,
     )
     db.add(evaluation)
     try:

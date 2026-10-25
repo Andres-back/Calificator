@@ -1,4 +1,5 @@
-import type { Evaluacion, EvaluacionModalidad, EvaluationVisualManifest } from '@/types/api';
+import type { Evaluacion, EvaluacionModalidad, EvaluationVisualManifest, EvaluationPrintSettings } from '@/types/api';
+import { defaultPrintSettings } from '../printSettings';
 
 export const WIZARD_VERSION = 7;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -60,6 +61,7 @@ export interface EditableRubricCriterion extends Record<string, unknown> {
   dba_ids: string[];
 }
 export interface WizardState {
+  printSettings?: EvaluationPrintSettings | null;
   lectura?: string;
   visualJobs?: Record<string, string>;
   visualKeysReviewed?: string[];
@@ -100,6 +102,7 @@ interface StoredWizardDraft {
 export function createEmptyWizardState(materiaId = ''): WizardState {
   return {
     step: 1,
+    printSettings: defaultPrintSettings(),
     materiaId,
     nombre: '',
     nombreAutomatico: true,
@@ -530,6 +533,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
   ));
   return {
     ...createEmptyWizardState(evaluation.materia_id),
+    printSettings: evaluation.configuracion_impresion ?? null,
     step: 5,
     nombre: evaluation.nombre,
     nombreAutomatico: false,
@@ -568,6 +572,8 @@ export function updateQuestionVisual(state: WizardState, questionId: string, blo
   const keptIds = new Set(bloques.map(item => item.id));
   const avisos = manifest.cobertura.avisos.filter(warning => !warning.bloque_id || keptIds.has(warning.bloque_id));
   return { ...state, visualKeysReviewed: (state.visualKeysReviewed ?? []).filter(id => id !== questionId),
+    ...(state.printSettings ? { printSettings: { ...state.printSettings,
+      materiales: Object.fromEntries(Object.entries(state.printSettings.materiales).filter(([id]) => bloques.some(block => block.id === id))) } } : {}),
     visualKeysPending: [...new Set([...(state.visualKeysPending ?? []), questionId])],
     contenidoVisual: { ...manifest, pregunta_ids: state.questions.map(question => question.contenidoId!), bloques,
       recurso_ids: [...new Set(bloques.flatMap(item => item.recurso_id ? [item.recurso_id] : []))],
@@ -575,7 +581,8 @@ export function updateQuestionVisual(state: WizardState, questionId: string, blo
 }
 
 export function reconcileVisualQuestions(state: WizardState, questions: EditableQuestion[], duplicateFrom?: string): Partial<WizardState> {
-  if (!state.contenidoVisual) return { questions };
+  const respuestas = Object.fromEntries(Object.entries(state.printSettings?.respuestas ?? {}).filter(([id]) => questions.some(question => question.contenidoId === id)));
+  if (!state.contenidoVisual) return { questions, ...(state.printSettings ? { printSettings: { ...state.printSettings, respuestas } } : {}) };
   const next = questions.map(question => ({ ...question, contenidoId: question.contenidoId || crypto.randomUUID() }));
   const ids = next.map(question => question.contenidoId!);
   const copied = duplicateFrom ? next.find(question => !state.questions.some(previous => previous.contenidoId === question.contenidoId))?.contenidoId : undefined;
@@ -590,6 +597,8 @@ export function reconcileVisualQuestions(state: WizardState, questions: Editable
   return { questions: next, contenidoVisual: { ...state.contenidoVisual, pregunta_ids: ids, bloques,
     recurso_ids: [...new Set(bloques.flatMap(block => block.recurso_id ? [block.recurso_id] : []))],
     cobertura: { ...state.contenidoVisual.cobertura, avisos, estado: avisos.length ? 'requiere_revision' : 'completa' } },
+    ...(state.printSettings ? { printSettings: { ...state.printSettings, respuestas,
+      materiales: Object.fromEntries(Object.entries(state.printSettings.materiales).filter(([id]) => kept.has(id))) } } : {}),
     visualKeysReviewed: state.visualKeysReviewed?.filter(id => ids.includes(id)),
     visualKeysPending: [...new Set([...(state.visualKeysPending ?? []).filter(id => ids.includes(id)), ...(copied ? [copied] : [])])] };
 }
@@ -691,6 +700,11 @@ function hasDraftShape(state: WizardState): boolean {
   const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === 'string');
   return ['materiaId', 'nombre', 'descripcion', 'fechaLimiteEntrega', 'referenceText', 'instruccionesAdicionales'].every(key => typeof state[key as keyof WizardState] === 'string')
     && (state.lectura === undefined || typeof state.lectura === 'string' && state.lectura.length <= 60000)
+    && (state.printSettings == null || Boolean(state.printSettings && state.printSettings.schema_version === 1
+      && ['compacta', 'media', 'amplia'].includes(state.printSettings.distribucion)
+      && typeof state.printSettings.blanco_negro === 'boolean'
+      && state.printSettings.respuestas && typeof state.printSettings.respuestas === 'object' && !Array.isArray(state.printSettings.respuestas)
+      && state.printSettings.materiales && typeof state.printSettings.materiales === 'object' && !Array.isArray(state.printSettings.materiales)))
     && ['online', 'fisica', 'mixta'].includes(state.modalidad)
     && Number.isFinite(state.step) && Number.isFinite(state.notaMaxima)
     && typeof state.useDba === 'boolean' && typeof state.useRubric === 'boolean'

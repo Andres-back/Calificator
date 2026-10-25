@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 547,
-      "missing": 96
+      "covered": 553,
+      "missing": 98
     },
     "by_kind": {
-      "endpoint": 304,
-      "frontend_call": 201,
+      "endpoint": 306,
+      "frontend_call": 205,
       "frontend_route": 38,
       "integration": 7,
-      "job": 24,
+      "job": 26,
       "table": 69
     },
-    "total": 643
+    "total": 651
   },
   "exceptions": [],
   "findings": [
@@ -134,8 +134,8 @@
     },
     {
       "category": "missing_coverage",
-      "description": "12 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
-      "id": "F-D9FBAF3C45D8",
+      "description": "14 superficies de 012-ia-jobs-produccion no tienen evidencia de prueba observable.",
+      "id": "F-D681EDCB4DD1",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
@@ -148,6 +148,8 @@
         "job:tasks.generate_evaluation_visual",
         "job:tasks.get_ai_config_version",
         "job:tasks.ingest_rag",
+        "job:tasks.prepare_evaluation_print",
+        "job:tasks.recover_evaluation_print",
         "job:tasks.recover_evaluation_visuals",
         "job:tasks.recover_expired_local_jobs",
         "job:tasks.send_password_reset_email"
@@ -543,7 +545,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "7fd7df775c0e5c4bd65e220831880e93766c076bae3de79b08634476f5aa6c65",
+  "source_digest": "afe68e91ddd56f95c8f6e4a8861c15ee56ecacba02980917f0a7692d09064035",
   "surfaces": [
     {
       "actors": [
@@ -791,7 +793,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{evaluacion_id}",
-      "source_line": 462,
+      "source_line": 484,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -866,6 +868,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -4776,6 +4784,36 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "download_prepared_print",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/evaluaciones/impresion/{job_id}/pdf",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/impresion/{job_id}/pdf",
+      "source_line": 57,
+      "source_path": "backend/app/modules/evaluaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/impresion/{job_id}/pdf",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -4797,7 +4835,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/recursos/{recurso_id}/propuesta",
-      "source_line": 173,
+      "source_line": 182,
       "source_path": "backend/app/modules/evaluaciones/visual_router.py",
       "states": [],
       "tests": [
@@ -4830,7 +4868,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}",
-      "source_line": 282,
+      "source_line": 304,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4905,6 +4943,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -5139,7 +5183,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/actividad",
-      "source_line": 292,
+      "source_line": 314,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5240,7 +5284,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/docx",
-      "source_line": 371,
+      "source_line": 393,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5469,7 +5513,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/original",
-      "source_line": 211,
+      "source_line": 220,
       "source_path": "backend/app/modules/evaluaciones/visual_router.py",
       "states": [],
       "tests": [
@@ -5507,7 +5551,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/pdf",
-      "source_line": 341,
+      "source_line": 363,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5542,7 +5586,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/recursos/{recurso_id}",
-      "source_line": 191,
+      "source_line": 200,
       "source_path": "backend/app/modules/evaluaciones/visual_router.py",
       "states": [],
       "tests": [
@@ -6787,6 +6831,12 @@
           "level": "e2e",
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
@@ -7711,7 +7761,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/evaluaciones",
-      "source_line": 266,
+      "source_line": 288,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -10329,7 +10379,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}",
-      "source_line": 395,
+      "source_line": 417,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -10404,6 +10454,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -10705,7 +10761,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
-      "source_line": 473,
+      "source_line": 495,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -14692,7 +14748,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 256,
+      "source_line": 278,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -14767,6 +14823,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -15000,7 +15062,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar",
-      "source_line": 236,
+      "source_line": 258,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15050,7 +15112,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/externa/digitalizar-con-archivo",
-      "source_line": 97,
+      "source_line": 119,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15100,7 +15162,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 222,
+      "source_line": 244,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15132,6 +15194,48 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "prepare_evaluation_print",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/evaluaciones/impresion/preparar",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/impresion/preparar",
+      "source_line": 46,
+      "source_path": "backend/app/modules/evaluaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/impresion/preparar",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/impresion/preparar",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/impresion/preparar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -15155,7 +15259,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/recursos",
-      "source_line": 144,
+      "source_line": 153,
       "source_path": "backend/app/modules/evaluaciones/visual_router.py",
       "states": [],
       "tests": [
@@ -15353,7 +15457,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 57,
+      "source_line": 79,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15385,7 +15489,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/sorpresa",
-      "source_line": 246,
+      "source_line": 268,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15423,7 +15527,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
-      "source_line": 440,
+      "source_line": 462,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15523,7 +15627,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/cerrar",
-      "source_line": 429,
+      "source_line": 451,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15561,7 +15665,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
-      "source_line": 407,
+      "source_line": 429,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15785,7 +15889,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
-      "source_line": 451,
+      "source_line": 473,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15823,7 +15927,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/publicar",
-      "source_line": 418,
+      "source_line": 440,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -19747,6 +19851,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/fixtures/render_print_settings_samples.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/fixtures/render_visual_export_samples.py"
         },
         {
@@ -19838,6 +19948,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_criteria_update.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_settings.py"
         },
         {
           "level": "unit",
@@ -19993,6 +20115,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_visual_image_attempt.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
         },
         {
@@ -20126,6 +20254,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_preparation.py"
         },
         {
           "level": "unit",
@@ -21151,6 +21291,18 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationPrintPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationPrintSettings.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
         },
         {
@@ -21170,6 +21322,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/pdfRenderQueue.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/pdfViewport.test.ts"
         },
         {
           "level": "unit",
@@ -27476,7 +27634,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{id}",
-      "source_line": 119,
+      "source_line": 121,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -27551,6 +27709,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -31129,7 +31293,7 @@
       "kind": "frontend_call",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 201,
+      "source_line": 203,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31467,6 +31631,40 @@
     },
     {
       "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/evaluaciones/impresion/{job_id}/pdf",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/evaluaciones/impresion/{id}/pdf:frontend/src/modules/evaluaciones/printApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/impresion/{id}/pdf",
+      "source_line": 22,
+      "source_path": "frontend/src/modules/evaluaciones/printApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/impresion/{id}/pdf",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/impresion/{id}/pdf",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -31493,7 +31691,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/recursos/{id}/propuesta",
-      "source_line": 35,
+      "source_line": 36,
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
@@ -31521,7 +31719,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/actividad",
-      "source_line": 143,
+      "source_line": 145,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31607,7 +31805,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
-      "source_line": 213,
+      "source_line": 215,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31635,7 +31833,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-entrega",
-      "source_line": 134,
+      "source_line": 136,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31663,7 +31861,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
-      "source_line": 176,
+      "source_line": 178,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31691,7 +31889,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/{format}",
-      "source_line": 162,
+      "source_line": 164,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31766,6 +31964,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -31995,7 +32199,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluationId}/original",
-      "source_line": 71,
+      "source_line": 73,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32025,7 +32229,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluationId}/recursos/{resourceId}",
-      "source_line": 64,
+      "source_line": 66,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32111,7 +32315,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{id}",
-      "source_line": 60,
+      "source_line": 62,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32186,6 +32390,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -32966,6 +33176,88 @@
         "ambiguous"
       ],
       "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/jobs/{job_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/jobs/{id}:frontend/src/modules/evaluaciones/printApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "GET:/jobs/{id}",
+      "source_line": 19,
+      "source_path": "frontend/src/modules/evaluaciones/printApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/resources-responsive.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
       "consumers": [
         "101-digitalizacion-visual-completa"
       ],
@@ -32979,7 +33271,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/jobs/{id}",
-      "source_line": 32,
+      "source_line": 33,
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
@@ -32994,6 +33286,12 @@
           "reference": "GET:/jobs/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -33093,6 +33391,12 @@
           "level": "e2e",
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
@@ -33170,6 +33474,12 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -33721,7 +34031,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materiaId}/evaluaciones",
-      "source_line": 56,
+      "source_line": 58,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -35879,7 +36189,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{id}",
-      "source_line": 99,
+      "source_line": 101,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -35954,6 +36264,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -39955,7 +40271,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 81,
+      "source_line": 83,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -39980,6 +40296,46 @@
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/generar-borrador",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/evaluaciones/impresion/preparar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/evaluaciones/impresion/preparar:frontend/src/modules/evaluaciones/printApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/impresion/preparar",
+      "source_line": 13,
+      "source_path": "frontend/src/modules/evaluaciones/printApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/impresion/preparar",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones/impresion/preparar",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/impresion/preparar",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
@@ -40013,7 +40369,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/recursos/estructurado",
-      "source_line": 24,
+      "source_line": 25,
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
@@ -40065,7 +40421,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/recursos/generar",
-      "source_line": 30,
+      "source_line": 31,
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
@@ -40116,7 +40472,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/recursos/recortar",
-      "source_line": 27,
+      "source_line": 28,
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
@@ -40152,7 +40508,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/recursos",
-      "source_line": 21,
+      "source_line": 22,
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
@@ -40198,7 +40554,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 95,
+      "source_line": 97,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40284,7 +40640,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas/archivo",
-      "source_line": 197,
+      "source_line": 199,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40312,7 +40668,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas",
-      "source_line": 122,
+      "source_line": 124,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40340,7 +40696,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacionId}/solicitud-revision",
-      "source_line": 183,
+      "source_line": 185,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40368,7 +40724,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/activar-recepcion",
-      "source_line": 111,
+      "source_line": 113,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40396,7 +40752,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/cerrar",
-      "source_line": 107,
+      "source_line": 109,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40424,7 +40780,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/pausar-recepcion",
-      "source_line": 115,
+      "source_line": 117,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40452,7 +40808,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/publicar",
-      "source_line": 103,
+      "source_line": 105,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40480,7 +40836,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 77,
+      "source_line": 79,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40555,6 +40911,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_generation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
         },
         {
           "level": "unit",
@@ -41200,6 +41562,34 @@
         "ambiguous"
       ],
       "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/jobs/{job_id}/cancelar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/jobs/{id}/cancelar:frontend/src/modules/evaluaciones/printApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "POST:/jobs/{id}/cancelar",
+      "source_line": 26,
+      "source_path": "frontend/src/modules/evaluaciones/printApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{id}/cancelar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
       "consumers": [
         "101-digitalizacion-visual-completa"
       ],
@@ -41213,7 +41603,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/jobs/{id}/cancelar",
-      "source_line": 33,
+      "source_line": 34,
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
@@ -41256,6 +41646,12 @@
           "reference": "POST:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
           "level": "e2e",
@@ -43234,6 +43630,12 @@
           "level": "unit",
           "reference": "cloudflare",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_image_transparency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
@@ -43754,6 +44156,12 @@
           "level": "unit",
           "reference": "openai",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_image_transparency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "openai",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
         },
         {
@@ -43951,7 +44359,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.cleanup_evaluation_visual_proposals",
-      "source_line": 155,
+      "source_line": 176,
       "source_path": "backend/app/workers/tasks_evaluation_visuals.py",
       "states": [
         "cancelled",
@@ -44305,7 +44713,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.generate_evaluation_visual",
-      "source_line": 120,
+      "source_line": 141,
       "source_path": "backend/app/workers/tasks_evaluation_visuals.py",
       "states": [
         "cancelled",
@@ -44605,6 +45013,89 @@
         "system"
       ],
       "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "bind": true,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "prepare_evaluation_print",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.prepare_evaluation_print",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.prepare_evaluation_print",
+      "source_line": 71,
+      "source_path": "backend/app/workers/tasks_evaluation_print.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "missing",
+      "details": {
+        "bind": false,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "recover_evaluation_print",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:recover-evaluation-print",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.recover_evaluation_print",
+      "kind": "job",
+      "owner_spec": "012-ia-jobs-produccion",
+      "signature": "tasks.recover_evaluation_print",
+      "source_line": 95,
+      "source_path": "backend/app/workers/tasks_evaluation_print.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
       "consumers": [
         "101-digitalizacion-visual-completa"
       ],
@@ -44635,7 +45126,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_evaluation_visuals",
-      "source_line": 138,
+      "source_line": 159,
       "source_path": "backend/app/workers/tasks_evaluation_visuals.py",
       "states": [
         "cancelled",
@@ -45248,6 +45739,18 @@
           "level": "unit",
           "reference": "ai_jobs",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_settings.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_permissions.py"
         },
         {
@@ -45279,6 +45782,12 @@
           "reference": "ai_jobs",
           "status": "direct",
           "test_path": "backend/tests/integration/test_multipage_recovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_visual_image_attempt.py"
         }
       ]
     },
@@ -46617,6 +47126,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_settings.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_permissions.py"
         },
         {
@@ -47668,7 +48183,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluacion_blueprints",
-      "source_line": 142,
+      "source_line": 143,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [
         "completo",
@@ -47728,7 +48243,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluacion_contenido_versiones",
-      "source_line": 234,
+      "source_line": 235,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [],
       "tests": [
@@ -47790,7 +48305,7 @@
       "kind": "table",
       "owner_spec": "005-evaluaciones",
       "signature": "evaluacion_recursos",
-      "source_line": 190,
+      "source_line": 191,
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [
         "dibujo",
@@ -47896,6 +48411,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/fixtures/render_print_settings_samples.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/fixtures/render_visual_export_samples.py"
         },
         {
@@ -47933,6 +48454,18 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_criteria_update.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_settings.py"
         },
         {
           "level": "unit",
@@ -48023,6 +48556,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_motif_preservation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_visual_image_attempt.py"
         },
         {
           "level": "unit",
@@ -48125,6 +48664,36 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_lifecycle_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_layout.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evaluation_print_settings.py"
         },
         {
           "level": "unit",
@@ -49989,6 +50558,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_settings.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_permissions.py"
         },
         {
@@ -51451,6 +52026,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_criteria_update.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_print_settings.py"
         },
         {
           "level": "unit",
