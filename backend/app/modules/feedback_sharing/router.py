@@ -14,8 +14,8 @@ from app.modules.calificaciones.models import Calificacion
 from app.modules.feedback_sharing.access_policy import authorize_evaluation, db_now, guard_access
 from app.modules.feedback_sharing.http_policy import PrivateRoute
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackPublication
-from app.modules.feedback_sharing.schemas import AccessAction, AccessCopiesInput, AccessCreate, BatchPublishInput, DeliveryReviewInput, PreviewInput, ReactivateInput, RenewInput, SelectedInput
-from app.modules.feedback_sharing.service import approve_delivery_review, create_access, manage_access, prepare_grade_preview, preview_grade
+from app.modules.feedback_sharing.schemas import AccessAction, AccessCopiesInput, AccessCreate, BatchPublishInput, DeliveryReviewInput, FeedbackMessageInput, PreviewInput, ReactivateInput, RenewInput, SelectedInput
+from app.modules.feedback_sharing.service import approve_delivery_review, create_access, manage_access, prepare_grade_preview, preview_grade, save_feedback_message
 from app.modules.users.models import User
 
 router = APIRouter(tags=["devoluciones"], route_class=PrivateRoute)
@@ -87,6 +87,13 @@ async def review_delivery(evaluation_id: UUID, payload: DeliveryReviewInput, act
     return {'calificacion_id': payload.calificacion_id, 'elegible': True,
         'seleccionable': True, 'preparacion': 'ready', 'fingerprint': projection.fingerprint,
         'resultado': projection.payload}
+
+
+@router.post('/evaluaciones/{evaluation_id}/devoluciones/mensaje')
+async def save_message(evaluation_id: UUID, payload: FeedbackMessageInput, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await save_feedback_message(db, actor, evaluation_id, payload)
+    await db.commit()
+    return result
 
 
 @router.post('/evaluaciones/{evaluation_id}/devoluciones/aceptar-publicar')

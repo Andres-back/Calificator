@@ -19,6 +19,35 @@ beforeEach(() => {
   vi.mocked(teacherApi.listFeedbackAccesses).mockResolvedValue([]);
 });
 describe('devoluciones por evaluación', () => {
+  it('el modo integrado y el diálogo usan el mismo contenido, sin seleccionar todo al abrir', async () => {
+    const { rerender } = render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
+    await screen.findByText(result.retroalimentacion);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    rerender(<ShareFeedbackDialog evaluationId="e1" initialSelectedIds={['g1']} onClose={() => {}} onReview={() => {}} />);
+    expect(await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' })).toBeChecked();
+    expect(screen.getByText(result.retroalimentacion)).toBeInTheDocument();
+    expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+  });
+  it('protege el texto al volver sin guardar y permite guardar sin aprobar la nota', async () => {
+    useAuth.setState({ user: { ...teacher, permissions: [...teacher.permissions!, 'grading.grade'] } });
+    const draft = { calificacion_id: 'g1', elegible: false, seleccionable: true, borrador_docente: { estado: 'sugerida', nota: '3.5', nota_maxima: '5', retroalimentacion: result.retroalimentacion }, mensaje_editable: { source_fingerprint: 'a'.repeat(64), feedback_text: result.retroalimentacion, detail_available: false } };
+    vi.mocked(teacherApi.previewFeedback).mockResolvedValue([draft]);
+    vi.mocked(teacherApi.saveFeedbackMessage).mockResolvedValue(draft);
+    const onClose = vi.fn();
+    render(<ShareFeedbackDialog evaluationId="e1" onClose={onClose} onReview={() => {}} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar devolución de Ana Pérez' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' }), { target: { value: 'Una explicación revisada.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar diálogo' }));
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Volver sin aprobar' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Descartar cambios y volver' })).toBeVisible());
+    fireEvent.click(screen.getByRole('button', { name: 'Seguir editando' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar mensaje sin publicar' }));
+    await waitFor(() => expect(teacherApi.saveFeedbackMessage).toHaveBeenCalledWith('e1', expect.objectContaining({ feedback_text: 'Una explicación revisada.' }), expect.any(AbortSignal)));
+    expect(teacherApi.approveFeedbackReview).not.toHaveBeenCalled();
+    expect(teacherApi.publishFeedbackBatch).not.toHaveBeenCalled();
+  });
   it('una carga cancelada por StrictMode no deja un falso error', async () => {
     vi.mocked(getEvaluationReview).mockImplementation(async (_id, _params, signal) => {
       await Promise.resolve();
@@ -41,6 +70,7 @@ describe('devoluciones por evaluación', () => {
     vi.mocked(teacherApi.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'access', estado: 'active', version: 1, expires_at: '2099-01-04T00:00:00Z', url: 'https://example.test/devolucion#' + 'a'.repeat(43), credential_available: true }]);
     render(<ShareFeedbackDialog evaluationId="e1" onClose={() => {}} onReview={() => {}} />);
     await screen.findByText(result.retroalimentacion);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Seleccionar Ana Pérez' }));
     fireEvent.click(screen.getByText('Enlaces individuales'));
     fireEvent.click(screen.getByRole('button', { name: 'Crear enlaces seleccionados' }));
     await waitFor(() => expect(teacherApi.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 3, evidencia: false, selecciones: [{ calificacion_id: 'g1', fingerprint: 'f'.repeat(64) }] }), expect.any(AbortSignal)));

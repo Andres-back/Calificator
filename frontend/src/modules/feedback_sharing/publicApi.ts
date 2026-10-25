@@ -1,4 +1,5 @@
 /** Cliente deliberadamente separado de Axios/JWT: credencial solo en memoria. */
+import { openConversation, type ConversationIdentity } from './conversation';
 export interface FeedbackQuota { restantes: number; retry_after_seconds: number }
 export interface FeedbackAnswer {
   numero: number; titulo: string; respuesta_estudiante: string | null;
@@ -14,11 +15,14 @@ export interface FeedbackResult {
 export interface PublicFeedback {
   resultado: FeedbackResult; expires_at: string; server_now: string;
   cupo: FeedbackQuota; evidencia_disponible: boolean;
+  conversation_scope?: string;
 }
 export interface FeedbackReply {
   request_id: string; status: 'queued' | 'running' | 'succeeded' | 'failed' | 'closed';
   respuesta: string | null; mensaje: string | null; cupo: FeedbackQuota;
 }
+export interface FeedbackExchange extends Omit<FeedbackReply, 'cupo'> { pregunta: string; accepted_at: string }
+export interface FeedbackHistory { items: FeedbackExchange[]; next_cursor: string | null; cupo: FeedbackQuota }
 const unavailable = 'Este enlace no está disponible. Pide a tu profesor que lo revise.';
 export class FeedbackAccessError extends Error {
   constructor(public readonly status: number, public readonly retryAfter = 0) {
@@ -31,6 +35,7 @@ export class FeedbackAccessError extends Error {
 
 export function createPublicFeedbackClient(credential: string) {
   if (!/^[A-Za-z0-9_-]{43}$/.test(credential)) throw new FeedbackAccessError(404);
+  let conversation: ConversationIdentity | null = null;
   async function request<T>(suffix: string, body?: object, signal?: AbortSignal, decode?: (response: Response) => Promise<T>): Promise<T> {
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -41,7 +46,7 @@ export function createPublicFeedbackClient(credential: string) {
       const response = await fetch(`/api/public/devolucion${suffix}`, {
         method: body ? 'POST' : 'GET', credentials: 'omit', cache: 'no-store',
         referrerPolicy: 'no-referrer', redirect: 'error', signal: controller.signal,
-        headers: { Authorization: `Bearer ${credential}`, Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        headers: { Authorization: `Bearer ${credential}`, Accept: 'application/json', ...(conversation ? { 'X-Feedback-Conversation': conversation.id } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
       if (!response.ok) {
@@ -59,7 +64,13 @@ export function createPublicFeedbackClient(credential: string) {
     }
   }
   return {
-    read: (signal?: AbortSignal) => request<PublicFeedback>('', undefined, signal),
+    read: async (signal?: AbortSignal) => {
+      const result = await request<PublicFeedback>('', undefined, signal);
+      if (result.conversation_scope !== conversation?.scope) conversation = result.conversation_scope ? openConversation(result.conversation_scope) : null;
+      return result;
+    },
+    continuity: () => conversation,
+    history: (cursor?: string, signal?: AbortSignal) => request<FeedbackHistory>(`/conversacion${cursor ? '?cursor=' + encodeURIComponent(cursor) : ''}`, undefined, signal),
     ask: (requestId: string, mensaje: string, signal?: AbortSignal) => request<FeedbackReply>('/preguntas', { request_id: requestId, mensaje }, signal),
     poll: (requestId: string, signal?: AbortSignal) => request<FeedbackReply>(`/preguntas/${encodeURIComponent(requestId)}`, undefined, signal),
     evidence: (page: number, signal?: AbortSignal) => {

@@ -1,10 +1,25 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createPublicFeedbackClient, FeedbackAccessError } from './publicApi';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); });
 const token = 'a'.repeat(43);
 
 describe('cliente individual sin sesión de plataforma', () => {
+  it('recupera el mismo ámbito opaco tras reabrir sin guardar el enlace ni el contenido', async () => {
+    const scope = 'b'.repeat(64);
+    const fetcher = vi.fn().mockImplementation(async (url: string) => new Response(JSON.stringify(url.endsWith('/conversacion') ? { items: [], next_cursor: null } : { conversation_scope: scope })));
+    vi.stubGlobal('fetch', fetcher);
+    const client = createPublicFeedbackClient(token);
+    await client.read(); await client.history();
+    const reader = client.continuity()!.id;
+    expect(fetcher.mock.calls[1][1].headers['X-Feedback-Conversation']).toBe(reader);
+    expect(fetcher.mock.calls[1][1].credentials).toBe('omit');
+    const reopened = createPublicFeedbackClient(token);
+    await reopened.read();
+    expect(reopened.continuity()?.id).toBe(reader);
+    expect(JSON.stringify(localStorage)).not.toContain(token);
+    expect(Object.values(localStorage)).toEqual([reader]);
+  });
   it('envía credencial solo en cabecera y omite cookies, caché y referrer', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ resultado: {} })));
     vi.stubGlobal('fetch', fetcher);

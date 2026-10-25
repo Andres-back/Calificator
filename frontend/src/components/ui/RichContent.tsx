@@ -11,6 +11,7 @@ export type RichContentProps = {
   content: string;
   variant?: RichContentVariant;
   className?: string;
+  policy?: 'default' | 'public-feedback';
 };
 
 function normalizeTextSegment(segment: string): string {
@@ -125,7 +126,13 @@ const components: Components = {
   },
 };
 
-export function RichContent({ content, variant = 'chat', className }: RichContentProps) {
+const publicComponents: Components = {
+  ...components,
+  a: ({ children }) => <span>{children}</span>,
+  img: ({ alt }) => alt ? <span>{alt}</span> : null,
+};
+
+export function RichContent({ content, variant = 'chat', className, policy = 'default' }: RichContentProps) {
   const normalized = normalizeEducationalMarkdown(content);
 
   if (!normalized) return null;
@@ -143,8 +150,8 @@ export function RichContent({ content, variant = 'chat', className }: RichConten
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-        components={components}
+        rehypePlugins={policy === 'public-feedback' ? [[rehypeKatex, { trust: false, maxExpand: 200, maxSize: 10 }]] : [rehypeKatex]}
+        components={policy === 'public-feedback' ? publicComponents : components}
       >
         {normalized}
       </ReactMarkdown>

@@ -112,6 +112,7 @@ class FeedbackChatRequest(Base):
         CheckConstraint("status IN ('queued','running','succeeded','failed','closed')", name="ck_feedback_chat_status"),
         Index("ix_feedback_chat_quota_window", "quota_id", "accepted_at"),
         Index("ix_feedback_chat_dispatch", "status", "dispatch_pending"),
+        Index('ix_feedback_chat_conversation', 'access_id', 'publication_id', 'credential_generation', 'conversation_digest', 'accepted_at', 'id'),
     )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     access_id: Mapped[UUID] = mapped_column(ForeignKey("feedback_accesses.id"))
@@ -121,6 +122,7 @@ class FeedbackChatRequest(Base):
     client_request_id: Mapped[UUID] = mapped_column()
     request_fingerprint: Mapped[str] = mapped_column(String(64))
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    conversation_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
     response: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="queued")
     error_code: Mapped[str | None] = mapped_column(String(40), nullable=True)

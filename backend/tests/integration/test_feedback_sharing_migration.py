@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import os
 from pathlib import Path
 import subprocess
@@ -25,6 +26,43 @@ def test_migration_is_additive_and_has_explicit_parent():
     upgrade = source.split("def upgrade()", 1)[1].split("def downgrade()", 1)[0].upper()
     for forbidden in ("DELETE FROM", "UPDATE CALIFICACIONES", "ALTER TABLE USERS", "DROP TABLE", "TRUNCATE"):
         assert forbidden not in upgrade
+
+
+def test_conversation_migration_adds_nullable_identity_without_backfill():
+    source = (MIGRATION.parent / '202610240003_feedback_conversation.py').read_text(encoding='utf8')
+    assert "down_revision = '202610240002'" in source
+    assert 'nullable=True' in source and 'ix_feedback_chat_conversation' in source
+    upgrade = source.split('def upgrade()', 1)[1].split('def downgrade()', 1)[0].upper()
+    for forbidden in ('DELETE ', 'UPDATE ', 'DROP ', 'TRUNCATE '):
+        assert forbidden not in upgrade
+
+
+@pytest.mark.asyncio
+async def test_conversation_upgrade_keeps_legacy_messages_and_academic_rows(fb_db):
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    migration_path = MIGRATION.parent / '202610240003_feedback_conversation.py'
+    module_spec = importlib.util.spec_from_file_location('conversation_migration', migration_path)
+    migration = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(migration)
+    schema = 'spec126_migration_' + uuid4().hex
+    # All DDL/data remain inside this rollback-only transaction and unique schema.
+    async with fb_db.bind.connect() as connection:
+        transaction = await connection.begin()
+        try:
+            await connection.execute(text(f'CREATE SCHEMA "{schema}"'))
+            await connection.execute(text(f'SET LOCAL search_path TO "{schema}"'))
+            await connection.execute(text('CREATE TABLE feedback_chat_requests (id uuid PRIMARY KEY, access_id uuid, publication_id uuid, credential_generation integer, accepted_at timestamptz, message text, response text)'))
+            await connection.execute(text("INSERT INTO feedback_chat_requests VALUES (:id,:access,:publication,1,now(),'Pregunta conservada','Respuesta conservada')"), {'id': uuid4(), 'access': uuid4(), 'publication': uuid4()})
+            before = await connection.scalar(text('SELECT to_jsonb(r) FROM feedback_chat_requests r'))
+            def apply(sync):
+                migration.op = Operations(MigrationContext.configure(sync))
+                migration.upgrade()
+            await connection.run_sync(apply)
+            after = await connection.scalar(text('SELECT to_jsonb(r) FROM feedback_chat_requests r'))
+            assert after.pop('conversation_digest') is None and after == before
+        finally:
+            await transaction.rollback()
 
 
 @pytest.mark.asyncio

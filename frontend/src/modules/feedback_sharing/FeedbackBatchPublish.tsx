@@ -7,9 +7,10 @@ import { publishFeedbackBatch, readFeedbackBatch, type FeedbackBatchResult, type
 
 interface Row { nombre: string; calificacion_id?: string | null; preview?: FeedbackPreview }
 interface Operation { parts: {request_id:string; selecciones:FeedbackBatchSelection[]}[]; cursor:number; results:FeedbackBatchResultItem[]; skipped:number }
-export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, valid, disabled=false, onBusy, onCompleted }: {
+export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, valid, disabled=false, onBusy, onCompleted, individual=false }: {
   evaluationId:string; rows:Row[]; selectedIds:string[]; signal:AbortSignal; valid:()=>boolean; disabled?:boolean;
   onBusy:(busy:boolean)=>void; onCompleted:(results:FeedbackBatchResultItem[],skipped:number)=>void|Promise<void>;
+  individual?:boolean;
 }) {
   const user=useAuth(state=>state.user);
   const [owner]=useState(user);
@@ -74,11 +75,11 @@ export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, 
   if(!permitted) return null;
   const selected=rows.filter(row=>selectedIds.includes(row.calificacion_id??''));
   return <section className="min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-3 sm:p-4" aria-label="Publicación de notas en lote">
-    <h3 className="font-bold">Aceptar notas y dejar las devoluciones listas</h3>
+    <h3 className="font-bold">{individual ? 'Aceptar la nota y dejar la devolución lista' : 'Aceptar notas y dejar las devoluciones listas'}</h3>
     <p className="text-sm text-muted">Aceptas las notas mostradas sin volver a usar la IA. Los ajustes que ya hiciste se conservan. Crear enlaces e imprimir siguen siendo acciones aparte.</p>
     {!summary && !operation.current && <div className="grid gap-2 sm:flex sm:flex-wrap">
-      <Button disabled={disabled||busy||!available(rows).length} onClick={()=>prepare(rows)}>Aceptar todas y publicar</Button>
-      <Button variant="outline" disabled={disabled||busy||!available(selected).length} onClick={()=>prepare(selected)}>Aceptar y publicar seleccionadas</Button>
+      <Button disabled={disabled||busy||!available(rows).length} onClick={()=>prepare(rows)}>{individual ? 'Revisar antes de publicar' : 'Aceptar todas y publicar'}</Button>
+      {!individual && <Button variant="outline" disabled={disabled||busy||!available(selected).length} onClick={()=>prepare(selected)}>Aceptar y publicar seleccionadas</Button>}
     </div>}
     {summary && <section className="space-y-3" aria-label="Resumen antes de publicar">
       <p className="font-semibold">{available(summary).length} notas para aceptar o conservar · {summary.length-available(summary).length} no disponibles</p>

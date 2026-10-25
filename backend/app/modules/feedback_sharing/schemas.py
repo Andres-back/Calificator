@@ -33,6 +33,13 @@ class DeliveryReviewInput(Input):
     request_id: UUID
 
 
+class FeedbackMessageInput(Input):
+    calificacion_id: UUID
+    source_fingerprint: str = Field(pattern=r'^[a-f0-9]{64}$')
+    feedback_text: str = Field(min_length=1, max_length=6000)
+    request_id: UUID
+
+
 class SelectedInput(Input):
     selecciones: list[Selection] = Field(min_length=1, max_length=100)
 

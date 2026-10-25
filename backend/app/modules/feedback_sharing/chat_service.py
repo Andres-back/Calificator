@@ -6,11 +6,12 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from fastapi.concurrency import run_in_threadpool
-from sqlalchemy import func, select, text, update
+from sqlalchemy import func, select, text, tuple_, update
 
 from app.core.config import settings
 from app.modules.calificaciones.models import Calificacion
 from app.modules.feedback_sharing.access_policy import UNAVAILABLE, db_now, enabled, guard_access, guard_token
+from app.modules.feedback_sharing.conversation import conversation_digest, read_cursor, seal_cursor
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackChatRequest, FeedbackPublication
 from app.modules.feedback_sharing.quota_service import accept_question, quota_snapshot
 from app.modules.xali.service import DIRECT_ANSWER_REFUSAL, XALI_EVALUATION_SYSTEM, enforce_post_delivery_response, is_direct_answer_request
@@ -60,20 +61,21 @@ async def generate_reply(emitter_id, prompt):
     return await router.generate_text("xali_evaluacion_post_entrega", prompt)
 
 
-async def admit_question(db, token, payload):
+async def admit_question(db, token, payload, *, visitor=None):
     await guard_token(db, token)
     # Presupuesto global independiente de la cuota académica. Una transacción
     # breve serializa admisiones, no inferencias ni procesos de calificación.
     await db.execute(text("SELECT pg_advisory_xact_lock(hashtext('feedback_admission'))"))
-    return await accept_question(db, token, payload, max_pending=60)
+    return await accept_question(db, token, payload, max_pending=60, visitor=visitor)
 
 
-async def read_request(db, token, request_id):
+async def read_request(db, token, request_id, *, visitor=None):
     context = await guard_token(db, token)
     request = await db.get(FeedbackChatRequest, request_id, populate_existing=True)
     if (not request or request.access_id != context.access.id
             or request.credential_generation != context.access.credential_generation
-            or request.publication_id != context.publication.id):
+            or request.publication_id != context.publication.id
+            or request.conversation_digest != conversation_digest(context, visitor)):
         raise HTTPException(404, UNAVAILABLE)
     quota = await quota_snapshot(db, context)
     final_context = await guard_token(db, token)
@@ -83,6 +85,35 @@ async def read_request(db, token, request_id):
             "respuesta": request.response if request.status == "succeeded" else None,
             "mensaje": ERROR_MESSAGES.get(request.error_code) if request.status == "failed" else None,
             "cupo": quota}
+
+
+async def read_conversation(db, token, visitor, *, limit=20, cursor=None):
+    context = await guard_token(db, token)
+    reader = conversation_digest(context, visitor)
+    if reader is None:
+        raise HTTPException(400, 'Vuelve a abrir el enlace para recuperar tu conversación.')
+    access_id, publication_id, generation = context.access.id, context.publication.id, context.access.credential_generation
+    query = select(FeedbackChatRequest).where(
+        FeedbackChatRequest.access_id == access_id,
+        FeedbackChatRequest.publication_id == publication_id,
+        FeedbackChatRequest.credential_generation == generation,
+        FeedbackChatRequest.conversation_digest == reader,
+        FeedbackChatRequest.message.is_not(None),
+    )
+    if cursor:
+        stamp, request_id = read_cursor(cursor, reader)
+        query = query.where(tuple_(FeedbackChatRequest.accepted_at, FeedbackChatRequest.id) < tuple_(stamp, request_id))
+    rows = list((await db.scalars(query.order_by(FeedbackChatRequest.accepted_at.desc(), FeedbackChatRequest.id.desc()).limit(limit + 1).execution_options(populate_existing=True))).all())
+    page, has_more = rows[:limit], len(rows) > limit
+    quota = await quota_snapshot(db, context)
+    final = await guard_token(db, token)
+    if (final.access.id, final.publication.id, final.access.credential_generation) != (access_id, publication_id, generation):
+        raise HTTPException(404, UNAVAILABLE)
+    return {'items': [{'request_id': row.id, 'pregunta': row.message, 'respuesta': row.response if row.status == 'succeeded' else None,
+                       'status': row.status, 'mensaje': ERROR_MESSAGES.get(row.error_code) if row.status == 'failed' else None,
+                       'accepted_at': row.accepted_at} for row in reversed(page)],
+            'next_cursor': seal_cursor(reader, page[-1].accepted_at, page[-1].id) if has_more else None,
+            'cupo': quota}
 
 
 def _send_task(request_id):

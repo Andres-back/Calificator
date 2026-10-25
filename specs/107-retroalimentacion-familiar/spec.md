@@ -1,5 +1,7 @@
 # Especificación: retroalimentación familiar temporal y modelos por calidad
 
+**Extensión aprobada**: [Spec126](../126-retroalimentacion-unificada-chat/spec.md), 2026-10-24, unifica gestión y recupera conversaciones nuevas por navegador/acceso/revisión, no un historial colectivo del enlace. Conserva cuota, retención, calificación y permisos; no asigna retrospectivamente mensajes de lectores desconocidos.
+
 **Rama**: `codex/107-retroalimentacion-familiar` | **Creada**: 2026-10-20 | **Estado**: Alcance y plan aprobados por el usuario el 2026-10-20 mediante respuestas sucesivas «aprove» | **Issue**: [#223](https://github.com/Andres-back/Calificator/issues/223)
 
 Evoluciona 008-calificaciones, 012-ia-jobs-produccion, 047-retroalimentacion-formativa y los permisos/contextos de Xali. No sustituye 101-digitalizacion-visual-completa ni autoriza mezclar sus cambios pendientes. Se conserva el flujo autenticado de profesor y estudiante.

@@ -17,6 +17,20 @@ function send() {
 }
 
 describe('Xali desde enlace individual', () => {
+  it('recupera 25 intercambios paginados y un pendiente sin reenviarlo', async () => {
+    const entries = Array.from({ length: 25 }, (_, i) => ({ request_id: `r${i}`, pregunta: `Pregunta ${i}`, respuesta: `Explicación ${i}`, status: 'succeeded' as const, mensaje: null, accepted_at: `2026-10-24T12:${String(i).padStart(2, '0')}:00Z` }));
+    const pending = { request_id: 'pending', pregunta: 'Pregunta pendiente', respuesta: null, status: 'queued' as const, mensaje: null, accepted_at: '2026-10-24T13:00:00Z' };
+    const client = { ask: vi.fn(), poll: vi.fn().mockResolvedValue({ request_id: 'pending', status: 'succeeded', respuesta: 'Respuesta recuperada.', cupo: quota }), read: vi.fn(), continuity: () => ({ scope: 'b'.repeat(64), id: 'browser', persistent: true }),
+      history: vi.fn().mockResolvedValueOnce({ items: [...entries.slice(6), pending], next_cursor: 'older', cupo: quota }).mockResolvedValueOnce({ items: entries.slice(0, 6), next_cursor: null, cupo: quota }) } as unknown as PublicFeedbackClient;
+    render(<PublicFeedbackChat client={client} quota={quota} onUnavailable={vi.fn()} />);
+    await screen.findByText('Respuesta recuperada.');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver preguntas anteriores' }));
+    await screen.findByText('Explicación 0');
+    expect(screen.getAllByRole('article', { name: 'Pregunta y respuesta' })).toHaveLength(26);
+    expect(client.ask).not.toHaveBeenCalled();
+    expect(client.poll).toHaveBeenCalledOnce();
+    expect(client.history).toHaveBeenLastCalledWith('older', expect.any(AbortSignal));
+  });
   it('muestra cupo, texto seguro y respuesta sin HTML ejecutable', async () => {
     const { client } = setup();
     vi.mocked(client.ask).mockResolvedValue({ request_id: 'r', status: 'succeeded', respuesta: '<img src=x> Relee la pregunta 2.', mensaje: null, cupo: { ...quota, restantes: 4 } });
