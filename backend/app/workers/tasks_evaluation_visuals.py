@@ -9,12 +9,25 @@ from sqlalchemy import select, text
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal, engine
 from app.modules.evaluaciones.models import EvaluacionRecurso
-from app.modules.evaluaciones.visual_generation import generate_proposal_bytes, proposal_block
+from app.modules.evaluaciones.visual_generation import generate_proposal_bytes, proposal_block, VisualMaterialError
+from app.services.image_router import ImageCapabilityError
 from app.modules.evaluaciones.visual_schemas import VisualProposalRequest, VisualUploadRequest
 from app.modules.evaluaciones.visual_service import stage_resource
 from app.modules.jobs import service as jobs
 from app.modules.users.models import User
 from app.workers.worker import celery_app
+
+
+async def reserve_image_attempt(db, job_id):
+    """Persist before a paid call; an uncertain response never triggers a replay."""
+    reserved = await db.scalar(text("""
+        UPDATE ai_jobs SET input_json=jsonb_set(input_json, '{_image_call_started}', 'true'::jsonb)
+        WHERE id=:id AND COALESCE(input_json->>'_image_call_started','false')='false'
+        RETURNING id
+    """), {'id': job_id})
+    if reserved is None:
+        raise VisualMaterialError('Esta propuesta ya inició su generación y no podemos comprobar el resultado. No repetiremos el gasto automáticamente. Puedes crear otra propuesta o usar la biblioteca.')
+    await db.commit()
 
 
 async def _heartbeat(job_id, token):
@@ -57,6 +70,9 @@ async def _generate(job_id, token):
                 EvaluacionRecurso.request_key == request.request_key))
             table, chart = request.tabla, request.grafica
             if resource is None:
+                if payload.get('_single_image_attempt') and request.tipo in {'imagen', 'dibujo'}:
+                    await jobs.lock_owned_job(db, job_id, token)
+                    await reserve_image_attempt(db, job_id)
                 await db.commit()  # Never retain a row lock during inference.
                 config = payload.get('_ai_config') or {}
                 content, table, chart = await generate_proposal_bytes(request, user_id=user.id, db=db,
@@ -97,6 +113,11 @@ async def _generate(job_id, token):
         except jobs.JobOwnershipLost:
             await db.rollback()
             return {'status': 'cancelled_or_reclaimed'}
+        except (VisualMaterialError, ImageCapabilityError) as exc:
+            await db.rollback()
+            await jobs.finish_job(db, job_id, estado='requires_review', resultado_json={'claim_token': token}, error=str(exc))
+            await db.commit()
+            return {'status': 'requires_review'}
         except Exception:
             await db.rollback()
             await jobs.finish_job(db, job_id, estado='requires_review', resultado_json={'claim_token': token},

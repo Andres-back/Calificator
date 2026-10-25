@@ -4,6 +4,7 @@ import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?worker&url';
 import { Button } from '@/components/ui';
 import { EvaluationPdfPage } from './EvaluationPdfPage';
 import { createRenderQueue } from './pdfRenderQueue';
+import { anchoredScrollTop, defaultPdfFit, type PdfFit } from './pdfViewport';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -15,6 +16,10 @@ export default function EvaluationPdfViewer({ blob }: { blob: Blob }) {
   visiblePage.current = pageNumber;
   const [zoom, setZoom] = useState(1);
   const [width, setWidth] = useState(300);
+  const [height, setHeight] = useState(500);
+  const [fit, setFit] = useState<PdfFit | null>(null);
+  const mode = fit ?? defaultPdfFit(width + 32);
+  const readingPoint = useRef({ number: 1, fraction: 0 });
   const [retry, setRetry] = useState(0);
   const [error, setError] = useState(false);
   const pdf = document?.source === blob ? document.pdf : null;
@@ -24,12 +29,20 @@ export default function EvaluationPdfViewer({ blob }: { blob: Blob }) {
     // Keep the current sheet, not a stale pixel offset, when zooming/rotating.
     const root = container.current;
     const target = root?.querySelector<HTMLElement>(`[data-pdf-page="${visiblePage.current}"]`);
-    if (root && target) root.scrollTop += target.getBoundingClientRect().top - root.getBoundingClientRect().top - 12;
-  }, [width, zoom]);
+    if (root && target) {
+      const offsetTop = root.scrollTop + target.getBoundingClientRect().top - root.getBoundingClientRect().top - 12;
+      root.scrollTop = anchoredScrollTop({ offsetTop, pageHeight: target.getBoundingClientRect().height, fraction: readingPoint.current.fraction });
+    }
+  }, [width, height, zoom, mode]);
 
   useEffect(() => {
     // Border width is stable when Safari toggles a scrollbar; clientWidth is not.
-    const measure = () => setWidth(Math.max(1, Math.floor((container.current?.getBoundingClientRect().width || 324) - 32)));
+    const measure = () => {
+      const bounds = container.current?.getBoundingClientRect();
+      setWidth(Math.max(1, Math.floor((bounds?.width || 324) - 32)));
+      // Page title + accessible text control + padding are outside the paper.
+      setHeight(Math.max(120, Math.floor((bounds?.height || 620) - 120)));
+    };
     measure();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
     if (container.current) observer?.observe(container.current);
@@ -40,7 +53,8 @@ export default function EvaluationPdfViewer({ blob }: { blob: Blob }) {
   useEffect(() => {
     let cancelled = false;
     let loading: PDFDocumentLoadingTask | undefined;
-    setDocument(null); setPageNumber(1); setZoom(1); setError(false);
+    setDocument(null); setPageNumber(1); setZoom(1); setFit(null); setError(false);
+    visiblePage.current = 1; readingPoint.current = { number: 1, fraction: 0 };
     void blob.arrayBuffer().then((buffer) => {
       if (cancelled) return;
       loading = getDocument({ data: new Uint8Array(buffer), useSystemFonts: true, useWasm: false,
@@ -69,7 +83,11 @@ export default function EvaluationPdfViewer({ blob }: { blob: Blob }) {
         const visible = Math.max(0, Math.min(page.bottom, bounds.bottom) - Math.max(page.top, bounds.top));
         if (visible > largest) { largest = visible; selected = node; }
       }
-      if (selected) { visiblePage.current = Number(selected.dataset.pdfPage); setPageNumber(visiblePage.current); }
+      if (selected) {
+        visiblePage.current = Number(selected.dataset.pdfPage); setPageNumber(visiblePage.current);
+        const page = selected.getBoundingClientRect();
+        readingPoint.current = { number: visiblePage.current, fraction: Math.max(0, (bounds.top - page.top) / page.height) };
+      }
     };
     const observer = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(measureVisible, { root, threshold: [0, 0.1, 0.5, 1] });
     root.querySelectorAll('[data-pdf-page]').forEach((node) => observer?.observe(node));
@@ -79,6 +97,7 @@ export default function EvaluationPdfViewer({ blob }: { blob: Blob }) {
 
   function goTo(number: number) {
     setPageNumber(number);
+    visiblePage.current = number; readingPoint.current = { number, fraction: 0 };
     const root = container.current;
     const target = root?.querySelector<HTMLElement>(`[data-pdf-page="${number}"]`);
     if (root && target) root.scrollTop += target.getBoundingClientRect().top - root.getBoundingClientRect().top - 12;
@@ -91,10 +110,12 @@ export default function EvaluationPdfViewer({ blob }: { blob: Blob }) {
         <span aria-live="polite" className="text-center text-xs font-semibold">{pdf ? `Página ${pageNumber} de ${pdf.numPages}` : 'Preparando páginas…'}</span>
         <Button variant="ghost" className="min-h-11 min-w-11 px-2" aria-label="Página siguiente" disabled={!pdf || pageNumber >= pdf.numPages} onClick={() => goTo(pageNumber + 1)}>→</Button>
       </div>
-      <div className="flex items-center">
-        <Button variant="ghost" className="min-h-11 px-2" aria-label="Ajustar al ancho" disabled={!pdf} onClick={() => setZoom(1)}>Ancho</Button>
-        <Button variant="ghost" className="min-h-11 min-w-11 px-2" aria-label="Reducir página" disabled={!pdf || zoom <= 1} onClick={() => setZoom((value) => Math.max(1, value - 0.25))}>−</Button>
-        <Button variant="ghost" className="min-h-11 min-w-11 px-2" aria-label="Ampliar página" disabled={!pdf || zoom >= 2} onClick={() => setZoom((value) => Math.min(2, value + 0.25))}>+</Button>
+      <div className="flex max-w-full flex-wrap items-center">
+        <Button variant="ghost" className="min-h-11 px-2" aria-pressed={mode === 'page' && zoom === 1} aria-label="Ajustar a página completa" disabled={!pdf} onClick={() => { setFit('page'); setZoom(1); }}>Página</Button>
+        <Button variant="ghost" className="min-h-11 px-2" aria-pressed={mode === 'width' && zoom === 1} aria-label="Ajustar al ancho" disabled={!pdf} onClick={() => { setFit('width'); setZoom(1); }}>Ancho</Button>
+        <Button variant="ghost" className="min-h-11 px-2" aria-pressed={mode === 'actual' && zoom === 1} aria-label="Tamaño real 100 %" disabled={!pdf} onClick={() => { setFit('actual'); setZoom(1); }}>100 %</Button>
+        <Button variant="ghost" className="min-h-11 min-w-11 px-2" aria-label="Reducir página" disabled={!pdf || zoom <= 0.5} onClick={() => setZoom((value) => Math.max(0.5, value - 0.25))}>−</Button>
+        <Button variant="ghost" className="min-h-11 min-w-11 px-2" aria-label="Ampliar página" disabled={!pdf || zoom >= 3} onClick={() => setZoom((value) => Math.min(3, value + 0.25))}>+</Button>
       </div>
     </div>
     <div ref={container} data-document-scroll className="min-h-0 min-w-0 flex-1 overflow-auto p-3" style={{ scrollbarGutter: 'stable' }}>
@@ -102,7 +123,7 @@ export default function EvaluationPdfViewer({ blob }: { blob: Blob }) {
         <p>No pudimos mostrar este documento. Puedes reintentar o usar «Ver evaluación completa».</p>
         <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>Reintentar vista</Button>
       </div> : pdf ? Array.from({ length: pdf.numPages }, (_, index) => <EvaluationPdfPage key={index + 1} pdf={pdf}
-        number={index + 1} width={width} zoom={zoom} active={Math.abs(index + 1 - pageNumber) <= 1} enqueue={enqueue} />)
+        number={index + 1} width={width} height={height} mode={mode} zoom={zoom} active={Math.abs(index + 1 - pageNumber) <= 1} enqueue={enqueue} />)
         : <p role="status" className="py-3 text-sm text-muted">Preparando páginas…</p>}
     </div>
   </section>;

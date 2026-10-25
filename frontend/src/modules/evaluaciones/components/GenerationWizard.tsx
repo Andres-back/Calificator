@@ -20,6 +20,7 @@ import { RubricEditor } from './RubricEditor';
 import { EvaluationCriteriaEditor } from './EvaluationCriteriaEditor';
 import { EvaluationSourceReview } from './EvaluationSourceReview';
 import { QuestionVisualEditor } from './QuestionVisualEditor';
+import { QuestionNavigator } from './QuestionNavigator';
 import { getVisualCapabilities } from '../visualApi';
 import { PasosGuia } from './PasosGuia';
 import {
@@ -64,24 +65,20 @@ function QuestionCard({
 
   return (
     <article className={cn('rounded-2xl border-2 bg-surface', error ? 'border-amber-300' : 'border-border')}>
-      <button
-        type="button"
-        onClick={() => onChange({ expanded: !question.expanded })}
-        className="writing-secondary focus-ring flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left"
-        aria-expanded={question.expanded}
-        aria-controls={`question-${question.clientId}`}
-      >
+      <div className="writing-secondary flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">{index + 1}</span>
-        <span className="min-w-0 flex-1">
-          <span className="line-clamp-2 block break-words text-base font-semibold leading-6 text-fg">{question.enunciado || 'Pregunta sin enunciado'}</span>
-          <span className="text-sm text-muted">{TYPE_COPY[question.tipo].label} · {question.puntaje || 0} puntos</span>
-        </span>
-        {question.expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-      </button>
+        <div className="min-w-0 flex-1">
+          <h4 className="font-semibold">Pregunta {index + 1} de {total}</h4>
+          <span className="text-sm text-muted">{TYPE_COPY[question.tipo].label}</span>
+        </div>
+      </div>
 
-      {question.expanded && (
+      {(
         <div id={`question-${question.clientId}`} className="space-y-4 border-t border-border p-4">
           {error && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">{error}</p>}
+          <Field label="Enunciado" required>
+            <Textarea value={question.enunciado} onChange={(event) => onChange({ enunciado: event.target.value })} className="min-h-28 text-base leading-7" />
+          </Field>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
             <Field label="Tipo de pregunta" required>
               <select
@@ -108,9 +105,6 @@ function QuestionCard({
               <Input type="number" min={0.01} step={0.01} value={question.puntaje} onChange={(event) => onChange({ puntaje: Number(event.target.value) })} className="min-h-12 w-full text-base" aria-label={`Puntaje de la pregunta ${index + 1}`} />
             </Field>
           </div>
-          <Field label="Enunciado" required>
-            <Textarea value={question.enunciado} onChange={(event) => onChange({ enunciado: event.target.value })} className="min-h-24 text-base" />
-          </Field>
           {visualEditor}
 
           {evaluationModality === 'mixta' && (
@@ -309,6 +303,10 @@ export function GenerationWizard({
   const activeContext = useRef({ userId, materiaId: state.materiaId, id: state.generatedEvaluationId });
   activeContext.current = { userId, materiaId: state.materiaId, id: state.generatedEvaluationId };
   const [criteriaEditing, setCriteriaEditing] = useState<Evaluacion | null>(null);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [closePrompt, setClosePrompt] = useState(false);
+  const editorBaseline = useRef<string | null>(null);
+  const activeQuestionIndex = Math.max(0, state.questions.findIndex(question => question.clientId === activeQuestionId));
   const mobile = useMobileFormViewport(open && !criteriaEditing, formRef);
   const generationWarnings = state.generationWarnings ?? [];
   const selectedMateria = availableMaterias.find((materia) => materia.id === state.materiaId);
@@ -330,6 +328,7 @@ export function GenerationWizard({
       if (activeContext.current.userId !== generationOwner.current?.userId || activeContext.current.materiaId !== payload.materia_id) return;
       if (evaluation.materia_id !== payload.materia_id) { setGenerationError('No pudimos asociar el borrador a esta materia. Revisa la evaluación antes de continuar.'); return; }
       savedEvaluation.current = evaluation;
+      editorBaseline.current = JSON.stringify(evaluationPayload(evaluationToWizardState(evaluation)));
       setGenerationError(null);
       setState((current) => ({
         ...current,
@@ -359,6 +358,7 @@ export function GenerationWizard({
       }
       savedEvaluation.current = evaluation;
       patch({ generatedUpdatedAt: evaluation.updated_at });
+      editorBaseline.current = JSON.stringify(evaluationPayload(evaluationToWizardState(evaluation)));
       setRestoreError(null);
     setSaveError(null);
     },
@@ -401,6 +401,8 @@ export function GenerationWizard({
     const key = `${userId}:${initialEvaluation?.id ?? 'new'}:${materiaId}`;
     if (initializedKey.current === key) return;
     initializedKey.current = key;
+    setActiveQuestionId(null); setClosePrompt(false);
+    editorBaseline.current = initialEvaluation ? JSON.stringify(evaluationPayload(evaluationToWizardState(initialEvaluation))) : null;
     savedEvaluation.current = initialEvaluation;
     initialSavedState.current = initialEvaluation ? evaluationToWizardState(initialEvaluation) : null;
     setGenerationError(null);
@@ -440,6 +442,20 @@ export function GenerationWizard({
 
   function patch(patchValue: Partial<WizardState>) {
     setState((current) => ({ ...current, ...patchValue }));
+  }
+
+  function selectQuestion(index: number) {
+    const question = state.questions[index];
+    if (!question) return;
+    setActiveQuestionId(question.clientId);
+    // Keep the question editor in view; do not focus a text field/open a keyboard.
+    window.requestAnimationFrame(() => contentRef.current?.querySelector<HTMLElement>('[aria-label="Preguntas editables"]')?.scrollIntoView({ block: 'nearest' }));
+  }
+
+  function requestClose() {
+    if (generate.isPending || confirm.isPending || extractReference.isPending || restoreGenerated.isPending) return;
+    if (state.generatedEvaluationId && editorBaseline.current !== JSON.stringify(evaluationPayload(state))) setClosePrompt(true);
+    else onClose();
   }
 
   function selectMateria(materiaId: string) {
@@ -563,6 +579,7 @@ export function GenerationWizard({
     const index = state.questions.findIndex((question, position) => validateQuestion(question, position));
     if (index < 0) return;
     const question = state.questions[index];
+    setActiveQuestionId(question.clientId);
     const invalidScore = question.enunciado.trim() && (!Number.isFinite(question.puntaje) || question.puntaje <= 0);
     const selector = invalidScore ? `[aria-label="Puntaje de la pregunta ${index + 1}"]` : 'textarea';
     const requestedBy = document.activeElement;
@@ -650,10 +667,10 @@ export function GenerationWizard({
     <>
       <Modal
         open={open && !criteriaEditing}
-        onClose={onClose}
+        onClose={requestClose}
         title=""
         ariaLabel={initialEvaluation ? 'Editar contenido de la evaluación' : 'Generar evaluación con IA'}
-        className={cn(initialEvaluation ? 'max-w-[min(96vw,90rem)]' : 'max-w-6xl', 'overflow-hidden p-0 sm:p-0 max-sm:fixed max-sm:inset-0 max-sm:max-h-none max-sm:rounded-none')}
+        className={cn(initialEvaluation ? 'max-w-[min(96vw,90rem)]' : 'max-w-6xl', 'bg-surface overflow-hidden p-0 sm:p-0 max-sm:fixed max-sm:inset-0 max-sm:max-w-none max-sm:max-h-none max-sm:rounded-none')}
         mobileViewport={mobile.viewport}
         mobileWriting={mobile.isWriting}
         initialFocusRef={closeRef}
@@ -669,9 +686,9 @@ export function GenerationWizard({
                 <h2 className="text-lg font-bold sm:text-xl">{mobile.isWriting ? (state.step === 5 ? 'Editar pregunta' : 'Escribir evaluación') : initialEvaluation ? 'Editar evaluación' : 'Crear evaluación'}</h2>
                 <p className="writing-secondary hidden text-sm text-muted sm:block">{initialEvaluation ? 'Modifica, agrega, ordena o elimina criterios y preguntas antes de guardar.' : 'La IA prepara un borrador; tú revisas y decides.'}</p>
               </div>
-              <Button type="button" ref={closeRef} variant="ghost" size="icon" onClick={onClose} disabled={busy} aria-label="Cerrar asistente"><X className="h-5 w-5" /></Button>
+              <Button type="button" ref={closeRef} variant="ghost" size="icon" onClick={requestClose} disabled={busy} aria-label="Cerrar asistente"><X className="h-5 w-5" /></Button>
             </div>
-            <div className="writing-secondary mt-2"><PasosGuia currentStep={state.step === 5 ? 2 : 1} /></div>
+            {!initialEvaluation && <div className="writing-secondary mt-2"><PasosGuia currentStep={state.step === 5 ? 2 : 1} /></div>}
           </header>
 
           <div ref={contentRef} data-testid="evaluation-wizard-content" data-mobile-scroll className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain", mobile.isWriting ? "p-2" : "p-3 sm:p-5")}>
@@ -687,7 +704,7 @@ export function GenerationWizard({
               </div>
             ) : (
               <div className="grid gap-4">
-                <main className={cn('min-w-0 rounded-2xl border border-border bg-surface-2/50 p-3 sm:p-5', editingQuestions && 'order-2', mobile.isWriting && 'border-transparent bg-transparent p-0 sm:p-0')}>
+                <main className={cn('min-w-0', !editingQuestions && 'rounded-2xl border border-border bg-surface-2/50 p-3 sm:p-5', editingQuestions && 'order-2', mobile.isWriting && 'border-transparent bg-transparent p-0 sm:p-0')}>
                   {generationError && <p role="alert" className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{generationError}</p>}
                   {saveError && <p role="alert" className="mb-3 rounded-xl border border-amber-300 p-3 text-sm">{saveError}</p>}
                   {restoreError && <div role="alert" className="mb-3 space-y-2 rounded-xl border border-amber-300 p-3 text-sm"><p>{restoreError}</p><Button type="button" variant="outline" disabled={restoreGenerated.isPending} onClick={continueDraft}>Volver a comprobar</Button></div>}
@@ -705,39 +722,27 @@ export function GenerationWizard({
                     <section aria-labelledby="wizard-step-title" className="space-y-4">
                         {generationWarnings.length > 0 && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{generationWarnings.join(' ')}</div>}
                         <div className="writing-secondary flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                          <div><h3 id="wizard-step-title" className="text-xl font-bold">Revisa y edita la evaluación</h3><p className="mt-1 text-base text-muted">Ajusta la rúbrica y las preguntas antes de confirmar. La IA propone; tú decides.</p></div>
+                          <h3 id="wizard-step-title" className="text-base font-bold">Revisa y edita la evaluación</h3>
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge tone={questionErrors || !state.questions.length ? 'warning' : 'success'}>{!state.questions.length ? 'Agrega una pregunta' : questionErrors ? `${questionErrors} por corregir` : 'Todas válidas'}</Badge>
-                            <Button type="button" variant="outline" onClick={() => patch(reconcileVisualQuestions(state, createBlankQuestion(state.questions, state.modalidad)))} disabled={state.questions.length >= MAX_QUESTIONS}><Plus className="h-4 w-4" /> Agregar pregunta</Button>
+                            <Button type="button" variant="outline" onClick={() => { const next = createBlankQuestion(state.questions, state.modalidad); setActiveQuestionId(next[next.length - 1].clientId); patch(reconcileVisualQuestions(state, next)); }} disabled={state.questions.length >= MAX_QUESTIONS}><Plus className="h-4 w-4" /> Agregar pregunta</Button>
                           </div>
                         </div>
                         {initialEvaluation && initialEvaluation.estado !== 'borrador' && (
-                          <div role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">
-                            <p className="font-bold">Estás editando una evaluación ya asignada.</p>
-                            <p>Los cambios quedarán disponibles de inmediato. No se borrarán entregas ni notas anteriores; revísalas si modificas criterios, puntajes o respuestas correctas.</p>
-                          </div>
+                          <details className="writing-secondary rounded-lg border border-amber-300 bg-amber-50 px-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">
+                            <summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Evaluación asignada: los cambios se aplican al guardar</summary>
+                            <p className="pb-3 leading-6">Se conservan las entregas y notas anteriores. Si cambias criterios, puntajes o respuestas correctas, revisa las calificaciones afectadas.</p>
+                          </details>
                         )}
-                        <details className="rounded-xl border border-border bg-surface p-3" open={Boolean(state.lectura)}>
-                          <summary className="focus-ring min-h-11 cursor-pointer py-2 font-semibold">Lectura o texto de apoyo</summary>
-                          <p className="mb-2 text-xs text-muted">Se muestra antes de las preguntas y se conserva al imprimir.</p>
-                          <Textarea aria-label="Lectura o texto de apoyo" value={state.lectura ?? ''} maxLength={60000} rows={8}
-                            className="min-h-48 text-base leading-7" placeholder="Añade o corrige aquí la lectura de la evaluación."
-                            onChange={event => patch({ lectura: event.target.value })} />
-                        </details>
-                        <details open={gradingOptionsOpen} onToggle={event => setGradingOptionsOpen(event.currentTarget.open)} className="rounded-xl border border-border bg-surface p-3">
-                          <summary className="writing-secondary focus-ring min-h-12 cursor-pointer py-2 font-semibold">Cómo se calificará</summary>
-                          {state.useRubric && (
-                          <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria })} />
-                        )}
-                        <Button type="button" variant="outline" onClick={editCriteria}>Criterios y rúbrica</Button>
-                        </details>
-                        <div role="list" aria-label="Preguntas editables" className="space-y-4">
+                        <div className="grid min-w-0 gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
+                        <QuestionNavigator questions={state.questions} activeIndex={activeQuestionIndex} onSelect={selectQuestion} />
+                        <div role="list" aria-label="Preguntas editables" className="min-w-0 space-y-4">
                           {visualCapabilities.isError && <div role="status" className="rounded-lg border border-border p-3 text-sm"><p>El contenido guardado sigue disponible. No pudimos cargar las opciones para añadir figuras.</p><Button variant="outline" onClick={() => { void visualCapabilities.refetch(); }}>Cargar opciones de figuras</Button></div>}
                           {state.contenidoVisual && state.generatedEvaluationId && <EvaluationSourceReview
                             evaluationId={state.generatedEvaluationId} versionId={state.contenidoVersionId} manifest={state.contenidoVisual}
                             onChange={visualCapabilities.data?.editor ? contenidoVisual => patch({ contenidoVisual, visualKeysReviewed: [], visualKeysPending: contenidoVisual.pregunta_ids }) : undefined}
                             questions={state.questions.filter(question => question.contenidoId).map(question => ({ id: question.contenidoId!, label: `Pregunta ${question.numero}` }))} />}
-                          {state.questions.map((question, index) => (
+                          {state.questions.map((question, index) => index === activeQuestionIndex && (
                             <QuestionCard
                               key={question.clientId}
                               question={question}
@@ -765,12 +770,25 @@ export function GenerationWizard({
                                     visualKeysReviewed: checked ? [...new Set([...(current.visualKeysReviewed ?? []), question.contenidoId!])] : (current.visualKeysReviewed ?? []).filter(id => id !== question.contenidoId) })); }} />He comprobado la respuesta correcta con este material.</label>}
                               </div> : undefined}
                               onChange={(questionPatch) => patch({ questions: state.questions.map((current, currentIndex) => currentIndex === index ? { ...current, ...questionPatch } : current) })}
-                              onDelete={() => patch(reconcileVisualQuestions(state, renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index))))}
-                              onDuplicate={() => patch(reconcileVisualQuestions(state, duplicateQuestion(state.questions, index), question.contenidoId))}
+                              onDelete={() => { const next = renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index)); setActiveQuestionId(next[Math.min(index, next.length - 1)]?.clientId ?? null); patch(reconcileVisualQuestions(state, next)); }}
+                              onDuplicate={() => { const next = duplicateQuestion(state.questions, index); setActiveQuestionId(next[index + 1].clientId); patch(reconcileVisualQuestions(state, next, question.contenidoId)); }}
                               onMove={(direction) => patch(reconcileVisualQuestions(state, moveQuestion(state.questions, index, direction)))}
                             />
                           ))}
                         </div>
+                        </div>
+                        <details className="rounded-xl border border-border bg-surface p-3" open={Boolean(state.lectura)}>
+                          <summary className="writing-secondary focus-ring min-h-11 cursor-pointer py-2 font-semibold">Lectura o texto de apoyo</summary>
+                          <p className="writing-secondary mb-2 text-xs text-muted">Se muestra antes de las preguntas y se conserva al imprimir.</p>
+                          <Textarea aria-label="Lectura o texto de apoyo" value={state.lectura ?? ''} maxLength={60000} rows={8}
+                            className="min-h-48 text-base leading-7" placeholder="Añade o corrige aquí la lectura de la evaluación."
+                            onChange={event => patch({ lectura: event.target.value })} />
+                        </details>
+                        <details open={gradingOptionsOpen} onToggle={event => setGradingOptionsOpen(event.currentTarget.open)} className="rounded-xl border border-border bg-surface p-3">
+                          <summary className="writing-secondary focus-ring min-h-12 cursor-pointer py-2 font-semibold">Cómo se calificará</summary>
+                          {state.useRubric && <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria })} />}
+                          <Button type="button" variant="outline" onClick={editCriteria}>Criterios y rúbrica</Button>
+                        </details>
                       </section>
                   )}
                 </main>
@@ -787,7 +805,7 @@ export function GenerationWizard({
               {validation && (!mobile.isWriting || state.step === 5) && <div className="mb-2 flex flex-wrap items-center gap-2"><p className="min-w-0 flex-1 text-xs text-muted" aria-live="polite">{validation}</p>{state.step === 5 && <Button type="button" variant="ghost" onClick={revealReviewErrors}>Revisar pendientes</Button>}</div>}
               <Button type="button" className={cn('w-full', !mobile.isWriting && 'hidden')} onClick={mobile.finishWriting}>Listo</Button>
               <div className={cn("flex items-center justify-between gap-2", mobile.isWriting && "hidden")}>
-                {state.step === 5 ? <Button variant="outline" onClick={() => patch({ step: 1 })} disabled={busy} icon={<ArrowLeft className="h-5 w-5" />}>Preparar</Button> : <span className="hidden text-xs text-muted sm:inline">No se publicará automáticamente.</span>}
+                {state.step === 5 ? <Button variant="outline" className="shrink-0 whitespace-nowrap px-3 sm:px-5" onClick={() => patch({ step: 1 })} disabled={busy} icon={<ArrowLeft className="h-5 w-5" />}>Preparar</Button> : <span className="hidden text-xs text-muted sm:inline">No se publicará automáticamente.</span>}
                 {state.step === 5
                   ? <Button onClick={confirmEvaluation} loading={confirm.isPending} disabled={Boolean(validation) || busy || Boolean(restoreError)} icon={<Check className="h-5 w-5" />}>{initialEvaluation ? 'Guardar cambios' : 'Guardar borrador'}</Button>
                   : state.generatedEvaluationId
@@ -799,11 +817,19 @@ export function GenerationWizard({
         </div>
       </Modal>
 
+      <ConfirmDialog open={closePrompt} onClose={() => setClosePrompt(false)} onConfirm={() => { setClosePrompt(false); resetDraft(true); }}
+        title="¿Salir sin guardar los cambios?" description="Los cambios de esta edición se descartarán. Puedes seguir editando y guardarlos antes de salir."
+        confirmLabel="Descartar y salir" cancelLabel="Seguir editando" tone="danger" />
+
       {criteriaEditing && <EvaluationCriteriaEditor evaluation={criteriaEditing} onClose={() => setCriteriaEditing(null)} onCompleted={(evaluation) => {
         savedEvaluation.current = evaluation;
         const next = evaluationToWizardState(evaluation);
         const criteriaPatch = { generatedUpdatedAt: evaluation.updated_at, dbaIds: next.dbaIds, dbaPersonalizadoIds: next.dbaPersonalizadoIds, useDba: next.useDba, generatedCriteria: next.generatedCriteria, useRubric: next.useRubric };
         if (initialSavedState.current) initialSavedState.current = { ...initialSavedState.current, ...criteriaPatch };
+        if (editorBaseline.current) {
+          const saved = evaluationPayload(next);
+          editorBaseline.current = JSON.stringify({ ...JSON.parse(editorBaseline.current), criterios: saved.criterios, dba_ids: saved.dba_ids, dba_personalizado_ids: saved.dba_personalizado_ids });
+        }
         patch(criteriaPatch); setCriteriaEditing(null);
         toast.success('Criterios guardados. Tus preguntas en edición se conservan.');
       }} />}

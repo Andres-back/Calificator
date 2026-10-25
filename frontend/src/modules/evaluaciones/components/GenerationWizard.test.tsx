@@ -112,16 +112,18 @@ const rubricEvaluation: Evaluacion = {
   ],
 };
 function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | null = null, subject = materia, contextual = true) {
+  const onClose = vi.fn();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return {
     onCompleted,
+    onClose,
     ...render(
       <QueryClientProvider client={client}>
         <GenerationWizard
           open
-          onClose={vi.fn()}
+          onClose={onClose}
           userId="profesor-1"
           materias={[subject, { ...materia, id: 'other-subject', nombre: 'Otra materia' }]}
           initialMateriaId={contextual ? subject.id : undefined}
@@ -175,11 +177,51 @@ beforeEach(() => {
 });
 
 describe('GenerationWizard', () => {
+  it('125 edits only the selected question and keeps changes when navigating directly', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), evaluation);
+    const navigator = await screen.findByRole('combobox', { name: 'Ir a la pregunta' });
+    expect(screen.getAllByLabelText(/Enunciado/)).toHaveLength(1);
+    await user.clear(screen.getByLabelText(/Enunciado/));
+    await user.type(screen.getByLabelText(/Enunciado/), 'Pregunta uno corregida');
+    await user.selectOptions(navigator, '1');
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Pregunta dos');
+    await user.click(screen.getByRole('button', { name: 'Pregunta anterior' }));
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Pregunta uno corregida');
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('125 asks before discarding edits and can return to the unchanged draft', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), evaluation);
+    await user.type(await screen.findByLabelText(/Enunciado/), ' corregida');
+    await user.click(screen.getByRole('button', { name: 'Cerrar asistente' }));
+    expect(await screen.findByText('¿Salir sin guardar los cambios?')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Seguir editando' }));
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Pregunta uno corregida');
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('125 discards only the local edit after confirmation without updating the evaluation', async () => {
+    const user = userEvent.setup();
+    const view = renderWizard(vi.fn(), evaluation);
+    await user.type(await screen.findByLabelText(/Enunciado/), ' cambio local');
+    await user.click(screen.getByRole('button', { name: 'Cerrar asistente' }));
+    expect(view.onClose).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Descartar y salir' }));
+    expect(view.onClose).toHaveBeenCalledOnce();
+    expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Pregunta uno');
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
   it('113 keeps an editable reading and sends it apart from the answer key', async () => {
     const user = userEvent.setup();
     renderWizard(vi.fn(), { ...evaluation, lectura: 'Una cuenca recoge el agua.' });
     const reading = await screen.findByLabelText('Lectura o texto de apoyo');
     expect(reading).toHaveValue('Una cuenca recoge el agua.');
+    expect(reading.closest('details')).not.toHaveClass('writing-secondary');
     await user.clear(reading);
     await user.type(reading, 'Los afluentes llegan al río principal.');
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
@@ -529,11 +571,15 @@ describe('GenerationWizard', () => {
     expect(mocks.update.mock.calls[0][1].preguntas[3].enunciado).toContain('procedimiento');
   });
 
-  it('warns clearly when editing an already assigned evaluation', () => {
+  it('warns clearly when editing an already assigned evaluation without filling the screen', async () => {
     renderWizard(vi.fn(), { ...evaluation, estado: 'publicada', recepcion_habilitada: true });
 
-    expect(screen.getByText('Estás editando una evaluación ya asignada.')).toBeInTheDocument();
-    expect(screen.getByText(/No se borrarán entregas ni notas anteriores/i)).toBeInTheDocument();
+    const warning = screen.getByText('Evaluación asignada: los cambios se aplican al guardar');
+    expect(warning).toBeInTheDocument();
+    expect(warning.closest('details')).not.toHaveAttribute('open');
+    await userEvent.setup().click(warning);
+    await waitFor(() => expect(warning.closest('details')).toHaveAttribute('open'));
+    expect(screen.getByText(/Se conservan las entregas y notas anteriores/i)).toBeVisible();
     expect(screen.getByRole('button', { name: 'Agregar pregunta' })).toBeInTheDocument();
   });
 

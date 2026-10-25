@@ -99,14 +99,23 @@ async def generate_resource(request: VisualProposalRequest, current_user: User =
     existing = (await db.execute(text('SELECT user_id,input_json FROM ai_jobs WHERE id=:id'), {'id': request.request_key})).mappings().first()
     proposal = request.model_dump(mode='json')
     if existing:
-        if existing['user_id'] != current_user.id or existing['input_json'].get('proposal') != proposal:
+        previous = existing['input_json'].get('proposal')
+        try:
+            previous = VisualProposalRequest.model_validate(previous).model_dump(mode='json')
+        except ValidationError:
+            previous = None
+        if existing['user_id'] != current_user.id or previous != proposal:
             raise HTTPException(409, 'Esta solicitud ya corresponde a otro material. Inicia una nueva propuesta.')
         return {'job_id': request.request_key}
     active = await db.scalar(text("SELECT count(*) FROM ai_jobs WHERE user_id=:user AND tipo='evaluacion_visual' AND estado IN ('queued','running','retrying')"), {'user': current_user.id})
     if active >= 2:
         raise HTTPException(409, 'Ya tienes dos propuestas en preparación. Espera o cancela una antes de pedir otra.')
     config = await jobs._resolve_job_ai_config(db, tipo='evaluacion_visual', feature='generacion_imagenes', user_id=current_user.id)
-    payload = {'proposal': proposal, '_ai_config': config}
+    if request.fondo_transparente:
+        from app.services.image_router import supports_transparent_background
+        if not supports_transparent_background(config.get('image')):
+            raise HTTPException(422, 'La ruta de imágenes configurada no ofrece fondo transparente. Puedes usar la biblioteca o subir un PNG sin fondo.')
+    payload = {'proposal': proposal, '_ai_config': config, '_single_image_attempt': True}
     job_id = await jobs.create_job(db, user_id=current_user.id, tipo='evaluacion_visual',
         input_json=payload, job_id=request.request_key)
     await db.commit()

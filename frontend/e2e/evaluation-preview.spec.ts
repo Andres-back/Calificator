@@ -87,6 +87,19 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await expect(frame).toBeVisible();
     const canvas = frame.locator('[data-pdf-page="1"] canvas');
     await expect(canvas).toHaveAttribute('data-rendered', 'true');
+    if (viewport.width >= 1024) {
+      await expect(frame.getByRole('button', { name: 'Ajustar a página completa' })).toHaveAttribute('aria-pressed', 'true');
+      const sheet = await canvas.boundingBox();
+      const readingArea = await frame.locator('[data-document-scroll]').boundingBox();
+      expect(sheet!.height).toBeLessThan(readingArea!.height);
+      expect(sheet!.width).toBeLessThan(viewport.width * 0.7);
+      await page.screenshot({ path: testInfo.outputPath('initial-page-fit.png') });
+    } else {
+      await expect(frame.getByRole('button', { name: 'Ajustar al ancho' })).toHaveAttribute('aria-pressed', 'true');
+    }
+    await activate(frame.getByRole('button', { name: 'Tamaño real 100 %' }));
+    await expect(frame.getByRole('button', { name: 'Tamaño real 100 %' })).toHaveAttribute('aria-pressed', 'true');
+    await activate(frame.getByRole('button', { name: 'Ajustar al ancho' }));
     await expect.poll(() => canvas.evaluate((node: HTMLCanvasElement) => {
       const pixels = node.getContext('2d')!.getImageData(0, 0, node.width, node.height).data;
       let ink = 0;

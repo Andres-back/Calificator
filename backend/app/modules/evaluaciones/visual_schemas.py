@@ -243,11 +243,16 @@ class VisualProposalRequest(VisualUploadRequest):
     expected_version_id: UUID | None = None
     tabla: VisualTable | None = None
     grafica: VisualChart | None = None
+    uso: Literal['academico', 'decoracion'] = 'academico'
+    blanco_negro: bool = Field(default=False, strict=True)
+    fondo_transparente: bool = Field(default=False, strict=True)
 
     @model_validator(mode="after")
     def explicit_version_and_data(self) -> VisualProposalRequest:
         if (self.tabla is not None and self.tipo != "tabla") or (self.grafica is not None and self.tipo != "grafica"):
             raise ValueError("Los datos no corresponden al recurso solicitado.")
+        if self.fondo_transparente and self.tipo in {'tabla', 'grafica'}:
+            raise ValueError('El fondo transparente se solicita para una imagen o un dibujo, no para una tabla o gráfica con datos.')
         return self
 
 
