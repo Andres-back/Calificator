@@ -24,7 +24,7 @@ export function EvaluationPrintPanel({ evaluation, onSaved }: { evaluation: Eval
       base.current = updated;
       setDraft(updated.configuracion_impresion ?? null);
       onSaved(updated);
-      void client?.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(updated.materia_id) });
+      void client?.invalidateQueries({ queryKey: queryKeys.evaluaciones.all });
       void client?.invalidateQueries({ queryKey: queryKeys.evaluaciones.detail(updated.id) });
     } catch (failure) { setError(toApiError(failure).detail); }
     finally { lock.current = false; setBusy(false); }
