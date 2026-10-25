@@ -186,6 +186,7 @@ def _snapshot(evaluation: Evaluacion) -> dict:
         "respuestas_esperadas": evaluation.respuestas_esperadas, "criterios": evaluation.criterios,
         "dba_ids": evaluation.dba_ids, "dba_personalizado_ids": evaluation.dba_personalizado_ids,
         "metas_profesor": evaluation.metas_profesor,
+        "configuracion_impresion": getattr(evaluation, 'configuracion_impresion', None),
         "blueprint": {field: getattr(blueprint, field) for field in (
             "nivel_contexto", "dba", "metas", "criterios", "preguntas", "respuestas_esperadas",
             "errores_comunes", "contexto_rag", "reglas_feedback",

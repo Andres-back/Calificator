@@ -43,6 +43,33 @@ it('cancels a library proposal without accepting a changed evaluation', async ()
   expect(accept).not.toHaveBeenCalled();
   expect(mocks.generate).not.toHaveBeenCalled();
 });
+it('125 enlarges the proposed material without generating or accepting it', async () => {
+  const accept = setup();
+  fireEvent.change(screen.getByLabelText('Tipo de material'), { target: { value: 'tabla' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Previsualizar datos' }));
+  const preview = await screen.findByAltText('Vista previa del material propuesto');
+  fireEvent.load(preview);
+  fireEvent.click(screen.getByRole('button', { name: 'Ampliar material' }));
+  expect(screen.getByRole('button', { name: 'Ajustar material' })).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByRole('region', { name: 'Vista ampliable del material' })).toHaveClass('overflow-auto');
+  fireEvent.click(screen.getByRole('button', { name: 'Ajustar material' }));
+  expect(screen.getByRole('button', { name: 'Ampliar material' })).toHaveAttribute('aria-expanded', 'false');
+  expect(accept).not.toHaveBeenCalled();
+  expect(mocks.generate).not.toHaveBeenCalled();
+  expect(mocks.structured).toHaveBeenCalledTimes(1);
+});
+it('125 requests a standalone printable figure only when the teacher chooses AI', async () => {
+  mocks.generate.mockResolvedValue({ job_id: 'pending-image' });
+  mocks.job.mockResolvedValue({ estado: 'queued', resultado_json: {} });
+  const accept = setup();
+  expect(mocks.generate).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText('Uso de la figura'), { target: { value: 'decoracion' } });
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Solicitar figura sin fondo' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Crear propuesta con IA' }));
+  await waitFor(() => expect(mocks.generate).toHaveBeenCalledTimes(1));
+  expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ uso: 'decoracion', blanco_negro: true, fondo_transparente: true }));
+  expect(accept).not.toHaveBeenCalled();
+});
 function setup() {
   const accept = vi.fn();
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>

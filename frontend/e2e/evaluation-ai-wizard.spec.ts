@@ -415,7 +415,15 @@ test('096 treinta preguntas y texto largo 390px dark mantienen edición y accion
   await expect(page.getByRole('heading', { name: 'Tipos de preguntas · 30 en total' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Agregar una pregunta de Respuesta abierta', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Generar evaluación' }).click();
-  await expect(page.getByRole('list', { name: 'Preguntas editables' }).locator('article')).toHaveCount(30);
+  await expect(page.getByRole('list', { name: 'Preguntas editables' }).locator('article')).toHaveCount(1);
+  const navigation = page.getByRole('combobox', { name: 'Ir a la pregunta' });
+  await expect(navigation.locator('option')).toHaveCount(30);
+  await page.getByLabel(/Enunciado/).fill('Cambio de la primera pregunta que debe conservarse');
+  await finishWritingIfVisible(page);
+  await navigation.selectOption('29');
+  await expect(page.getByLabel(/Enunciado/)).toHaveValue(generated.preguntas[29].enunciado);
+  await navigation.selectOption('0');
+  await expect(page.getByLabel(/Enunciado/)).toHaveValue('Cambio de la primera pregunta que debe conservarse');
   expect(quantity).toBe(30);
   const content = page.getByTestId('evaluation-wizard-content');
   await content.evaluate(element => { element.scrollTop = element.scrollHeight; });

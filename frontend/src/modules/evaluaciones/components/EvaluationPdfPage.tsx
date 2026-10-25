@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { Button } from '@/components/ui';
 import type { EnqueueRender } from './pdfRenderQueue';
+import { pdfPageWidth, type PdfFit } from './pdfViewport';
 
-export function EvaluationPdfPage({ pdf, number, width, zoom, active, enqueue }: {
-  pdf: PDFDocumentProxy; number: number; width: number; zoom: number; active: boolean; enqueue: EnqueueRender;
+export function EvaluationPdfPage({ pdf, number, width, height, mode, zoom, active, enqueue }: {
+  pdf: PDFDocumentProxy; number: number; width: number; height: number; mode: PdfFit; zoom: number; active: boolean; enqueue: EnqueueRender;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [ratio, setRatio] = useState(595 / 842);
+  const [dimensions, setDimensions] = useState({ width: 595, height: 842 });
+  const paperWidth = pdfPageWidth({ availableWidth: width, availableHeight: height, page: dimensions, mode, zoom });
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -28,8 +30,8 @@ export function EvaluationPdfPage({ pdf, number, width, zoom, active, enqueue }:
         page = await pdf.getPage(number);
         if (cancelled) { page.cleanup(); return; }
         const original = page.getViewport({ scale: 1 });
-        setRatio(original.width / original.height);
-        const scale = width * zoom / original.width;
+        setDimensions(current => current.width === original.width && current.height === original.height ? current : { width: original.width, height: original.height });
+        const scale = pdfPageWidth({ availableWidth: width, availableHeight: height, page: original, mode, zoom }) / original.width;
         const css = page.getViewport({ scale });
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(4_000_000 / (css.width * css.height)));
         const viewport = page.getViewport({ scale: scale * pixelRatio });
@@ -52,11 +54,11 @@ export function EvaluationPdfPage({ pdf, number, width, zoom, active, enqueue }:
       void Promise.resolve(render?.promise).catch(() => {}).then(() => page?.cleanup()).catch(() => {});
       canvas.width = 0; canvas.height = 0; canvas.dataset.rendered = 'false';
     };
-  }, [active, enqueue, number, pdf, retry, width, zoom]);
+  }, [active, enqueue, number, pdf, retry, width, height, mode, zoom]);
 
-  return <article data-pdf-page={number} className="mx-auto mb-4" style={{ width: width * zoom }}>
+  return <article data-pdf-page={number} className="mx-auto mb-4" style={{ width: paperWidth }}>
     <h3 className="flex min-h-11 items-center text-sm font-semibold text-secondary">Página {number} de {pdf.numPages}</h3>
-    <div className="relative rounded bg-white shadow-sm" style={{ aspectRatio: ratio }} aria-busy={active && busy}>
+    <div className="relative rounded bg-white shadow-sm" style={{ aspectRatio: dimensions.width / dimensions.height }} aria-busy={active && busy}>
       {active ? <>
         {busy && <p role="status" className="absolute inset-x-3 top-3 text-sm text-slate-600">Dibujando página {number}…</p>}
         {error && <div role="alert" className="absolute inset-x-3 top-3 space-y-2 text-sm text-slate-800">

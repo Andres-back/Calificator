@@ -468,17 +468,29 @@ def _render_examen(c: dict, soluciones: bool) -> str:
     for q in c.get("preguntas") or []:
         short = len(str(q.get('enunciado') or '')) + sum(len(str(op)) for op in q.get('opciones') or []) < 650
         style = 'padding:6px 2px;margin-bottom:5px;border:0;border-bottom:1px solid #ddd;border-radius:0;' if compact else ''
-        if (compact and short) or q.get('_evaluation_visuals'):
+        if (short and (compact or c.get('configuracion_impresion') is not None)) or q.get('_evaluation_visuals'):
             style += 'break-inside:avoid;'
         out.append(f'<div class="card" style="{style}">')
-        pts = f' <span class="pts">[{_e(q.get("puntaje"))} pts]</span>' if q.get("puntaje") is not None else ""
+        pts = f' <span class="pts">[{_e(q.get("puntaje"))} pts]</span>' if q.get("puntaje") is not None and '_print_common_score' not in c else ""
+        lateral = bool(q.get('_print_lateral'))
+        if lateral:
+            out.append('<table class="question-figure-row"><tbody><tr><td class="question-figure-text">')
         out.append(f'<p class="p"><b>{_e(q.get("numero"))}. {_e(q.get("enunciado"))}</b>{pts}</p>')
+        figures = []
         for visual in q.get('_evaluation_visuals') or []:
             if not isinstance(visual, ResolvedVisualBlock):
                 raise ValueError('El material visual necesita revisión antes de descargar.')
-            out.append(visual_block_html(visual))
+            rendered = visual_block_html(visual, include_caption=not lateral)
+            layout = (q.get('_print_visual_layouts') or {}).get(str(visual.block.id))
+            if layout:
+                width = 100 if lateral else layout['ancho_porcentaje']
+                margin = {'inicio': '0 auto 0 0', 'centro': '0 auto', 'fin': '0 0 0 auto'}[layout['alineacion']]
+                rendered = f'<div class="print-visual" style="width:{width}%;margin:{margin}">{rendered}</div>'
+            figures.append(rendered)
+        if not lateral:
+            out.extend(figures)
         options = q.get('opciones') or []
-        columns = option_columns([str(option) for option in options]) if compact else 1
+        columns = q.get('_print_option_columns', option_columns([str(option) for option in options]) if compact else 1)
         if columns == 2:
             out.append('<table class="compact-options" style="width:100%;border-collapse:collapse"><tbody>')
         for idx, op in enumerate(options):
@@ -500,7 +512,17 @@ def _render_examen(c: dict, soluciones: bool) -> str:
         if soluciones and q.get("respuesta_correcta") is not None:
             out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(q.get("respuesta_correcta"))}</p>')
         elif not q.get("opciones"):
-            out.append('<div class="line"></div><div class="line"></div>')
+            if q.get('_print_drawing_mm'):
+                out.append(f'<div style="height:{q["_print_drawing_mm"]}mm;border:1px solid #777"></div>')
+            else:
+                out.append('<div class="line"></div>' * q.get('_print_lines', 2))
+        if lateral:
+            width = next(iter(q['_print_visual_layouts'].values()))['ancho_porcentaje']
+            out.append(f'</td><td style="width:{width}%">' + ''.join(figures) + '</td></tr></tbody></table>')
+            for visual in q.get('_evaluation_visuals') or []:
+                caption = visual.block.pie or visual.block.descripcion
+                if caption:
+                    out.append(f'<p class="figure-caption">{_e(caption)}</p>')
         out.append("</div>")
     questions = c.get("preguntas") or []
     question_scores = [question.get("puntaje") for question in questions]
@@ -761,6 +783,8 @@ _RENDERERS["mapa_conceptual"] = _render_mapa_conceptual
 
 def render_material_html(material: dict, soluciones: bool = False) -> str:
     from app.modules.motif_library.presentation import decoration_html
+    from app.modules.evaluaciones.print_layout import prepare_print_material, print_css
+    material = prepare_print_material(material)
     tipo = material.get("tipo")
     contenido = material.get("contenido_json") or {}
     titulo = contenido.get("titulo") or material.get("titulo") or TOOL_LABELS.get(tipo, "Material")
@@ -774,8 +798,11 @@ def render_material_html(material: dict, soluciones: bool = False) -> str:
         meta += " · HOJA DE RESPUESTAS"
     if material.get("created_at"):
         meta += f" · {_e(str(material['created_at'])[:10])}"
+    if '_print_common_score' in contenido:
+        meta = ('Solucionario docente · ' if soluciones else '') + f'Cada pregunta vale {contenido["_print_common_score"]} puntos'
+    styles = print_css(contenido.get('configuracion_impresion')) if tipo == 'examen' else ''
 
-    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>{BASE_CSS}</style></head>
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>{BASE_CSS}{styles}</style></head>
 <body>
   <div class="topbar"><span class="htitle">{_e(titulo)}</span><span class="brand">XCalificator</span></div>
   <div style="display:flex;align-items:center;justify-content:space-between;gap:4mm">

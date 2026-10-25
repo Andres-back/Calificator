@@ -110,6 +110,13 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await activate(page.locator('summary').filter({ hasText: 'Más opciones' }), browserName);
     await activate(page.getByRole('button', { name: 'Editar preguntas' }), browserName);
     const wizard = page.getByRole('dialog', { name: 'Editar contenido de la evaluación' });
+    await expect(wizard.getByLabel(/Enunciado/)).toBeVisible();
+    await expect(wizard).toHaveCSS('opacity', '1');
+    if (width < 640) {
+      await expect(wizard).toHaveCSS('max-width', 'none');
+      await expect.poll(async () => (await wizard.boundingBox())!.width).toBeGreaterThanOrEqual(width - 1);
+    }
+    if (theme === 'light' && (width === 360 || width === 1440)) await page.screenshot({ path: `../output/playwright/spec125-focused-editor-${width}-${browserName}.png` });
     await activate(wizard.getByRole('button', { name: 'Añadir contenido', exact: true }), browserName);
     const editor = page.getByRole('dialog', { name: 'Material de la pregunta' });
     await activate(editor.getByRole('button', { name: 'Elegir de la biblioteca' }), browserName);
@@ -120,6 +127,10 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await expect(accept).toBeDisabled();
     const confirmation = editor.getByRole('checkbox', { name: /no contiene respuestas/ });
     await expect(confirmation).toBeEnabled();
+    await activate(editor.getByRole('button', { name: 'Ampliar material' }), browserName);
+    await expect(editor.getByRole('button', { name: 'Ajustar material' })).toHaveAttribute('aria-expanded', 'true');
+    expect(await editor.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+    await activate(editor.getByRole('button', { name: 'Ajustar material' }), browserName);
     if (browserName === 'webkit') await confirmation.press('Space'); else await confirmation.check();
     await page.screenshot({ path: `../output/playwright/spec123-evaluation-${width}-${theme}-${browserName}.png` });
     await activate(accept, browserName);

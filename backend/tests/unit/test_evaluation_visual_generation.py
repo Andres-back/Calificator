@@ -9,6 +9,8 @@ import pytest
 from app.modules.evaluaciones.visual_schemas import VisualProposalRequest
 from app.modules.evaluaciones import visual_generation as generation
 from tests.integration.test_evaluation_visual_persistence import synthetic_png
+from io import BytesIO
+from PIL import Image
 
 
 def request(kind='imagen', **kwargs):
@@ -62,6 +64,51 @@ def test_crop_is_bounded_and_does_not_modify_original():
     assert content == synthetic_png()
     with pytest.raises(ValueError):
         generation.crop_proposal_bytes(content, (-1, 0, 1, 1))
+
+
+@pytest.mark.asyncio
+async def test_125_isolated_print_figure_is_one_explicit_call(monkeypatch):
+    output = BytesIO()
+    image = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    image.putpixel((16, 16), (0, 0, 0, 255))
+    image.save(output, format='PNG')
+    content = output.getvalue()
+    mock = AsyncMock(return_value=SimpleNamespace(is_placeholder=False, b64_data=base64.b64encode(content).decode()))
+    monkeypatch.setattr(generation, 'generate_image', mock)
+    result, _, _ = await generation.generate_proposal_bytes(request(uso='decoracion', blanco_negro=True, fondo_transparente=True), user_id=uuid4(), db=object(), ai_config={})
+    assert result == content
+    assert mock.await_count == 1
+    assert mock.await_args.kwargs['single_attempt'] is True
+    assert mock.await_args.kwargs['admin_config'] == {'quality': 'low', 'background': 'transparent'}
+    prompt = mock.await_args.args[0]
+    assert 'figura aislada' in prompt and 'No generes una hoja' in prompt
+    assert 'blanco y negro' in prompt and 'Decoración' in prompt
+
+
+@pytest.mark.asyncio
+async def test_125_white_background_is_not_claimed_as_transparent(monkeypatch):
+    mock = AsyncMock(return_value=SimpleNamespace(is_placeholder=False, b64_data=base64.b64encode(synthetic_png()).decode()))
+    monkeypatch.setattr(generation, 'generate_image', mock)
+    with pytest.raises(ValueError, match='transparente'):
+        await generation.generate_proposal_bytes(request(fondo_transparente=True), user_id=uuid4(), db=object(), ai_config={})
+    assert mock.await_count == 1
+
+
+def test_125_print_figure_options_do_not_change_structured_data():
+    with pytest.raises(ValueError, match='fondo'):
+        request('tabla', fondo_transparente=True)
+
+
+@pytest.mark.asyncio
+async def test_125_a_recovered_job_cannot_spend_an_uncertain_image_attempt_twice():
+    from app.workers.tasks_evaluation_visuals import reserve_image_attempt
+    db = SimpleNamespace(scalar=AsyncMock(side_effect=[uuid4(), None]), commit=AsyncMock())
+    job = uuid4()
+    await reserve_image_attempt(db, job)
+    assert db.commit.await_count == 1
+    with pytest.raises(generation.VisualMaterialError, match='No repetiremos el gasto'):
+        await reserve_image_attempt(db, job)
+    assert db.commit.await_count == 1
 
 
 @pytest.mark.asyncio

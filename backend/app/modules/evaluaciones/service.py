@@ -520,6 +520,12 @@ async def create_evaluation(
         if not enabled:
             raise HTTPException(503, "La edición visual todavía no está habilitada. Conserva tu documento para continuar después.")
     questions = normalize_question_modalities(payload.preguntas, payload.modalidad)
+    from app.modules.evaluaciones.print_settings import validate_print_scope
+    try:
+        validate_print_scope(payload.configuracion_impresion, questions,
+            payload.contenido_visual.model_dump(mode='json') if payload.contenido_visual else None)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     evaluacion = Evaluacion(
         materia_id=materia.id,
         profesor_id=materia.profesor_id,
@@ -542,6 +548,7 @@ async def create_evaluation(
         criterios=payload.criterios,
         preguntas=questions,
         respuestas_esperadas=payload.respuestas_esperadas,
+        configuracion_impresion=payload.configuracion_impresion.model_dump(mode='json') if payload.configuracion_impresion else None,
     )
     db.add(evaluacion)
     await db.flush()
@@ -597,11 +604,21 @@ async def update_evaluation(
     db: AsyncSession,
     evaluacion: Evaluacion,
     payload: EvaluacionUpdate,
+    *, actor_id: UUID | None = None,
 ) -> Evaluacion:
     data = payload.model_dump(exclude_unset=True)
     expected_updated_at = data.pop("expected_updated_at", None)
     expected_content_version_id = data.pop("expected_content_version_id", None)
     reviewed_visual_keys = data.pop('claves_visuales_revisadas', [])
+    if 'configuracion_impresion' in data:
+        data['configuracion_impresion'] = payload.configuracion_impresion.model_dump(mode='json') if payload.configuracion_impresion else None
+    if set(data) == {'configuracion_impresion'} and not reviewed_visual_keys:
+        from app.modules.evaluaciones.print_service import set_print_settings
+        await set_print_settings(db, evaluacion.id, payload.configuracion_impresion,
+            expected_updated_at=expected_updated_at, expected_version_id=expected_content_version_id,
+            actor_id=actor_id or evaluacion.profesor_id)
+        await db.commit()
+        return await get_evaluation_or_404(db, evaluacion.id)
     if reviewed_visual_keys and not settings.EVALUATION_VISUAL_EDITOR_ENABLED:
         raise HTTPException(409, 'La revisión de material todavía no está habilitada.')
     visual_requested = "contenido_visual" in data
@@ -707,7 +724,20 @@ async def update_evaluation(
         validate_publication_structure(evaluacion)
 
     if content_edit is not None:
+        if 'configuracion_impresion' in data:
+            from app.modules.evaluaciones.print_settings import validate_print_scope
+            try:
+                validate_print_scope(payload.configuracion_impresion, evaluacion.preguntas,
+                    content_edit.manifest.model_dump(mode='json'))
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
         await save_content_revision(db, content_edit, reviewed_question_ids=reviewed_visual_keys)
+    elif 'configuracion_impresion' in data:
+        from app.modules.evaluaciones.print_settings import validate_print_scope
+        try:
+            validate_print_scope(payload.configuracion_impresion, evaluacion.preguntas, None)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
     await db.commit()
     return await get_evaluation_or_404(db, evaluacion.id)
 

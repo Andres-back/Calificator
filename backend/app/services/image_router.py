@@ -17,6 +17,15 @@ from app.shared.enums import ImageProvider
 
 logger = get_logger(__name__)
 
+
+class ImageCapabilityError(ValueError):
+    """Safe, user-facing absence of a requested image capability."""
+
+
+def supports_transparent_background(snapshot: dict[str, Any] | None) -> bool:
+    selected = (snapshot or {}).get('primary') or {}
+    return selected.get('provider') == 'openai_image' and str(selected.get('model') or '').startswith('gpt-image')
+
 # Tipos de imagen que van a OpenAI (calidad premium)
 OPENAI_IMAGE_TYPES = {"para_colorear", "portada_premium", "diagrama", "educativa_profesional"}
 # Tipos que van a Cloudflare (volumen, borradores)
@@ -91,12 +100,14 @@ async def generate_image(
     db: AsyncSession | None = None,
     teacher_id: UUID | None = None,
     ai_config: dict[str, Any] | None = None,
+    single_attempt: bool = False,
 ) -> GeneratedImage:
     """Generate an image using the captured route when rollout is enabled."""
     model = (admin_config or {}).get("model")
     quality = (admin_config or {}).get(
         "quality", settings.OPENAI_IMAGE_QUALITY
     )
+    background = (admin_config or {}).get('background')
     snapshot = dict(ai_config) if ai_config else None
     personal_api_key: str | None = None
     captured_fallback: dict[str, Any] | None = None
@@ -141,6 +152,8 @@ async def generate_image(
                     )
                     personal_without_fallback = not bool(captured_fallback)
         except Exception as exc:
+            if single_attempt:
+                raise
             logger.warning(
                 "Image AI configuration unavailable; using existing route: %s",
                 type(exc).__name__,
@@ -150,6 +163,9 @@ async def generate_image(
         chosen = ImageProvider(provider) if isinstance(provider, str) else provider
     else:
         chosen = decide_provider(image_type)
+
+    if background == 'transparent' and chosen != ImageProvider.OPENAI:
+        raise ImageCapabilityError('La ruta de imágenes elegida no ofrece fondo transparente. Elige una figura de la biblioteca o sube una imagen PNG sin fondo.')
 
     async def captured_fallback_image() -> GeneratedImage | None:
         if not captured_fallback:
@@ -162,6 +178,8 @@ async def generate_image(
                 size,
                 model=fallback_model,
                 quality=quality,
+                background=background,
+                single_attempt=single_attempt,
             )
         if fallback_provider == "cloudflare_image":
             return await _call_cloudflare(prompt)
@@ -175,8 +193,12 @@ async def generate_image(
                 model=model,
                 quality=quality,
                 api_key=personal_api_key,
+                background=background,
+                single_attempt=single_attempt,
             )
         except Exception as exc:
+            if single_attempt:
+                raise
             if personal_without_fallback:
                 raise RuntimeError(
                     "La API personal de imágenes falló y no hay fallback autorizado"
@@ -195,6 +217,8 @@ async def generate_image(
     try:
         return await _call_cloudflare(prompt)
     except Exception as exc:
+        if single_attempt:
+            raise
         try:
             fallback_result = await captured_fallback_image()
             if fallback_result is not None:
@@ -212,17 +236,27 @@ async def _call_openai_custom(
     model: str | None = None,
     quality: str | None = None,
     api_key: str | None = None,
+    background: str | None = None,
+    single_attempt: bool = False,
 ) -> GeneratedImage:
     credentials = await get_effective_ai_credentials()
     resolved_key = api_key if api_key is not None else credentials.openai_key
     if not resolved_key:
         raise ValueError("OPENAI_API_KEY not set")
     client = _openai_client(resolved_key)
+    if single_attempt:
+        client = client.with_options(max_retries=0)
     model_name = model or getattr(settings, "OPENAI_IMAGE_MODEL", "gpt-image-1")
     kwargs: dict[str, Any] = {"model": model_name, "prompt": prompt, "size": size, "n": 1}
     if str(model_name).startswith("gpt-image"):
         kwargs["quality"] = quality or getattr(settings, "OPENAI_IMAGE_QUALITY", "low")
+        if background == 'transparent':
+            # extra_body also works with the pinned SDK, before these options
+            # became typed parameters. No model substitution or second call.
+            kwargs['extra_body'] = {'background': 'transparent', 'output_format': 'png'}
     else:
+        if background == 'transparent':
+            raise ImageCapabilityError('El modelo configurado no ofrece fondo transparente. Usa la biblioteca o sube un PNG sin fondo.')
         kwargs["response_format"] = "b64_json"
     resp = await client.images.generate(**kwargs)  # type: ignore[arg-type]
     b64 = resp.data[0].b64_json or ""

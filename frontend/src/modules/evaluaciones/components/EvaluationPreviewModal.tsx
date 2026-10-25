@@ -3,6 +3,7 @@ import { Download, ExternalLink, FileText } from 'lucide-react';
 import { Button, Modal, RichContent, Select } from '@/components/ui';
 import { EvaluationContentViewer } from './EvaluationContentViewer';
 import { EvaluationSourceReview } from './EvaluationSourceReview';
+import { EvaluationPrintPanel } from './EvaluationPrintPanel';
 import { toApiError } from '@/lib/api';
 import { getEvaluationDocument } from '../api';
 import type { Evaluacion } from '@/types/api';
@@ -24,11 +25,14 @@ function downloadUrl(url: string, name: string) {
   link.remove();
 }
 
-export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }: {
+export function EvaluationPreviewModal({ evaluation: suppliedEvaluation, canViewSolutions, canEditPresentation = false, onClose }: {
   evaluation: Evaluacion | null;
   canViewSolutions: boolean;
+  canEditPresentation?: boolean;
   onClose: () => void;
 }) {
+  const [printEvaluation, setPrintEvaluation] = useState<Evaluacion | null>(null);
+  const evaluation = printEvaluation?.id === suppliedEvaluation?.id ? printEvaluation : suppliedEvaluation;
   const [solutions, setSolutions] = useState(false);
   const [file, setFile] = useState<PreviewFile | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +46,7 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
   const evaluationId = evaluation?.id;
   const versionId = evaluation?.contenido_version_id;
   const showSolutions = solutions && canViewSolutions;
+  useEffect(() => { setPrintEvaluation(null); }, [suppliedEvaluation?.id, suppliedEvaluation?.updated_at]);
 
   useEffect(() => {
     setSolutions(false);
@@ -116,6 +121,8 @@ export function EvaluationPreviewModal({ evaluation, canViewSolutions, onClose }
               </Select>
             </label>
           ) : <p className="text-sm text-muted">Evaluación para estudiantes · Sin respuestas</p>}
+          {canViewSolutions && canEditPresentation && evaluation && !evaluation.material_origen_id && <EvaluationPrintPanel key={evaluation.id} evaluation={evaluation}
+            onSaved={updated => { setPrintEvaluation(updated); setFile(null); setOptionsOpen(false); setRetry(value => value + 1); }} />}
           {(evaluation?.contenido_visual || evaluation?.lectura) && <Button type="button" variant="outline" className="min-h-11 w-full" onClick={() => { setContentView(value => !value); setOptionsOpen(false); }}>
             {contentView ? 'Ver formato para imprimir' : evaluation?.lectura ? 'Ver lectura y preguntas' : 'Ver preguntas y figuras'}
           </Button>}

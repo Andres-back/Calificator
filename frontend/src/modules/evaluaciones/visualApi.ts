@@ -6,6 +6,7 @@ export interface VisualScope { materia_id: string; evaluacion_id: string; expect
 export interface VisualRequest extends VisualScope {
   request_key: string; pregunta_id: string; tipo: 'imagen' | 'dibujo' | 'tabla' | 'grafica'; descripcion: string;
   tabla?: EvaluationVisualTable; grafica?: EvaluationVisualChart;
+  uso?: 'academico' | 'decoracion'; blanco_negro?: boolean; fondo_transparente?: boolean;
 }
 export interface VisualJob {
   estado: string; error?: string | null;

@@ -7,6 +7,7 @@ import type { DBAUnifiedItem, Materia } from '@/types/api';
 import { DBASelector } from './DBASelector';
 import { MAX_QUESTIONS, MIN_QUESTIONS, QUESTION_TYPES, resizeQuestionCounts, totalQuestionCount, type WizardState } from './generationWizardModel';
 import { MODALITY_OPTIONS, TYPE_COPY } from './generationWizardOptions';
+import { EvaluationPrintSettings } from './EvaluationPrintSettings';
 
 export function EvaluationPreparation({ state, materias, fixedContext, mobile = false, expanded, onExpandedChange, onPatch, onTopicChange, onMateriaChange, onToggleCriterion, criteria, referenceInputRef, extracting, onReferenceFile }: {
   state: WizardState;
@@ -66,6 +67,7 @@ export function EvaluationPreparation({ state, materias, fixedContext, mobile = 
       </div>
       {state.modalidad === 'mixta' && <p className="text-sm font-semibold text-brand-700 dark:text-brand-200">Modalidad mixta seleccionada</p>}
     </fieldset>
+    <div className="writing-secondary"><EvaluationPrintSettings value={state.printSettings} onChange={printSettings => onPatch({ printSettings })} /></div>
     <details open={expanded} onToggle={event => onExpandedChange(event.currentTarget.open)} className={cn("group rounded-xl border border-border bg-surface", !expanded && "writing-secondary")}>
       <summary className="writing-secondary focus-ring flex min-h-12 cursor-pointer items-center justify-between gap-2 rounded-xl p-3 font-semibold"><span>Personalizar</span><ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 group-open:rotate-180" /></summary>
       <div className="space-y-5 border-t border-border p-3 sm:p-4">

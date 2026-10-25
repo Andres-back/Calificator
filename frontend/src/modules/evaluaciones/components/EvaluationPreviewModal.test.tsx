@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render as renderUi, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError } from 'axios';
 import { EvaluationPreviewModal } from './EvaluationPreviewModal';
 import type { Evaluacion } from '@/types/api';
+
+function render(element: ReactElement) {
+  return renderUi(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{element}</QueryClientProvider>);
+}
 
 const mocks = vi.hoisted(() => ({ document: vi.fn(), revoke: vi.fn(), create: vi.fn() }));
 vi.mock('../api', () => ({ getEvaluationDocument: mocks.document }));

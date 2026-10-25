@@ -12,6 +12,7 @@ from app.core.permissions import get_current_user, require_permission_now
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.modules.evaluaciones import export_service, generation_service, service
+from app.modules.evaluaciones.print_preparation import PrintPreparationRequest
 from app.modules.evaluaciones.visual_serialization import authorized_content_revision, visual_read_fields, batch_visual_read_fields
 from app.modules.evaluaciones.visual_render import resolve_visual_material
 from app.modules.evaluaciones.digitalize_service import (
@@ -40,6 +41,27 @@ from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo, UserRole
 from app.workers.tasks_digitalization import digitalize_evaluation
 
 router = APIRouter(tags=["evaluaciones"])
+
+
+@router.post('/evaluaciones/impresion/preparar', status_code=202)
+async def prepare_evaluation_print(request: PrintPreparationRequest,
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limit(limit=30, window_seconds=3600, scope='evaluation-print'))):
+    from app.modules.evaluaciones.print_preparation import create_preparation
+    try:
+        return await create_preparation(db, current_user, request)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.get('/evaluaciones/impresion/{job_id}/pdf')
+async def download_prepared_print(job_id: UUID, current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)):
+    from app.modules.evaluaciones.print_preparation import download_preparation
+    data = await download_preparation(db, current_user, job_id)
+    return Response(content=data, media_type='application/pdf', headers={
+        'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff',
+        'Content-Disposition': 'inline; filename="vista-evaluacion.pdf"'})
 
 
 async def _evaluation_response(db, evaluation, current_user, prepared_fields=None):
@@ -401,7 +423,7 @@ async def update_evaluation(
 ) -> object:
     require_permission_now(current_user, "evaluations.update")
     evaluacion = await service.ensure_can_manage_evaluation(db, evaluacion_id, current_user)
-    return await _evaluation_response(db, await service.update_evaluation(db, evaluacion, payload), current_user)
+    return await _evaluation_response(db, await service.update_evaluation(db, evaluacion, payload, actor_id=current_user.id), current_user)
 
 
 @router.post("/evaluaciones/{evaluacion_id}/crear-blueprint", response_model=EvaluacionBlueprintRead)

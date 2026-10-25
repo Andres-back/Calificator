@@ -13,6 +13,10 @@ from app.services.image_router import generate_image
 from app.services.llm_router import LLMRouter
 
 
+class VisualMaterialError(ValueError):
+    """Known validation error safe to show without provider diagnostics."""
+
+
 def crop_proposal_bytes(content: bytes, region) -> bytes:
     inspect_resource_bytes(content, clase='imagen')
     left, top, right, bottom = region
@@ -50,9 +54,17 @@ async def generate_proposal_bytes(request, *, user_id, db, ai_config):
             chart = VisualChart.model_validate(value) if request.tipo == 'grafica' else None
         return await asyncio.to_thread(render_structured_visual, table or chart), table, chart
     image = await generate_image(
-        'Material de una pregunta escolar. No incluyas soluciones, marcas de corrección ni datos personales. '
-        + request.descripcion, image_type='educativa_profesional', strict_provider=True,
-        admin_config={'quality': 'low'}, db=db, teacher_id=user_id, ai_config=ai_config,
+        'Crea una sola figura aislada para insertar en una pregunta escolar. '
+        'No generes una hoja de evaluación, títulos, encabezados, preguntas, opciones, renglones para responder, '
+        'soluciones, marcas de corrección ni datos personales. '
+        + ('Decoración: dibujo sencillo sin texto ni etiquetas, sin sugerir una respuesta correcta. ' if request.uso == 'decoracion'
+           else 'Material académico: respeta los datos, proporciones y etiquetas pedidos; no añadas información que resuelva la pregunta. ')
+        + ('Impresión en blanco y negro: contornos negros claros, sin degradados, sin sombras y con poca tinta. ' if request.blanco_negro else '')
+        + ('Fondo realmente transparente, no blanco ni cuadriculado dibujado. ' if request.fondo_transparente else '')
+        + '\nDescripción del docente:\n' + request.descripcion,
+        image_type='educativa_profesional', strict_provider=True, single_attempt=True,
+        admin_config={'quality': 'low', **({'background': 'transparent'} if request.fondo_transparente else {})},
+        db=db, teacher_id=user_id, ai_config=ai_config,
     )
     if image.is_placeholder or not image.b64_data or len(image.b64_data) > (MAX_RESOURCE_BYTES * 4 // 3 + 8):
         raise ValueError('No se obtuvo una imagen completa. Puedes volver a intentarlo o subirla.')
@@ -61,4 +73,9 @@ async def generate_proposal_bytes(request, *, user_id, db, ai_config):
         await asyncio.to_thread(inspect_resource_bytes, content, clase='imagen')
     except (ValueError, TypeError) as exc:
         raise ValueError('No pudimos leer la imagen generada. Tu evaluación sigue igual.') from exc
+    if request.fondo_transparente:
+        with Image.open(BytesIO(content)) as proposal:
+            alpha = proposal.convert('RGBA').getchannel('A').getextrema()
+        if alpha[0] == 255 or alpha[1] == 0:
+            raise VisualMaterialError('La imagen no tiene un fondo transparente comprobable. Puedes usar una figura de la biblioteca o subir otra.')
     return content, None, None

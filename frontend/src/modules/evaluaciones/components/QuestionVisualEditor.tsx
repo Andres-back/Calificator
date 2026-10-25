@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Field, Input, Modal, Textarea } from '@/components/ui';
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
+import { toApiError } from '@/lib/api';
 import { MotifPicker } from '@/modules/motif_library/MotifPicker';
 import { motifFile } from '@/modules/motif_library/api';
 import type { Motif } from '@/modules/motif_library/types';
@@ -14,6 +15,7 @@ function ProposalImage({ id, onReady }: { id: string; onReady?: (ready: boolean)
   const [url, setUrl] = useState('');
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     const controller = new AbortController(); let current = '';
     void getVisualProposal(id, controller.signal).then(blob => {
@@ -22,7 +24,12 @@ function ProposalImage({ id, onReady }: { id: string; onReady?: (ready: boolean)
     return () => { controller.abort(); if (current) URL.revokeObjectURL(current); };
   }, [id, attempt]);
   return error ? <div><p role="alert">No pudimos abrir la propuesta. No se ha añadido a la evaluación; tus datos siguen disponibles.</p><Button variant="outline" onClick={() => { onReady?.(false); setError(false); setUrl(''); setAttempt(value => value + 1); }}>Volver a abrir propuesta</Button></div>
-    : url ? <img src={url} alt="Vista previa del material propuesto" onLoad={() => onReady?.(true)} onError={() => { setError(true); onReady?.(false); }} className="mx-auto max-h-[45dvh] max-w-full object-contain" /> : <p role="status">Abriendo propuesta…</p>;
+    : url ? <div className="min-w-0 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted">Material de esta pregunta, no la evaluación completa.</p><Button variant="outline" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? 'Ajustar material' : 'Ampliar material'}</Button></div>
+      <div className="max-h-[70dvh] max-w-full overflow-auto rounded-lg border border-border bg-surface-2 p-2" tabIndex={0} role="region" aria-label="Vista ampliable del material">
+        <img src={url} alt="Vista previa del material propuesto" onLoad={() => onReady?.(true)} onError={() => { setError(true); onReady?.(false); }} className={expanded ? 'mx-auto w-[max(100%,50rem)] max-w-none object-contain' : 'mx-auto max-h-[55dvh] max-w-full object-contain'} />
+      </div>
+    </div> : <p role="status">Abriendo propuesta…</p>;
 }
 
 function StructuredFields({ kind, table, chart, onTable, onChart }: {
@@ -51,11 +58,12 @@ function StructuredFields({ kind, table, chart, onTable, onChart }: {
   </div>;
 }
 
-export function QuestionVisualEditor({ evaluationId, materiaId, questionId, versionId, generationEnabled = false, existing, onAccept, onRemove, onBegin, pendingJobId, onJobChange, suggestedArea }: {
+export function QuestionVisualEditor({ evaluationId, materiaId, questionId, versionId, generationEnabled = false, existing, onAccept, onRemove, onBegin, pendingJobId, onJobChange, suggestedArea, blackAndWhiteDefault = true }: {
   evaluationId: string; materiaId: string; questionId: string; versionId?: string | null;
   generationEnabled?: boolean; existing?: TeacherVisualBlock; onAccept: (block: TeacherVisualBlock) => void; onRemove?: () => void; onBegin?: () => void;
   pendingJobId?: string; onJobChange?: (id: string | null) => void;
   suggestedArea?: string | null;
+  blackAndWhiteDefault?: boolean;
 }) {
   const [open, setOpen] = useState(Boolean(pendingJobId));
   const [kind, setKind] = useState<Kind>(existing?.tipo === 'tabla' || existing?.tipo === 'grafica' || existing?.tipo === 'dibujo' ? existing.tipo : 'imagen');
@@ -67,6 +75,9 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
   const [jobId, setJobId] = useState<string | null>(pendingJobId || null);
   const [previewReady, setPreviewReady] = useState(false);
   const [library, setLibrary] = useState(false);
+  const [purpose, setPurpose] = useState<'academico' | 'decoracion'>('academico');
+  const [blackAndWhite, setBlackAndWhite] = useState(blackAndWhiteDefault);
+  const [transparent, setTransparent] = useState(false);
   const jobChangeRef = useRef(onJobChange); jobChangeRef.current = onJobChange;
   function trackJob(id: string | null) { setJobId(id); jobChangeRef.current?.(id); }
   const [region, setRegion] = useState([0, 0, 100, 100]);
@@ -120,7 +131,8 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
     const token = ++sequence.current; setBusy(true); setError(''); setProposal(null); setClean(false); setPreviewReady(false);
     try {
       if (description.trim().length < 3) throw new Error('Describe el material que necesitas.');
-      const request: VisualRequest = { ...scope, request_key: crypto.randomUUID(), pregunta_id: questionId, tipo: kind, descripcion: description.trim() };
+      const request: VisualRequest = { ...scope, request_key: crypto.randomUUID(), pregunta_id: questionId, tipo: kind, descripcion: description.trim(),
+        uso: purpose, blanco_negro: blackAndWhite, fondo_transparente: mode === 'ai' && !structured && transparent };
       let block: TeacherVisualBlock;
       if (mode === 'crop' && existing?.recurso_id) {
         block = (await cropVisual({ ...request, tipo: 'imagen', source_resource_id: existing.recurso_id, region: region.map(value => value / 100) })).bloque;
@@ -140,18 +152,20 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
       }
       if (token === sequence.current) { setProposal(block); setClean(false); }
     } catch (cause) {
-      if (token === sequence.current) setError(cause instanceof Error && !('isAxiosError' in cause) ? cause.message : 'No pudimos preparar el material. Revisa los datos y vuelve a intentarlo; tu edición se conserva.');
+      if (token === sequence.current) setError(cause instanceof Error && !('isAxiosError' in cause) ? cause.message : toApiError(cause).status === 422 ? toApiError(cause).detail : 'No pudimos preparar el material. Revisa los datos y vuelve a intentarlo; tu edición se conserva.');
     } finally { if (token === sequence.current && mode !== 'ai') setBusy(false); else if (token === sequence.current && !jobId) setBusy(false); }
   }
   return <div className="min-w-0 space-y-2">
-    <Button type="button" variant="outline" onClick={() => { onBegin?.(); setOpen(true); }}>{existing ? 'Editar material' : 'Añadir contenido'}</Button>
+    <Button type="button" variant="outline" aria-label={existing ? 'Editar material' : 'Añadir contenido'} onClick={() => { onBegin?.(); setOpen(true); }}>{existing ? 'Editar material' : 'Añadir contenido'}{!existing && <span className="text-xs font-normal"> · figura, tabla o gráfico</span>}</Button>
     {onRemove && <Button variant="ghost" onClick={onRemove}>Quitar material de esta pregunta</Button>}
-    {createPortal(<Modal open={open} onClose={() => { void close(); }} title="Material de la pregunta" className="max-w-4xl" mobileViewport={mobile.viewport} mobileWriting={mobile.isWriting}>
+    {createPortal(<Modal open={open} onClose={() => { void close(); }} title="Material de la pregunta" className="max-w-6xl bg-surface" mobileViewport={mobile.viewport} mobileWriting={mobile.isWriting}>
       <div ref={formRef} className="min-w-0 space-y-4">
         <p className="text-sm text-muted">{proposal ? 'Comprueba el material antes de añadirlo.' : 'Previsualiza el material y comprueba la respuesta correcta. Nada cambia hasta que lo aceptes y guardes la evaluación.'}</p>
         <fieldset hidden={Boolean(proposal)} disabled={busy || Boolean(jobId)} className="min-w-0 space-y-4">
           <Field label="Tipo de material"><select aria-label="Tipo de material" className="min-h-11 w-full rounded-lg border border-border bg-surface px-3" value={kind} onChange={event => { change(); setKind(event.target.value as Kind); }}>
             <option value="imagen">Imagen</option><option value="dibujo">Dibujo</option><option value="tabla">Tabla editable</option><option value="grafica">Gráfica con datos</option></select></Field>
+          {!structured && <Field label="Uso de la figura"><select className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-base" value={purpose} onChange={event => { change(); setPurpose(event.target.value as 'academico' | 'decoracion'); }}>
+            <option value="academico">Necesaria para responder</option><option value="decoracion">Decoración</option></select></Field>}
           <Field label="Descripción del material"><Textarea value={description} maxLength={4000} onChange={event => { change(); setDescription(event.target.value); }} /></Field>
           {existing?.seguridad_contenido === 'privado_original' && existing.recurso_id && <details className="rounded-lg border border-border p-3"><summary className="min-h-11 cursor-pointer font-semibold">Recortar una figura de esta página</summary>
             <ProposalImage id={existing.recurso_id} />
@@ -163,7 +177,15 @@ export function QuestionVisualEditor({ evaluationId, materiaId, questionId, vers
           <Field label={structured ? 'O subir como imagen (sin celdas ni datos editables)' : 'Subir imagen (PNG, JPEG o WebP)'}><input className="block min-h-11 w-full max-w-full text-base" type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; if (file) void prepare('data', file); event.target.value = ''; }} /></Field>
           <Button variant="outline" onClick={() => setLibrary(value => !value)}>Elegir de la biblioteca</Button>
           {library && <><p className="text-sm text-muted">Ilustraciones temáticas. Comprueba que la imagen sea adecuada para esta pregunta; no reemplaza un gráfico científico ni una respuesta correcta.</p><MotifPicker suggestedArea={suggestedArea} disabled={busy} onSelect={item => { void prepareLibrary(item); }} onCancel={() => setLibrary(false)} /></>}
-          {generationEnabled && <Button variant="outline" onClick={() => { void prepare('ai'); }}>Crear propuesta con IA</Button>}
+          {generationEnabled && <div className="space-y-2 rounded-lg border border-border p-3">
+            {!structured && <>
+              <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={blackAndWhite} onChange={event => { change(); setBlackAndWhite(event.target.checked); }} />Trazos para imprimir en blanco y negro</label>
+              <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={transparent} onChange={event => { change(); setTransparent(event.target.checked); }} />Solicitar figura sin fondo</label>
+              <p className="text-xs leading-5 text-muted">Se crea solo una figura, no una hoja completa. Si el color es necesario para responder, desmarca blanco y negro. El fondo transparente depende del modelo configurado.</p>
+            </>}
+            <Button variant="outline" onClick={() => { void prepare('ai'); }}>Crear propuesta con IA</Button>
+            <p className="text-xs text-muted">Esta acción usa la API de IA. Elegir de la biblioteca o introducir datos no genera una imagen de pago.</p>
+          </div>}
         </fieldset>
         {(busy || jobId) && <p role="status">Preparando material… Puedes cancelar sin cambiar la evaluación.</p>}
         {error && <p role="alert" className="rounded-lg border border-amber-300 p-3 text-sm">{error}</p>}
