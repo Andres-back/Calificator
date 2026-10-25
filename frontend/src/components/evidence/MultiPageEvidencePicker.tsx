@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   AlertTriangle, ArrowDown, ArrowUp, Camera, CheckCircle2, FilePlus2, FileText, Images,
   RotateCw, Trash2, ZoomIn,
@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui';
 import type { EvidencePage, EvidenceRotation } from './evidencePayload';
 import { analyzeEvidenceImage } from './imageQuality';
 import { CameraCapture } from './CameraCapture';
+import { openEvidenceFilePicker, prefersNativeCapture } from './nativeCapture';
 
 const MAX_FILES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -72,13 +73,11 @@ function PreviewModal({ page, pageNumber, onClose }: { page: EvidencePage | null
 }
 
 export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '', allowPdf = true, maxTotalBytes = MAX_TOTAL_BYTES, maxImageBytes = MAX_IMAGE_BYTES }: Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const replacementIdRef = useRef<string | null>(null);
-  const selectionContext = useRef(contextKey);
+  const selectionCleanup = useRef<(() => void) | null>(null);
+  const contextEpoch = useRef(0);
   const currentContext = useRef(contextKey);
   currentContext.current = contextKey;
-  const [cameraRequest, setCameraRequest] = useState<{ id: string; context: string; replacementId: string | null } | null>(null);
+  const [cameraRequest, setCameraRequest] = useState<{ id: string; context: string; epoch: number; replacementId: string | null } | null>(null);
   const [preferredCameraId, setPreferredCameraId] = useState('');
   const pagesRef = useRef(pages);
   const mounted = useRef(true);
@@ -86,28 +85,49 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   disabledRef.current = disabled;
   const [previewId, setPreviewId] = useState<string | null>(null);
   useEffect(() => { pagesRef.current = pages; }, [pages]);
-  useEffect(() => { setCameraRequest(null); replacementIdRef.current = null; }, [contextKey]);
+  useLayoutEffect(() => {
+    contextEpoch.current++;
+    setCameraRequest(null);
+    setPreviewId(null);
+    return () => {
+      selectionCleanup.current?.();
+      selectionCleanup.current = null;
+    };
+  }, [contextKey, disabled]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
   const reportError = (message: string) => onError ? onError(message) : toast.error(message);
+  const canSelect = (replacementId: string | null) => !disabledRef.current && mounted.current
+    && !pagesRef.current.some((page) => page.file.type === 'application/pdf')
+    && (replacementId ? pagesRef.current.some((page) => page.id === replacementId) : pagesRef.current.length < MAX_FILES);
   const openCamera = (replacementId: string | null = null) => {
-    if (disabledRef.current) return;
-    replacementIdRef.current = replacementId;
-    setCameraRequest({ id: crypto.randomUUID(), context: contextKey, replacementId });
+    if (!canSelect(replacementId)) return;
+    if (prefersNativeCapture()) { selectFiles(true, replacementId); return; }
+    selectionCleanup.current?.();
+    selectionCleanup.current = null;
+    setCameraRequest({ id: crypto.randomUUID(), context: contextKey, epoch: contextEpoch.current, replacementId });
   };
   const selectFiles = (nativeCamera: boolean, replacementId: string | null = null) => {
-    selectionContext.current = contextKey;
-    replacementIdRef.current = replacementId;
+    if (!canSelect(replacementId)) return;
+    const epoch = contextEpoch.current;
+    selectionCleanup.current?.();
     setCameraRequest(null);
-    (nativeCamera ? cameraInputRef : fileInputRef).current?.click();
+    try {
+      selectionCleanup.current = openEvidenceFilePicker({ nativeCamera, allowPdf, onFiles: (files) => {
+        if (contextEpoch.current === epoch && currentContext.current === contextKey) void addFiles(files, replacementId, epoch);
+      } });
+    } catch {
+      selectionCleanup.current = null;
+      reportError('No pudimos abrir el selector. Puedes volver a intentarlo o subir una foto guardada.');
+    }
   };
 
-  const addFiles = async (fileList: FileList | File[], replacementId: string | null = null) => {
+  const addFiles = async (fileList: FileList | File[], replacementId: string | null = null, epoch = contextEpoch.current) => {
     const addedContext = contextKey;
     const incoming = Array.from(fileList);
-    if (!incoming.length || disabledRef.current || !mounted.current) return;
+    if (!incoming.length || disabledRef.current || !mounted.current || contextEpoch.current !== epoch) return;
     const currentPages = pagesRef.current;
     const replacementIndex = replacementId ? currentPages.findIndex((page) => page.id === replacementId) : -1;
     if (replacementId && replacementIndex < 0) return;
@@ -153,7 +173,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       id: page.id,
       quality: await analyzeEvidenceImage(page.file),
     }))).then((assessments) => {
-      if (!mounted.current || disabledRef.current || currentContext.current !== addedContext) return;
+      if (!mounted.current || disabledRef.current || currentContext.current !== addedContext || contextEpoch.current !== epoch) return;
       const byId = new Map(assessments.map((item) => [item.id, item.quality]));
       // Solo aplicar resultados a las mismas hojas que aún siguen en este paquete.
       if (!pagesRef.current.some((page) => byId.has(page.id))) return;
@@ -204,8 +224,6 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
           <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Tomar foto'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Abre la cámara y revisa la foto antes de añadirla</span></span>
         </button>
       </div>
-      <input ref={fileInputRef} type="file" disabled={disabled} multiple accept={`image/jpeg,image/png,image/webp${allowPdf ? ',application/pdf' : ''}`} aria-label="Seleccionar fotografías" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files && selectionContext.current === contextKey) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
-      <input ref={cameraInputRef} type="file" disabled={disabled} accept="image/*" capture="environment" className="hidden" onChange={(event) => { const replacementId = replacementIdRef.current; replacementIdRef.current = null; if (event.target.files && selectionContext.current === contextKey) void addFiles(event.target.files, replacementId); event.target.value = ''; }} />
 
       {pages.length > 0 && <>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-2 px-4 py-3">
@@ -226,7 +244,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
                   <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Revisa esta foto</p>
                   <p>{page.quality.warnings.join(' ')}</p>
-                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => openCamera(page.id)}>Repetir foto</button>
+                  <button type="button" disabled={disabled} className="mt-1 min-h-11 font-bold underline disabled:opacity-50" onClick={() => openCamera(page.id)}>Repetir foto</button>
                   <span className="ml-2">o continúa si puedes leerla.</span>
                 </div>
               )}
@@ -234,7 +252,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                 <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs leading-5 text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
                   <p className="flex items-center gap-1.5 font-bold"><AlertTriangle className="h-4 w-4" /> Reemplaza esta foto</p>
                   <p>{page.quality.warnings.join(' ')}</p>
-                  <button type="button" disabled={disabled} className="mt-1 font-bold underline disabled:opacity-50" onClick={() => openCamera(page.id)}>Reemplazar foto</button>
+                  <button type="button" disabled={disabled} className="mt-1 min-h-11 font-bold underline disabled:opacity-50" onClick={() => openCamera(page.id)}>Reemplazar foto</button>
                 </div>
               )}
               <div className="flex flex-wrap gap-1.5">
@@ -252,14 +270,14 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
         {!isPdf && pages.length > 1 && <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">Revisa el orden: Xali leerá primero la hoja 1 y continuará hasta la hoja {pages.length}.</p>}
       </>}
       <PreviewModal page={previewIndex >= 0 ? pages[previewIndex] : null} pageNumber={previewIndex + 1} onClose={() => setPreviewId(null)} />
-      {cameraRequest && cameraRequest.context === contextKey && !disabled && !isPdf && <CameraCapture key={cameraRequest.id}
+      {cameraRequest && cameraRequest.context === contextKey && cameraRequest.epoch === contextEpoch.current && !disabled && !isPdf && <CameraCapture key={cameraRequest.id}
         preferredCameraId={preferredCameraId} onCameraChange={setPreferredCameraId}
-        onClose={() => { setCameraRequest(null); replacementIdRef.current = null; }}
+        onClose={() => setCameraRequest(null)}
         onUpload={() => selectFiles(false, cameraRequest.replacementId)}
         onNativeCamera={() => selectFiles(true, cameraRequest.replacementId)}
         onCapture={(file) => {
-          if (currentContext.current === cameraRequest.context && !disabledRef.current) void addFiles([file], cameraRequest.replacementId);
-          setCameraRequest(null); replacementIdRef.current = null;
+          if (currentContext.current === cameraRequest.context && contextEpoch.current === cameraRequest.epoch && !disabledRef.current) void addFiles([file], cameraRequest.replacementId, cameraRequest.epoch);
+          setCameraRequest((current) => current?.id === cameraRequest.id ? null : current);
         }} />}
     </div>
   );

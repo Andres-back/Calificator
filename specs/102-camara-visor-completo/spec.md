@@ -74,6 +74,8 @@ Como docente, quiero ver el formato final con espacio para leer, recorrer todas 
 
 ## Supuestos
 
+- Evolución [127-camara-nativa-movil](../127-camara-nativa-movil/spec.md), issue #268: las acciones de foto priorizan cámara del dispositivo en celular/tableta y conservan webcam/selector en PC. Retorno nativo no se invalida solo por ocultamiento; los intentos se aíslan por apertura y época de entrega. No cambia el visor continuo de documentos, datos ni envío explícito.
+
 - Evoluciona los dominios propietarios 005 (evaluaciones) y 008 (calificación); no reemplaza sus reglas.
 - Se reutilizan los documentos y permisos actuales. El selector de evidencias también tiene un consumidor estudiante que debe conservar su flujo y restricciones.
 - La cámara depende de permisos y capacidades del navegador; no se requiere instalar una aplicación nativa ni activar servicios de pago.

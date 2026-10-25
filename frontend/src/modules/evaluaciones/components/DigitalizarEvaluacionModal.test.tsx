@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DigitalizarEvaluacionModal } from './DigitalizarEvaluacionModal';
@@ -41,6 +41,7 @@ function renderModal(onCompleted = vi.fn()) {
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   window.localStorage.clear();
   URL.createObjectURL = vi.fn(() => 'blob:photo');
@@ -56,6 +57,23 @@ beforeEach(() => {
 });
 
 describe('DigitalizarEvaluacionModal', () => {
+  it('127 native photo preserves the digitalization limits and does not submit until requested', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Android');
+    renderModal();
+    fireEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+    const input = document.querySelector('input[capture]')!;
+    expect(input.getAttribute('accept')).not.toContain('pdf');
+    const file = new File(['synthetic'], 'evaluacion.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(screen.getByText('0.0 MB de 20 MB')).toBeInTheDocument();
+    expect(mocks.post).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Digitalizar' }));
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledOnce());
+    const form = mocks.post.mock.calls[0][1] as FormData;
+    expect(form.getAll('file')).toEqual([file]);
+    expect(form.get('materia_id')).toBe('materia-1');
+    expect(JSON.parse(String(form.get('rotaciones')))).toEqual([0]);
+  });
   it('queues FormData, persists the job and lets the teacher continue navigating', async () => {
     const user = userEvent.setup();
     const { container } = renderModal();

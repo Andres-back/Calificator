@@ -72,6 +72,8 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 ## Evolución 105: éxito contextual
 
+La captura compartida evoluciona en [127-camara-nativa-movil](../127-camara-nativa-movil/spec.md), issue #268: prioriza cámara del teléfono/tableta, conserva webcam de PC y aísla el retorno por intento/época. Digitalización y entrega del estudiante conservan límites, formatos, permisos y envío explícito.
+
 [105-materia-movil-cola](../105-materia-movil-cola/spec.md) conserva el éxito visible en el paso Revisar y elimina únicamente el toast redundante de generación que podía cubrir la cabecera. No altera errores, advertencias, preguntas, guardado, modalidades ni publicación.
 
 ## Evolución 097: escritura móvil despejada

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AxiosError } from 'axios';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -64,6 +64,7 @@ function renderPage(entry = '/app/evaluaciones/evaluation-1/resolver') {
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   sessionStorage.clear();
   mocks.getEvaluation.mockResolvedValue({
@@ -432,9 +433,12 @@ describe('ResolverEvaluacionPage', () => {
     renderPage();
 
     const file = new File(['imagen'], 'taller.jpg', { type: 'image/jpeg' });
-    await screen.findByRole('button', { name: /Subir fotos o PDF/ });
-    const fileInput = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
-    await user.upload(fileInput, file);
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('iPhone');
+    await user.click(await screen.findByRole('button', { name: /^Tomar foto/ }));
+    const fileInput = document.querySelector('input[capture]') as HTMLInputElement;
+    expect(fileInput.getAttribute('capture')).toBe('environment');
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    expect(mocks.createFileDelivery).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Revisar y entregar 1 hoja' }));
     await user.click(screen.getByRole('button', { name: 'Entregar 1 hoja' }));
 
@@ -486,6 +490,7 @@ describe('ResolverEvaluacionPage', () => {
 
     expect(await screen.findByText('El docente solicitó reemplazar la entrega completa')).toBeInTheDocument();
     expect(screen.getByText(/Falta la hoja donde termina el ejercicio 3/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Subir fotos o PDF/ }));
     const input = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
     const pages = [
       new File(['uno'], 'hoja-1.jpg', { type: 'image/jpeg', lastModified: 1 }),

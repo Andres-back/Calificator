@@ -545,7 +545,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "9fb4b8718c515f85a4493190c58b57874dd9cb35cec8efbc5c6dd3f5657f2d78",
+  "source_digest": "7b55b55277215de9ea447d799f012febef45d03734a717aa6a604c8c62870eca",
   "surfaces": [
     {
       "actors": [
@@ -892,12 +892,6 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -3269,12 +3263,6 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/auth/me",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -4979,12 +4967,6 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/evaluaciones/{evaluacion_id}",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -7038,12 +7020,6 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/materias",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -7324,12 +7300,6 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/materias/{materia_id}",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -9311,12 +9281,6 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/users/me",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -9492,12 +9456,6 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/users/me/authorization",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -10667,12 +10625,6 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -11334,12 +11286,6 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "PATCH:/materias/{materia_id}",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -11755,12 +11701,6 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "PATCH:/users/me",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -12501,12 +12441,6 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/admin-icons.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/analytics/evento",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -15055,12 +14989,6 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/evaluaciones",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -18444,12 +18372,6 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/materias",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -21151,6 +21073,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/native-camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
@@ -21236,6 +21164,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/nativeCapture.test.ts"
         },
         {
           "level": "unit",
@@ -22285,12 +22219,6 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -23604,12 +23532,6 @@
           "reference": "/app/calificaciones",
           "status": "domain",
           "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app/calificaciones",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -28168,12 +28090,6 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "DELETE:/evaluaciones/{id}",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -31041,12 +30957,6 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/auth/me",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -32435,12 +32345,6 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -32862,12 +32766,6 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/evaluaciones/{id}",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -34073,12 +33971,6 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/materias/{id}",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -34626,12 +34518,6 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/materias",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -35304,12 +35190,6 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/users/me/authorization",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -36747,12 +36627,6 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "PATCH:/evaluaciones/{id}",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -37276,12 +37150,6 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "PATCH:/materias/{id}",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -37606,12 +37474,6 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "PATCH:/users/me",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -39243,12 +39105,6 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/e2e/admin-icons.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/analytics/evento",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -41406,12 +41262,6 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/evaluaciones",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -42394,12 +42244,6 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/materias",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -48042,12 +47886,6 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "calificaciones",
-          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -49340,12 +49178,6 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "evaluaciones",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",
@@ -51227,12 +51059,6 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "materias",
-          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -52755,12 +52581,6 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "users",
-          "status": "direct",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
           "level": "e2e",

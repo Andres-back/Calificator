@@ -77,6 +77,8 @@ La docente añade varias fotos sin preparar un PDF externo. Antes de enviar pued
 
 ## Supuestos
 
+- Evolución [127-camara-nativa-movil](../127-camara-nativa-movil/spec.md), issue #268: captura móvil directa del dispositivo, con orden, repetición, máximo de diez fotos y límites propios conservados. No añade conversión, IA, lectura nueva ni envíos automáticos.
+
 - El usuario aprobó expresamente el plan completo el 2026-10-21. La reparación urgente de nueve calificaciones pertenece a Spec 112 y se entrega por separado.
 - No se añaden llamadas de generación de imágenes, proveedores ni modelos nuevos. Figuras existentes siguen el mecanismo visual actual.
 - La consolidación de fotos conserva una copia normalizada y ordenada; no se describe como archivo byte a byte idéntico a cada foto original.

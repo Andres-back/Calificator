@@ -661,7 +661,9 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
     mimeType: 'image/png',
     buffer: readFileSync(new URL('../public/branding/feature-grade.png', import.meta.url)),
   };
-  await page.locator('input[type=file]').first().setInputFiles([file, { ...file, name: 'hoja2.png' }]);
+  const firstChooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: /Subir fotos o PDF/ }).click();
+  await (await firstChooser).setFiles([file, { ...file, name: 'hoja2.png' }]);
   await page.getByRole('button', { name: 'Rotar hoja 2' }).click();
   await expect(page.getByText('2 fotos en el orden mostrado', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Enviar a calificar', exact: true }).click();
@@ -677,7 +679,9 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
   // La URL cambia antes de que React remonte el formulario para el nuevo alumno.
   await expect(page.getByRole('status').filter({ hasText: 'Seleccionado: Segundo estudiante' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Subir fotos o PDF/ })).toBeEnabled();
-  await page.locator('input[type=file][multiple]').setInputFiles({ ...file, name: 'segunda-entrega.png' });
+  const secondChooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: /Subir fotos o PDF/ }).click();
+  await (await secondChooser).setFiles({ ...file, name: 'segunda-entrega.png' });
   const submitButton = page.getByRole('button', { name: 'Enviar a calificar', exact: true });
   await expect(submitButton).toBeEnabled();
   await submitButton.click();

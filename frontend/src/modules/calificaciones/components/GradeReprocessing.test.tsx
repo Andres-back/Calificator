@@ -4,9 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CalificacionDetalle } from '@/types/api';
 import { GradeReprocessing } from './GradeReprocessing';
 
-const mocks = vi.hoisted(() => ({ send: vi.fn(), history: vi.fn() }));
+const mocks = vi.hoisted(() => ({ send: vi.fn(), history: vi.fn(), realPicker: false }));
 vi.mock('../api', () => ({ reprocessGrade: mocks.send, listGradingRevisions: mocks.history }));
-vi.mock('@/components/evidence/MultiPageEvidencePicker', () => ({ MultiPageEvidencePicker: ({ onChange }: { onChange: (pages: unknown[]) => void }) => <button onClick={() => onChange([{ id: 'page', file: new File(['synthetic'], 'photo.jpg', { type: 'image/jpeg' }), rotation: 90 }])}>Tomar foto sintética</button> }));
+vi.mock('@/components/evidence/MultiPageEvidencePicker', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/evidence/MultiPageEvidencePicker')>();
+  return { MultiPageEvidencePicker: (props: React.ComponentProps<typeof actual.MultiPageEvidencePicker>) => mocks.realPicker
+    ? <actual.MultiPageEvidencePicker {...props} />
+    : <button onClick={() => props.onChange([{ id: 'page', file: new File(['synthetic'], 'photo.jpg', { type: 'image/jpeg' }), rotation: 90 }])}>Tomar foto sintética</button> };
+});
+vi.mock('@/components/evidence/imageQuality', () => ({ analyzeEvidenceImage: vi.fn().mockResolvedValue(null) }));
 const cal = { id: 'c1', evaluacion_id: 'e1', materia_id: 'm1', estudiante_id: 's1', estudiante_nombre: 'Alumno sintético', evaluacion_nombre: 'Actividad sintética',
   estado: 'confirmada', nota_confirmada: 0, revisado_por_docente: true, entrega_archivo_url: '/api/evidencia', updated_at: '2026-10-22T00:00:00', resultado_json: {} } as unknown as CalificacionDetalle;
 function setup(changes: Partial<CalificacionDetalle> = {}, expandOptions = true) {
@@ -15,9 +21,26 @@ function setup(changes: Partial<CalificacionDetalle> = {}, expandOptions = true)
   if (expandOptions) fireEvent.click(screen.getByText('Recalificar y cambiar evidencia'));
   return accepted;
 }
-beforeEach(() => { vi.clearAllMocks(); mocks.history.mockResolvedValue([]); mocks.send.mockResolvedValue({ ...cal, estado: 'procesando', nota_confirmada: null, resultado_json: { job_id: 'job1' } }); });
+beforeEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); mocks.realPicker = false; mocks.history.mockResolvedValue([]); mocks.send.mockResolvedValue({ ...cal, estado: 'procesando', nota_confirmada: null, resultado_json: { job_id: 'job1' } }); });
 
 describe('corregir una entrega desde la revisión docente', () => {
+  it('127 native replacement requires explicit reopening confirmation and preserves file/rotation payload', async () => {
+    mocks.realPicker = true;
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('iPhone');
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar evidencia' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+    const input = document.querySelector('input[capture]')!;
+    expect(input.getAttribute('capture')).toBe('environment');
+    const file = new File(['anonymous'], 'new.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(mocks.send).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Rotar hoja 1' }));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await waitFor(() => expect(mocks.send).toHaveBeenCalledWith('c1', expect.objectContaining({ files: [file], rotations: [90], confirmed: true, version: cal.updated_at })));
+  });
   it('mantiene las opciones avanzadas plegadas hasta que el docente las abre', () => {
     setup({}, false);
     expect(screen.getByRole('button', { name: 'Volver a calificar' })).not.toBeVisible();
