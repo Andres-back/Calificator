@@ -69,6 +69,8 @@ Como administrador, quiero iconos ilustrados coherentes con XCalificator en Inic
 
 ## Supuestos
 
+- Evolución [127-camara-nativa-movil](../127-camara-nativa-movil/spec.md), issue #268: la selección de webcams de este incremento se conserva en PC, incluso con ventana estrecha; móvil prioriza cámara del dispositivo. No modifica ilustraciones administrativas ni Xali.
+
 - Evolución de Spec 102 para captura y del sistema ilustrado existente; no incluye la digitalización visual pendiente de Spec 101 ni cambios de IA, datos o backend.
 - Se usan solo las cámaras que el navegador autorice; no se instala aplicación nativa ni se promete acceso universal a todos los dispositivos del sistema.
 - Se crean tres iconos nuevos para cuentas de todas las edades, permisos y correo; no se reutiliza una imagen de alumnos, IA o reclamos como si significara estas funciones.

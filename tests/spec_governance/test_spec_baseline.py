@@ -121,6 +121,7 @@ ALL_SPECS = {
     "123-motivos-por-area",
     "125-edicion-impresion-evaluaciones",
     "126-retroalimentacion-unificada-chat",
+    "127-camara-nativa-movil",
 }
 OWNED_SPECS = {
     name

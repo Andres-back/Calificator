@@ -111,6 +111,8 @@ Carga, nota manual, reemplazo, ajuste, confirmación y publicación conservan su
 
 ## Evolución 105: seguimiento discreto
 
+La captura compartida evoluciona en [127-camara-nativa-movil](../127-camara-nativa-movil/spec.md), issue #268: cámara nativa móvil sin visor web previo; PC conserva selector. Cancelación, reemplazo y resultados tardíos se aíslan por apertura y época de entrega, sin modificar notas, evidencia guardada o contratos de recalificación.
+
 [105-materia-movil-cola](../105-materia-movil-cola/spec.md) inicia el monitor compacto con cantidad/estado y Ver progreso; puede minimizarse sin retirar, cancelar, reenviar ni detener trabajos. Funciona embebido y en otras páginas sin superponer captura. Conserva incidencias, resultados y reintentos; pendientes locales se aíslan por cuenta y recuperación tardía no se aplica a otra sesión. El almacenamiento legado permanece intacto, pero sus nombres sin propietario no se muestran como autorizados; pendientes activos se recuperan desde servidor. No modifica notas ni evidencias.
 
 ## Evolución 100: retroalimentación legible y precisión visible
