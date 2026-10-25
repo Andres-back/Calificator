@@ -602,7 +602,10 @@ test('crea desde una materia sin repetir el contexto y permite abrir opciones', 
   await page.getByRole('button', { name: 'Crear con IA', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Generar evaluación con IA' });
   await expect(dialog.getByText('Grado 4 · Área: Matemáticas')).toBeVisible();
-  await expect(dialog.getByRole('combobox')).toHaveCount(0);
+  await expect(dialog.getByRole('combobox', { name: /Materia|Grado|Área/ })).toHaveCount(0);
+  await expect(dialog.getByRole('combobox')).toHaveCount(2);
+  await expect(dialog.getByRole('combobox', { name: 'Distribución', exact: true })).toHaveValue('compacta');
+  await expect(dialog.getByRole('combobox', { name: 'Color de impresión', exact: true })).toHaveValue('bn');
   await dialog.getByLabel(/Qué quieres evaluar/).fill('Multiplicación');
   const done = dialog.getByRole('button', { name: 'Listo', exact: true });
   await expect(done).toBeVisible();
