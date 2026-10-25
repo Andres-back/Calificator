@@ -67,3 +67,4 @@ FR-001/FR-002 → T005–008; FR-003 → T006–007 y prueba de guardado de mens
 ## Corrección de CI 2026-10-25
 
 - [x] T026 Actualizar los recorridos de biblioteca e impresión de motivos en frontend/e2e/motif-library.spec.ts y motif-print.spec.ts al nombre «Retroalimentación del grupo» y selección explícita aprobados (FR-004/FR-014, T008/T020); conservar todas las aserciones de contenido, motivos y PDF, ejecutar los 24 casos afectados y regresiones126, registrar resultados y preparar el ajuste para el PR267 sin fusionar ni desplegar.
+- [x] T027 Regenerar specs/system-inventory/current.json con scripts/build_system_inventory.py --write tras T026; comprobar que solo cambia la huella de fuentes, validar inventario, pruebas y contrato de gobernanza, y registrar el cierre documental sin modificar producto ni workflows (T020).
