@@ -1,5 +1,19 @@
 import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
+export type EvaluationCopyRequest = { materia_destino_id: string; request_key: string; expected_updated_at: string; expected_content_version_id: string | null; nombre?: string };
+export type EvaluationCopyStatus = { job_id: string; estado: string; progreso: number; materia_destino_id: string; evaluacion_id: string | null; error: string | null; solicitud?: EvaluationCopyRequest | null };
+export async function getLatestEvaluationCopy(id: string): Promise<EvaluationCopyStatus | null> {
+  const { data } = await api.get<EvaluationCopyStatus | null>(`/evaluaciones/${id}/ultima-copia`);
+  return data;
+}
+export async function requestEvaluationCopy(id: string, request: EvaluationCopyRequest): Promise<EvaluationCopyStatus> {
+  const { data } = await api.post<EvaluationCopyStatus>(`/evaluaciones/${id}/copiar`, request);
+  return data;
+}
+export async function getEvaluationCopy(id: string): Promise<EvaluationCopyStatus> {
+  const { data } = await api.get<EvaluationCopyStatus>(`/evaluaciones/copias/${id}`);
+  return data;
+}
 import type { EvaluationVisualManifest, DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {

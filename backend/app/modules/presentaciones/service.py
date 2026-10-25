@@ -282,7 +282,7 @@ async def _resolve_presentacion_context(
 ) -> tuple[UUID, PresentacionCreate]:
     if payload.materia_id:
         materia = await materias_service.ensure_can_manage_materia(
-            db, payload.materia_id, current_user
+            db, payload.materia_id, current_user, admission=True
         )
         enriched = payload.model_copy(
             update={

@@ -154,3 +154,7 @@ Como profesor, quiero insertar imágenes, tablas, gráficas o dibujos en una pre
 - El documento aportado se utiliza como referencia local de diagnóstico. Las muestras versionadas serán sintéticas y no incluirán documentos de docentes, nombres de alumnos ni evidencias reales.
 - Esta evolución desarrolla el dominio [005-evaluaciones](../005-evaluaciones/spec.md) y sus contratos de digitalización, documentos y calificación; el plan actualizará las referencias responsables sin crear contratos contradictorios.
 - El usuario aprobó este alcance ampliado el 2026-10-15 mediante «adelante» y el plan mediante «aprove». La revisión de requisitos, implementación y autorización de fusión o despliegue siguen sus fases separadas conforme a la constitución.
+
+## Evolución 128: copia privada de contenido visual existente
+
+[128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, reutiliza contenido guardado sin redigitalizar. Copia bytes verificados en almacenamiento privado de destino y remapea preguntas, bloques, recursos, cobertura y revisión; no comparte permisos por referencia al origen ni publica originales. Conserva avisos/claves pendientes y material revisado. Snapshot fijado al admitir, staging determinista y compensación de archivos propios sin referencia persistida evitan copias incompletas o borrado tras un commit incierto. No añade IA ni inventa documentos ausentes.

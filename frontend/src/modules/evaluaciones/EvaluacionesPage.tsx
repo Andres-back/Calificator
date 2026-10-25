@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { EvaluationCopyDialog } from './EvaluationCopyDialog';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -513,6 +514,7 @@ export function EvaluacionesPage() {
   const [digitalizeOpen, setDigitalizeOpen] = useState(false);
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
+  const [copyingEval, setCopyingEval] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
   const [pending, setPending] = useState<Record<ListField, string>>(emptyPending);
 
@@ -780,6 +782,7 @@ export function EvaluacionesPage() {
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+                      {canCreate && permissions.has('evaluations.read') && <Button size="sm" className="min-h-11" variant="outline" onClick={() => setCopyingEval(ev)}>Usar en otra materia</Button>}
                       {user?.rol !== 'estudiante' && permissions.has('evaluations.read') && (
                         <Button size="sm" variant="outline" onClick={() => setPreviewEval(ev)}>
                           <Eye className="h-4 w-4" aria-hidden="true" /> Visualizar
@@ -819,6 +822,7 @@ export function EvaluacionesPage() {
         </>
       )}
 
+      {copyingEval && canCreate && <EvaluationCopyDialog key={copyingEval.id + user?.id} evaluation={copyingEval} onClose={() => setCopyingEval(null)} />}
       {previewEval && (
         <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
           canEditPresentation={canUpdate}

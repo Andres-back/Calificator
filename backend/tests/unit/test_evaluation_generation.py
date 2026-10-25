@@ -262,7 +262,7 @@ def test_generate_draft_persists_private_answers_and_teacher_review_trace(
     db = FakeDB()
     captured = {}
 
-    async def can_manage(_db, _materia_id, _user):
+    async def can_manage(_db, _materia_id, _user, *, admission=False):
         return materia
 
     async def get_official(_db, _ids):

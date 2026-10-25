@@ -147,7 +147,7 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
         async def refresh(self, _value: object) -> None:
             return None
 
-    async def manage(_db, evaluation_id, _user):
+    async def manage(_db, evaluation_id, _user, *, admission=False):
         assert evaluation_id == evaluation.id
         return evaluation
 

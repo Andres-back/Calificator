@@ -47,7 +47,7 @@ async def save_attendance_day(
     db: AsyncSession = Depends(get_db),
 ) -> AsistenciaDiaRead:
     require_permission_now(current_user, "attendance.manage")
-    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user, admission=True)
     return await service.save_attendance_day(db, materia, payload, current_user)
 
 
@@ -59,5 +59,5 @@ async def patch_attendance_day(
     db: AsyncSession = Depends(get_db),
 ) -> AsistenciaDiaRead:
     require_permission_now(current_user, "attendance.manage")
-    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user, admission=True)
     return await service.patch_attendance_day(db, materia, payload, current_user)

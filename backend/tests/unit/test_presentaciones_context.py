@@ -19,7 +19,7 @@ def test_materia_enriquece_el_contexto_de_generacion(monkeypatch) -> None:
         descripcion="Curso enfocado en fenomenos del entorno colombiano.",
     )
 
-    async def ensure_can_manage_materia(*_args):
+    async def ensure_can_manage_materia(*_args, **_kwargs):
         return materia
 
     monkeypatch.setattr(service.materias_service, "ensure_can_manage_materia", ensure_can_manage_materia)

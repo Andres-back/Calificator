@@ -4,6 +4,7 @@ import asyncio
 from copy import deepcopy
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -12,6 +13,12 @@ from fastapi import HTTPException
 from app.modules.evaluaciones import service
 from app.modules.evaluaciones.schemas import EvaluacionEstructuraValidacion, EvaluacionUpdate
 from app.shared.enums import EvaluacionEstado, EvaluacionModalidad
+
+
+@pytest.fixture(autouse=True)
+def active_subject(monkeypatch):
+    # Subject admission is exercised with a real database in Spec128 contracts.
+    monkeypatch.setattr(service, "ensure_active_materia", AsyncMock())
 
 
 class FakeDB:
@@ -53,6 +60,7 @@ def _evaluation(
         )
     return SimpleNamespace(
         id=uuid4(),
+        materia_id=uuid4(),
         estado=state,
         recepcion_habilitada=reception_enabled,
         fecha_publicacion=None,

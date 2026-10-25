@@ -107,7 +107,7 @@ async def create_dba_personalizado(
     # Solo el profesor dueño de la materia (o admin) puede crear DBA en ella.
     require_permission_now(current_user, "dba.manage")
     materia = await materias_service.ensure_can_manage_materia(
-        db, materia_id, current_user
+        db, materia_id, current_user, admission=True
     )
     return await service.create_dba_personalizado(
         db,

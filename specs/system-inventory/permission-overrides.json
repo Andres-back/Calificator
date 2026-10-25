@@ -2,6 +2,27 @@
   "schema_version": 1,
   "permission_overrides": [
     {
+      "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/ultima-copia",
+      "actors": ["admin", "profesor"],
+      "reason": "Exige simultáneamente evaluations.read y evaluations.create, además de gestión de fuente y destino. La extracción estática une actores de cada permiso y no representa su intersección.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/270",
+      "evidence": ["backend/tests/integration/test_evaluation_copy.py"]
+    },
+    {
+      "surface_id": "backend:GET:/evaluaciones/copias/{job_id}",
+      "actors": ["admin", "profesor"],
+      "reason": "Requiere lectura y creación, identidad del solicitante y gestión del destino. El alumno no obtiene estado privado pese a tener lectura de evaluaciones.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/270",
+      "evidence": ["backend/tests/integration/test_evaluation_copy.py"]
+    },
+    {
+      "surface_id": "backend:POST:/evaluaciones/{evaluacion_id}/copiar",
+      "actors": ["admin", "profesor"],
+      "reason": "Lectura y creación son acumulativas; ambos extremos deben ser gestionables y del mismo propietario. El contrato de alumno está denegado y no se copian datos académicos.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/270",
+      "evidence": ["backend/tests/integration/test_evaluation_copy.py"]
+    },
+    {
       "surface_id": "backend:GET:/biblioteca-motivos",
       "actors": [
         "admin",

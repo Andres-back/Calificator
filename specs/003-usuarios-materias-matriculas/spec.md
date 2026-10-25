@@ -71,3 +71,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Evolución 095: contexto docente y sesión
 
 [095-flujo-docente-ligero](../095-flujo-docente-ligero/spec.md) mantiene matrícula y perfil actuales; compacta la cabecera docente mostrando grado. El marcador local de continuación guarda únicamente IDs/fecha por docente y caduca a los siete días; cerrar/perder sesión o cambiar de cuenta lo elimina sin cambiar autenticación ni caché académica. No guarda archivos, respuestas, notas o contraseñas ni concede permisos. El rol estudiante conserva acceso y sus comprobaciones.
+
+## Evolución 128: gestión recuperable de materias
+
+[128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, expone editar metadatos y «Eliminar de mis materias» como archivo recuperable confirmado, no DELETE físico. Archivadas conserva matrículas, notas, evidencias, asistencia e histórico consultable/exportable. Cierra código, recepción y admisión nueva; trabajos aceptados pueden terminar. Restaurar comparte bloqueo del propietario/cupo de seis con crear y no reabre inscripciones ni recepción. PATCH conserva compatibilidad y la UI nueva comprueba versión; propiedad/permisos y auditoría se verifican en servidor.

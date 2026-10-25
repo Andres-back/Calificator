@@ -1,35 +1,21 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 555,
-      "missing": 98
+      "covered": 565,
+      "missing": 96
     },
     "by_kind": {
-      "endpoint": 308,
-      "frontend_call": 205,
+      "endpoint": 311,
+      "frontend_call": 208,
       "frontend_route": 38,
       "integration": 7,
-      "job": 26,
+      "job": 28,
       "table": 69
     },
-    "total": 653
+    "total": 661
   },
   "exceptions": [],
   "findings": [
-    {
-      "category": "missing_coverage",
-      "description": "5 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
-      "id": "F-1306EF66A8D3",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/materias/{materia_id}/dba-personalizados",
-        "backend:POST:/materias/{materia_id}/dba-personalizados",
-        "backend:POST:/materias/{materia_id}/dba-personalizados/upload-document",
-        "table:dba_catalog",
-        "table:dba_personalizados"
-      ]
-    },
     {
       "category": "missing_coverage",
       "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
@@ -195,6 +181,18 @@
     },
     {
       "category": "missing_coverage",
+      "description": "3 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.",
+      "id": "F-E2499E78D99B",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/materias/{materia_id}/dba-personalizados",
+        "backend:POST:/materias/{materia_id}/dba-personalizados",
+        "backend:POST:/materias/{materia_id}/dba-personalizados/upload-document"
+      ]
+    },
+    {
+      "category": "missing_coverage",
       "description": "4 superficies de 010-presentaciones-imagenes no tienen evidencia de prueba observable.",
       "id": "F-EB65DEC976DE",
       "issue_url": "",
@@ -237,6 +235,42 @@
     }
   ],
   "permission_overrides": [
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_evaluation_copy.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/270",
+      "reason": "Exige simultáneamente evaluations.read y evaluations.create, además de gestión de fuente y destino. La extracción estática une actores de cada permiso y no representa su intersección.",
+      "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/ultima-copia"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_evaluation_copy.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/270",
+      "reason": "Requiere lectura y creación, identidad del solicitante y gestión del destino. El alumno no obtiene estado privado pese a tener lectura de evaluaciones.",
+      "surface_id": "backend:GET:/evaluaciones/copias/{job_id}"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "backend/tests/integration/test_evaluation_copy.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/270",
+      "reason": "Lectura y creación son acumulativas; ambos extremos deben ser gestionables y del mismo propietario. El contrato de alumno está denegado y no se copian datos académicos.",
+      "surface_id": "backend:POST:/evaluaciones/{evaluacion_id}/copiar"
+    },
     {
       "actors": [
         "admin",
@@ -545,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "7b55b55277215de9ea447d799f012febef45d03734a717aa6a604c8c62870eca",
+  "source_digest": "1b61c29e666b8166c0447a98eb351c82a36b30fed133f9b5146bb9159bc1308a",
   "surfaces": [
     {
       "actors": [
@@ -699,7 +733,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1098,
+      "source_line": 1101,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -793,7 +827,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{evaluacion_id}",
-      "source_line": 484,
+      "source_line": 487,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -808,6 +842,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -867,6 +907,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -903,6 +949,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -922,6 +974,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -1000,6 +1058,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -3637,7 +3701,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/bandeja-docente",
-      "source_line": 1582,
+      "source_line": 1588,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3713,7 +3777,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
-      "source_line": 1408,
+      "source_line": 1414,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3777,7 +3841,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
-      "source_line": 1453,
+      "source_line": 1459,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3840,7 +3904,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 909,
+      "source_line": 911,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3903,7 +3967,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
-      "source_line": 933,
+      "source_line": 935,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3966,7 +4030,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1703,
+      "source_line": 1709,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4035,7 +4099,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose/historial",
-      "source_line": 1739,
+      "source_line": 1745,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4104,7 +4168,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/detalle",
-      "source_line": 1509,
+      "source_line": 1515,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4166,7 +4230,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1656,
+      "source_line": 1662,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4228,7 +4292,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones",
-      "source_line": 106,
+      "source_line": 108,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -4290,7 +4354,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia",
-      "source_line": 148,
+      "source_line": 150,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -4623,7 +4687,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/boletin",
-      "source_line": 835,
+      "source_line": 837,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4687,7 +4751,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/resumen-academico",
-      "source_line": 814,
+      "source_line": 816,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4784,6 +4848,57 @@
     },
     {
       "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override",
+        "get_current_user",
+        "require_permission_now:evaluations.create",
+        "require_permission_now:evaluations.read"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "get_copy",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_evaluation_copy.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/270",
+        "permission_override_reason": "Requiere lectura y creación, identidad del solicitante y gestión del destino. El alumno no obtiene estado privado pese a tener lectura de evaluaciones.",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/evaluaciones/copias/{job_id}",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/copias/{job_id}",
+      "source_line": 29,
+      "source_path": "backend/app/modules/evaluaciones/copy_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/copias/{job_id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/copias/{job_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/copias/{job_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "authenticated"
       ],
       "authorization": [
@@ -4868,7 +4983,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}",
-      "source_line": 304,
+      "source_line": 307,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -4883,6 +4998,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -4942,6 +5063,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -4978,6 +5105,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -4997,6 +5130,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -5075,6 +5214,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -5183,7 +5328,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/actividad",
-      "source_line": 314,
+      "source_line": 317,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5216,7 +5361,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
-      "source_line": 795,
+      "source_line": 797,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5284,7 +5429,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/docx",
-      "source_line": 393,
+      "source_line": 396,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5317,7 +5462,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
-      "source_line": 1764,
+      "source_line": 1770,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5385,7 +5530,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
-      "source_line": 1125,
+      "source_line": 1128,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5448,7 +5593,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
-      "source_line": 1595,
+      "source_line": 1601,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5551,7 +5696,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/pdf",
-      "source_line": 363,
+      "source_line": 366,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -5619,7 +5764,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/revision",
-      "source_line": 771,
+      "source_line": 773,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5658,6 +5803,45 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}/revision",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override",
+        "get_current_user",
+        "require_permission_now:evaluations.create",
+        "require_permission_now:evaluations.read"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "latest_copy",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_evaluation_copy.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/270",
+        "permission_override_reason": "Exige simultáneamente evaluations.read y evaluations.create, además de gestión de fuente y destino. La extracción estática une actores de cada permiso y no representa su intersección.",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/evaluaciones/{evaluacion_id}/ultima-copia",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{evaluacion_id}/ultima-copia",
+      "source_line": 15,
+      "source_path": "backend/app/modules/evaluaciones/copy_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/ultima-copia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
     },
@@ -6831,6 +7015,12 @@
           "level": "unit",
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
         },
         {
@@ -6996,6 +7186,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -7026,6 +7222,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -7033,6 +7235,18 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -7153,6 +7367,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -7281,6 +7501,12 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -7311,6 +7537,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -7318,6 +7550,18 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -7438,6 +7682,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -7761,7 +8011,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/evaluaciones",
-      "source_line": 288,
+      "source_line": 291,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -10179,7 +10429,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
-      "source_line": 979,
+      "source_line": 981,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10241,7 +10491,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/ajustar",
-      "source_line": 720,
+      "source_line": 722,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10303,7 +10553,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/confirmar",
-      "source_line": 703,
+      "source_line": 705,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10365,7 +10615,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/publicar",
-      "source_line": 1530,
+      "source_line": 1536,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10427,7 +10677,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
-      "source_line": 737,
+      "source_line": 739,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10521,7 +10771,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}",
-      "source_line": 417,
+      "source_line": 420,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -10536,6 +10786,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -10595,6 +10851,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -10631,6 +10893,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -10650,6 +10918,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -10728,6 +11002,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -10835,7 +11115,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
-      "source_line": 1751,
+      "source_line": 1757,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10903,7 +11183,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
-      "source_line": 495,
+      "source_line": 498,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -11174,7 +11454,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidencia_id}/resolver",
-      "source_line": 1672,
+      "source_line": 1678,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -11262,6 +11542,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -11292,6 +11578,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -11299,6 +11591,18 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -11419,6 +11723,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -13585,6 +13895,12 @@
         {
           "level": "unit",
           "reference": "POST:/calificaciones/foto",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/foto",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
@@ -13652,7 +13968,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote",
-      "source_line": 388,
+      "source_line": 389,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13726,7 +14042,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 1569,
+      "source_line": 1575,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13788,7 +14104,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 501,
+      "source_line": 502,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13856,7 +14172,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 1559,
+      "source_line": 1565,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13918,7 +14234,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 1549,
+      "source_line": 1555,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13986,7 +14302,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 868,
+      "source_line": 870,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14048,7 +14364,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
-      "source_line": 1022,
+      "source_line": 1024,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14110,7 +14426,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1635,
+      "source_line": 1641,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14296,7 +14612,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
-      "source_line": 343,
+      "source_line": 344,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14890,7 +15206,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 278,
+      "source_line": 280,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -14905,6 +15221,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -14964,6 +15286,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -15000,6 +15328,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -15019,6 +15353,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -15097,6 +15437,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -15631,7 +15977,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/sorpresa",
-      "source_line": 268,
+      "source_line": 269,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15669,7 +16015,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
-      "source_line": 462,
+      "source_line": 465,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15707,7 +16053,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
-      "source_line": 754,
+      "source_line": 756,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -15769,7 +16115,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/cerrar",
-      "source_line": 451,
+      "source_line": 454,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15782,6 +16128,45 @@
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacion_id}/cerrar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override",
+        "get_current_user",
+        "require_permission_now:evaluations.create",
+        "require_permission_now:evaluations.read"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "copy_evaluation",
+        "permission_override_evidence": [
+          "backend/tests/integration/test_evaluation_copy.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/270",
+        "permission_override_reason": "Lectura y creación son acumulativas; ambos extremos deben ser gestionables y del mismo propietario. El contrato de alumno está denegado y no se copian datos académicos.",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/evaluaciones/{evaluacion_id}/copiar",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/{evaluacion_id}/copiar",
+      "source_line": 22,
+      "source_path": "backend/app/modules/evaluaciones/copy_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/copiar",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
@@ -15807,7 +16192,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
-      "source_line": 429,
+      "source_line": 432,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -15845,7 +16230,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas",
-      "source_line": 1179,
+      "source_line": 1183,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -15907,7 +16292,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
-      "source_line": 1270,
+      "source_line": 1275,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -15969,7 +16354,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/iniciar-entrega",
-      "source_line": 1163,
+      "source_line": 1166,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -16031,7 +16416,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
-      "source_line": 473,
+      "source_line": 476,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -16069,7 +16454,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/publicar",
-      "source_line": 440,
+      "source_line": 443,
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
@@ -16108,7 +16493,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
-      "source_line": 1612,
+      "source_line": 1618,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -18261,7 +18646,7 @@
       "kind": "endpoint",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "POST:/jobs/{job_id}/cancelar",
-      "source_line": 364,
+      "source_line": 368,
       "source_path": "backend/app/modules/jobs/router.py",
       "states": [],
       "tests": [
@@ -18348,6 +18733,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -18378,6 +18769,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -18385,6 +18782,18 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -18505,6 +18914,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -19882,7 +20297,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1718,
+      "source_line": 1724,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -20179,6 +20594,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_admin_mail_config.py"
         },
         {
@@ -20252,6 +20673,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -20378,6 +20805,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
         },
         {
           "level": "unit",
@@ -20995,6 +21428,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -21020,6 +21459,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -21559,6 +22010,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
         },
         {
@@ -21907,6 +22364,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaManagement.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaRecursos.test.tsx"
         },
         {
@@ -21950,6 +22413,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/attendanceReportModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/gradebookExportModel.test.ts"
         },
         {
           "level": "unit",
@@ -22230,6 +22699,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -22249,6 +22724,18 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -22429,6 +22916,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -24797,6 +25290,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -24804,6 +25303,18 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -24906,6 +25417,12 @@
           "reference": "/app/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -25048,6 +25565,12 @@
           "level": "e2e",
           "reference": "/app/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -25055,6 +25578,18 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -25157,6 +25692,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -27986,7 +28527,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "DELETE:/evaluaciones/{id}",
-      "source_line": 121,
+      "source_line": 135,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -28001,6 +28542,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -28060,6 +28607,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -28096,6 +28649,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -28115,6 +28674,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -28193,6 +28758,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -31639,7 +32210,7 @@
       "kind": "frontend_call",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 203,
+      "source_line": 217,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -31989,6 +32560,46 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/evaluaciones/copias/{job_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/evaluaciones/copias/{id}:frontend/src/modules/evaluaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/copias/{id}",
+      "source_line": 14,
+      "source_path": "frontend/src/modules/evaluaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/copias/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/copias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/copias/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/evaluaciones/impresion/{job_id}/pdf",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -32071,7 +32682,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/actividad",
-      "source_line": 145,
+      "source_line": 159,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32157,7 +32768,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
-      "source_line": 215,
+      "source_line": 229,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32185,7 +32796,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-entrega",
-      "source_line": 136,
+      "source_line": 150,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32213,7 +32824,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
-      "source_line": 178,
+      "source_line": 192,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32241,7 +32852,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacionId}/{format}",
-      "source_line": 164,
+      "source_line": 178,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32256,6 +32867,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -32315,6 +32932,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -32351,6 +32974,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -32370,6 +32999,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -32448,6 +33083,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -32551,7 +33192,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluationId}/original",
-      "source_line": 73,
+      "source_line": 87,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32581,7 +33222,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluationId}/recursos/{resourceId}",
-      "source_line": 66,
+      "source_line": 80,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32659,6 +33300,34 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/evaluaciones/{evaluacion_id}/ultima-copia",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/evaluaciones/{id}/ultima-copia:frontend/src/modules/evaluaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{id}/ultima-copia",
+      "source_line": 6,
+      "source_path": "frontend/src/modules/evaluaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}/ultima-copia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/evaluaciones/{evaluacion_id}",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -32667,7 +33336,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{id}",
-      "source_line": 62,
+      "source_line": 76,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -32682,6 +33351,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -32741,6 +33416,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -32777,6 +33458,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -32796,6 +33483,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -32874,6 +33567,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -33547,6 +34246,12 @@
           "level": "unit",
           "reference": "GET:/jobs/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
         },
         {
@@ -33631,6 +34336,12 @@
           "level": "unit",
           "reference": "GET:/jobs/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
         },
         {
@@ -33709,6 +34420,12 @@
       "source_path": "frontend/src/modules/calificaciones/gradingJobs.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/jobs/{jobId}",
@@ -33815,6 +34532,12 @@
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/jobs/{jobId}",
@@ -33947,6 +34670,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -33977,6 +34706,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -33984,6 +34719,18 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -34104,6 +34851,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -34377,7 +35130,7 @@
       "kind": "frontend_call",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materiaId}/evaluaciones",
-      "source_line": 58,
+      "source_line": 72,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -34499,6 +35252,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -34529,6 +35288,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -34536,6 +35301,18 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -34656,6 +35433,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -36523,7 +37306,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{id}",
-      "source_line": 101,
+      "source_line": 115,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -36538,6 +37321,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -36597,6 +37386,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -36633,6 +37428,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -36652,6 +37453,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -36730,6 +37537,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -37126,6 +37939,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -37156,6 +37975,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -37163,6 +37988,18 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -37283,6 +38120,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -39738,6 +40581,12 @@
         {
           "level": "unit",
           "reference": "POST:/calificaciones/foto",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/foto",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
@@ -40593,7 +41442,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/generar-borrador",
-      "source_line": 83,
+      "source_line": 97,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40876,7 +41725,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/referencia/extraer",
-      "source_line": 97,
+      "source_line": 111,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40962,7 +41811,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas/archivo",
-      "source_line": 199,
+      "source_line": 213,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -40990,7 +41839,7 @@
       "kind": "frontend_call",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacionId}/entregas",
-      "source_line": 124,
+      "source_line": 138,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -41018,7 +41867,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacionId}/solicitud-revision",
-      "source_line": 185,
+      "source_line": 199,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -41046,7 +41895,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/activar-recepcion",
-      "source_line": 113,
+      "source_line": 127,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -41074,13 +41923,41 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/cerrar",
-      "source_line": 109,
+      "source_line": 123,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/cerrar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/evaluaciones/{evaluacion_id}/copiar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/evaluaciones/{id}/copiar:frontend/src/modules/evaluaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/{id}/copiar",
+      "source_line": 10,
+      "source_path": "frontend/src/modules/evaluaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/copiar",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
@@ -41102,7 +41979,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/pausar-recepcion",
-      "source_line": 117,
+      "source_line": 131,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -41130,7 +42007,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/publicar",
-      "source_line": 105,
+      "source_line": 119,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -41158,7 +42035,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones",
-      "source_line": 79,
+      "source_line": 93,
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
@@ -41173,6 +42050,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -41232,6 +42115,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -41268,6 +42157,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -41287,6 +42182,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -41365,6 +42266,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -41961,6 +42868,12 @@
           "level": "unit",
           "reference": "POST:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
         },
         {
@@ -42225,6 +43138,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/authorization_helpers.py"
         },
         {
@@ -42255,6 +43174,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -42262,6 +43187,18 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -42382,6 +43319,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -44822,6 +45765,54 @@
         "effects": [
           "not_observed"
         ],
+        "function": "copy_evaluation",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.copy_evaluation",
+      "kind": "job",
+      "owner_spec": "005-evaluaciones",
+      "signature": "tasks.copy_evaluation",
+      "source_line": 50,
+      "source_path": "backend/app/modules/evaluaciones/copy_worker.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.copy_evaluation",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "bind": true,
+        "effects": [
+          "not_observed"
+        ],
         "function": "digitalize_evaluation",
         "idempotency_evidence": [
           "not_observed"
@@ -45364,6 +46355,55 @@
         "success"
       ],
       "tests": []
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "bind": false,
+        "effects": [
+          "not_observed"
+        ],
+        "function": "recover_evaluation_copies",
+        "idempotency_evidence": [
+          "not_observed"
+        ],
+        "retry_policy": [
+          "not_observed"
+        ],
+        "terminal_states": [
+          "cancelled",
+          "failed",
+          "success"
+        ],
+        "triggers": [
+          "beat:recover-evaluation-copies",
+          "celery_queue"
+        ]
+      },
+      "id": "job:tasks.recover_evaluation_copies",
+      "kind": "job",
+      "owner_spec": "005-evaluaciones",
+      "signature": "tasks.recover_evaluation_copies",
+      "source_line": 68,
+      "source_path": "backend/app/modules/evaluaciones/copy_worker.py",
+      "states": [
+        "cancelled",
+        "failed",
+        "success"
+      ],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.recover_evaluation_copies",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
     },
     {
       "actors": [
@@ -46049,7 +47089,19 @@
           "level": "unit",
           "reference": "ai_jobs",
           "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_ai_job_leases.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -46420,6 +47472,12 @@
         {
           "level": "unit",
           "reference": "asistencia_registros",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "asistencia_registros",
           "status": "domain",
           "test_path": "backend/tests/unit/test_asistencia_report.py"
         },
@@ -46480,6 +47538,12 @@
           "reference": "audit_events",
           "status": "domain",
           "test_path": "backend/tests/fixtures/authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "audit_events",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
         },
         {
           "level": "unit",
@@ -46579,6 +47643,12 @@
         {
           "level": "unit",
           "reference": "authorization_permissions",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_permissions",
           "status": "domain",
           "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
         },
@@ -46661,6 +47731,12 @@
           "reference": "authorization_role_permissions",
           "status": "domain",
           "test_path": "backend/tests/fixtures/authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_role_permissions",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
         },
         {
           "level": "unit",
@@ -46750,6 +47826,12 @@
         {
           "level": "unit",
           "reference": "authorization_roles",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_roles",
           "status": "domain",
           "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
         },
@@ -46833,6 +47915,12 @@
           "reference": "authorization_user_roles",
           "status": "domain",
           "test_path": "backend/tests/fixtures/authorization.py"
+        },
+        {
+          "level": "unit",
+          "reference": "authorization_user_roles",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
         },
         {
           "level": "unit",
@@ -47418,6 +48506,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_ai_api_configuration.py"
         },
         {
@@ -47431,6 +48525,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_attendance_autosave.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -47538,6 +48638,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_gradebook_export_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_grading_recovery_persistence.py"
         },
         {
@@ -47545,6 +48651,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
         },
         {
           "level": "unit",
@@ -47904,6 +49016,12 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
         },
         {
@@ -48131,7 +49249,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": true,
         "class": "DBACatalog",
@@ -48155,7 +49273,14 @@
       "source_line": 12,
       "source_path": "backend/app/modules/dba/models.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "dba_catalog",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -48163,7 +49288,7 @@
       ],
       "authorization": [],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "active": true,
         "class": "DBAPersonalizado",
@@ -48190,7 +49315,14 @@
       "source_line": 35,
       "source_path": "backend/app/modules/dba/models.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "dba_personalizados",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -48248,6 +49380,12 @@
         "revisada"
       ],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
         {
           "level": "unit",
           "reference": "entregas",
@@ -48511,6 +49649,12 @@
           "level": "unit",
           "reference": "evaluacion_blueprints",
           "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluacion_blueprints",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_persistence.py"
         },
         {
@@ -48563,6 +49707,12 @@
       "source_path": "backend/app/modules/evaluaciones/models.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "evaluacion_contenido_versiones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
         {
           "level": "unit",
           "reference": "evaluacion_contenido_versiones",
@@ -48643,6 +49793,12 @@
         "subido"
       ],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "evaluacion_recursos",
+          "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
         {
           "level": "unit",
           "reference": "evaluacion_recursos",
@@ -48745,6 +49901,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_ai_job_leases.py"
         },
         {
@@ -48764,6 +49926,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -48853,7 +50021,19 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_gradebook_export_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
         },
         {
           "level": "unit",
@@ -49189,6 +50369,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -49208,6 +50394,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
           "level": "e2e",
@@ -49298,6 +50490,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
           "level": "unit",
@@ -50897,6 +52095,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
         },
         {
@@ -50910,6 +52114,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -50945,7 +52155,19 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_gradebook_export_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
         },
         {
           "level": "unit",
@@ -51047,6 +52269,18 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_online_grading_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_photo_grading_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
         {
@@ -51065,6 +52299,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-copy.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -51072,6 +52312,18 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/gradebook-export.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/materia-lifecycle.spec.ts"
         },
         {
           "level": "e2e",
@@ -51197,6 +52449,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -51240,6 +52498,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaManagement.test.tsx"
         },
         {
           "level": "unit",
@@ -51345,6 +52609,12 @@
           "level": "unit",
           "reference": "matriculas",
           "status": "direct",
+          "test_path": "backend/tests/integration/spec128_database.py"
+        },
+        {
+          "level": "unit",
+          "reference": "matriculas",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
         },
         {
@@ -51358,6 +52628,12 @@
           "reference": "matriculas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "matriculas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
         },
         {
           "level": "unit",
@@ -51418,6 +52694,12 @@
           "reference": "matriculas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "matriculas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
         },
         {
           "level": "unit",
@@ -52382,6 +53664,12 @@
           "level": "unit",
           "reference": "users",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evaluation_copy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_criteria_update.py"
         },
         {
@@ -52460,7 +53748,19 @@
           "level": "unit",
           "reference": "users",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_gradebook_export_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_grading_revisions_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_materia_lifecycle.py"
         },
         {
           "level": "unit",

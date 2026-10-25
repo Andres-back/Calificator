@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { GradebookExport } from './GradebookExport';
 import { useAuth } from '@/stores/auth';
@@ -53,7 +53,8 @@ it('supports several evaluations and disables an empty selection', async () => {
   await user.click(screen.getByRole('button', { name: 'Todas' }));
   await user.click(screen.getByRole('button', { name: 'Descargar notas CSV' }));
   await waitFor(() => expect(mocks.download).toHaveBeenCalledOnce());
-  expect(mocks.grades).toHaveBeenCalledTimes(2);
+  expect(mocks.grades).toHaveBeenCalledWith('e1', { readOnly: true });
+  expect(mocks.grades).toHaveBeenCalledWith('e2', { readOnly: true });
   expect(mocks.download.mock.calls[0][1][0]).toEqual(['Nombre del estudiante', 'Uno', 'Dos']);
   expect(mocks.download.mock.calls[0][1]).toHaveLength(5);
 });
@@ -94,4 +95,48 @@ it('discards results after logout while reading', async () => {
 it('hides export without grading permission', () => {
   useAuth.setState({ user: { id: 'teacher', permissions: [] } as never }); show();
   expect(screen.queryByRole('button', { name: 'Descargar notas CSV' })).not.toBeInTheDocument();
+});
+it('does not download an empty final report and offers an explicitly provisional report', async () => {
+  mocks.grades.mockResolvedValue([{ id: 'g', estudiante_id: 'a', estado: 'sugerida', nota_sugerida: 3.75 }]);
+  show();
+  expect(await screen.findByText(/Todavía no hay notas finales/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Descargar notas CSV' })).toBeDisabled();
+  expect(mocks.download).not.toHaveBeenCalled();
+  await userEvent.setup().selectOptions(screen.getByLabelText('Contenido del archivo'), 'provisional');
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Descargar notas CSV' }));
+  expect(mocks.download).toHaveBeenCalledWith('Informe-provisional-Notas-Clase', expect.arrayContaining([
+    ['Nombre del estudiante', 'Uno · Nota provisional', 'Uno · Estado'],
+    ['a', '3,75', 'Sugerida · pendiente de revisión'],
+  ]));
+});
+it('keeps a valid preview when the same account refreshes its session object', async () => {
+  let finish!: (value: unknown[]) => void;
+  mocks.grades.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  show();
+  await waitFor(() => expect(mocks.grades).toHaveBeenCalled());
+  act(() => useAuth.setState({ user: { id: 'teacher', permissions: ['grading.read'], nombre: 'Actualizado' } as never }));
+  await act(async () => finish([{ id: 'g', estudiante_id: 'a', estado: 'publicada', nota_confirmada: 4 }]));
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Descargar notas CSV' }));
+  expect(mocks.download).toHaveBeenCalledOnce();
+});
+it('discards previous preview when selection changes during a read', async () => {
+  let finish!: (value: unknown[]) => void;
+  mocks.grades.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+  show();
+  await waitFor(() => expect(mocks.grades).toHaveBeenCalled());
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Ninguna' }));
+  await act(async () => finish([{ id: 'g', estudiante_id: 'a', estado: 'publicada', nota_confirmada: 4 }]));
+  expect(screen.getByRole('button', { name: 'Descargar notas CSV' })).toBeDisabled();
+  expect(screen.queryByRole('region', { name: 'Vista previa de notas' })).not.toBeInTheDocument();
+  expect(mocks.download).not.toHaveBeenCalled();
+});
+it('supports retrying a failed preview and permission withdrawal never downloads', async () => {
+  mocks.grades.mockRejectedValueOnce(new Error('No se pudo leer'));
+  show();
+  await screen.findByRole('alert');
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Actualizar vista previa' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Descargar notas CSV' })).toBeEnabled());
+  act(() => useAuth.setState({ user: { id: 'teacher', permissions: [] } as never }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(mocks.download).not.toHaveBeenCalled();
 });

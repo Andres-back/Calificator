@@ -82,3 +82,7 @@ La docente añade varias fotos sin preparar un PDF externo. Antes de enviar pued
 - El usuario aprobó expresamente el plan completo el 2026-10-21. La reparación urgente de nueve calificaciones pertenece a Spec 112 y se entrega por separado.
 - No se añaden llamadas de generación de imágenes, proveedores ni modelos nuevos. Figuras existentes siguen el mecanismo visual actual.
 - La consolidación de fotos conserva una copia normalizada y ordenada; no se describe como archivo byte a byte idéntico a cada foto original.
+
+## Evolución 128: conservar lectura al reutilizar
+
+[128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, copia la lectura guardada en blueprint.reglas_feedback junto con preguntas, recursos y original privado verificable. El destino es borrador independiente de otra materia del mismo docente; no extrae de nuevo el documento ni hereda respuestas de estudiantes. Se verifica reapertura, original multipágina y exportación PDF/Word con datos sintéticos.

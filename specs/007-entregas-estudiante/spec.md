@@ -53,6 +53,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 - Registra comportamiento vigente; no introduce cambios funcionales.
 - Inconsistencias se convierten en issues separados.
 - Se conservan arquitectura y contratos públicos.
+
+## Evolución 128: materia archivada
+
+[128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, impide admitir entregas o calificaciones nuevas en materias archivadas. Conserva consultas autorizadas, evidencias, matrículas y resultados históricos; los trabajos ya admitidos pueden terminar sin volver a encolarse. Restaurar no abre recepción automáticamente. Copiar una evaluación nunca copia las entregas del grupo origen.
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).

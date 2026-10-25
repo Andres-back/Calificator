@@ -49,7 +49,7 @@ async def update_materia(
 ) -> object:
     require_permission_now(current_user, "subjects.update")
     materia = await service.ensure_can_manage_materia(db, materia_id, current_user)
-    return await service.update_materia(db, materia, payload)
+    return await service.update_materia(db, materia, payload, current_user)
 
 
 @router.post("/{materia_id}/regenerar-codigo", response_model=MateriaRead)

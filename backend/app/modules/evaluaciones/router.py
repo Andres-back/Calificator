@@ -142,7 +142,7 @@ async def digitalize_from_file(
     require_permission_now(current_user, "evaluations.create")
     from app.modules.materias.service import ensure_can_manage_materia
 
-    await ensure_can_manage_materia(db, materia_id, current_user)
+    await ensure_can_manage_materia(db, materia_id, current_user, admission=True)
     try:
         files = list(file) if isinstance(file, (list, tuple)) else [file]
         if not 1 <= len(files) <= 10:
@@ -262,6 +262,7 @@ async def digitalize_external_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.create")
+    await service.ensure_can_manage_materia(db, payload.materia_id, current_user, admission=True)
     return await _evaluation_response(db, await service.digitalize_external_evaluation(db, payload, current_user), current_user)
 
 
@@ -272,6 +273,7 @@ async def create_surprise_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.create")
+    await service.ensure_can_manage_materia(db, payload.materia_id, current_user, admission=True)
     return await _evaluation_response(db, await service.create_surprise_evaluation(db, payload, current_user), current_user)
 
 
@@ -282,6 +284,7 @@ async def create_evaluation(
     db: AsyncSession = Depends(get_db),
 ) -> object:
     require_permission_now(current_user, "evaluations.create")
+    await service.ensure_can_manage_materia(db, payload.materia_id, current_user, admission=True)
     return await _evaluation_response(db, await service.create_evaluation(db, payload, current_user), current_user)
 
 

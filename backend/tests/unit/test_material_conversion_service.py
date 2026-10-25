@@ -71,7 +71,7 @@ def test_conversion_delegates_to_the_canonical_evaluation_service(monkeypatch) -
         assert teacher_id == teacher.id
         return None
 
-    async def can_manage(_db, selected_subject_id, user):
+    async def can_manage(_db, selected_subject_id, user, *, admission=False):
         assert selected_subject_id == subject_id
         assert user is teacher
         return SimpleNamespace(id=subject_id, profesor_id=teacher.id)
@@ -177,7 +177,7 @@ def test_conversion_rejects_copied_criteria_before_writing(monkeypatch):
                                    "criterios": [{"nombre": "Punto 1", "descripcion": "Calcula el producto"}]}}
     async def no_link(*_args):
         return None
-    async def can_manage(*_args):
+    async def can_manage(*_args, **_kwargs):
         return SimpleNamespace(id=subject_id)
     monkeypatch.setattr(service, "get_material", get_material)
     monkeypatch.setattr(service, "_linked_evaluation", no_link)

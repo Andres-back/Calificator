@@ -37,6 +37,7 @@ import { useAuth } from '@/stores/auth';
 import { routes } from '@/config/routes';
 import { JoinMateriaModal } from './UnirseMateriaPage';
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
+import { MateriaManagement } from './MateriaManagement';
 import {
   getPostCreateDestination,
   getTeacherActionGuide,
@@ -115,6 +116,7 @@ export function MateriasListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [joinOpen, setJoinOpen] = useState(searchParams.get('unirse') === '1');
   const [form, setForm] = useState(EMPTY_FORM);
   const formRef = useRef<HTMLFormElement>(null);
@@ -145,9 +147,10 @@ export function MateriasListPage() {
   const isStudent = canEnroll && !canManageCourses;
   const isProfesor = canManageCourses;
   const activeMateriaCount =
-    data?.filter((materia) => materia.estado === 'activa').length ?? 0;
+    data?.filter((materia) => materia.estado === 'activa' && (user?.rol === 'admin' || materia.profesor_id === user?.id)).length ?? 0;
   const reachedMateriaLimit =
-    canCreateMateria && activeMateriaCount >= MAX_ACTIVE_MATERIAS;
+    user?.rol !== 'admin' && canCreateMateria && activeMateriaCount >= MAX_ACTIVE_MATERIAS;
+  const visibleMaterias = data?.filter(materia => showArchived ? materia.estado === 'archivada' : materia.estado !== 'archivada');
   const requestedAction = canManageCourses ? searchParams.get('accion') : null;
   const actionGuide = getTeacherActionGuide(requestedAction);
   const ActionGuideIcon = actionGuide
@@ -165,7 +168,7 @@ export function MateriasListPage() {
 
   const subtitle = actionGuide
     ? actionGuide.description
-    : isProfesor
+    : user?.rol === 'admin' ? 'Clases registradas en la institución.' : isProfesor
       ? `Tus clases y sus estudiantes. Materias creadas: ${activeMateriaCount}/${MAX_ACTIVE_MATERIAS}.`
       : isStudent
         ? 'Consulta tus materias inscritas y únete a nuevas clases con el código de tu docente.'
@@ -224,7 +227,7 @@ export function MateriasListPage() {
         badge={
           isProfesor ? (
             <Badge tone={reachedMateriaLimit ? 'warning' : 'neutral'}>
-              {activeMateriaCount}/{MAX_ACTIVE_MATERIAS} activas
+              {user?.rol === 'admin' ? `${activeMateriaCount} activas` : `${activeMateriaCount}/${MAX_ACTIVE_MATERIAS} activas`}
             </Badge>
           ) : undefined
         }
@@ -277,12 +280,16 @@ export function MateriasListPage() {
         </Card>
       )}
 
+      <div className="flex flex-wrap gap-2" aria-label="Estado de materias">
+        <Button variant={showArchived ? 'outline' : 'primary'} className="min-h-11" aria-pressed={!showArchived} onClick={() => setShowArchived(false)}>Activas ({data?.filter(item => item.estado !== 'archivada').length ?? 0})</Button>
+        <Button variant={showArchived ? 'primary' : 'outline'} className="min-h-11" aria-pressed={showArchived} onClick={() => setShowArchived(true)}>Archivadas ({data?.filter(item => item.estado === 'archivada').length ?? 0})</Button>
+      </div>
       <QueryState
         isLoading={isLoading}
         isError={isError}
         error={error}
         onRetry={() => void refetch()}
-        isEmpty={!data || data.length === 0}
+        isEmpty={!visibleMaterias?.length}
         loading={
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -295,21 +302,21 @@ export function MateriasListPage() {
             icon={BookOpen}
             image="/branding/empty-no-subjects.webp"
             title={
-              isStudent
+              showArchived ? 'No tienes materias archivadas' : isStudent
                 ? 'Aún no estás inscrito en materias'
                 : 'Aún no tienes materias'
             }
             description={
-              isStudent
+              showArchived ? 'Aquí podrás consultar y restaurar las materias que retires de activas.' : isStudent
                 ? 'Únete a una materia usando el código que te compartió tu docente.'
                 : 'Crea tu primera clase. Después te guiaremos para invitar estudiantes.'
             }
             action={
-              isStudent && canEnroll ? (
+              !showArchived && isStudent && canEnroll ? (
                 <Button type="button" onClick={() => setJoinOpen(true)}>
                   <UserPlus className="h-4 w-4" /> Unirme a materia
                 </Button>
-              ) : canCreateMateria ? (
+              ) : !showArchived && canCreateMateria ? (
                 <Button
                   onClick={() => setOpen(true)}
                   disabled={reachedMateriaLimit}
@@ -322,7 +329,7 @@ export function MateriasListPage() {
         }
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data?.map((materia, index) => {
+          {visibleMaterias?.map((materia, index) => {
             const tone = COURSE_TONES[index % COURSE_TONES.length];
             return (
               <motion.div
@@ -333,7 +340,7 @@ export function MateriasListPage() {
               >
                 <Link
                   to={
-                    actionGuide
+                    actionGuide && materia.estado !== 'archivada'
                       ? actionGuide.destination(materia.id)
                       : routes.materia(materia.id)
                   }
@@ -406,6 +413,7 @@ export function MateriasListPage() {
                     </div>
                   </Card>
                 </Link>
+                <div className="mt-2"><MateriaManagement materia={materia} /></div>
               </motion.div>
             );
           })}

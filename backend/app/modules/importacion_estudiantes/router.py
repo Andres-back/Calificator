@@ -32,7 +32,7 @@ async def create_import(
     _: None = Depends(rate_limit(limit=10, window_seconds=3600, scope="roster-import")),
 ) -> dict:
     require_permission_now(actor, "subjects.update")
-    await ensure_can_manage_materia(db, materia_id, actor)
+    await ensure_can_manage_materia(db, materia_id, actor, admission=True)
     try:
         content = await read_upload_limited(archivo, MAX_ROSTER_PHOTO)
     except UploadTooLargeError as exc:

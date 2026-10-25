@@ -61,7 +61,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
   const [resetStudent, setResetStudent] = useState<{ id: string; nombre: string } | null>(null);
   const [temporaryAccess, setTemporaryAccess] = useState<RosterConfirmation | null>(null);
   const user = useAuth((state) => state.user);
-  const canRegister = user?.permissions?.includes('subjects.update') ?? false;
+  const canRegister = materia.estado !== 'archivada' && (user?.permissions?.includes('subjects.update') ?? false);
   const evaluationsQuery = useQuery({
     queryKey: ['evaluaciones', materia.id],
     queryFn: () => listEvaluaciones(materia.id),
@@ -117,7 +117,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
                 Compártelo solo con estudiantes de esta materia.
               </p>
             </div>
-            <Badge tone="brand">Activo</Badge>
+            <Badge tone="brand">{materia.codigo_activo && materia.estado !== 'archivada' ? 'Activo' : 'Cerrado'}</Badge>
           </div>
           <div className="mt-4 rounded-lg border border-dashed border-brand-300 bg-brand-50 p-5 text-center dark:bg-brand-500/10">
             <p className="font-mono text-2xl font-extrabold text-brand-700 dark:text-brand-200">
@@ -132,6 +132,7 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
               variant="outline"
               size="sm"
               loading={regen.isPending}
+              disabled={materia.estado === 'archivada'}
               onClick={() => regen.mutate()}
             >
               <RefreshCw className="h-4 w-4" /> Regenerar

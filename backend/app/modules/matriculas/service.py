@@ -24,7 +24,7 @@ async def join_by_code(db: AsyncSession, codigo_matricula: str, student: User) -
             Materia.codigo_matricula == code,
             Materia.codigo_activo.is_(True),
             Materia.estado == MateriaEstado.ACTIVA.value,
-        )
+        ).with_for_update().execution_options(populate_existing=True)
     )
     if not materia:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enrollment code not found")
@@ -80,7 +80,7 @@ async def update_estado(
     current_user: User,
 ) -> Matricula:
     matricula = await get_matricula_or_404(db, matricula_id)
-    await ensure_can_manage_materia(db, matricula.materia_id, current_user)
+    await ensure_can_manage_materia(db, matricula.materia_id, current_user, admission=estado in {MatriculaEstado.ACTIVO, MatriculaEstado.PENDIENTE})
     matricula.estado = estado.value
     await db.commit()
     await db.refresh(matricula)

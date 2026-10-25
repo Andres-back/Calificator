@@ -137,7 +137,7 @@ async def calificar_foto(
 ) -> object:
     require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db, evaluacion_id, current_user
+        db, evaluacion_id, current_user, admission=True
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
     if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.ONLINE.value:
@@ -288,6 +288,7 @@ async def reintentar_calificacion_foto(
         db,
         calificacion.evaluacion_id,
         current_user,
+        admission=True,
     )
     service.ensure_evaluation_active(evaluacion)
 
@@ -400,7 +401,7 @@ async def calificar_lote(
     """
     require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db, evaluacion_id, current_user
+        db, evaluacion_id, current_user, admission=True
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
 
@@ -516,6 +517,7 @@ async def calificar_lote_asincrono(
         db,
         evaluacion_id,
         current_user,
+        admission=True,
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
 
@@ -763,7 +765,7 @@ async def establecer_nota_manual(
 ) -> object:
     require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db, evaluacion_id, current_user
+        db, evaluacion_id, current_user, admission=True
     )
     return await service.set_manual_grade(db, evaluacion, payload, current_user)
 
@@ -873,7 +875,7 @@ async def iniciar_salon(
 ) -> dict:
     require_permission_now(current_user, "grading.grade")
     evaluacion = await evaluaciones_service.ensure_can_manage_evaluation(
-        db, evaluacion_id, current_user
+        db, evaluacion_id, current_user, admission=True
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
 
@@ -1043,6 +1045,7 @@ async def salon_foto(
         db,
         sesion.evaluacion_id,
         current_user,
+        admission=True,
     )
     service.ensure_evaluation_accepts_grading(evaluacion)
     if not await is_student_enrolled(db, evaluacion.materia_id, estudiante_id):
@@ -1167,6 +1170,7 @@ async def iniciar_entrega_online(evaluacion_id: UUID, current_user: User = Depen
     evaluation = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
     if not await is_student_enrolled(db, evaluation.materia_id, current_user.id):
         raise HTTPException(403, 'No estás matriculado en esta materia')
+    await materias_service.ensure_active_materia(db, evaluation.materia_id)
     service.ensure_evaluation_accepts_grading(evaluation)
     if evaluation.modalidad not in {EvaluacionModalidad.ONLINE.value, EvaluacionModalidad.MIXTA.value}:
         raise HTTPException(409, 'Esta evaluación se entrega mediante foto o PDF.')
@@ -1189,6 +1193,7 @@ async def crear_entrega_online(
 ) -> object:
     require_permission_now(current_user, "evaluations.submit")
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
+    await materias_service.ensure_active_materia(db, evaluacion.materia_id)
     service.ensure_evaluation_accepts_grading(evaluacion)
     if evaluacion.modalidad not in {
         EvaluacionModalidad.ONLINE.value,
@@ -1282,6 +1287,7 @@ async def crear_entrega_archivo_estudiante(
     """Entrega atómica de una o varias hojas para evaluaciones físicas/mixtas."""
     require_permission_now(current_user, "evaluations.submit")
     evaluacion = await evaluaciones_service.get_evaluation_or_404(db, evaluacion_id)
+    await materias_service.ensure_active_materia(db, evaluacion.materia_id)
     service.ensure_evaluation_accepts_grading(evaluacion)
     if evaluacion.modalidad not in {
         EvaluacionModalidad.FISICA.value,

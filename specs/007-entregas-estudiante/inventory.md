@@ -6,14 +6,14 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `GET:/calificaciones/entregas/{entrega_id}/evidencia` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1408` |
-| endpoint | `GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1453` |
+| endpoint | `GET:/calificaciones/entregas/{entrega_id}/evidencia` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1414` |
+| endpoint | `GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1459` |
 | endpoint | `GET:/presentaciones/{presentacion_id}/archivo/{fmt}` | admin, estudiante, profesor | covered | `backend/app/modules/presentaciones/router.py:157` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1179` |
-| endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas/archivo` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1270` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1183` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/entregas/archivo` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1275` |
 | frontend_route | `/app/evaluaciones/{id}/resolver` | estudiante | covered | `frontend/src/config/routes.ts:44` |
-| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas/archivo` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:199` |
-| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:124` |
+| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas/archivo` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:213` |
+| frontend_call | `POST:/evaluaciones/{evaluacionId}/entregas` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:138` |
 
 ## Decisiones explícitas de permiso
 

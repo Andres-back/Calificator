@@ -145,7 +145,7 @@ async def replace_rows(db: AsyncSession, lote: ImportacionEstudiantesLote, rows:
 
 async def create_manual_lote(db: AsyncSession, materia_id: UUID, payload: LoteManualCreate, actor: User):
     require_permission_now(actor, "subjects.update")
-    await ensure_can_manage_materia(db, materia_id, actor)
+    await ensure_can_manage_materia(db, materia_id, actor, admission=True)
     fingerprint = hashlib.sha256(json.dumps(
         [row.model_dump(mode="json", exclude={"id"}) for row in payload.filas],
         sort_keys=True, ensure_ascii=False, separators=(",", ":"),
@@ -201,6 +201,7 @@ async def confirm_lote(db: AsyncSession, lote_id: UUID, actor: User) -> dict:
     if lote.estado == "confirmado":
         previous = dict(lote.resultado_json or {})
         return {**previous, "credenciales": [], "credenciales_mostradas_una_vez": True}
+    await ensure_can_manage_materia(db, lote.materia_id, actor, admission=True)
     if lote.estado != "revision":
         raise HTTPException(status_code=409, detail="La lista todavía no está lista para confirmar")
     rows = list((await db.scalars(select(ImportacionEstudiantesFila).where(ImportacionEstudiantesFila.lote_id == lote.id).order_by(ImportacionEstudiantesFila.orden))).all())
@@ -260,7 +261,7 @@ async def searchable_students(db: AsyncSession, materia: Materia, query: str) ->
 
 async def enroll_existing(db: AsyncSession, materia_id: UUID, student_ids: list[UUID], actor: User) -> dict:
     require_permission_now(actor, "subjects.update")
-    materia = await ensure_can_manage_materia(db, materia_id, actor)
+    materia = await ensure_can_manage_materia(db, materia_id, actor, admission=True)
     allowed = await _accessible_students(db, materia, student_ids)
     if not set(student_ids).issubset(allowed):
         raise HTTPException(status_code=403, detail="Uno o más estudiantes no pertenecen a materias administradas por ti")

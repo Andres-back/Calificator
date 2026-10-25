@@ -179,3 +179,7 @@ El docente crea una materia y añade alumnos de una materia propia o solicita un
 - El primer flujo compartido reutiliza matrículas actuales y referencias explícitas de listas; no incorpora todavía instituciones, salones centrales o cursos lectivos nuevos. Coincidencia de grado/nombre no sustituye autorización ni garantiza identidad entre personas homónimas.
 - Una aprobación autoriza un conjunto revisado de alumnos para una materia destino; no incorpora automáticamente futuros alumnos de origen ni copia bajas entre materias. Los alumnos ya añadidos no se eliminan al cerrar la solicitud.
 - Fuera de alcance: promedio oficial nuevo, boletines institucionales, exportación de notas entre materias, envío masivo de correos, cambios del modelo evaluador y despliegue antes de plan aprobado y CI verde.
+
+## Evolución 128: archivo de notas comprobable
+
+[128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, conserva el CSV final mínimo (nombre + columna por evaluación) y añade informe provisional opcional con estados claramente rotulados. Preserva cero, ajustes y decimales, identifica pendientes antes de descargar y bloquea un final sin ninguna nota. Grupo matriculado activo y nombres repetidos se advierten; identidades distintas no se mezclan. Descarga real probada en Chromium/WebKit con BOM/UTF-8, delimitador, comillas y celdas reconciliadas. No cambia accesos, claves, matrículas ni decisiones docentes.

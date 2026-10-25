@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
+from unittest.mock import AsyncMock
 from fastapi import HTTPException
 
 from app.modules.calificaciones import router
@@ -78,6 +79,7 @@ def _student() -> SimpleNamespace:
 
 
 def _configure(monkeypatch, evaluation: SimpleNamespace) -> None:
+    monkeypatch.setattr(router.materias_service, "ensure_active_materia", AsyncMock(return_value=SimpleNamespace(id=evaluation.materia_id, estado="activa")))
     async def get_evaluation(_db, evaluation_id):
         assert evaluation_id == evaluation.id
         return evaluation

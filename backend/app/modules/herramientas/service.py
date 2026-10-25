@@ -184,7 +184,7 @@ async def _resolve_materia_id(db: AsyncSession, req: object, current_user: User)
             )
         _attach_rubric_context(req)
         return None
-    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user, admission=True)
     await _attach_dba_rag_context(db, req, materia)
     _attach_rubric_context(req)
     return materia.id
@@ -872,7 +872,7 @@ async def assign_material_as_support(
             status_code=status.HTTP_409_CONFLICT,
             detail="Este recurso ya es una actividad evaluable. Adminístralo desde Evaluaciones.",
         )
-    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user)
+    materia = await materias_service.ensure_can_manage_materia(db, materia_id, current_user, admission=True)
     await db.execute(
         text(
             "UPDATE materiales_generados SET materia_id = :materia_id, "
@@ -932,6 +932,8 @@ async def set_material_visibility(
     if material is None:
         raise HTTPException(status_code=404, detail="Material no encontrado")
     assignment_type = material.get("asignacion_tipo")
+    if visible and material.get("materia_id"):
+        await materias_service.ensure_can_manage_materia(db, material["materia_id"], current_user, admission=True)
     if assignment_type not in {"apoyo", "actividad"}:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -1442,6 +1444,7 @@ async def convertir_a_evaluacion(
         db,
         UUID(str(target_materia_id)),
         current_user,
+        admission=True,
     )
 
     try:
