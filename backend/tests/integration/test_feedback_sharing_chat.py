@@ -298,7 +298,7 @@ async def test_http_accepted_once_broker_down_keeps_durable_request(fb_db, fb_ca
 async def test_db_failure_blocks_chat_with_safe_no_store_error(fb_db, monkeypatch):
     from sqlalchemy.exc import OperationalError
 
-    async def unavailable(*args):
+    async def unavailable(*args, **kwargs):
         raise OperationalError("SYNTHETIC_SQL_PRIVATE", {}, Exception("private"))
 
     monkeypatch.setattr(chat_service, "admit_question", unavailable)

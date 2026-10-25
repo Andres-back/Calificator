@@ -1,5 +1,7 @@
 # Especificación: devolución docente clara y compartible
 
+**Extensión aprobada**: [Spec126](../126-retroalimentacion-unificada-chat/spec.md), 2026-10-24, aplica el mismo espacio de revisión a estudiante y grupo. Añade guardado explícito del mensaje sin confirmar/publicar nota, con historial, huella, permisos e invalidación; conserva la autorización separada de entrega y todas las reglas de esta especificación.
+
 **Rama**: `codex/120-retroalimentacion-entrega-clara` | **Creada**: 2026-10-23 | **Estado**: Aprobada por el usuario el 2026-10-23 («si usemoslo … adicional lo de la retroalimentacion»); continuación confirmada («sigue») | **Issue**: #255
 
 **Solicitud**: Resolver de forma común la selección de estudiantes para enlaces e impresión, incluso después de confirmar una nota, y ordenar la retroalimentación para que sea comprensible.

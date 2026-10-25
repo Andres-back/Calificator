@@ -28,6 +28,7 @@ import {
 import { routes } from '@/config/routes';
 import { useAuth } from '@/stores/auth';
 import { FeedbackToolsButton } from '@/modules/feedback_sharing/FeedbackToolsButton';
+import { FeedbackWorkspace } from '@/modules/feedback_sharing/FeedbackWorkspace';
 import { GradingUploadPanel } from '@/modules/materias/MateriaCalificar';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -317,7 +318,7 @@ export function Timeline({ events }: { events: CalificacionDetalle['timeline'] }
               </div>
               <div className="min-w-0">
                 <p className="font-medium text-fg">
-                  {ev.tipo === 'confirmada' ? 'Confirmada' : ev.tipo === 'ajustada' ? 'Ajustada' : ev.tipo}
+                  {ev.tipo === 'confirmada' ? 'Confirmada' : ev.tipo === 'ajustada' ? 'Ajustada' : ev.tipo === 'retroalimentacion_original' ? 'Mensaje original conservado' : ev.tipo === 'retroalimentacion_editada' ? 'Retroalimentación editada' : ev.tipo}
                   {formatTimelineScore(ev.nota_anterior) != null && formatTimelineScore(ev.nota_nueva) != null && (
                     <>: {formatTimelineScore(ev.nota_anterior)} → {formatTimelineScore(ev.nota_nueva)}</>
                   )}
@@ -630,6 +631,7 @@ function PanelDetalle({
 }) {
   const [adjNota, setAdjNota] = useState<number | ''>(effectiveGradeScore(cal) ?? '');
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
+  const [feedbackDirty, setFeedbackDirty] = useState(false);
   const [showAjustar, setShowAjustar] = useState(false);
   const [adjError, setAdjError] = useState('');
   const [replacementOpen, setReplacementOpen] = useState(false);
@@ -778,7 +780,8 @@ function PanelDetalle({
   const presentation = gradePresentation(cal);
   const originalNota = effectiveGradeScore(cal) ?? '';
   const originalFeedback = cal.feedback ?? '';
-  const isDirty = adjNota !== originalNota || adjFeedback !== originalFeedback;
+  const analysisFeedback = cal.timeline?.find(event => event.tipo === 'retroalimentacion_original')?.feedback ?? originalFeedback;
+  const isDirty = adjNota !== originalNota || adjFeedback !== originalFeedback || feedbackDirty;
 
   // Reset dirty state when cal changes
   useEffect(() => {
@@ -1064,7 +1067,6 @@ function PanelDetalle({
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
         {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
         <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
-        {mobileTab === 'retroalimentacion' && <div className="flex min-w-0 flex-wrap gap-2"><FeedbackToolsButton evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty || presentation.processing} /></div>}
         {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
           onAccepted={(grade) => {
             const jobId = grade.resultado_json?.job_id;
@@ -1174,11 +1176,12 @@ function PanelDetalle({
         </div>
 
         <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-4 sm:p-5 xl:scroll-mt-32">
-          {presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || showGlobalAdjustment || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />}
+          {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || showGlobalAdjustment || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
         </div>
 
         <div id="grade-history-panel" hidden={mobileTab !== 'historial'} className="space-y-3">
         <h2 className="text-base font-bold">Historial de la calificación</h2>
+        {analysisFeedback && <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Retroalimentación del análisis original</summary><p className="whitespace-pre-wrap text-sm leading-7">{analysisFeedback}</p></details>}
         {hasInitialReviewNotices && (done || presentation.processing) && <details className="rounded-xl border border-border px-3">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold">{presentation.processing ? 'Avisos del análisis en curso' : 'Historial de revisión de IA'}</summary>
           {reviewNotices}
@@ -2166,7 +2169,7 @@ function GradingCenter() {
             {mobileMoreActionsOpen && <div id="grading-more-actions" className="absolute right-0 top-full z-20 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg">
               {materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
               {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
-              {evalId && <FeedbackToolsButton evaluationId={evalId} suggestedArea={selectedMateria?.area} disabled={mobileDirty} />}
+              {evalId && <FeedbackToolsButton evaluationId={evalId} initialSelectedIds={[...selectedBatch]} suggestedArea={selectedMateria?.area} disabled={mobileDirty} />}
               {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
               {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
             </div>}

@@ -63,11 +63,47 @@ async def prepare_grade_preview(db, actor, evaluation_id, grade_id):
                 and not breakdown.requiere_revision and breakdown.nota_final == note),
         }
     from app.modules.feedback_sharing.batch_policy import prepare_candidate
+    if score is not None and grade.estado != 'anulada':
+        result['mensaje_editable'] = {'source_fingerprint': source.source_fingerprint,
+            'feedback_text': (result.get('resultado') or {}).get('retroalimentacion', grade.feedback or ''), 'detail_available': False}
     try:
         result['batch_candidate'] = prepare_candidate(source, result.get('resultado'))
     except HTTPException as exc:
         result['batch_unavailable_reason'] = exc.detail
     return result
+
+
+async def save_feedback_message(db, actor, evaluation_id, payload):
+    """Explicit text-only edit: never confirm a grade or authorize delivery."""
+    enabled()
+    source = await load_source(db, payload.calificacion_id, lock=True, prepare_only=True)
+    if source.evaluation.id != evaluation_id:
+        raise HTTPException(403, 'Este resultado no pertenece a la evaluación seleccionada.')
+    await authorize_teacher(db, actor, source, 'grading.grade')
+    previous = (await db.execute(text("SELECT metadata FROM audit_events WHERE actor_id=:actor AND entity_type='feedback_message' AND entity_id=:grade AND event='feedback_message_saved' AND metadata->>'request_id'=:request ORDER BY created_at DESC LIMIT 1"),
+        {'actor': actor.id, 'grade': str(source.grade.id), 'request': str(payload.request_id)})).scalar_one_or_none()
+    fingerprint = digest([payload.source_fingerprint, payload.feedback_text])
+    if previous:
+        if previous.get('fingerprint') != fingerprint or source.grade.feedback != payload.feedback_text:
+            raise HTTPException(409, 'Hay un mensaje más reciente. Actualiza la devolución antes de guardar.')
+        return await prepare_grade_preview(db, actor, evaluation_id, payload.calificacion_id)
+    if source.source_fingerprint != payload.source_fingerprint:
+        raise HTTPException(409, 'La devolución cambió. Actualízala antes de guardar tu mensaje.')
+    if source.grade.estado in {'en_cola', 'procesando', 'anulada'}:
+        raise HTTPException(409, 'Espera a que la nota esté disponible antes de editar el mensaje.')
+    from app.modules.calificaciones.service import _append_timeline_event
+    from app.modules.feedback_sharing.invalidations import suspend_grade_publications
+    timeline = (source.grade.resultado_json or {}).get('_timeline', [])
+    if not any(item.get('tipo') == 'retroalimentacion_original' for item in timeline):
+        _append_timeline_event(source.grade, 'retroalimentacion_original', feedback=source.grade.feedback, detalle='Mensaje anterior a la primera edición de devolución')
+    source.grade.feedback = payload.feedback_text
+    _append_timeline_event(source.grade, 'retroalimentacion_editada', feedback=payload.feedback_text,
+        actor_id=actor.id, actor_nombre=actor.nombre, detalle='Mensaje editado sin cambiar la nota ni autorizar su entrega')
+    await suspend_grade_publications(db, source.grade.id)
+    await audit_control(db, 'message_saved', source.grade.id, actor.id,
+        {'request_id': str(payload.request_id), 'fingerprint': fingerprint}, entity_type='feedback_message')
+    await db.flush()
+    return await prepare_grade_preview(db, actor, evaluation_id, payload.calificacion_id)
 
 
 async def approve_delivery_review(db, actor, evaluation_id, payload):

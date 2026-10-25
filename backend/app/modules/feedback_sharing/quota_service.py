@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from app.modules.calificaciones.models import Calificacion
 from app.modules.feedback_sharing.access_policy import UNAVAILABLE, db_now, guard_token
+from app.modules.feedback_sharing.conversation import conversation_digest
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackChatQuota, FeedbackChatRequest, FeedbackPublication
 from app.modules.feedback_sharing.projection import digest
 
@@ -24,7 +25,7 @@ async def quota_snapshot(db, context):
     return {"restantes": max(0, 5 - count), "retry_after_seconds": max(1, math.ceil((oldest + timedelta(seconds=600) - now).total_seconds())) if count >= 5 and oldest else 0}
 
 
-async def accept_question(db, token, payload, *, max_pending=None):
+async def accept_question(db, token, payload, *, max_pending=None, visitor=None):
     context = await guard_token(db, token)
     # Orden: nota -> publicación -> acceso -> cuota -> petición. Nunca mantener
     # esta transacción abierta al esperar al proveedor; el caller debe commit.
@@ -40,7 +41,10 @@ async def accept_question(db, token, payload, *, max_pending=None):
         FeedbackChatRequest.client_request_id == payload.request_id,
     ).execution_options(populate_existing=True))
     fingerprint = digest(payload.mensaje)
+    reader = conversation_digest(context, visitor)
     if existing:
+        if existing.publication_id != context.publication.id or existing.conversation_digest != reader:
+            raise HTTPException(409, 'No pudimos recuperar esta pregunta. Actualiza la conversación.')
         if existing.request_fingerprint != fingerprint:
             raise HTTPException(409, "Esta pregunta ya se envió con otro contenido.")
         return existing, False
@@ -59,7 +63,7 @@ async def accept_question(db, token, payload, *, max_pending=None):
     if count >= 5:
         seconds = max(1, math.ceil((oldest + timedelta(seconds=600) - now).total_seconds()))
         raise HTTPException(429, "Ya usaste tus 5 preguntas. Podrás preguntar de nuevo cuando termine la espera.", headers={"Retry-After": str(seconds)})
-    request = FeedbackChatRequest(access_id=context.access.id, publication_id=context.publication.id, quota_id=quota.id, credential_generation=context.access.credential_generation, client_request_id=payload.request_id, request_fingerprint=fingerprint, message=payload.mensaje, accepted_at=now)
+    request = FeedbackChatRequest(access_id=context.access.id, publication_id=context.publication.id, quota_id=quota.id, credential_generation=context.access.credential_generation, client_request_id=payload.request_id, request_fingerprint=fingerprint, message=payload.mensaje, accepted_at=now, conversation_digest=reader)
     db.add(request)
     await db.flush()
     return request, True

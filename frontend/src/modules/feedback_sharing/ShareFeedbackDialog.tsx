@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button, Modal } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
 import { getEvaluationReview } from '@/modules/calificaciones/api';
@@ -18,16 +18,19 @@ import { queryClient } from '@/lib/queryClient';
 type Row = ReviewStudent & { preview?: FeedbackPreview };
 interface Link { id: string; estudiante: string; url: string; expires_at?: string }
 
-export function ShareFeedbackDialog(props: { evaluationId: string; initialGradeId?: string; suggestedArea?: string | null; onClose: () => void; onReview: (gradeId: string) => void }) {
+interface WorkspaceProps { evaluationId: string; initialGradeId?: string; initialSelectedIds?: string[]; suggestedArea?: string | null; embedded?: boolean; onDirtyChange?: (dirty: boolean) => void; onClose: () => void; onReview: (gradeId: string) => void }
+
+export function ShareFeedbackDialog(props: WorkspaceProps) {
   // Replacing the evaluation unmounts all private state, including copied credentials.
   return <FeedbackDialogContent key={props.evaluationId+'-'+(props.initialGradeId??'group')} {...props} />;
 }
 
-function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, onClose, onReview }: { evaluationId: string; initialGradeId?: string; suggestedArea?: string | null; onClose: () => void; onReview: (gradeId: string) => void }) {
+function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedIds, suggestedArea, embedded, onDirtyChange, onClose, onReview }: WorkspaceProps) {
   const user = useAuth(state => state.user);
   const [owner] = useState(user);
   const permitted = Boolean(owner) && user === owner && ['profesor', 'admin'].includes(user?.rol ?? '') && Boolean(user?.permissions?.includes('grading.read'));
   const canDeliver = permitted && Boolean(user?.permissions?.includes('grading.publish'));
+  const canEditMessage = permitted && Boolean(user?.permissions?.includes('grading.grade'));
   const [rows, setRows] = useState<Row[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [accesses, setAccesses] = useState<FeedbackAccess[]>([]);
@@ -42,12 +45,21 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, on
   const [days, setDays] = useState(3);
   const [evidence, setEvidence] = useState(false);
   const [reviewing, setReviewing] = useState<string | null>(null);
+  const [reviewDirty, setReviewDirty] = useState(false);
   const [pendingAction, setPendingAction] = useState<'print' | 'links' | null>(null);
   const firstLoad = useRef(true);
   const controller = useRef(new AbortController());
   const locked = useRef(false);
   const creation = useRef<{ key: string; id: string } | null>(null);
   const valid = useCallback(() => useAuth.getState().user === owner && !controller.current.signal.aborted, [owner]);
+  const initialSelection = useRef(initialSelectedIds ?? (initialGradeId ? [initialGradeId] : []));
+  useEffect(() => { onDirtyChange?.(reviewDirty || busy); return () => onDirtyChange?.(false); }, [reviewDirty, busy, onDirtyChange]);
+  useEffect(() => {
+    if (!reviewDirty) return;
+    const protect = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', protect);
+    return () => window.removeEventListener('beforeunload', protect);
+  }, [reviewDirty]);
 
   const refreshAccesses = useCallback(async () => {
     const signal = controller.current.signal;
@@ -84,7 +96,7 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, on
         merged.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
         setRows(merged);
         const initial = firstLoad.current;
-        setSelected(current => initial ? previews.filter(item => item.elegible && item.fingerprint).map(item => item.calificacion_id) : current.filter(id => ids.includes(id)));
+        setSelected(current => initial ? initialSelection.current.filter(id => ids.includes(id)) : current.filter(id => ids.includes(id)));
         firstLoad.current = false;
         await refreshAccesses();
       } catch { if (current()) setError('No pudimos cargar toda la evaluación. No mostramos una lista incompleta. Revisa la conexión y vuelve a intentarlo.'); }
@@ -104,10 +116,14 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, on
     if (pendingRows.length) { setPendingAction(action); return; }
     void (action === 'print' ? preparePrint() : createLinks());
   }
-  function approved(result: FeedbackPreview) {
+  function approved(result: FeedbackPreview, action?: 'saved') {
     if (!valid()) return;
     setRows(current => current.map(row => row.calificacion_id === result.calificacion_id ? { ...row, preview: { ...row.preview, ...result, batch_candidate: result.batch_candidate } } : row));
-    setReviewing(null); setPendingAction(null); setNotice('Devolución aprobada. Ya puedes incluirla en la impresión o crear su enlace.');
+    setReviewing(null); setPendingAction(null); setNotice(action !== 'saved' && result.elegible ? 'Devolución aprobada. Ya puedes incluirla en la impresión o crear su enlace.' : 'Mensaje guardado. La nota y su estado no cambiaron; revisa su entrega antes de compartir.');
+    setReviewDirty(false);
+    setLinks([]);
+    setReload(value => value + 1);
+    void queryClient.invalidateQueries({queryKey:['calificacion-detalle',result.calificacion_id]});
     void refreshAccesses();
   }
   async function published(results: FeedbackBatchResultItem[], skipped: number) {
@@ -163,16 +179,17 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, on
     finally { locked.current = false; if (valid()) setBusy(false); }
   }
   if (!permitted) return null;
-  const canClose = () => !busy;
+  const canClose = () => !busy && !reviewDirty;
   const visible = rows.filter(row => row.nombre.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es')));
-  return <Modal open onClose={() => { if (canClose()) onClose(); }} closeOnBackdrop={!busy} closeOnEscape={!busy} title={initialGradeId?'Devolución del estudiante':'Retroalimentaciones'} className="max-w-6xl [overflow-wrap:anywhere]" description="Prepara las notas, imprime las fichas o comparte enlaces individuales.">
-    {printEntries ? <FeedbackPrintSheet entries={printEntries} suggestedArea={suggestedArea} onClose={() => setPrintEntries(null)} /> : loading ? <p role="status">Cargando estudiantes y retroalimentaciones…</p> : reviewRow?.preview?.revision_docente ? <FeedbackDeliveryReview
+  return <FeedbackFrame embedded={embedded} onClose={() => { if (canClose()) onClose(); else if (reviewDirty) setNotice('Guarda o descarta el mensaje antes de cerrar.'); }} canClose={canClose()} title={initialGradeId?'Retroalimentación del estudiante':'Retroalimentación del grupo'}>
+    {reviewDirty && <p role="status" className="mb-3 rounded-xl border border-amber-400 p-3 text-sm">Tienes un mensaje sin guardar. Guarda o descarta los cambios antes de cerrar o cambiar de estudiante.</p>}
+    {printEntries ? <FeedbackPrintSheet entries={printEntries} suggestedArea={suggestedArea} onClose={() => setPrintEntries(null)} /> : loading ? <p role="status">Cargando estudiantes y retroalimentaciones…</p> : reviewRow?.preview && (reviewRow.preview.revision_docente || reviewRow.preview.mensaje_editable) ? <FeedbackDeliveryReview
       key={reviewRow.calificacion_id} evaluationId={evaluationId} name={reviewRow.nombre} preview={reviewRow.preview}
-      signal={controller.current.signal} valid={valid} onApproved={approved} onBusy={setBusy} onCancel={() => setReviewing(null)} /> : <div className="space-y-4">
+      signal={controller.current.signal} valid={valid} onApproved={approved} onBusy={setBusy} onDirtyChange={setReviewDirty} onCancel={() => { setReviewDirty(false); setReviewing(null); }} /> : <div className="space-y-4">
       {error && <div role="alert" className="space-y-2 rounded-xl border border-amber-400 p-3"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => setReload(value => value + 1)}>Actualizar lista</Button></div>}
       {notice && <p role="status" className="text-sm">{notice}</p>}
-      <p className="text-sm text-muted">{rows.length} estudiantes · {eligible.length} listos para entregar · {selectedRows.length} seleccionados</p>
-      {canDeliver && <FeedbackBatchPublish evaluationId={evaluationId} rows={rows} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy} onCompleted={published}/>}
+      {!initialGradeId && <p className="text-sm text-muted">{rows.length} estudiantes · {eligible.length} listos para entregar · {selectedRows.length} seleccionados</p>}
+      {canDeliver && (!initialGradeId || !eligible.length) && <FeedbackBatchPublish individual={Boolean(initialGradeId)} evaluationId={evaluationId} rows={rows} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy} onCompleted={published}/>}
       <Button variant="link" disabled={busy} onClick={() => setReload(value => value + 1)}>Actualizar estudiantes y devoluciones</Button>
       {pendingAction && <section role="status" className="space-y-3 rounded-xl border border-amber-400 p-3">
         <p>{pendingRows.length} devoluciones seleccionadas necesitan revisión. No se entregarán sin tu aprobación.</p>
@@ -182,10 +199,10 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, on
           <Button variant="outline" disabled={busy} onClick={() => setPendingAction(null)}>Cancelar</Button>
         </div>
       </section>}
-      <label className="block text-sm font-semibold">Buscar estudiante<input type="search" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-base" value={search} onChange={event => setSearch(event.target.value)} /></label>
-      {canDeliver && <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy || !rows.some(row => row.preview?.seleccionable || row.preview?.elegible)} onClick={() => setSelected(rows.filter(row => row.preview?.seleccionable || row.preview?.elegible).map(row => row.calificacion_id!))}>Todos con nota</Button><Button variant="outline" disabled={busy || !eligible.length} onClick={() => setSelected(eligible.map(row => row.calificacion_id!))}>Todos los listos</Button><Button variant="outline" disabled={busy} onClick={() => setSelected([])}>Ninguno</Button><Button disabled={busy || !selectedRows.length} onClick={() => requestDelivery('print')}>Preparar impresión</Button></div>}
+      {!initialGradeId && <label className="block text-sm font-semibold">Buscar estudiante<input type="search" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-base" value={search} onChange={event => setSearch(event.target.value)} /></label>}
+      {canDeliver && <div className="flex flex-wrap gap-2">{!initialGradeId && <><Button variant="outline" disabled={busy || !rows.some(row => row.preview?.seleccionable || row.preview?.elegible)} onClick={() => setSelected(rows.filter(row => row.preview?.seleccionable || row.preview?.elegible).map(row => row.calificacion_id!))}>Todos con nota</Button><Button variant="outline" disabled={busy || !eligible.length} onClick={() => setSelected(eligible.map(row => row.calificacion_id!))}>Todos los listos</Button><Button variant="outline" disabled={busy} onClick={() => setSelected([])}>Ninguno</Button></>}<Button disabled={busy || !selectedRows.length} onClick={() => requestDelivery('print')}>Preparar impresión</Button></div>}
       {canDeliver && <>
-        <FeedbackLinkActions evaluationId={evaluationId} accesses={initialGradeId?accesses.filter(access=>access.calificacion_id===initialGradeId):accesses} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy}/>
+        <FeedbackLinkActions compact={Boolean(initialGradeId)} evaluationId={evaluationId} accesses={initialGradeId?accesses.filter(access=>access.calificacion_id===initialGradeId):accesses} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy}/>
         <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-bold">Enlaces individuales</summary><div className="space-y-3 pt-2">
           <p className="text-sm">La familia abre su enlace sin iniciar sesión. Solo ve la devolución de ese estudiante y puede preguntar a Xali: máximo cinco preguntas cada diez minutos, mientras el enlace esté activo.</p>
           <label className="block text-sm">Duración<select aria-label="Duración del enlace" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3" disabled={busy} value={days} onChange={event => setDays(Number(event.target.value))}>{Array.from({ length: 30 }, (_, index) => index + 1).map(value => <option key={value} value={value}>{value} {value === 1 ? 'día' : 'días'}{value === 3 ? ' · recomendado' : ''}</option>)}</select></label>
@@ -197,12 +214,12 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, on
       </>}
       <ul className="space-y-3" aria-label="Retroalimentaciones del grupo">{visible.map(row => <li key={row.estudiante_id} className="min-w-0 rounded-xl border border-border p-3 sm:p-4">
         <div className="flex items-start justify-between gap-3">
-          <label className="flex min-h-11 min-w-0 items-center gap-3 font-bold">{canDeliver && <input type="checkbox" className="h-5 w-5 shrink-0" aria-label={'Seleccionar ' + row.nombre} checked={selected.includes(row.calificacion_id ?? '')} disabled={busy || !(row.preview?.seleccionable || row.preview?.elegible)} onChange={event => { const checked = event.target.checked; setSelected(current => checked ? [...new Set([...current, row.calificacion_id!])] : current.filter(id => id !== row.calificacion_id)); }} />}<span className="break-words">{row.nombre}</span></label>
+          <label className="flex min-h-11 min-w-0 items-center gap-3 font-bold">{canDeliver && !initialGradeId && <input type="checkbox" className="h-5 w-5 shrink-0" aria-label={'Seleccionar ' + row.nombre} checked={selected.includes(row.calificacion_id ?? '')} disabled={busy || !(row.preview?.seleccionable || row.preview?.elegible)} onChange={event => { const checked = event.target.checked; setSelected(current => checked ? [...new Set([...current, row.calificacion_id!])] : current.filter(id => id !== row.calificacion_id)); }} />}<span className="break-words">{row.nombre}</span></label>
           {(row.preview?.resultado ?? row.preview?.borrador_docente)?.nota != null && <span className="shrink-0 py-3 font-bold tabular-nums">{formatGradeScore(Number((row.preview!.resultado ?? row.preview!.borrador_docente)!.nota))} / {formatGradeScore(Number((row.preview!.resultado ?? row.preview!.borrador_docente)!.nota_maxima))}</span>}
         </div>
         <p className="text-sm text-muted">{row.preview?.elegible ? 'Lista para entregar' : row.preview?.motivo ?? 'Sin calificación todavía.'}</p>
-        {(row.preview?.resultado ?? row.preview?.borrador_docente)?.retroalimentacion && <details className="mt-2"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Leer retroalimentación</summary><FeedbackMessage text={(row.preview!.resultado ?? row.preview!.borrador_docente)!.retroalimentacion} /></details>}
-        {canDeliver && row.preview?.revision_docente && <Button variant={row.preview.elegible ? 'link' : 'outline'} className="mt-2 h-auto min-h-11 py-2 text-left" disabled={busy} aria-label={'Revisar devolución de ' + row.nombre} onClick={() => setReviewing(row.calificacion_id!)}>Revisar y aprobar devolución</Button>}
+        {(row.preview?.resultado ?? row.preview?.borrador_docente)?.retroalimentacion && <details open={Boolean(initialGradeId)} className="mt-2"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Leer retroalimentación</summary><FeedbackMessage text={(row.preview!.resultado ?? row.preview!.borrador_docente)!.retroalimentacion} /></details>}
+        {((canDeliver && row.preview?.revision_docente) || (canEditMessage && row.preview?.mensaje_editable)) && <Button variant={row.preview?.elegible ? 'link' : 'outline'} className="mt-2 h-auto min-h-11 py-2 text-left" disabled={busy} aria-label={'Revisar devolución de ' + row.nombre} onClick={() => setReviewing(row.calificacion_id!)}>Editar y revisar devolución</Button>}
         {row.calificacion_id && <Button variant="link" className="mt-1 min-h-11 text-left" disabled={busy} onClick={() => { if (canClose()) onReview(row.calificacion_id!); }}>Revisar respuestas y evidencia</Button>}
       </li>)}</ul>
       {!visible.length && <p className="text-sm text-muted">No hay estudiantes que coincidan con la búsqueda.</p>}
@@ -210,5 +227,11 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, suggestedArea, on
         <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-bold">Controlar enlaces</summary><FeedbackAccessList evaluationId={evaluationId} accesses={initialGradeId?accesses.filter(access=>access.calificacion_id===initialGradeId):accesses} previews={rows.flatMap(row => row.preview ? [row.preview] : [])} signal={controller.current.signal} valid={valid} onChanged={refreshAccesses} onIssued={(result, name) => received(result, name, true)} /></details>
       </>}
     </div>}
-  </Modal>;
+  </FeedbackFrame>;
+}
+
+function FeedbackFrame({ embedded, onClose, canClose, title, children }: { embedded?: boolean; onClose: () => void; canClose: boolean; title: string; children: ReactNode }) {
+  const description = 'Revisa el mensaje, imprime las fichas o comparte enlaces individuales. Es la misma devolución en todas las vistas.';
+  if (embedded) return <section className="min-w-0 space-y-4" aria-label={title}><header className="space-y-2"><h2 className="text-lg font-bold">{title}</h2><p className="text-sm leading-6 text-muted">{description}</p></header>{children}</section>;
+  return <Modal open onClose={onClose} closeOnBackdrop={canClose} closeOnEscape={canClose} title={title} className="max-w-6xl [overflow-wrap:anywhere] max-sm:!max-h-[100dvh] max-sm:!rounded-none max-sm:!p-4" description={description}>{children}</Modal>;
 }

@@ -16,7 +16,7 @@ describe('entrada gradual de devoluciones', () => {
   it('solo abre cuando está habilitada y monta el diálogo fuera del menú', async () => {
     vi.mocked(feedbackAvailable).mockResolvedValue(true);
     const { container } = render(<MemoryRouter><FeedbackToolsButton evaluationId="e" /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Retroalimentaciones' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Retroalimentación del grupo' }));
     const dialog = await screen.findByRole('dialog');
     expect(container.contains(dialog)).toBe(false);
   });

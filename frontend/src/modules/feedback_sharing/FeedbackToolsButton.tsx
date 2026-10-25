@@ -9,11 +9,11 @@ import { copyFeedbackAccesses, feedbackAvailable, listFeedbackAccesses } from '.
 
 const ShareFeedbackDialog = lazy(() => import('./ShareFeedbackDialog').then(module => ({ default: module.ShareFeedbackDialog })));
 
-export function FeedbackToolsButton(props: { evaluationId: string; gradeId?: string; disabled?: boolean; suggestedArea?: string | null }) {
+export function FeedbackToolsButton(props: { evaluationId: string; gradeId?: string; initialSelectedIds?: string[]; disabled?: boolean; suggestedArea?: string | null }) {
   return <FeedbackToolsContent key={props.evaluationId + '-' + (props.gradeId ?? 'group')} {...props} />;
 }
 
-function FeedbackToolsContent({ evaluationId, gradeId, disabled = false, suggestedArea }: { evaluationId: string; gradeId?: string; disabled?: boolean; suggestedArea?: string | null }) {
+function FeedbackToolsContent({ evaluationId, gradeId, initialSelectedIds, disabled = false, suggestedArea }: { evaluationId: string; gradeId?: string; initialSelectedIds?: string[]; disabled?: boolean; suggestedArea?: string | null }) {
   const user = useAuth(state => state.user);
   const [owner] = useState(user);
   const navigate = useNavigate();
@@ -60,11 +60,11 @@ function FeedbackToolsContent({ evaluationId, gradeId, disabled = false, suggest
   }
   if (!permitted || availability?.owner !== user || !availability.enabled || !evaluationId) return null;
   return <>
-    <Button variant="outline" className="h-auto min-h-11 py-2" disabled={disabled || busy} onClick={() => void openOrCopy()}><MessageSquareText className="h-4 w-4" aria-hidden="true" /> {gradeId ? 'Copiar enlace' : 'Retroalimentaciones'}</Button>
+    <Button variant="outline" className="h-auto min-h-11 py-2" disabled={disabled || busy} onClick={() => void openOrCopy()}><MessageSquareText className="h-4 w-4" aria-hidden="true" /> {gradeId ? 'Copiar enlace' : 'Retroalimentación del grupo'}</Button>
     {gradeId && <Button variant="link" className="min-h-11" disabled={disabled || busy} onClick={() => setOpened({ evaluationId, owner: user })}>Opciones para compartir</Button>}
     {message && <p role="status" className="w-full text-sm">{message}</p>}
     {manual && <label className="w-full text-sm">Enlace para copiar<textarea aria-label="Enlace para copiar" className="mt-1 min-h-24 w-full rounded-lg border border-border bg-surface p-3 text-base" readOnly value={manual} onFocus={event => event.currentTarget.select()} /></label>}
-    {opened?.owner === user && opened.evaluationId === evaluationId && createPortal(<Suspense fallback={<p role="status">Abriendo retroalimentaciones…</p>}><ShareFeedbackDialog evaluationId={evaluationId} initialGradeId={gradeId} suggestedArea={suggestedArea} onClose={() => setOpened(null)} onReview={gradeId => {
+    {opened?.owner === user && opened.evaluationId === evaluationId && createPortal(<Suspense fallback={<p role="status">Abriendo retroalimentaciones…</p>}><ShareFeedbackDialog evaluationId={evaluationId} initialGradeId={gradeId} initialSelectedIds={initialSelectedIds} suggestedArea={suggestedArea} onClose={() => setOpened(null)} onReview={gradeId => {
       setOpened(null);
       const params = new URLSearchParams({ evaluacion: evaluationId, calificacion: gradeId });
       navigate(`${routes.calificacionesWorkspace}?${params}`);

@@ -1,13 +1,14 @@
 """Lectura con credencial individual; sin dependencias de cuenta de plataforma."""
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Path, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Path, Query, Response
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.core.rate_limit import rate_limit
 from app.modules.feedback_sharing.access_policy import UNAVAILABLE, db_now, guard_token
+from app.modules.feedback_sharing.conversation import conversation_scope
 from app.modules.feedback_sharing.http_policy import PrivateRoute
 from app.modules.feedback_sharing.http_policy import PRIVATE_HEADERS
 from app.modules.feedback_sharing.quota_service import quota_snapshot
@@ -29,19 +30,24 @@ def read_credential(authorization: str | None = Header(default=None)) -> str:
 
 
 @router.post("/preguntas", status_code=202)
-async def ask_question(payload: QuestionInput, background: BackgroundTasks, credential: str = Depends(read_credential), db: AsyncSession = Depends(get_db)):
-    request, _ = await chat_service.admit_question(db, credential, payload)
+async def ask_question(payload: QuestionInput, background: BackgroundTasks, credential: str = Depends(read_credential), db: AsyncSession = Depends(get_db), visitor: str | None = Header(default=None, alias='X-Feedback-Conversation', max_length=36)):
+    request, _ = await chat_service.admit_question(db, credential, payload, visitor=visitor)
     request_id = request.id
     await db.commit()
-    result = await chat_service.read_request(db, credential, request_id)
+    result = await chat_service.read_request(db, credential, request_id, visitor=visitor)
     if request.status == "queued":
         background.add_task(chat_service.dispatch_question, request_id)
     return result
 
 
 @router.get("/preguntas/{request_id}")
-async def read_question(request_id: UUID, credential: str = Depends(read_credential), db: AsyncSession = Depends(get_db)):
-    return await chat_service.read_request(db, credential, request_id)
+async def read_question(request_id: UUID, credential: str = Depends(read_credential), db: AsyncSession = Depends(get_db), visitor: str | None = Header(default=None, alias='X-Feedback-Conversation', max_length=36)):
+    return await chat_service.read_request(db, credential, request_id, visitor=visitor)
+
+
+@router.get('/conversacion')
+async def read_history(credential: str = Depends(read_credential), db: AsyncSession = Depends(get_db), visitor: str | None = Header(default=None, alias='X-Feedback-Conversation', max_length=36), limit: int = Query(default=20, ge=1, le=50), cursor: str | None = Query(default=None, max_length=1024)):
+    return await chat_service.read_conversation(db, credential, visitor, limit=limit, cursor=cursor)
 
 
 @router.get("")
@@ -49,7 +55,7 @@ async def read_feedback(credential: str = Depends(read_credential), db: AsyncSes
     context = await guard_token(db, credential)
     quota = await quota_snapshot(db, context)
     context = await guard_token(db, credential)
-    return {"resultado": context.publication.payload_json, "expires_at": context.access.expires_at, "server_now": await db_now(db), "cupo": quota, "evidencia_disponible": bool(context.publication.evidence_enabled and context.source.delivery)}
+    return {"resultado": context.publication.payload_json, "expires_at": context.access.expires_at, "server_now": await db_now(db), "cupo": quota, "evidencia_disponible": bool(context.publication.evidence_enabled and context.source.delivery), 'conversation_scope': conversation_scope(context)}
 
 
 @router.get("/evidencia/{page}")

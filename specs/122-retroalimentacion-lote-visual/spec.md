@@ -1,5 +1,7 @@
 # Especificación: retroalimentaciones en lote, enlaces copiables y fichas visuales
 
+**Extensión aprobada**: [Spec126](../126-retroalimentacion-unificada-chat/spec.md), 2026-10-24, reutiliza lote, enlaces y fichas en un espacio común. Permite recordar solo scope/UUID opacos para continuidad del chat; mantiene prohibido almacenar credenciales, mensajes y datos académicos en localStorage. Copiar no crea, renueva ni publica enlaces.
+
 **Rama**: `codex/122-retroalimentacion-lote-visual` | **Creada**: 2026-10-23 | **Estado**: Aprobada por el usuario («aprobe»); revisión de requisitos autorizada («Sí, revisa y continúa») | **Issue**: #257
 
 **Solicitud**: «Aceptar todas y publicarlas», copiar el enlace individual desde el estudiante y todos los enlaces desde retroalimentaciones, mejorar celular y computador y disponer de al menos veinte motivos sin fondo para decorar las fichas impresas.

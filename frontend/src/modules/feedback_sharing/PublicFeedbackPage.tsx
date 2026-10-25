@@ -103,7 +103,7 @@ function FeedbackSession({ token }: { token: string }) {
       </li>)}</ol>
     </details>}
     <details className="rounded-2xl border border-border bg-surface p-5"><summary className="min-h-11 cursor-pointer font-bold">Pregúntale a Xali</summary>
-      <PublicFeedbackChat client={client} quota={result.cupo} onUnavailable={close} />
+      <PublicFeedbackChat key={result.conversation_scope ?? 'legacy'} client={client} quota={result.cupo} onUnavailable={close} />
     </details>
     <p className="text-xs leading-5 text-muted">Enlace privado para este resultado. No lo compartas con otras personas. Si necesitas corregir la nota, habla con tu docente.</p>
   </>;

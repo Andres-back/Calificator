@@ -36,8 +36,8 @@ async function setup(page: Page, ready = false) {
   });
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
   await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
-  await page.getByRole('button', { name: 'Retroalimentaciones', exact: true }).click();
-  return { dialog: page.getByRole('dialog', { name: 'Retroalimentaciones', exact: true }), calls };
+  await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
+  return { dialog: page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true }), calls };
 }
 
 for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']) {
@@ -71,6 +71,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.setViewportSize({ width, height: 850 });
     const { dialog } = await setup(page, true);
     await page.evaluate(theme => document.documentElement.classList.toggle('dark', theme === 'dark'), theme);
+    await dialog.getByRole('button', { name: 'Todos los listos', exact: true }).click();
     await dialog.getByRole('button', { name: 'Preparar impresión', exact: true }).click();
     const decoration = dialog.getByRole('combobox', { name: 'Decoración de las fichas' });
     await expect(decoration.locator('option')).toHaveCount(22);

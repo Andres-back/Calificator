@@ -10,9 +10,11 @@ const result = (index: number) => ({ estudiante: index === 1 ? 'Estudiante Prueb
   respuestas: [], claves_liberadas: false, alcance: 'summary',
 });
 
-async function installFeedback(page: Page, initiallyApproved = false) {
+async function installFeedback(page: Page, initiallyApproved = false, { deferApprovalRefresh = false } = {}) {
   let approved = initiallyApproved;
   let previewCalls = 0;
+  let releaseApprovalRefresh = () => {};
+  const approvalRefresh = new Promise<void>(resolve => { releaseApprovalRefresh = resolve; });
   const operations: string[] = [];
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
@@ -21,6 +23,7 @@ async function installFeedback(page: Page, initiallyApproved = false) {
     if (path === '/api/public/devolucion') return json({ resultado: result(1), server_now: '2026-10-23T12:00:00Z', expires_at: '2026-10-26T12:00:00Z', cupo: { restantes: 5, retry_after_seconds: 0 }, evidencia_disponible: false });
     if (path === '/api/evaluaciones/e1/devoluciones/previsualizar') {
       previewCalls++;
+      if (approved && deferApprovalRefresh) await approvalRefresh;
       return json({ resultados: Array.from({ length: 30 }, (_, offset) => {
         const index = offset + 1;
         const ready = index !== 1 || approved;
@@ -49,8 +52,45 @@ async function installFeedback(page: Page, initiallyApproved = false) {
     }
     return route.fallback();
   });
-  return { operations, previewCalls: () => previewCalls };
+  return { operations, previewCalls: () => previewCalls, releaseApprovalRefresh };
 }
+
+test('126 conserva tres seleccionados al abrir el grupo sin publicar', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 850 });
+  await login(page, 'profesor', { rosterSize: 30 });
+  const state = await installFeedback(page, true);
+  await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
+  const choices = page.getByRole('checkbox', { name: /^Seleccionar nota de / });
+  for (let index = 0; index < 3; index++) await choices.nth(index).click();
+  await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
+  await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
+  await expect(dialog.getByText('30 estudiantes · 30 listos para entregar · 3 seleccionados')).toBeVisible();
+  await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(3);
+  expect(state.operations).toEqual([]);
+});
+
+for (const width of [390, 1440]) test(`126 misma gestión individual y grupo ${width}px`, async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width, height: 850 });
+  await login(page, 'profesor', { rosterSize: 30 });
+  await installFeedback(page, true);
+  await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
+  await page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Retroalimentación', exact: true }).click();
+  const individual = page.getByRole('region', { name: 'Retroalimentación del estudiante', exact: true });
+  await expect(individual.getByText('identificaste el personaje principal.', { exact: true })).toBeVisible();
+  await expect(individual.getByRole('searchbox')).toHaveCount(0);
+  await individual.getByRole('button', { name: 'Revisar devolución de Estudiante Prueba', exact: true }).click();
+  await expect(individual.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue(message);
+  await individual.getByRole('button', { name: 'Volver sin aprobar', exact: true }).click();
+  if (width < 1280) await page.getByRole('button', { name: 'Volver a lista', exact: true }).click();
+  await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
+  await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
+  const group = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
+  await group.getByRole('button', { name: 'Revisar devolución de Estudiante Prueba', exact: true }).click();
+  await expect(group.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue(message);
+  expect(await group.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+});
 
 for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark'] as const) {
   test(`120 devolución seleccionable y legible ${width}px ${theme}`, async ({ page, browserName }) => {
@@ -59,13 +99,13 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     test.setTimeout(60_000);
     await page.setViewportSize({ width, height: 850 });
     await login(page, 'profesor', { rosterSize: 30 });
-    const state = await installFeedback(page);
+    const state = await installFeedback(page, false, { deferApprovalRefresh: true });
     await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
     await page.evaluate(theme => { document.documentElement.classList.toggle('dark', theme === 'dark'); }, theme);
     await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
-    await page.getByRole('button', { name: 'Retroalimentaciones', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'Retroalimentaciones' });
-    await expect(dialog.getByText('30 estudiantes · 29 listos para entregar · 29 seleccionados')).toBeVisible();
+    await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Retroalimentación del grupo' });
+    await expect(dialog.getByText('30 estudiantes · 29 listos para entregar · 0 seleccionados')).toBeVisible();
     await dialog.getByRole('button', { name: 'Ninguno', exact: true }).click();
     const selected = dialog.getByRole('checkbox', { name: 'Seleccionar Estudiante Prueba', exact: true });
     await selected.press('Space');
@@ -76,7 +116,15 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     expect((await dialog.getByRole('textbox', { name: 'Mensaje para el estudiante' }).boundingBox())!.height).toBeGreaterThanOrEqual(224);
     await expect(dialog.getByRole('combobox')).toContainText('Solo nota y retroalimentación');
     await page.screenshot({ path: `../output/playwright/spec120-review-${width}-${theme}-${browserName}.png` });
+    const callsBeforeApproval = state.previewCalls();
+    const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/evaluaciones/e1/devoluciones/previsualizar' && response.ok());
     await dialog.getByRole('button', { name: 'Aprobar devolución', exact: true }).click();
+    // Approval intentionally revalidates the list. Hold that response so the
+    // test observes loading instead of racing the optimistic ready state.
+    await expect(dialog.getByText('Cargando estudiantes y retroalimentaciones…', { exact: true })).toBeVisible();
+    await expect.poll(state.previewCalls).toBe(callsBeforeApproval + 1);
+    state.releaseApprovalRefresh();
+    await (await refreshed).finished();
     await expect(selected).toBeChecked();
     await expect(dialog.getByText('30 estudiantes · 30 listos para entregar · 1 seleccionados')).toBeVisible();
     const calls = state.previewCalls();
@@ -102,8 +150,9 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
     await page.evaluate(theme => { document.documentElement.classList.toggle('dark', theme === 'dark'); }, theme);
     await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
-    await page.getByRole('button', { name: 'Retroalimentaciones', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'Retroalimentaciones' });
+    await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Retroalimentación del grupo' });
+    await dialog.getByRole('button', { name: 'Todos los listos', exact: true }).click();
     await expect(dialog.getByText('30 estudiantes · 30 listos para entregar · 30 seleccionados')).toBeVisible();
     await dialog.getByRole('button', { name: 'Preparar impresión', exact: true }).click();
     await expect(dialog.getByRole('heading', { name: '30 fichas para entregar individualmente' })).toBeVisible();

@@ -32,7 +32,7 @@ async def test_global_capacity_is_independent_of_student_quota_and_fail_closed(m
     with pytest.raises(HTTPException) as exc:
         await chat_service.admit_question(db, "synthetic-credential", "payload")
     assert exc.value.status_code == 503
-    admission.assert_awaited_once_with(db, "synthetic-credential", "payload", max_pending=60)
+    admission.assert_awaited_once_with(db, "synthetic-credential", "payload", max_pending=60, visitor=None)
     assert "feedback_admission" in str(db.execute.call_args.args[0])
 
 

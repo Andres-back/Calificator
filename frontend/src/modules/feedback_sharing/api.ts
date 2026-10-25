@@ -8,6 +8,7 @@ export interface FeedbackPreview {
   borrador_docente?: { estado: string; nota: string | null; nota_maxima: string; retroalimentacion: string };
   seleccionable?: boolean; preparacion?: 'no_grade' | 'needs_review' | 'ready';
   revision_docente?: { source_fingerprint: string; feedback_text: string; detail_available: boolean };
+  mensaje_editable?: { source_fingerprint: string; feedback_text: string; detail_available: boolean };
   batch_candidate?: FeedbackBatchCandidate;
   batch_unavailable_reason?: string;
 }
@@ -45,6 +46,10 @@ export async function previewFeedback(id: string, ids: string[], signal?: AbortS
 }
 export async function approveFeedbackReview(id: string, payload: FeedbackReviewInput, signal?: AbortSignal) {
   const { data } = await api.post<FeedbackPreview>(path(id) + '/revisar', payload, { signal });
+  return data;
+}
+export async function saveFeedbackMessage(id: string, payload: Omit<FeedbackReviewInput, 'scope'>, signal?: AbortSignal) {
+  const { data } = await api.post<FeedbackPreview>(path(id) + '/mensaje', payload, { signal });
   return data;
 }
 export async function issueFeedbackAccesses(id: string, payload: { request_id: string; selecciones: FeedbackSelection[]; duracion_dias: number; evidencia: boolean }, signal?: AbortSignal) {
