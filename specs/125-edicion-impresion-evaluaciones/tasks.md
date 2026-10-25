@@ -59,7 +59,7 @@ Prueba independiente: biblioteca sin gasto, tabla/gráfico determinista, propues
 - [x] T027 Ejecutar typecheck/lint/Vitest/pytest y regresiones de generación, lectura, digitalización, motivos, visuales y calificación; registrar comandos/resultados en `specs/125-edicion-impresion-evaluaciones/quickstart.md`.
 - [x] T028 Verificar visualmente móvil/computador, claro/oscuro, Chromium/WebKit y exportaciones sin llamadas reales en `output/playwright/` y `output/pdf/`; registrar límites de prueba en `specs/125-edicion-impresion-evaluaciones/quickstart.md` (SC-001–SC-007).
 - [x] T029 Ejecutar Converge, gobernanza, auditorías y builds aplicables; actualizar `specs/125-edicion-impresion-evaluaciones/tasks.md`, `quickstart.md` y `specs/README.md` sin certificar CI pendiente.
-- [ ] T030 Preparar PR enlazado a262 con todos los cambios revisados y CI requerido en verde antes de entrega; no fusionar ni desplegar sin autorización y registrar enlace en `specs/125-edicion-impresion-evaluaciones/quickstart.md`.
+- [x] T030 Preparar PR enlazado a262 con todos los cambios revisados y CI requerido en verde antes de entrega; no fusionar ni desplegar sin autorización y registrar enlace en `specs/125-edicion-impresion-evaluaciones/quickstart.md`.
 
 ## Dependencias y ejecución
 

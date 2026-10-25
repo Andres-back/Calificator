@@ -44,6 +44,8 @@ Este apartado registra el primer hito. La segunda parte se documenta a continuac
 
 Pendiente externo al cierre local: CI remoto completo, PR/merge protegido y verificación del despliegue automático. El estado real se registra en el PR; ninguna cifra local certifica ese resultado.
 
+Candidato publicado en [PR #263](https://github.com/Andres-back/Calificator/pull/263), enlazado al issue262 con etiquetas `spec-approved` y `plan-approved`. T030 registra la preparación y la puerta de entrega, no un CI verde anticipado. No fusionar mientras quede un control requerido pendiente/fallido/ausente. El merge y su despliegue se verificarán en este chat y en el comentario del PR con el HEAD exacto.
+
 ### Cierre de verificación local
 
 - `alembic upgrade head` desde cero y `alembic current` en segundo contenedor pgvector temporal: revisión única `202610240002`. La migración nueva también se comprobó sobre una tabla legacy con preguntas/notas/evidencia; no hubo backfill ni pérdida de columnas anteriores.
