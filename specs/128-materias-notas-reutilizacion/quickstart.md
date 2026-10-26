@@ -1,6 +1,6 @@
 # Validación 128
 
-Implementación aprobada y en curso, todavía sin PR, fusión ni producción. Usar datos/archivos sintéticos, no notas/fotos/nombres reales.
+Implementación aprobada en el PR #271, sin fusión ni producción. Usar datos/archivos sintéticos, no notas/fotos/nombres reales.
 
 ## Evidencia de implementación (2026-10-25)
 
@@ -51,4 +51,13 @@ Usuario aprobó spec/plan y revisión el 2026-10-25. Checklist propio 8/8 y docu
 
 ## Estado
 
-Issue #270, aprobación humana del alcance/plan/revisión registrada el 2026-10-25; calidad documental 16/16 y checklist específico 8/8. PR se prepara tras Converge y verificaciones finales; no autoriza fusión ni despliegue. No se han usado datos reales, APIs IA ni cuentas de producción. Una comprobación posterior con demo necesita su alcance autorizado; no se presume realizada por CI ni se afirma Excel o teclado físico probado.
+Issue #270, aprobación humana del alcance/plan/revisión registrada el 2026-10-25; calidad documental 16/16 y checklist específico 8/8. [PR #271](https://github.com/Andres-back/Calificator/pull/271) abierto; no autoriza fusión ni despliegue. No se han usado datos reales, APIs IA ni cuentas de producción. Una comprobación posterior con demo necesita su alcance autorizado; no se presume realizada por CI ni se afirma Excel o teclado físico probado.
+
+## Corrección de CI autorizada: T026
+
+- La ejecución 40244013116 falló antes de las pruebas backend: apt de Ubuntu 22.04 no encuentra libharfbuzz-subset0 (exit 100). Frontend, E2E, contenedores y gobernanza sí terminaron verdes para ese HEAD; eso no sustituye su repetición en el nuevo commit.
+- Se retira únicamente ese paquete opcional para WeasyPrint 70 y se declaran libharfbuzz0b y libpangoft2-1.0-0, además de Pango/Cairo/fuentes. No se cambia versión de Python, WeasyPrint, runner ni dependencias de la app. La [ficha oficial de Ubuntu Jammy](https://packages.ubuntu.com/jammy/libpango-1.0-0) y la inspección local de ffi.py de WeasyPrint 70 respaldan el conjunto; harfbuzz_subset se carga con allow_fail=True y su ausencia emite advertencia de compatibilidad futura, no un fallo actual.
+- Prueba RED de workflow: dos fallos esperados (paquete no disponible y ausencia de smoke), un caso aprobado. Después de corregir: 3/3 aprobadas. Las pruebas de integración completas permanecen habilitadas, sin exclusiones ni continue-on-error.
+- Ubuntu 22.04 limpio, sin montajes ni credenciales: apt-get update y apt-get install --simulate resolvieron satisfactoriamente todos los paquetes corregidos. Se comprobó disponibilidad/resolución, no se presenta esa simulación como un render allí.
+- El mismo smoke de CI generó y leyó en memoria un PDF de una página con WeasyPrint 70/Python 3.11 en el contenedor local sin red, verificando firma PDF y texto con PyMuPDF. CI lo ejecuta obligatoriamente después de instalar bibliotecas, antes de auditoría y pruebas. No se produce ni se usa un archivo de estudiante.
+- Inventario sin cambios: 661 superficies vigentes; YAML válido y gobernanza completa 61/61 aprobada. Converge del seguimiento revisó FR-018/T026, decisiones de bibliotecas/prueba PDF y los ocho principios: cero brechas nuevas, sin escribir tareas durante su análisis. La corrección se publica en el mismo PR para iniciar todos los controles, sin fusionar ni desplegar.

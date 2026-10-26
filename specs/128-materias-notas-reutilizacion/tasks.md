@@ -61,3 +61,7 @@ FR-001: T004–007. FR-002: T004–008. FR-003: T004–008. FR-004: T004–007. 
 FR-007: T009–014. FR-008: T009–014. FR-009: T009–014. FR-010: T009–014.
 FR-011: T015–022. FR-012: T015–022. FR-013: T015–022. FR-014: T015–022. FR-015: T015–022.
 FR-016: T003–024. FR-017: T007/T013/T021/T024. FR-018: T007/T008/T014/T022–025.
+
+## Seguimiento de CI del PR #271
+
+- [x] T026 Corregir los paquetes PDF de Ubuntu 22.04 en .github/workflows/ci.yml, añadir generación/lectura sintética obligatoria y regresión en tests/spec_governance/test_backend_pdf_ci.py; comprobar gobernanza, documentar el resultado y reenviar CI sin fusionar ni desplegar (FR-018). Autorizado por el usuario: «corrige y manda ci».
