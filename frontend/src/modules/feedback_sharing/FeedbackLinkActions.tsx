@@ -7,14 +7,14 @@ export function FeedbackLinkActions({evaluationId,accesses,selectedIds,signal,va
   evaluationId:string; accesses:FeedbackAccess[]; selectedIds:string[]; signal:AbortSignal; valid:()=>boolean; disabled?:boolean; onBusy?:(busy:boolean)=>void; compact?:boolean;
 }) {
   const user=useAuth(state=>state.user);
-  const [owner]=useState(user);
+  const [owner]=useState(user?.id);
   const [busy,setBusy]=useState(false);
   const [manual,setManual]=useState('');
   const [message,setMessage]=useState('');
   const [errors,setErrors]=useState<string[]>([]);
   const lock=useRef(false);
-  const permitted=user===owner && ['profesor','admin'].includes(user?.rol??'') && Boolean(user?.permissions?.includes('grading.publish'));
-  const current=()=>permitted && valid() && !signal.aborted && useAuth.getState().user===owner;
+  const permitted=user?.id===owner && ['profesor','admin'].includes(user?.rol??'') && Boolean(user?.permissions?.includes('grading.publish'));
+  const current=()=>permitted && valid() && !signal.aborted && useAuth.getState().user?.id===owner && Boolean(useAuth.getState().user?.permissions?.includes('grading.publish'));
   const active=accesses.filter(access=>access.estado==='active');
   async function copy(items:FeedbackAccess[]) {
     if(!current()||lock.current||!items.length) return;

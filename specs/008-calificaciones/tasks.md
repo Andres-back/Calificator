@@ -16,3 +16,4 @@
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
 - [X] T032-REF Enlazar recuperación, revisión explicable y protección de la nota implementadas en `specs/032-calificacion-impacto-docente/` (FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-013, FR-018).
+- [x] T033 Referenciar la composición de entrega frontend en specs/129-retroalimentacion-flujo-claro/tasks.md, issue #272; conservar las operaciones académicas existentes y sus guardas (FR-005, FR-006, FR-008).

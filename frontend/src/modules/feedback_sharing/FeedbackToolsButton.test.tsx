@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '@/stores/auth';
@@ -47,5 +47,16 @@ describe('entrada gradual de devoluciones', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Copiar enlace' }));
     expect(await screen.findByRole('dialog')).toBeVisible();
     expect(copyFeedbackAccesses).not.toHaveBeenCalled();
+  });
+  it('129 conserva el grupo abierto durante renovación y lo retira al salir', async () => {
+    vi.mocked(feedbackAvailable).mockResolvedValue(true);
+    render(<MemoryRouter><FeedbackToolsButton evaluationId="e" /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button', { name: 'Retroalimentación del grupo' }));
+    await screen.findByRole('dialog');
+    act(() => useAuth.setState({ user: { ...useAuth.getState().user! } }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(feedbackAvailable).toHaveBeenCalledTimes(1);
+    act(() => useAuth.setState({ user: null }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

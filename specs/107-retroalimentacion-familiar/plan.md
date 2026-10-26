@@ -90,3 +90,7 @@ Salida estricta de texto/claves: rechazar campos de notas, referencias a pregunt
 7. CI: Backend quality and tests; Frontend quality, build and E2E; Container builds; Spec governance. PR con evidencia y autorización propia para fusión/despliegue, sin cambios manuales anticipados.
 
 Artefactos: [research.md](./research.md), [data-model.md](./data-model.md), [contratos](./contracts/http-and-ui.md) y [validación](./quickstart.md). Sin hooks before_plan/after_plan configurados. Plan terminó en diseño; tras su aprobación se añaden [tareas](./tasks.md) y [lista de revisión](./checklists/entrega-individual.md), sin confundirlos con implementación.
+
+## Integración 129
+
+[Plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272: sin endpoints, migraciones o proveedores nuevos. Preparación distingue activos/faltantes/cerrados y resultados inciertos; copia autorizada sin mutar cuota/vigencia y recuperación mínima de la misma solicitud, sin credenciales persistidas en navegador. La copia definitiva ocurre por un gesto desde URLs preparadas en memoria.

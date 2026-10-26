@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
 import type { FeedbackAccess, FeedbackPreview, IssuedFeedbackAccess } from './api';
 import { changeFeedbackAccess } from './api';
 import { FeedbackLinkActions } from './FeedbackLinkActions';
 
 const labels = { active: 'Activo', expired: 'Vencido', disabled: 'Desactivado', suspended: 'Necesita nueva autorización' };
-export function FeedbackAccessList({ evaluationId, accesses, previews, signal, valid, onChanged, onIssued }: {
+export function FeedbackAccessList({ evaluationId, accesses, previews, signal, valid, onChanged, onIssued, onBusy }: {
   evaluationId?: string;
   accesses: FeedbackAccess[]; previews: FeedbackPreview[]; signal: AbortSignal;
   valid: () => boolean; onChanged: () => Promise<void>;
   onIssued: (result: IssuedFeedbackAccess, name: string) => void;
+  onBusy?: (busy: boolean) => void;
 }) {
   const [pending, setPending] = useState<{ access: FeedbackAccess; action: 'desactivar' | 'reactivar' | 'renovar'; requestId: string } | null>(null);
   const [days, setDays] = useState(3);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => { onBusy?.(busy); return () => onBusy?.(false); }, [busy, onBusy]);
   async function execute() {
     if (!pending || busy || !valid()) return;
     const { access, action, requestId } = pending;

@@ -23,3 +23,7 @@ El [plan 102](../102-camara-visor-completo/plan.md) integra captura local sin au
 ## Coordinación con 032
 
 La evolución [032](../032-calificacion-impacto-docente/plan.md) implementa recuperación, revisión contextual y autoridad del escritor dentro de este dominio; las tablas y rutas académicas continúan siendo propiedad de 008.
+
+## Coordinación con 129
+
+[Plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272: composición frontend común sin modificar cálculo ni publicación. Marco de cabecera/cuerpo/pie; detalle integrado con acciones locales, sin otro pie global sobre las acciones de calificación. Contratos de 107/120/122 intactos; pruebas por identidad y permisos actuales.

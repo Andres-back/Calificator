@@ -78,3 +78,7 @@ MVP interno: US1 con recibos y conservación verificados, sin producción. Despu
 | FR-010 | T014, T018 |
 | FR-011 | T008, T009, T011, T012, T018 |
 | FR-012 | T006, T007, T020, T023 |
+
+## Coordinación 129
+
+- [x] T024 Vincular reorganización y regresiones de lote/copia/fichas a specs/129-retroalimentacion-flujo-claro/tasks.md, issue #272; mantener contenido, motivos y publicación expresa (FR-001, FR-002, FR-003, FR-007, FR-008, FR-009, FR-012).

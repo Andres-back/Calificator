@@ -141,3 +141,7 @@ Paralelismo posible, sin obligación de delegar: US1 fixtures de benchmark frent
 | FR-029 | T042, T043, T044 |
 | FR-030 | T042, T043, T044, T045 |
 | FR-031 | T045 |
+
+## Coordinación 129
+
+- [x] T046 Vincular selección y entrega adaptativa a specs/129-retroalimentacion-flujo-claro/tasks.md, issue #272, manteniendo contratos, permisos, emisión/copia y vigencia actuales (FR-028, FR-029, FR-030, FR-031).

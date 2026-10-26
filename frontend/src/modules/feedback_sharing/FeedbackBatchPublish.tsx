@@ -13,7 +13,7 @@ export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, 
   individual?:boolean;
 }) {
   const user=useAuth(state=>state.user);
-  const [owner]=useState(user);
+  const [owner]=useState(user?.id);
   const [summary,setSummary]=useState<Row[]|null>(null);
   const [busy,setBusy]=useState(false);
   const [status,setStatus]=useState('');
@@ -22,8 +22,8 @@ export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, 
   const operation=useRef<Operation|null>(null);
   const stop=useRef(false);
   const lock=useRef(false);
-  const permitted=user===owner && ['profesor','admin'].includes(user?.rol??'') && ['grading.grade','grading.publish'].every(permission=>user?.permissions?.includes(permission));
-  const current=()=>permitted && valid() && !signal.aborted && useAuth.getState().user===owner;
+  const permitted=user?.id===owner && ['profesor','admin'].includes(user?.rol??'') && ['grading.grade','grading.publish'].every(permission=>user?.permissions?.includes(permission));
+  const current=()=>permitted && valid() && !signal.aborted && useAuth.getState().user?.id===owner && ['grading.grade','grading.publish'].every(permission=>useAuth.getState().user?.permissions?.includes(permission));
   const available=(items:Row[])=>items.filter(row=>row.calificacion_id && row.preview?.batch_candidate);
   function prepare(items:Row[]) {
     if (!current() || busy || lock.current) return;

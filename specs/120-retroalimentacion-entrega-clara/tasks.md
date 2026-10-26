@@ -46,6 +46,12 @@
 
 ## Dependencias
 
+## Coordinación 129
+
+- [x] T018 Referenciar navegación/selección y conservación del editor mediante specs/129-retroalimentacion-flujo-claro/tasks.md, issue #272, sin nuevas condiciones de elegibilidad (FR-001, FR-002, FR-003, FR-004).
+
+### Dependencias originales
+
 T001 bloquea implementación. T002..005 preceden T006..008. US2 entrega el backend seguro antes de US1; US1 depende de T006/007, US3 puede desarrollar su función pura después de T001 en archivos separados (T012), pero se integra después de US1 para evitar ediciones simultáneas. T015..017 requieren las tres historias completas.
 
 Paralelismo posible: dentro de US2, pruebas de contexto y de migración usan archivos diferentes una vez disponibles sus fundamentos; dentro de US1, pruebas/contrato pueden revisarse mientras se diseña el editor; US3 T012 es independiente de la persistencia. No se requiere delegación de agentes para la implementación.

@@ -13,7 +13,7 @@ import type { Motif } from '@/modules/motif_library/types';
 
 export function FeedbackPrintSheet({ entries, onClose, suggestedArea }: { entries: FeedbackPrintEntry[]; onClose: () => void; suggestedArea?: string | null }) {
   const user = useAuth(state => state.user);
-  const [owner] = useState(user);
+  const [owner] = useState(user?.id);
   const [printing, setPrinting] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [motif, setMotif] = useState('none');
@@ -25,7 +25,7 @@ export function FeedbackPrintSheet({ entries, onClose, suggestedArea }: { entrie
   const mounted = useRef(false);
   const printLock = useRef(false);
   const [error, setError] = useState('');
-  const permitted = user === owner && ['profesor', 'admin'].includes(user?.rol ?? '') && Boolean(user?.permissions?.includes('grading.publish'));
+  const permitted = user?.id === owner && ['profesor', 'admin'].includes(user?.rol ?? '') && Boolean(user?.permissions?.includes('grading.publish'));
   const pages = useMemo(() => {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -51,7 +51,7 @@ export function FeedbackPrintSheet({ entries, onClose, suggestedArea }: { entrie
     setLoadingCollection(true); setError('');
     try {
       const items = await collectionMotifs(collection);
-      if (!mounted.current || request !== selectionRequest.current || useAuth.getState().user !== owner) return;
+      if (!mounted.current || request !== selectionRequest.current || useAuth.getState().user?.id !== owner || !useAuth.getState().user?.permissions?.includes('grading.publish')) return;
       const motifs = items.map(item => ({ id: item.id, label: item.label, src: curatedAssetPath(item.thumbnail_url) }));
       setAvailableMotifs(motifs); setMotif('mixed'); setGallery(false);
     } catch {
@@ -59,7 +59,7 @@ export function FeedbackPrintSheet({ entries, onClose, suggestedArea }: { entrie
     } finally { if (mounted.current && request === selectionRequest.current) setLoadingCollection(false); }
   }
   async function print() {
-    if (!pages || printLock.current || loadingCollection || useAuth.getState().user !== owner) return;
+    if (!pages || printLock.current || loadingCollection || useAuth.getState().user?.id !== owner || !useAuth.getState().user?.permissions?.includes('grading.publish')) return;
     printLock.current = true; setPreparing(true); setError('');
     try {
       // Local decorative assets must never hold the text hostage. A missing
@@ -68,16 +68,16 @@ export function FeedbackPrintSheet({ entries, onClose, suggestedArea }: { entrie
         Promise.all(Array.from(previewRef.current?.querySelectorAll('img') ?? []).map(img => img.decode().catch(() => undefined))),
         new Promise(resolve => window.setTimeout(resolve, 4000)),
       ]);
-      if (!mounted.current || useAuth.getState().user !== owner) return;
+      if (!mounted.current || useAuth.getState().user?.id !== owner || !useAuth.getState().user?.permissions?.includes('grading.publish')) return;
       flushSync(() => setPrinting(true));
       document.body.classList.add('feedback-printing');
       await Promise.race([
         Promise.all(Array.from(document.getElementById('feedback-private-print')?.querySelectorAll('img') ?? []).map(img => img.decode().catch(() => undefined))),
         new Promise(resolve => window.setTimeout(resolve, 4000)),
       ]);
-      if (!mounted.current || useAuth.getState().user !== owner) return;
+      if (!mounted.current || useAuth.getState().user?.id !== owner || !useAuth.getState().user?.permissions?.includes('grading.publish')) return;
       await new Promise(resolve => window.requestAnimationFrame(resolve));
-      if (!mounted.current || useAuth.getState().user !== owner) return;
+      if (!mounted.current || useAuth.getState().user?.id !== owner || !useAuth.getState().user?.permissions?.includes('grading.publish')) return;
       flushSync(() => setPreparing(false));
       window.print();
     } catch { if (mounted.current) { document.body.classList.remove('feedback-printing'); setPrinting(false); setError('No se pudo abrir la impresión. Puedes volver a intentarlo.'); } }
