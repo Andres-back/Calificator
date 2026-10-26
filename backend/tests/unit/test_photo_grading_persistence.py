@@ -492,6 +492,8 @@ def test_student_file_submission_returns_received_delivery_and_enqueues(monkeypa
     evaluation = evaluation_fixture()
     evaluation.modalidad = EvaluacionModalidad.FISICA.value
     evaluation.recepcion_habilitada = True
+    from unittest.mock import AsyncMock
+    monkeypatch.setattr(router.materias_service, "ensure_active_materia", AsyncMock(return_value=SimpleNamespace(id=evaluation.materia_id, estado="activa")))
     student = SimpleNamespace(
         id=uuid4(), rol=UserRole.ESTUDIANTE.value,
         _effective_permissions=default_permissions_for_role(UserRole.ESTUDIANTE.value),

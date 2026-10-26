@@ -77,6 +77,8 @@ async def recalificar_entrega(
 ):
     require_permission_now(current_user, "grading.grade")
     grade, evaluation = await owned_grade(db, calificacion_id, current_user, lock=True)
+    from app.modules.materias.service import ensure_active_materia
+    await ensure_active_materia(db, evaluation.materia_id)
     service.ensure_evaluation_active(evaluation)
     bundle = None
     if foto:

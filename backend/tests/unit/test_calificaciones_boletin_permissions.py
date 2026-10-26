@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -107,6 +109,20 @@ def test_read_only_does_not_bypass_effective_grading_permission(monkeypatch):
     response = _client_with_user(teacher).get(f"/api/evaluaciones/{uuid4()}/calificaciones?solo_lectura=true")
     assert response.status_code == 403
     ensure.assert_not_awaited()
+
+
+@pytest.mark.parametrize("policy,expected", [("mejor_puntaje", "best"), ("ultimo_intento", "recent"), ("multiples_intentos", "recent")])
+def test_128_export_uses_official_attempt_policy_without_modifying_history(policy, expected):
+    student_id = uuid4()
+    now = datetime(2026, 10, 25)
+    def grade(key, score, days, state="publicada"):
+        return SimpleNamespace(id=key, estudiante_id=student_id, nota_confirmada=Decimal(score), nota_sugerida=None,
+                               created_at=now + timedelta(days=days), estado=state)
+    history = [grade("best", "4.25", 0), grade("recent", "0", 1), grade("annulled", "5", 2, "anulada")]
+    original = [vars(row).copy() for row in history]
+    selected = calificaciones_service._select_current_calificaciones(history, policy)
+    assert [row.id for row in selected] == [expected]
+    assert [vars(row) for row in history] == original
 
 
 def test_estudiante_no_puede_ver_boletin_ajeno(monkeypatch) -> None:

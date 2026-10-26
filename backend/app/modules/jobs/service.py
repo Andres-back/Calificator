@@ -346,6 +346,12 @@ def dispatch_persisted_job(job: dict[str, Any]) -> bool:
         celery_app.send_task('tasks.prepare_evaluation_print', kwargs={'job_id': job_id}, queue='presentations')
         return True
 
+    if job_type == 'evaluacion_copia':
+        if not user_id or payload.get('schema') != 128:
+            return False
+        celery_app.send_task('tasks.copy_evaluation', kwargs={'job_id': job_id}, queue='digitalization')
+        return True
+
     if job_type == "evaluacion_digitalizacion":
         required = {
             "materia_id", "file_key", "filename", "nombre", "nota_maxima", "modalidad"

@@ -155,7 +155,7 @@ def test_assign_support_publishes_resource_without_creating_an_evaluation(monkey
         assert teacher_id == teacher.id
         return None
 
-    async def can_manage(_db, selected_subject_id, user):
+    async def can_manage(_db, selected_subject_id, user, *, admission=False):
         assert selected_subject_id == subject_id
         assert user is teacher
         return SimpleNamespace(id=subject_id)
@@ -396,7 +396,7 @@ def test_teacher_subject_resources_include_drafts_and_activities(monkeypatch) ->
     subject_id = uuid4()
     teacher = SimpleNamespace(id=uuid4(), rol="profesor")
 
-    async def can_manage(_db, selected_subject_id, user):
+    async def can_manage(_db, selected_subject_id, user, *, admission=False):
         assert selected_subject_id == subject_id
         assert user is teacher
 
@@ -434,6 +434,22 @@ def test_visibility_update_does_not_change_evaluation_reception(monkeypatch) -> 
     sql = str(db.executions[0][0])
     assert "publicado_estudiantes = :visible" in sql
     assert "recepcion_habilitada" not in sql
+
+
+def test_archived_subject_rejects_new_resource_visibility_without_writes(monkeypatch):
+    teacher = SimpleNamespace(id=uuid4(), rol='profesor')
+    subject_id = uuid4()
+    async def material(*_args):
+        return {'asignacion_tipo': 'apoyo', 'materia_id': subject_id}
+    async def denied(_db, selected, actor, *, admission=False):
+        assert selected == subject_id and actor is teacher and admission
+        raise HTTPException(409, 'La materia está archivada')
+    monkeypatch.setattr(service, 'get_material', material)
+    monkeypatch.setattr(service.materias_service, 'ensure_can_manage_materia', denied)
+    db = FakeDB()
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.set_material_visibility(db, uuid4(), teacher, visible=True))
+    assert error.value.status_code == 409 and not db.executions and not db.commits
 
 def test_assign_support_rejects_changing_original_subject(monkeypatch) -> None:
     material_id = uuid4()

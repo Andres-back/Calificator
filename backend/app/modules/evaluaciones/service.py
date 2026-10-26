@@ -31,7 +31,7 @@ from app.modules.evaluaciones.schemas import (
 )
 from app.modules.evaluaciones.state_machine import transition_evaluation_state
 from app.modules.evaluaciones.visual_service import ContentEdit, get_content_revision, prepare_content_edit, save_content_revision
-from app.modules.materias.service import ensure_can_manage_materia, ensure_can_read_materia
+from app.modules.materias.service import ensure_active_materia, ensure_can_manage_materia, ensure_can_read_materia
 from app.modules.users.models import User
 from app.shared.enums import (
     CalificacionEstado,
@@ -158,9 +158,12 @@ async def ensure_can_manage_evaluation(
     db: AsyncSession,
     evaluacion_id: UUID,
     current_user: User,
+    *, admission: bool = False,
 ) -> Evaluacion:
     evaluacion = await get_evaluation_or_404(db, evaluacion_id)
     if current_user.rol == UserRole.ADMIN.value or evaluacion.profesor_id == current_user.id:
+        if admission:
+            await ensure_active_materia(db, evaluacion.materia_id)
         return evaluacion
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
@@ -877,6 +880,7 @@ def validate_publication_structure(evaluacion: Evaluacion) -> None:
 
 
 async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
+    await ensure_active_materia(db, evaluacion.materia_id)
     if getattr(evaluacion, "contenido_version_id", None) is not None:
         revision = await get_content_revision(db, evaluacion.id, evaluacion.contenido_version_id)
         if revision.snapshot_json.get("claves_pendientes_revision") or revision.coverage_json.get("estado") != "completa":
@@ -937,6 +941,7 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
 
 
 async def activate_reception(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
+    await ensure_active_materia(db, evaluacion.materia_id)
     if evaluacion.estado == EvaluacionEstado.CERRADA.value:
         transition_evaluation_state(evaluacion, EvaluacionEstado.EN_CALIFICACION)
     elif evaluacion.estado not in ACTIVE_RECEPTION_STATES:

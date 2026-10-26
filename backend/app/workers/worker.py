@@ -20,6 +20,7 @@ celery_app = Celery(
         "app.workers.tasks_digitalization",
         "app.workers.tasks_evaluation_visuals",
         "app.workers.tasks_evaluation_print",
+        "app.modules.evaluaciones.copy_worker",
         "app.workers.tasks_deadlines",
         "app.workers.tasks_password_recovery",
         "app.workers.tasks_roster_import",
@@ -42,6 +43,8 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
     task_default_queue="default",
     task_routes={
+        'tasks.copy_evaluation': {'queue': 'digitalization'},
+        'tasks.recover_evaluation_copies': {'queue': 'digitalization'},
         'tasks.prepare_evaluation_print': {'queue': 'presentations'},
         'tasks.recover_evaluation_print': {'queue': 'presentations'},
         "tasks.feedback_question": {"queue": "feedback"},
@@ -63,6 +66,7 @@ celery_app.conf.update(
         "tasks.generate_image": {"queue": "presentations"},
     },
     beat_schedule={
+        'recover-evaluation-copies': {'task': 'tasks.recover_evaluation_copies', 'schedule': float(settings.AI_JOB_RECOVERY_INTERVAL_SECONDS)},
         'recover-evaluation-print': {'task': 'tasks.recover_evaluation_print', 'schedule': 60.0},
         "cleanup-feedback-conversations": {
             "task": "tasks.cleanup_feedback_conversations",

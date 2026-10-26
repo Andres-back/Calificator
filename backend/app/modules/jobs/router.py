@@ -242,6 +242,10 @@ async def retry_job(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     job = await _get_job(db, job_id, _owner_filter(current_user))
+    if job.get('tipo') == 'evaluacion_copia':
+        # Its dedicated admission checks the immutable request, current scope,
+        # retry budget and staging marker. Do not bypass it via generic retry.
+        raise HTTPException(409, 'Reintenta desde «Usar en otra materia» para conservar la misma copia y comprobar sus permisos.')
     children = (
         await db.execute(
             text(

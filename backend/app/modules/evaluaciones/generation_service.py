@@ -356,7 +356,7 @@ async def generate_evaluation_draft(
         validate_print_scope(request.configuracion_impresion, [], None)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
-    materia = await ensure_can_manage_materia(db, request.materia_id, current_user)
+    materia = await ensure_can_manage_materia(db, request.materia_id, current_user, admission=True)
     official = await get_dba_records(db, request.dba_ids)
     custom = await get_dba_personalizado_records_for_evaluation(
         db,

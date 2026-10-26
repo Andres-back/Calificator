@@ -16,6 +16,7 @@ class MateriaCreate(BaseModel):
 
 
 class MateriaUpdate(BaseModel):
+    expected_updated_at: datetime | None = None
     nombre: str | None = Field(default=None, min_length=2, max_length=180)
     area: str | None = Field(default=None, max_length=100)
     grado: str | None = Field(default=None, max_length=30)

@@ -132,3 +132,7 @@ El usuario aprobó el plan y autorizó revisar los ocho requisitos y continuar e
 El2026-10-24, tras revisar la muestra de alimentos, el usuario precisó que la figura debía ocupar menos espacio y compartir fila con la pregunta para aprovechar mejor cada hoja. Es composición lateral de bloques dentro de la historia3, no un editor libre ni un cambio de contenido, orden o puntajes. Primero se contrastará una muestra local conservando las respuestas abiertas; no se declara desplegado este formato por generar el PDF de ejemplo.
 
 Después pidió expresamente tres modos «compacta, media o amplia» y que las mejoras se reflejen en producción para dejar de generar evaluaciones solo con texto. El flujo permite añadir biblioteca, subida, tabla/gráfica o propuesta de ilustración al borrador recién generado, con revisión docente y sin imágenes de pago automáticas. Blanco y negro/color es una decisión independiente y persistente, no dos plantillas desconectadas del visor.
+
+## Evolución 128: formato independiente en la copia
+
+[128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, conserva configuración de impresión al usar una evaluación en otra materia propia. Remapea también las claves de diccionario de espacios por pregunta y tamaño/posición por bloque a sus nuevas identidades. La copia puede editarse sin modificar el original; las exportaciones usan recursos propios y no muestran solucionarios en la versión del estudiante. No cambia distribución ni generación de imágenes.

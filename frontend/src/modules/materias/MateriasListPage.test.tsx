@@ -11,12 +11,14 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   create: vi.fn(),
   join: vi.fn(),
+  update: vi.fn(),
 }));
 
 vi.mock('./api', () => ({
   listMaterias: mocks.list,
   createMateria: mocks.create,
   unirseMateria: mocks.join,
+  updateMateria: mocks.update,
 }));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },

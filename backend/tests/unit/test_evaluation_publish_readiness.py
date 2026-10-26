@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -23,6 +24,12 @@ class FakeDB:
         self.commits += 1
 
 
+@pytest.fixture(autouse=True)
+def active_subject(monkeypatch):
+    # This suite checks structure; archived subject admission has DB/API coverage.
+    monkeypatch.setattr(service, "ensure_active_materia", AsyncMock())
+
+
 def _evaluation(
     *,
     questions: list[dict],
@@ -36,6 +43,7 @@ def _evaluation(
 
     return SimpleNamespace(
         id=uuid4(),
+        materia_id=uuid4(),
         estado=EvaluacionEstado.BORRADOR.value,
         recepcion_habilitada=False,
         fecha_publicacion=None,

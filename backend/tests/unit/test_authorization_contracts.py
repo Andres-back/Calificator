@@ -159,7 +159,7 @@ def test_attendance_owner_and_admin_preserve_success_contract(monkeypatch) -> No
         "resumen": {"total": 0, "presentes": 0, "tarde": 0, "ausentes": 0, "excusas": 0, "pendientes": 0},
     }
 
-    async def allow(_db, _materia_id, current_user):
+    async def allow(_db, _materia_id, current_user, *, admission=False):
         assert current_user.rol in {UserRole.PROFESOR.value, UserRole.ADMIN.value}
         return SimpleNamespace(id=materia_id)
 
@@ -188,7 +188,7 @@ def test_attendance_owner_and_admin_preserve_success_contract(monkeypatch) -> No
 def test_attendance_patch_checks_permissions_and_ownership_before_writing(monkeypatch):
     writes = []
 
-    async def deny(*_args):
+    async def deny(*_args, **_kwargs):
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     async def write(*_args):
@@ -207,7 +207,7 @@ def test_attendance_patch_checks_permissions_and_ownership_before_writing(monkey
 def test_attendance_patch_owner_success(monkeypatch):
     subject_id, student_id = uuid4(), uuid4()
 
-    async def allow(*_args):
+    async def allow(*_args, **_kwargs):
         return SimpleNamespace(id=subject_id)
 
     async def write(_db, _subject, payload, _actor):

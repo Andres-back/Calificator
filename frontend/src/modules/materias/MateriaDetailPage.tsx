@@ -8,6 +8,7 @@ import { toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { cn } from '@/lib/cn';
 import { isStandardStudentProfile } from '@/lib/authorization';
+import { MateriaManagement } from './MateriaManagement';
 
 const ALL_TABS = [
   { label: 'Vista general', to: '', brandIcon: 'subjects', permissions: ['subjects.read'], staffOnly: false },
@@ -144,6 +145,8 @@ export function MateriaDetailPage() {
           </details>
         </div>
       </motion.section>
+      {canManageMateria && <MateriaManagement key={materia.id} materia={materia} />}
+      {materia.estado === 'archivada' && <p role="status" className="rounded-lg border border-border bg-surface p-3 text-sm">Materia archivada. Puedes consultar su historial y exportar notas. Restáurala para admitir actividades o entregas nuevas.</p>}
 
       {/* Tab navigation */}
       <div className="md:hidden">

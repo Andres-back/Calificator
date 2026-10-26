@@ -10,6 +10,7 @@ from app.modules.calificaciones.router import router as calificaciones_router
 from app.modules.dba.router import custom_router as dba_custom_router
 from app.modules.dba.router import router as dba_router
 from app.modules.evaluaciones.router import router as evaluaciones_router
+from app.modules.evaluaciones.copy_router import router as evaluaciones_copy_router
 from app.modules.feedback_sharing.router import router as feedback_sharing_router
 from app.modules.feedback_sharing.public_router import router as public_feedback_router
 from app.modules.evaluaciones.visual_router import router as evaluaciones_visual_router
@@ -42,6 +43,7 @@ api_router.include_router(dba_router)
 api_router.include_router(dba_custom_router)
 api_router.include_router(evaluaciones_visual_router)
 api_router.include_router(evaluaciones_router)
+api_router.include_router(evaluaciones_copy_router)
 api_router.include_router(feedback_sharing_router)
 api_router.include_router(public_feedback_router)
 api_router.include_router(rag_router)

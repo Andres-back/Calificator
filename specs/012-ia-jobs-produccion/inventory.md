@@ -10,7 +10,7 @@
 | endpoint | `GET:/jobs/{job_id}` | authenticated | covered | `backend/app/modules/jobs/router.py:115` |
 | endpoint | `GET:/jobs/{job_id}/estado` | authenticated | covered | `backend/app/modules/jobs/router.py:167` |
 | endpoint | `GET:/jobs/{job_id}/items` | authenticated | covered | `backend/app/modules/jobs/router.py:177` |
-| endpoint | `POST:/jobs/{job_id}/cancelar` | authenticated | covered | `backend/app/modules/jobs/router.py:364` |
+| endpoint | `POST:/jobs/{job_id}/cancelar` | authenticated | covered | `backend/app/modules/jobs/router.py:368` |
 | endpoint | `POST:/jobs/{job_id}/reintentar` | authenticated | covered | `backend/app/modules/jobs/router.py:233` |
 | frontend_call | `GET:/jobs/pendientes` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:109` |
 | frontend_call | `GET:/jobs/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/printApi.ts:19` |

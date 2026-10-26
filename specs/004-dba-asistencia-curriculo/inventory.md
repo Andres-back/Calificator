@@ -21,7 +21,7 @@
 | frontend_route | `/app/materias/{id}/asistencia` | admin, profesor | covered | `frontend/src/config/routes.ts:38` |
 | frontend_route | `/app/materias/{id}/dba` | admin, profesor | covered | `frontend/src/config/routes.ts:40` |
 | frontend_call | `DELETE:/dba-personalizados/{id}` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:33` |
-| frontend_call | `GET:/dba` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:203` |
+| frontend_call | `GET:/dba` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:217` |
 | frontend_call | `GET:/materias/{materiaId}/asistencia/reporte` | ambiguous | covered | `frontend/src/modules/materias/asistenciaApi.ts:82` |
 | frontend_call | `GET:/materias/{materiaId}/asistencia` | admin, profesor | covered | `frontend/src/modules/materias/asistenciaApi.ts:70` |
 | frontend_call | `GET:/materias/{materiaId}/dba-personalizados` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:13` |
@@ -32,8 +32,8 @@
 | frontend_call | `POST:/materias/{materiaId}/dba-personalizados` | ambiguous | covered | `frontend/src/modules/materias/dbaApi.ts:23` |
 | frontend_call | `PUT:/materias/{materiaId}/asistencia` | admin, profesor | covered | `frontend/src/modules/materias/asistenciaApi.ts:93` |
 | table | `asistencia_registros` | system | covered | `backend/app/modules/asistencia/models.py:13` |
-| table | `dba_catalog` | system | missing | `backend/app/modules/dba/models.py:12` |
-| table | `dba_personalizados` | system | missing | `backend/app/modules/dba/models.py:35` |
+| table | `dba_catalog` | system | covered | `backend/app/modules/dba/models.py:12` |
+| table | `dba_personalizados` | system | covered | `backend/app/modules/dba/models.py:35` |
 
 ## Decisiones explícitas de permiso
 
@@ -43,4 +43,4 @@
 
 ## Hallazgos
 
-- **low · missing_coverage**: 5 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.
+- **low · missing_coverage**: 3 superficies de 004-dba-asistencia-curriculo no tienen evidencia de prueba observable.

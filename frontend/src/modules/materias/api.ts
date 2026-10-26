@@ -33,7 +33,7 @@ export async function regenerateCode(id: string): Promise<Materia> {
   const { data } = await api.post<Materia>(`/materias/${id}/regenerar-codigo`);
   return data;
 }
-export async function updateMateria(id: string, payload: Partial<MateriaCreate> & { estado?: string; codigo_activo?: boolean }): Promise<Materia> {
+export async function updateMateria(id: string, payload: Partial<MateriaCreate> & { estado?: string; codigo_activo?: boolean; expected_updated_at?: string }): Promise<Materia> {
   const { data } = await api.patch<Materia>(`/materias/${id}`, payload);
   return data;
 }

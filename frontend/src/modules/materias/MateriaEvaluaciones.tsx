@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { EvaluationCopyDialog } from '@/modules/evaluaciones/EvaluationCopyDialog';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -80,7 +81,8 @@ export function MateriaEvaluaciones() {
   const { materia, isStudent } = useMateriaContext();
   const user = useAuth((state) => state.user);
   const permissions = new Set(user?.permissions ?? []);
-  const canCreateEvaluation = !isStudent && permissions.has('evaluations.create');
+  const canCreateEvaluation = materia.estado !== 'archivada' && !isStudent && permissions.has('evaluations.create');
+  const canCopyEvaluation = !isStudent && permissions.has('evaluations.create') && permissions.has('evaluations.read');
   const canViewEvaluation = !isStudent && permissions.has('evaluations.read');
   const canUpdateEvaluation = !isStudent && permissions.has('evaluations.update');
   const canPublishEvaluation = !isStudent && permissions.has('evaluations.publish');
@@ -103,6 +105,7 @@ export function MateriaEvaluaciones() {
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [contentEditingEval, setContentEditingEval] = useState<Evaluacion | null>(null);
   const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
+  const [copyingEval, setCopyingEval] = useState<Evaluacion | null>(null);
   const [criteriaEval, setCriteriaEval] = useState<Evaluacion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
@@ -363,9 +366,10 @@ export function MateriaEvaluaciones() {
                     </span>
                   )}
                 </div>
-                {canManageEvaluations && (canUpdateEvaluation || canDeleteEvaluation || (canPublishEvaluation && !isDraft)) && <details className="group mt-2 rounded-lg border border-border px-3">
+                {canManageEvaluations && (canCopyEvaluation || canUpdateEvaluation || canDeleteEvaluation || (canPublishEvaluation && !isDraft)) && <details className="group mt-2 rounded-lg border border-border px-3">
                   <summary className="focus-ring flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-lg text-sm font-semibold"><span>Más opciones</span><ChevronDown className="h-4 w-4 shrink-0 group-open:rotate-180" aria-hidden="true" /></summary>
                   <div className="flex flex-wrap gap-2 border-t border-border py-3 [&_button]:min-h-11">
+                    {canCopyEvaluation && <Button size="sm" variant="outline" onClick={() => setCopyingEval(evaluation)}>Usar en otra materia</Button>}
                     {canUpdateEvaluation && <>
                       <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}><Pencil className="h-4 w-4" /> Editar datos</Button>
                       <Button size="sm" variant="outline" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}><ClipboardCheck className="h-4 w-4" /> Editar preguntas</Button>
@@ -401,6 +405,7 @@ export function MateriaEvaluaciones() {
           canViewSolutions={user?.rol === 'admin' || previewEval.profesor_id === user?.id} />
       )}
       {canUpdateEvaluation && criteriaEval && <EvaluationCriteriaEditor evaluation={criteriaEval} onClose={() => setCriteriaEval(null)} onCompleted={() => { setCriteriaEval(null); refresh(); toast.success('Criterios actualizados; las notas anteriores se conservan'); }} />}
+      {copyingEval && canCopyEvaluation && <EvaluationCopyDialog key={copyingEval.id + user?.id} evaluation={copyingEval} onClose={() => setCopyingEval(null)} />}
       {canCreateEvaluation && (
         <DigitalizarEvaluacionModal
           open={digitalizeOpen}

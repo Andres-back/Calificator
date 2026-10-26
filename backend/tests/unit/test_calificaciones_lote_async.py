@@ -91,7 +91,7 @@ def test_async_batch_endpoint_persists_then_enqueues_exact_deliveries(monkeypatc
     job_ids = []
     retries = []
 
-    async def can_manage(_db, _evaluation_id, _user):
+    async def can_manage(_db, _evaluation_id, _user, *, admission=False):
         return evaluacion
 
     async def enrolled(_db, _materia_id, _student_id):
@@ -200,7 +200,7 @@ def test_async_batch_rejects_duplicate_evidence_before_saving(monkeypatch) -> No
     students = [uuid4(), uuid4()]
     saved: list[str] = []
 
-    async def can_manage(*_args):
+    async def can_manage(*_args, **_kwargs):
         return evaluation
 
     async def enrolled(*_args):
@@ -249,7 +249,7 @@ def test_async_batch_removes_stored_files_when_persistence_fails(monkeypatch) ->
             assert missing_ok is True
             removed.append(self.value)
 
-    async def can_manage(*_args):
+    async def can_manage(*_args, **_kwargs):
         return evaluation
 
     async def enrolled(*_args):
