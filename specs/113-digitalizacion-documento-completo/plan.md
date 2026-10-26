@@ -35,3 +35,7 @@ Conservar lectura pública opcional en blueprint y snapshots, separada de pregun
 ## Decisiones y complejidad
 
 Blueprint evita otra tabla y ya integra versiones. Lectura se filtra expresamente y se separa de respuestas manuscritas. Consolidado de fotos normalizado, sin prometer identidad binaria de originales. No activar globalmente banderas visuales ni IA de imágenes. Impresión compacta acotada para no rediseñar otros recursos. Investigación previa de lectura/impresión y multipágina completada y consolidada en research.md; no quedan decisiones técnicas abiertas.
+
+## Coordinación 130 en curso
+
+La lectura intercalada vive en nodos documentales, sin duplicarse como lectura general legacy. La misma extracción multipágina conserva actividades e instrucciones por identidad de origen; no añade llamadas IA ni reescribe evaluaciones antiguas. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

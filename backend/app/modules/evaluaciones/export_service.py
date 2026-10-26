@@ -31,11 +31,31 @@ def _answer(item: dict) -> object:
 
 
 def build_evaluation_material(evaluation, *, soluciones: bool, visual_blocks: list[ResolvedVisualBlock] | None = None) -> dict:
+    from app.modules.evaluaciones.document_schemas import EvaluationDocument
+    from app.modules.evaluaciones.document_structure import public_document
+
+    document = getattr(evaluation, 'estructura_documento', None)
+    projection = public_document(EvaluationDocument.model_validate(document), evaluation.preguntas,
+        material_ids=[item.block.id for item in visual_blocks or []]) if document is not None else None
     expected = {str(answer.get('numero', index)): _answer(answer)
                 for index, answer in enumerate(evaluation.respuestas_esperadas or [], 1)
                 if isinstance(answer, dict)}
     questions = []
     pending_visuals = {str(item.block.id): item for item in visual_blocks or []}
+    document_visuals = []
+    section_totals = {}
+    if projection:
+        placed = {node['bloque_id'] for node in projection['nodos'] if node['tipo'] == 'material'}
+        document_visuals = [pending_visuals.pop(identifier) for identifier in placed]
+        if document.get('puntuacion_secciones'):
+            by_node = {node['id']: node for node in projection['nodos']}
+            by_question = {str(question['contenido_id']): Decimal(str(question['puntaje'])) for question in evaluation.preguntas}
+            for node in projection['nodos']:
+                if node['tipo'] == 'pregunta':
+                    parent = node.get('padre_id')
+                    while parent:
+                        section_totals[parent] = section_totals.get(parent, Decimal('0')) + by_question[node['pregunta_id']]
+                        parent = by_node[parent].get('padre_id')
     for index, raw in enumerate(evaluation.preguntas or [], 1):
         raw = raw if isinstance(raw, dict) else {'enunciado': str(raw)}
         clean = sanitize_student_payload(deepcopy(raw))
@@ -67,7 +87,9 @@ def build_evaluation_material(evaluation, *, soluciones: bool, visual_blocks: li
             'contenido_json': {'titulo': evaluation.nombre,
                               **({'configuracion_impresion': evaluation.configuracion_impresion}
                                  if getattr(evaluation, 'configuracion_impresion', None) is not None else {}),
-                              'texto': evaluation_reading(evaluation), 'impresion_compacta': True,
+                              **({'documento': projection, '_document_visuals': document_visuals,
+                                  'subtotales_secciones': {key: format(value, '.2f') for key, value in section_totals.items()}} if projection else {}),
+                              'texto': None if projection else evaluation_reading(evaluation), 'impresion_compacta': True,
                               'instrucciones': evaluation.descripcion or 'Lee y responde cada punto.',
                               'preguntas': questions, 'total_puntaje': evaluation.nota_maxima}}
 
@@ -115,6 +137,7 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
     from docx.shared import Cm, Pt, RGBColor
     from app.modules.evaluaciones.print_layout import prepare_print_material
     from app.modules.evaluaciones.print_settings import resolve_print_settings
+    from app.modules.evaluaciones.document_print import document_print_events
 
     material = prepare_print_material(material)
 
@@ -185,11 +208,26 @@ def render_evaluation_docx(material: dict, *, soluciones: bool) -> bytes:
         document.add_paragraph(_text(content['texto']))
         if content.get('fuente'):
             document.add_paragraph(f'Fuente: {_text(content["fuente"])}')
-    for index, raw in enumerate(questions, 1):
+    for index, (event, raw, label) in enumerate(document_print_events(content, questions), 1):
+        if event == 'seccion':
+            subtotal = content.get('subtotales_secciones', {}).get(str(raw.id))
+            title = ' '.join(value for value in (raw.etiqueta_original, raw.titulo) if value)
+            heading = document.add_paragraph(title + (f' ({subtotal} puntos)' if subtotal is not None else ''),
+                'Heading 2' if raw.padre_id else 'Heading 1')
+            heading.paragraph_format.keep_with_next = True
+            continue
+        if event == 'texto':
+            paragraph = document.add_paragraph(raw.texto)
+            paragraph.paragraph_format.keep_with_next = False
+            paragraph.paragraph_format.keep_together = False
+            continue
+        if event == 'material':
+            append_visual_docx(document, raw)
+            continue
         question_start = len(document.element.body) - 1  # Inserted before sectPr.
         raw = raw if isinstance(raw, dict) else {'enunciado': str(raw)}
         safe = sanitize_student_payload(raw)
-        number = raw.get('numero', index)
+        number = label or raw.get('numero', index)
         score = raw.get('puntaje')
         suffix = f' ({score} puntos)' if score is not None and '_print_common_score' not in content else ''
         target, image_target = document, document

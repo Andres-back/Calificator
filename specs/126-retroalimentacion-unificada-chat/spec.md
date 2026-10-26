@@ -98,6 +98,10 @@ El lector distingue la explicación, un paso concreto y un ejemplo cuando la res
 - **SC-006**: En 360, 390, 768 y 1440 px, dos motores y ambos temas, no hay texto cortado, botones inaccesibles o desbordamiento de página; la emulación no se reporta como prueba física de iPhone/Android.
 - **SC-007**: Las primeras cinco preguntas válidas compartidas se admiten y la sexta espera; recargar o cambiar de conversación no altera esa cuenta. Recuperar, reformatear e imprimir producen cero llamadas a IA y cero modificaciones académicas.
 
+## Coordinación documental 130
+
+[Spec130](../130-digitalizacion-secciones/spec.md), issue #274, amplía este contrato bajo aprobación registrada. El chat puede usar contexto educativo de la versión conservada en devoluciones nuevas, con segunda lista blanca y sin claves no liberadas. No modifica persistencia, cuotas, formato o publicaciones legacy. El estado de pruebas y las limitaciones están en su guía de validación; no supone activación en producción.
+
 ## Supuestos
 
 - La continuidad se limita al mismo perfil de navegador, con conexión y almacenamiento disponible. En un dispositivo compartido, quienes usen ese perfil y posean el enlace podrán continuar la misma conversación; no se afirma identificar personas. Borrar los datos locales pierde su referencia de recuperación.

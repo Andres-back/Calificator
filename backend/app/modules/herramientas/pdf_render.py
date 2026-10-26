@@ -457,6 +457,7 @@ def _render_taller(c: dict, soluciones: bool) -> str:
 def _render_examen(c: dict, soluciones: bool) -> str:
     from app.modules.evaluaciones.visual_render import ResolvedVisualBlock, visual_block_html
     from app.modules.evaluaciones.print_layout import option_columns
+    from app.modules.evaluaciones.document_print import document_print_events
 
     out = ['<div class="sectionbar">EXAMEN</div>']
     compact = bool(c.get('impresion_compacta'))
@@ -465,7 +466,23 @@ def _render_examen(c: dict, soluciones: bool) -> str:
     if c.get('texto'):
         out.append('<h2 class="h3">Lectura o texto de apoyo</h2>')
         out.append(f'<div style="white-space:pre-wrap;line-height:1.5;margin-bottom:12px">{_e(c["texto"])}</div>')
-    for q in c.get("preguntas") or []:
+    for event, q, label in document_print_events(c, c.get('preguntas') or []):
+        if event == 'seccion':
+            tag = 'h3' if q.padre_id else 'h2'
+            title = ' '.join(value for value in (q.etiqueta_original, q.titulo) if value)
+            subtotal = c.get('subtotales_secciones', {}).get(str(q.id))
+            if subtotal is not None:
+                title += f' ({subtotal} puntos)'
+            out.append(f'<{tag} class="h3" style="break-after:avoid">{_e(title)}</{tag}>')
+            continue
+        if event == 'texto':
+            out.append(f'<div class="p" style="white-space:pre-wrap;line-height:1.35;break-inside:auto">{_e(q.texto)}</div>')
+            continue
+        if event == 'material':
+            if not isinstance(q, ResolvedVisualBlock):
+                raise ValueError('Revisa el material de la sección antes de descargar.')
+            out.append(visual_block_html(q))
+            continue
         short = len(str(q.get('enunciado') or '')) + sum(len(str(op)) for op in q.get('opciones') or []) < 650
         style = 'padding:6px 2px;margin-bottom:5px;border:0;border-bottom:1px solid #ddd;border-radius:0;' if compact else ''
         if (short and (compact or c.get('configuracion_impresion') is not None)) or q.get('_evaluation_visuals'):
@@ -475,7 +492,7 @@ def _render_examen(c: dict, soluciones: bool) -> str:
         lateral = bool(q.get('_print_lateral'))
         if lateral:
             out.append('<table class="question-figure-row"><tbody><tr><td class="question-figure-text">')
-        out.append(f'<p class="p"><b>{_e(q.get("numero"))}. {_e(q.get("enunciado"))}</b>{pts}</p>')
+        out.append(f'<p class="p"><b>{_e(label or q.get("numero"))}. {_e(q.get("enunciado"))}</b>{pts}</p>')
         figures = []
         for visual in q.get('_evaluation_visuals') or []:
             if not isinstance(visual, ResolvedVisualBlock):

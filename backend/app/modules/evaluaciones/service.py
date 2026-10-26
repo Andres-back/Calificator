@@ -84,6 +84,7 @@ _STUDENT_FORBIDDEN_KEYS = {
 
 
 STRUCTURAL_FIELDS = {
+    'estructura_documento',
     "dba_ids",
     "dba_personalizado_ids",
     "metas_profesor",
@@ -224,6 +225,18 @@ def _student_safe_evaluation(evaluacion: Evaluacion, progress: dict | None = Non
         "blueprint": None,
     }
     payload.update(progress or {})
+    document = getattr(evaluacion, 'estructura_documento', None)
+    if document is not None:
+        from app.modules.evaluaciones.document_schemas import EvaluationDocument
+        from app.modules.evaluaciones.document_structure import public_document
+        parsed = EvaluationDocument.model_validate(document)
+        # Material references are projected after resource authorization by the
+        # revision serializer, not by this database-free metadata helper.
+        if not any(node.tipo == 'material' for node in parsed.nodos):
+            try:
+                payload['estructura_documento'] = public_document(parsed, evaluacion.preguntas)
+            except ValueError as exc:
+                raise HTTPException(409, 'El documento necesita revisión docente antes de consultarlo.') from exc
     return payload
 
 
@@ -518,11 +531,19 @@ async def create_evaluation(
     visual_import: bool = False,
 ) -> Evaluacion:
     materia = await ensure_can_manage_materia(db, payload.materia_id, current_user)
+    if payload.estructura_documento is not None and not settings.EVALUATION_DOCUMENT_STRUCTURE_ENABLED:
+        raise HTTPException(503, 'La organización por secciones todavía no está habilitada. Conserva el documento para continuar después.')
     if payload.contenido_visual is not None:
         enabled = settings.EVALUATION_VISUAL_IMPORT_ENABLED if visual_import else settings.EVALUATION_VISUAL_EDITOR_ENABLED
         if not enabled:
             raise HTTPException(503, "La edición visual todavía no está habilitada. Conserva tu documento para continuar después.")
     questions = normalize_question_modalities(payload.preguntas, payload.modalidad)
+    from app.modules.evaluaciones.document_structure import apply_section_scoring
+    try:
+        questions = apply_section_scoring(None, payload.estructura_documento, questions, questions,
+            payload.nota_maxima, payload.nota_maxima, confirmed=payload.confirmar_puntuacion_secciones)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
     from app.modules.evaluaciones.print_settings import validate_print_scope
     try:
         validate_print_scope(payload.configuracion_impresion, questions,
@@ -552,11 +573,12 @@ async def create_evaluation(
         preguntas=questions,
         respuestas_esperadas=payload.respuestas_esperadas,
         configuracion_impresion=payload.configuracion_impresion.model_dump(mode='json') if payload.configuracion_impresion else None,
+        estructura_documento=payload.estructura_documento.model_dump(mode='json') if payload.estructura_documento else None,
     )
     db.add(evaluacion)
     await db.flush()
     await _build_or_update_blueprint(db, evaluacion, payload.dba_ids, payload.dba_personalizado_ids, initial_validation)
-    if payload.contenido_visual is not None:
+    if payload.contenido_visual is not None or payload.estructura_documento is not None:
         await save_content_revision(db, ContentEdit(evaluation=evaluacion, previous=None, manifest=payload.contenido_visual))
     if commit:
         await db.commit()
@@ -610,12 +632,25 @@ async def update_evaluation(
     *, actor_id: UUID | None = None,
 ) -> Evaluacion:
     data = payload.model_dump(exclude_unset=True)
+    confirm_scoring = data.pop('confirmar_puntuacion_secciones', False)
     expected_updated_at = data.pop("expected_updated_at", None)
     expected_content_version_id = data.pop("expected_content_version_id", None)
     reviewed_visual_keys = data.pop('claves_visuales_revisadas', [])
+    reviewed_document_keys = data.pop('claves_documentales_revisadas', [])
+    document_requested = 'estructura_documento' in data
+    if document_requested and payload.estructura_documento is None:
+        if getattr(evaluacion, 'estructura_documento', None) is not None:
+            raise HTTPException(422, 'No borraremos el documento completo. Edita las secciones o prepara una copia.')
+        data.pop('estructura_documento')
+        document_requested = False
+    if document_requested or reviewed_document_keys:
+        if not settings.EVALUATION_DOCUMENT_STRUCTURE_ENABLED:
+            raise HTTPException(409, 'La edición por secciones todavía no está habilitada. Tu documento sigue guardado.')
+        if document_requested:
+            data['estructura_documento'] = payload.estructura_documento.model_dump(mode='json')
     if 'configuracion_impresion' in data:
         data['configuracion_impresion'] = payload.configuracion_impresion.model_dump(mode='json') if payload.configuracion_impresion else None
-    if set(data) == {'configuracion_impresion'} and not reviewed_visual_keys:
+    if set(data) == {'configuracion_impresion'} and not reviewed_visual_keys and not reviewed_document_keys:
         from app.modules.evaluaciones.print_service import set_print_settings
         await set_print_settings(db, evaluacion.id, payload.configuracion_impresion,
             expected_updated_at=expected_updated_at, expected_version_id=expected_content_version_id,
@@ -631,10 +666,10 @@ async def update_evaluation(
     if visual_requested and payload.contenido_visual is None:
         raise HTTPException(422, "Indica el contenido que quieres guardar; para quitar un recurso, edita su asociación.")
     content_edit = None
-    if visual_requested or (getattr(evaluacion, "contenido_version_id", None) is not None and (data or reviewed_visual_keys)):
+    if visual_requested or document_requested or (getattr(evaluacion, "contenido_version_id", None) is not None and (data or reviewed_visual_keys or reviewed_document_keys)):
         content_edit = await prepare_content_edit(db, evaluacion.id,
             expected_version_id=expected_content_version_id, expected_updated_at=expected_updated_at,
-            manifest=payload.contenido_visual)
+            manifest=payload.contenido_visual, document=payload.estructura_documento if document_requested else None)
         evaluacion = content_edit.evaluation
         expected_updated_at = None  # Already checked while holding the row lock.
     if expected_updated_at is not None or 'lectura' in data:
@@ -663,6 +698,22 @@ async def update_evaluation(
             detail="El estado de una evaluacion solo puede cambiar mediante endpoints dedicados.",
         )
     structural_update = bool(STRUCTURAL_FIELDS.intersection(data))
+    from app.modules.evaluaciones.document_schemas import EvaluationDocument
+    from app.modules.evaluaciones.document_structure import apply_section_scoring
+    previous_document = EvaluationDocument.model_validate(evaluacion.estructura_documento) if getattr(evaluacion, 'estructura_documento', None) else None
+    next_document = payload.estructura_documento if document_requested else previous_document
+    if previous_document is not None or next_document is not None:
+        if structural_update and not settings.EVALUATION_DOCUMENT_STRUCTURE_ENABLED:
+            raise HTTPException(409, 'La edición por secciones está pausada. El documento y los puntajes se conservan.')
+        try:
+            proposed = data.get('preguntas') or evaluacion.preguntas
+            compiled = apply_section_scoring(previous_document, next_document, evaluacion.preguntas, proposed,
+                evaluacion.nota_maxima, data.get('nota_maxima') or evaluacion.nota_maxima, confirmed=confirm_scoring)
+            if compiled != proposed:
+                data['preguntas'] = compiled
+                structural_update = True
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
     criteria_only = bool(data) and set(data) <= {"criterios", "dba_ids", "dba_personalizado_ids"}
     retained_custom_ids = {UUID(value) for value in evaluacion.dba_personalizado_ids}
 
@@ -713,6 +764,8 @@ async def update_evaluation(
             await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
 
     if 'lectura' in data:
+        if getattr(evaluacion, 'estructura_documento', None) is not None:
+            raise HTTPException(422, 'Edita la lectura dentro de su sección para no guardar dos versiones diferentes del texto.')
         blueprint = evaluacion.blueprint
         if blueprint is None:
             blueprint = await _build_or_update_blueprint(db, evaluacion, dba_ids, dba_personalizado_ids)
@@ -725,16 +778,30 @@ async def update_evaluation(
     # debe conservar una estructura válida mientras siga visible al estudiante.
     if structural_update and evaluacion.estado != EvaluacionEstado.BORRADOR.value:
         validate_publication_structure(evaluacion)
+        if getattr(evaluacion, 'estructura_documento', None):
+            from app.modules.evaluaciones.document_structure import assert_document_ready
+            try:
+                assert_document_ready(EvaluationDocument.model_validate(evaluacion.estructura_documento))
+            except ValueError as exc:
+                raise HTTPException(422, 'Confirma la revisión del documento antes de actualizar una evaluación que ya está publicada.') from exc
 
     if content_edit is not None:
         if 'configuracion_impresion' in data:
             from app.modules.evaluaciones.print_settings import validate_print_scope
             try:
                 validate_print_scope(payload.configuracion_impresion, evaluacion.preguntas,
-                    content_edit.manifest.model_dump(mode='json'))
+                    content_edit.manifest.model_dump(mode='json') if content_edit.manifest else None)
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from exc
-        await save_content_revision(db, content_edit, reviewed_question_ids=reviewed_visual_keys)
+        if reviewed_document_keys:
+            from app.modules.evaluaciones.document_schemas import EvaluationDocument
+            from app.modules.evaluaciones.document_structure import assert_document_ready
+            try:
+                assert_document_ready(EvaluationDocument.model_validate(evaluacion.estructura_documento))
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+        await save_content_revision(db, content_edit,
+            reviewed_question_ids=set(reviewed_visual_keys) | set(reviewed_document_keys))
     elif 'configuracion_impresion' in data:
         from app.modules.evaluaciones.print_settings import validate_print_scope
         try:
@@ -881,6 +948,13 @@ def validate_publication_structure(evaluacion: Evaluacion) -> None:
 
 async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evaluacion:
     await ensure_active_materia(db, evaluacion.materia_id)
+    if getattr(evaluacion, 'estructura_documento', None) is not None:
+        from app.modules.evaluaciones.document_schemas import EvaluationDocument
+        from app.modules.evaluaciones.document_structure import assert_document_ready
+        try:
+            assert_document_ready(EvaluationDocument.model_validate(evaluacion.estructura_documento))
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
     if getattr(evaluacion, "contenido_version_id", None) is not None:
         revision = await get_content_revision(db, evaluacion.id, evaluacion.contenido_version_id)
         if revision.snapshot_json.get("claves_pendientes_revision") or revision.coverage_json.get("estado") != "completa":
@@ -1033,8 +1107,9 @@ async def digitalize_external_evaluation(
         preguntas=structure.get("preguntas", []),
         respuestas_esperadas=structure.get("respuestas_esperadas", []),
         contenido_visual=structure.get("contenido_visual"),
+        estructura_documento=structure.get('estructura_documento'),
     )
-    if create_payload.contenido_visual is not None or not commit:
+    if create_payload.contenido_visual is not None or create_payload.estructura_documento is not None or not commit:
         # Build the complete blueprint before snapshotting, in the caller's transaction.
         return await create_evaluation(db, create_payload, current_user, commit=commit,
             initial_validation=EvaluacionEstructuraValidacion(

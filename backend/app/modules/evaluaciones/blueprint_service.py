@@ -126,11 +126,14 @@ def build_blueprint_payload(
 
 def evaluation_to_grading_blueprint(evaluacion: Any) -> dict[str, Any]:
     from app.modules.evaluaciones.reading_service import evaluation_reading
+    from app.modules.evaluaciones.document_structure import document_context
+    context = document_context(evaluacion)
     blueprint = evaluacion.blueprint
-    source_questions = blueprint.preguntas if blueprint else evaluacion.preguntas
+    source_questions = evaluacion.preguntas if context else blueprint.preguntas if blueprint else evaluacion.preguntas
     return {
         "nombre": evaluacion.nombre,
-        "lectura": evaluation_reading(evaluacion),
+        "lectura": None if context else evaluation_reading(evaluacion),
+        **({'contexto_documental': context} if context else {}),
         "nota_maxima": float(evaluacion.nota_maxima),
         "dba": blueprint.dba if blueprint else [],
         "metas": blueprint.metas if blueprint else evaluacion.metas_profesor,

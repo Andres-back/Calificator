@@ -13,6 +13,7 @@ import { crearEntregaArchivo, crearEntregaOnline, evaluationPdfUrl, getActividad
 import { StudentActivityPlayer } from './StudentActivityPlayer';
 import { StudentAnswerSheet } from './StudentAnswerSheet';
 import { EvaluationContentViewer } from './components/EvaluationContentViewer';
+import { EvaluationDocumentContent } from './components/EvaluationDocumentContent';
 import { GradeBreakdown } from '@/modules/calificaciones/components/GradeBreakdown';
 import { XaliFeedbackStory } from '@/modules/calificaciones/student-feedback/XaliFeedbackStory';
 import type { SolicitudRevisionMotivo } from '@/types/api';
@@ -111,6 +112,7 @@ export function ResolverEvaluacionPage() {
   const evaluacion = currentEvaluation && pinned ? { ...currentEvaluation,
     nombre: pinned.nombre, descripcion: pinned.descripcion, nota_maxima: pinned.nota_maxima,
     lectura: pinned.lectura,
+    estructura_documento: pinned.estructura_documento ?? null,
     modalidad: pinned.modalidad, tipo_origen: pinned.tipo_origen,
     preguntas: pinned.preguntas, criterios: pinned.criterios, metas_profesor: pinned.metas_profesor,
     contenido_visual: pinned.contenido_visual, contenido_version_id: pinned.contenido_version_id,
@@ -414,7 +416,7 @@ export function ResolverEvaluacionPage() {
         </div>
       </Card>
 
-      {evaluacion.lectura && <Card className="min-w-0 space-y-3 p-4 sm:p-6">
+      {!evaluacion.estructura_documento && evaluacion.lectura && <Card className="min-w-0 space-y-3 p-4 sm:p-6">
         <h2 className="font-semibold">Lectura o texto de apoyo</h2>
         <p className="whitespace-pre-wrap break-words text-base leading-7">{evaluacion.lectura}</p>
       </Card>}
@@ -477,7 +479,8 @@ export function ResolverEvaluacionPage() {
           )}
           {!answerFormEnabled && !(assignedMaterial?.interactivo && modalidad === 'online') && <>
           <div><h2 className="font-display text-lg font-bold">Preguntas</h2><p className="text-sm text-muted">Lee cada enunciado y numera tus respuestas al escribir.</p></div>
-          {preguntasOnline.length === 0 ? (
+          {evaluacion.estructura_documento ? <EvaluationDocumentContent document={evaluacion.estructura_documento}
+            questions={preguntas} evaluationId={evaluacion.id} versionId={evaluacion.contenido_version_id} visuals={evaluacion.contenido_visual} /> : preguntasOnline.length === 0 ? (
             <p className="text-sm text-muted">Esta evaluación no tiene preguntas visibles.</p>
           ) : (
             <div className="space-y-3">

@@ -33,12 +33,19 @@ JOB_TYPE = 'evaluacion_copia'
 MAX_COPY_BYTES = 200 * 1024 * 1024
 RESOURCE_FIELDS = ('id', 'clase', 'origen', 'storage_key', 'sha256', 'mime', 'bytes_size', 'ancho', 'alto', 'paginas', 'estado', 'seguridad_contenido')
 DBA_FIELDS = ('id', 'area', 'grado', 'enunciado', 'evidencias_aprendizaje', 'ejemplo', 'fuente', 'activo')
-EDITORIAL_FIELDS = ('nombre', 'descripcion', 'tipo_origen', 'modalidad', 'nota_maxima', 'preguntas', 'respuestas_esperadas', 'criterios', 'dba_ids', 'dba_personalizado_ids', 'metas_profesor', 'configuracion_impresion', 'politica_intento', 'intentos_permitidos', 'tiempo_limite_minutos')
+EDITORIAL_FIELDS = ('nombre', 'descripcion', 'tipo_origen', 'modalidad', 'nota_maxima', 'preguntas', 'respuestas_esperadas', 'criterios', 'dba_ids', 'dba_personalizado_ids', 'metas_profesor', 'configuracion_impresion', 'politica_intento', 'intentos_permitidos', 'tiempo_limite_minutos', 'estructura_documento')
 
 
 def _permissions(actor):
     require_permission_now(actor, 'evaluations.read')
     require_permission_now(actor, 'evaluations.create')
+
+
+def _request_data(request):
+    data = request.model_dump(mode='json')
+    if data.get('recuperacion_documental') is None:
+        data.pop('recuperacion_documental', None)  # Preserve identities of legacy admissions.
+    return data
 
 
 def _utc(value):
@@ -57,11 +64,14 @@ def _public(row):
             'solicitud': row['input_json'].get('request')}
 
 
-async def latest_copy(db, source_id, actor):
+async def latest_copy(db, source_id, actor, recovery=False):
     _permissions(actor)
     await ensure_can_manage_evaluation(db, source_id, actor)
-    row = (await db.execute(text("SELECT * FROM ai_jobs WHERE tipo=:kind AND user_id=:actor AND input_json->>'source_id'=:source ORDER BY created_at DESC,id DESC LIMIT 1"),
-                            {'kind': JOB_TYPE, 'actor': actor.id, 'source': str(source_id)})).mappings().first()
+    if recovery:
+        require_permission_now(actor, 'evaluations.update')
+    row = (await db.execute(text("SELECT * FROM ai_jobs WHERE tipo=:kind AND user_id=:actor AND input_json->>'source_id'=:source "
+        "AND (COALESCE(input_json->'request'->'recuperacion_documental','null'::jsonb)<>'null'::jsonb)=:recovery ORDER BY created_at DESC,id DESC LIMIT 1"),
+        {'kind': JOB_TYPE, 'actor': actor.id, 'source': str(source_id), 'recovery': recovery})).mappings().first()
     if row:
         await ensure_can_manage_materia(db, UUID(row['input_json']['target_id']), actor)
     return _public(row) if row else None
@@ -72,6 +82,8 @@ async def read_copy(db, job_id, actor):
     row = await _job(db, job_id)
     if not row or row['tipo'] != JOB_TYPE or row['user_id'] != actor.id:
         raise HTTPException(404, 'Copia no disponible')
+    if row['input_json'].get('request', {}).get('recuperacion_documental'):
+        require_permission_now(actor, 'evaluations.update')
     await ensure_can_manage_materia(db, UUID(row['input_json']['target_id']), actor)
     return _public(row)
 
@@ -87,7 +99,12 @@ def _legacy_links(value):
 
 async def request_copy(db, source_id, request: CopyRequest, actor):
     _permissions(actor)
-    fingerprint = content_hash({'source_id': str(source_id), 'request': request.model_dump(mode='json')})
+    recovery = request.recuperacion_documental
+    if recovery:
+        require_permission_now(actor, 'evaluations.update')
+        if not settings.EVALUATION_DOCUMENT_STRUCTURE_ENABLED:
+            raise HTTPException(409, 'La recuperación documental aún no está habilitada. Tu evaluación no cambia.')
+    fingerprint = content_hash({'source_id': str(source_id), 'request': _request_data(request)})
     # Serialize duplicate admissions before either allocates a job or files.
     lock = int.from_bytes(hashlib.sha256(request.request_key.bytes).digest()[:8], 'big', signed=True)
     await db.execute(text('SELECT pg_advisory_xact_lock(:key)'), {'key': lock})
@@ -108,7 +125,7 @@ async def request_copy(db, source_id, request: CopyRequest, actor):
         return _public(previous)
     source = await ensure_can_manage_evaluation(db, source_id, actor)
     target = await ensure_can_manage_materia(db, request.materia_destino_id, actor, admission=True)
-    if source.materia_id == target.id or source.profesor_id != target.profesor_id:
+    if (source.materia_id == target.id and not recovery) or source.profesor_id != target.profesor_id:
         raise HTTPException(422, 'Elige otra materia activa del mismo docente.')
     source = await db.scalar(select(Evaluacion).options(selectinload(Evaluacion.blueprint)).where(
         Evaluacion.id == source_id, Evaluacion.deleted_at.is_(None)).with_for_update(of=Evaluacion).execution_options(populate_existing=True))
@@ -120,6 +137,13 @@ async def request_copy(db, source_id, request: CopyRequest, actor):
         raise HTTPException(422, 'Este recurso interactivo se reutiliza desde Recursos. No crearemos una copia incompleta.')
     revision = await get_content_revision(db, source.id, source.contenido_version_id) if source.contenido_version_id else None
     snapshot = deepcopy(revision.snapshot_json) if revision else _snapshot(source)
+    if recovery:
+        from app.modules.evaluaciones.document_recovery import validate_recovery
+        recovered = await validate_recovery(db, source, request, actor)
+        snapshot.update(preguntas=recovered['preguntas'], estructura_documento=recovery.documento.model_dump(mode='json'))
+        # No second legacy reading authority beside the recovered document.
+        if snapshot.get('blueprint'):
+            snapshot['blueprint']['reglas_feedback'] = {key: value for key, value in snapshot['blueprint'].get('reglas_feedback', {}).items() if key != 'lectura'}
     if revision is None:
         # Same effective response modes as the legacy publication path, with no
         # changes to wording, points or keys when introducing a content version.
@@ -149,7 +173,7 @@ async def request_copy(db, source_id, request: CopyRequest, actor):
         raise HTTPException(409, 'Revisa los criterios personalizados antes de copiar la evaluación.')
     encode = lambda rows, fields: [{field: str(getattr(row, field)) if isinstance(getattr(row, field), UUID) else getattr(row, field) for field in fields} for row in rows]
     payload = {'schema': 128, 'fingerprint': fingerprint, 'source_id': str(source.id), 'source_version_id': str(source.contenido_version_id) if source.contenido_version_id else None,
-               'request': request.model_dump(mode='json'),
+               'request': _request_data(request),
                'target_id': str(target.id), 'owner_id': str(source.profesor_id), 'snapshot': snapshot,
                'resources': encode(resources, RESOURCE_FIELDS), 'custom_dba': encode(custom, DBA_FIELDS),
                'name': request.nombre or source.nombre, 'coverage': deepcopy(revision.coverage_json) if revision else VisualCoverage().model_dump(mode='json')}
@@ -216,6 +240,10 @@ async def perform_copy(db, job_id: UUID, token: str):
     source = await db.get(Evaluacion, UUID(payload['source_id']))
     if source is None or str(source.profesor_id) != payload['owner_id']:
         raise HTTPException(403, 'La evaluación origen ya no pertenece al mismo docente.')
+    if payload.get('request', {}).get('recuperacion_documental'):
+        from app.modules.evaluaciones.document_recovery import validate_recovery
+        await ensure_can_manage_evaluation(db, source.id, actor)
+        await validate_recovery(db, source, CopyRequest.model_validate(payload['request']), actor)
     identities = {item['id']: str(uuid5(job_id, item['id'])) for item in payload['resources'] + payload['custom_dba']}
     snapshot = deepcopy(payload['snapshot'])
     for i, question in enumerate(snapshot.get('preguntas', [])):
@@ -231,6 +259,8 @@ async def perform_copy(db, job_id: UUID, token: str):
                     question['modalidad_respuesta'] = matches[0]['modalidad_respuesta']
     for block in (snapshot.get('contenido_visual') or {}).get('bloques', []):
         identities[str(block['id'])] = str(uuid5(job_id, str(block['id'])))
+    for node in (snapshot.get('estructura_documento') or {}).get('nodos', []):
+        identities[str(node['id'])] = str(uuid5(job_id, str(node['id'])))
     snapshot = _remap(snapshot, identities)
     snapshot['nombre'] = payload['name']
     if snapshot.get('blueprint'):
@@ -260,7 +290,12 @@ async def perform_copy(db, job_id: UUID, token: str):
     manifest = VisualManifest.model_validate(snapshot['contenido_visual']) if snapshot.get('contenido_visual') else None
     print_config = PrintSettings.model_validate(snapshot['configuracion_impresion']) if snapshot.get('configuracion_impresion') else None
     validate_print_scope(print_config, copied.preguntas, snapshot.get('contenido_visual'))
-    if payload['source_version_id'] is not None:
+    if snapshot.get('estructura_documento'):
+        from app.modules.evaluaciones.document_schemas import EvaluationDocument
+        from app.modules.evaluaciones.document_structure import validate_document_scope
+        validate_document_scope(EvaluationDocument.model_validate(snapshot['estructura_documento']), copied.preguntas,
+            material_ids=[block.id for block in manifest.bloques] if manifest else [])
+    if payload['source_version_id'] is not None or snapshot.get('estructura_documento'):
         revision = EvaluacionContenidoVersion(evaluacion_id=copied.id, numero_version=1, autor_id=actor.id,
             content_hash=content_hash(snapshot), motivo='Copia independiente de evaluación', origen='copia',
             snapshot_json=snapshot, coverage_json=_remap(payload['coverage'], identities), recurso_ids=[identities[item['id']] for item in payload['resources']],

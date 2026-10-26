@@ -57,6 +57,9 @@ vi.mock('./MateriaContext', () => ({
   useMateriaContext: () => mocks.context,
 }));
 vi.mock('@/modules/materias/dbaApi', () => ({ listDbaCombinado: vi.fn().mockResolvedValue([]) }));
+vi.mock('@/modules/evaluaciones/visualApi', () => ({
+  getVisualCapabilities: vi.fn().mockResolvedValue({ documento: false }),
+}));
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));

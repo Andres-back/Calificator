@@ -27,3 +27,7 @@ El [plan 096](../096-evaluacion-dos-pantallas/plan.md) reutiliza GenerationWizar
 ## Incremento 097
 
 El [plan 097](../097-escritura-docente-movil/plan.md) añade un hook de presentación opt-in para foco y VisualViewport, listeners acotados y limpieza. Modal conserva defaults fuera del alcance; los formularios IA/manual mantienen controles montados y un scroll principal. Sin dependencias, cambios de API ni generación por foco/resize/Listo. Chromium/WebKit cubren alturas reducidas; la prueba física de iPhone/Android queda expresamente diferenciada.
+
+## Coordinación 130 en curso
+
+Documento editorial opcional JSONB, versiones textuales, revisión, editor y presupuestos compilados a máximos canónicos. El dominio005 mantiene la propiedad; la activación nueva queda cerrada por defecto. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

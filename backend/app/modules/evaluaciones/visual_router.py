@@ -27,6 +27,7 @@ router = APIRouter(tags=["evaluaciones"])
 async def visual_capabilities(current_user: User = Depends(get_current_user)) -> dict:
     require_any_permission_now(current_user, 'evaluations.create', 'evaluations.update')
     return {'importacion': settings.EVALUATION_VISUAL_IMPORT_ENABLED,
+            'documento': settings.EVALUATION_DOCUMENT_STRUCTURE_ENABLED,
             'editor': settings.EVALUATION_VISUAL_EDITOR_ENABLED,
             'generacion': settings.EVALUATION_VISUAL_EDITOR_ENABLED and settings.EVALUATION_VISUAL_GENERATION_ENABLED,
             'max_bytes': MAX_RESOURCE_BYTES}

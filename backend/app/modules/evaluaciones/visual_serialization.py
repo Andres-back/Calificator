@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from app.modules.evaluaciones.models import EvaluacionRecurso, EvaluacionContenidoVersion
 from app.modules.evaluaciones.visual_schemas import VisualManifest
 from app.modules.evaluaciones.visual_service import get_content_revision, content_hash
+from app.modules.evaluaciones.document_structure import document_read_fields
 
 
 async def authorized_content_revision(db, evaluation_id, version_id, user):
@@ -66,11 +67,20 @@ async def visual_read_fields(db: AsyncSession, evaluation, *, student: bool, pre
     revision = prepared_revision if prepared_revision is not None else await get_content_revision(db, evaluation.id, version_id)
     raw = revision.snapshot_json.get('contenido_visual')
     if raw is None:  # Honest legacy baseline, not a reconstructed historical image.
-        return {'contenido_version_id': version_id, 'contenido_visual': None}
+        try:
+            document = document_read_fields(revision.snapshot_json, student=student)
+        except ValueError as exc:
+            raise HTTPException(409, 'El documento de esta versión necesita revisión docente.') from exc
+        return {'contenido_version_id': version_id, 'contenido_visual': None, **document}
     manifest = VisualManifest.model_validate(raw)
     if not student:
+        try:
+            document = document_read_fields(revision.snapshot_json, student=False,
+                material_ids=[block.id for block in manifest.bloques])
+        except ValueError as exc:
+            raise HTTPException(409, 'No pudimos comprobar la organización de este documento.') from exc
         return {'contenido_version_id': version_id, 'contenido_visual': manifest.model_dump(mode='json'),
-                'claves_visuales_pendientes': revision.snapshot_json.get('claves_pendientes_revision', [])}
+                'claves_visuales_pendientes': revision.snapshot_json.get('claves_pendientes_revision', []), **document}
     projection = manifest.for_student()
     resource_ids = {block.recurso_id for block in projection.bloques if block.recurso_id is not None}
     allowed: set[UUID] = set()
@@ -86,4 +96,9 @@ async def visual_read_fields(db: AsyncSession, evaluation, *, student: bool, pre
                    and resource.clase != 'original' and resource.seguridad_contenido == 'publicable_confirmado'}
     projection.bloques = [block for block in projection.bloques
                           if block.recurso_id is None or block.recurso_id in allowed]
-    return {'contenido_version_id': version_id, 'contenido_visual': projection.model_dump(mode='json')}
+    try:
+        document = document_read_fields(revision.snapshot_json, student=True,
+            material_ids=[block.id for block in projection.bloques])
+    except ValueError as exc:
+        raise HTTPException(409, 'El documento necesita material revisado antes de consultarlo.') from exc
+    return {'contenido_version_id': version_id, 'contenido_visual': projection.model_dump(mode='json'), **document}

@@ -3,6 +3,7 @@ import { CheckCircle2, Circle, Send } from 'lucide-react';
 import { Badge, Button, Card, Field, Input, RichContent, Textarea } from '@/components/ui';
 import type { Evaluacion } from '@/types/api';
 import { EvaluationContentViewer } from './components/EvaluationContentViewer';
+import { EvaluationDocumentContent } from './components/EvaluationDocumentContent';
 
 type Question = Record<string, unknown>;
 
@@ -25,7 +26,7 @@ function questionOptions(question: Question): string[] {
 }
 
 interface Props {
-  evaluation?: Pick<Evaluacion, 'id' | 'contenido_visual' | 'contenido_version_id'>;
+  evaluation?: Pick<Evaluacion, 'id' | 'contenido_visual' | 'contenido_version_id' | 'estructura_documento' | 'preguntas'>;
   questions: Question[];
   answers: Record<number, string>;
   onAnswerChange: (number: number, value: string) => void;
@@ -52,43 +53,10 @@ export function StudentAnswerSheet({
     return Boolean((answers[number] ?? '').trim());
   }).length;
   const percentage = questions.length ? Math.round((answered / questions.length) * 100) : 0;
-
-  return (
-    <Card className="space-y-5 border-brand-200 p-4 dark:border-brand-500/30 sm:p-6">
-      <div className="space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="font-display text-xl font-bold">Resuelve paso a paso</h2>
-            <p className="mt-1 text-sm leading-6 text-muted">Cada pregunta aparece junto a su respuesta. Puedes avanzar a tu ritmo.</p>
-          </div>
-          <Badge tone={answered === questions.length ? 'success' : 'brand'} className="self-start">
-            {answered} de {questions.length} respondidas
-          </Badge>
-        </div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-surface-2" aria-label={`${percentage}% completado`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percentage}>
-          <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-[width] duration-300" style={{ width: `${percentage}%` }} />
-        </div>
-        <div className="flex flex-wrap gap-2" aria-label="Navegación entre preguntas">
-          {questions.map((question, index) => {
-            const number = questionNumber(question, index);
-            const completed = Boolean((answers[number] ?? '').trim());
-            return (
-              <a
-                key={number}
-                href={`#respuesta-${number}`}
-                className={`focus-ring inline-flex min-h-10 min-w-10 items-center justify-center gap-1 rounded-full border px-3 text-sm font-bold transition ${completed ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : 'border-border bg-surface text-secondary hover:border-brand-300'}`}
-                aria-label={`Ir a la pregunta ${number}${completed ? ', respondida' : ', pendiente'}`}
-              >
-                {completed ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <Circle className="h-4 w-4" aria-hidden="true" />}
-                {number}
-              </a>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {questions.map((question, index) => {
+  const placed = new Set(evaluation?.estructura_documento?.nodos.filter(node => node.tipo === 'material').map(node => node.bloque_id));
+  const questionVisuals = evaluation?.contenido_visual ? { ...evaluation.contenido_visual,
+    bloques: evaluation.contenido_visual.bloques.filter(block => !placed.has(block.id)) } : null;
+  function renderAnswer(question: Question, index: number, label?: string, interactive = true) {
           const number = questionNumber(question, index);
           const options = questionOptions(question);
           const type = String(question.tipo ?? 'abierta');
@@ -100,13 +68,13 @@ export function StudentAnswerSheet({
               className={`scroll-mt-24 rounded-2xl border p-4 transition sm:p-5 ${incomplete ? 'border-rose-400 bg-rose-50/60 ring-2 ring-rose-100 dark:bg-rose-500/10 dark:ring-rose-500/10' : 'border-border bg-surface-2/40'}`}
             >
               <div className="mb-4 flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Pregunta {number}</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">Pregunta {label ?? number}</p>
                 {(answers[number] ?? '').trim() && <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Respondida</span>}
               </div>
               <RichContent content={questionText(question, index)} variant="evaluation" className="mb-5" />
               {evaluation && <EvaluationContentViewer evaluationId={evaluation.id} versionId={evaluation.contenido_version_id}
-                content={evaluation.contenido_visual} questionId={String(question.contenido_id || '')} />}
-              {options.length > 0 ? (
+                content={questionVisuals} questionId={String(question.contenido_id || '')} />}
+              {!interactive ? <p className="text-sm font-semibold text-muted">Se responde en papel o archivo, según la indicación del docente.</p> : options.length > 0 ? (
                 <fieldset className="space-y-2" disabled={submitting}>
                   <legend className="sr-only">Respuesta de la pregunta {number}</legend>
                   {options.map((option) => (
@@ -128,7 +96,36 @@ export function StudentAnswerSheet({
               {incomplete && <p id={`error-${number}`} className="mt-3 text-sm font-semibold text-rose-700 dark:text-rose-300">Completa esta respuesta antes de entregar.</p>}
             </article>
           );
-        })}
+  }
+  return (
+    <Card className="space-y-5 border-brand-200 p-4 dark:border-brand-500/30 sm:p-6">
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div><h2 className="font-display text-xl font-bold">Resuelve paso a paso</h2>
+            <p className="mt-1 text-sm leading-6 text-muted">Cada pregunta aparece junto a su respuesta. Puedes avanzar a tu ritmo.</p></div>
+          <Badge tone={answered === questions.length ? 'success' : 'brand'} className="self-start">{answered} de {questions.length} respondidas</Badge>
+        </div>
+        <div className="h-2.5 overflow-hidden rounded-full bg-surface-2" aria-label={`${percentage}% completado`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percentage}>
+          <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-[width] duration-300" style={{ width: `${percentage}%` }} />
+        </div>
+        <div className="flex flex-wrap gap-2" aria-label="Navegación entre preguntas">
+          {questions.map((question, index) => {
+            const number = questionNumber(question, index), completed = Boolean((answers[number] ?? '').trim());
+            const node = evaluation?.estructura_documento?.nodos.find(item => item.pregunta_id === question.contenido_id);
+            return <a key={number} href={`#respuesta-${number}`}
+              className={`focus-ring inline-flex min-h-10 min-w-10 items-center justify-center gap-1 rounded-full border px-3 text-sm font-bold transition ${completed ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200' : 'border-border bg-surface text-secondary hover:border-brand-300'}`}
+              aria-label={`Ir a la pregunta ${number}${completed ? ', respondida' : ', pendiente'}`}>
+              {completed ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <Circle className="h-4 w-4" aria-hidden="true" />}{node?.etiqueta_original ?? number}
+            </a>;
+          })}
+        </div>
+      </div>
+      <div className="space-y-4">
+        {evaluation?.estructura_documento ? <EvaluationDocumentContent document={evaluation.estructura_documento} questions={evaluation.preguntas}
+          evaluationId={evaluation.id} versionId={evaluation.contenido_version_id} visuals={evaluation.contenido_visual}
+          renderQuestion={(node, question) => renderAnswer(question, evaluation.preguntas.indexOf(question), node.etiqueta_original ?? undefined,
+            questions.some(item => item.contenido_id === question.contenido_id))} />
+          : questions.map((question, index) => renderAnswer(question, index))}
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">

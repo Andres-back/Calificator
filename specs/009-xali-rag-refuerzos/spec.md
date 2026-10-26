@@ -61,6 +61,10 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 [032 Calificación e impacto docente](../032-calificacion-impacto-docente/spec.md), FR-012: el contexto se recupera después de extraer la respuesta, se limita por materia y propietario tanto en fragmento como fuente, y conserva título/versión o ausencia explícita. Los fragmentos privados no se serializan al estudiante. La existencia del recuperador no demuestra por sí sola validez pedagógica.
 
+## Coordinación documental 130
+
+[Spec130](../130-digitalizacion-secciones/spec.md), issue #274, amplía este contrato bajo aprobación registrada. Xali usa secciones y lecturas de la versión fijada de la entrega, mediante una lista blanca de contexto educativo. No revela claves o procedencia privada, no cambia cuotas y rechaza contexto excesivo sin recortarlo. El estado de pruebas y las limitaciones están en su guía de validación; no supone activación en producción.
+
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).

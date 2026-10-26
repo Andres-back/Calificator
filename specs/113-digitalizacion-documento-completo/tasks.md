@@ -42,3 +42,7 @@ FR-001 → T002–T005; FR-002 → T002/T004/T005/T012; FR-003 → T006–T008; 
 ## Cierre de regresiones de CI
 
 - [x] T014 Estabilizar en frontend/e2e/p2-responsive.spec.ts la espera de inicio de sesión/módulo antes de navegar y aislar la guía automática de la prueba de menú; conservar aserciones de foco, responsive y guía dedicada, añadir latencia sintética y repetir en Chromium/WebKit según FR-007 y Constitución VII. No aumentar reintentos ni modificar producción para ocultar fallos.
+
+## Coordinación 130 en curso
+
+La lectura intercalada vive en nodos documentales, sin duplicarse como lectura general legacy. La misma extracción multipágina conserva actividades e instrucciones por identidad de origen; no añade llamadas IA ni reescribe evaluaciones antiguas. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

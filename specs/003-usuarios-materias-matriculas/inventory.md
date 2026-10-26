@@ -12,7 +12,7 @@
 | endpoint | `GET:/materias/{materia_id}` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:33` |
 | endpoint | `GET:/materias/{materia_id}/estudiantes` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:66` |
 | endpoint | `GET:/materias/{materia_id}/estudiantes-existentes` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:135` |
-| endpoint | `GET:/materias/{materia_id}/evaluaciones` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:291` |
+| endpoint | `GET:/materias/{materia_id}/evaluaciones` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:292` |
 | endpoint | `GET:/materias/{materia_id}/importaciones-estudiantes` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:66` |
 | endpoint | `GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:81` |
 | endpoint | `GET:/matriculas/mis-materias` | admin, estudiante, profesor | covered | `backend/app/modules/matriculas/router.py:25` |
@@ -46,7 +46,7 @@
 | frontend_call | `GET:/materias/{id}/estudiantes` | ambiguous | covered | `frontend/src/modules/materias/api.ts:21` |
 | frontend_call | `GET:/materias/{id}` | ambiguous | covered | `frontend/src/modules/materias/api.ts:17` |
 | frontend_call | `GET:/materias/{materiaId}/estudiantes-existentes` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:73` |
-| frontend_call | `GET:/materias/{materiaId}/evaluaciones` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:72` |
+| frontend_call | `GET:/materias/{materiaId}/evaluaciones` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:84` |
 | frontend_call | `GET:/materias/{materiaId}/importaciones-estudiantes/{batchId}` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:54` |
 | frontend_call | `GET:/materias/{materiaId}/importaciones-estudiantes` | ambiguous | covered | `frontend/src/modules/materias/rosterImportApi.ts:58` |
 | frontend_call | `GET:/materias` | ambiguous | covered | `frontend/src/modules/materias/api.ts:13` |

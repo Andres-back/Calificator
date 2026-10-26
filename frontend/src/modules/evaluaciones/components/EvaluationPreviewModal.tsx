@@ -4,6 +4,7 @@ import { Button, Modal, RichContent, Select } from '@/components/ui';
 import { EvaluationContentViewer } from './EvaluationContentViewer';
 import { EvaluationSourceReview } from './EvaluationSourceReview';
 import { EvaluationPrintPanel } from './EvaluationPrintPanel';
+import { EvaluationDocumentContent } from './EvaluationDocumentContent';
 import { toApiError } from '@/lib/api';
 import { getEvaluationDocument } from '../api';
 import type { Evaluacion } from '@/types/api';
@@ -123,7 +124,7 @@ export function EvaluationPreviewModal({ evaluation: suppliedEvaluation, canView
           ) : <p className="text-sm text-muted">Evaluación para estudiantes · Sin respuestas</p>}
           {canViewSolutions && canEditPresentation && evaluation && !evaluation.material_origen_id && <EvaluationPrintPanel key={evaluation.id} evaluation={evaluation}
             onSaved={updated => { setPrintEvaluation(updated); setFile(null); setOptionsOpen(false); setRetry(value => value + 1); }} />}
-          {(evaluation?.contenido_visual || evaluation?.lectura) && <Button type="button" variant="outline" className="min-h-11 w-full" onClick={() => { setContentView(value => !value); setOptionsOpen(false); }}>
+          {(evaluation?.contenido_visual || evaluation?.lectura || evaluation?.estructura_documento) && <Button type="button" variant="outline" className="min-h-11 w-full" onClick={() => { setContentView(value => !value); setOptionsOpen(false); }}>
             {contentView ? 'Ver formato para imprimir' : evaluation?.lectura ? 'Ver lectura y preguntas' : 'Ver preguntas y figuras'}
           </Button>}
           {currentFile && (
@@ -148,6 +149,8 @@ export function EvaluationPreviewModal({ evaluation: suppliedEvaluation, canView
       </div>
       <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-surface-2">
         {contentView && evaluation ? <div className="h-full min-w-0 space-y-4 overflow-y-auto p-3 sm:p-5">
+          {evaluation.estructura_documento ? <EvaluationDocumentContent document={evaluation.estructura_documento} questions={evaluation.preguntas}
+            evaluationId={evaluation.id} versionId={evaluation.contenido_version_id} visuals={evaluation.contenido_visual} /> : <>
           {evaluation.lectura && <article className="min-w-0 space-y-3 rounded-xl border border-border bg-surface p-4 sm:p-6">
             <h3 className="font-semibold">Lectura o texto de apoyo</h3>
             <p className="whitespace-pre-wrap break-words text-base leading-7">{evaluation.lectura}</p>
@@ -159,7 +162,7 @@ export function EvaluationPreviewModal({ evaluation: suppliedEvaluation, canView
               content={evaluation.contenido_visual} questionId={String(question.contenido_id || '')} />
             {Array.isArray(question.opciones) && <ul className="space-y-2">{question.opciones.map((option, optionIndex) => <li key={optionIndex} className="break-words text-sm">{String(typeof option === 'object' && option ? (option as { texto?: string }).texto || '' : option)}</li>)}</ul>}
             {showSolutions && <p className="text-sm"><strong>Respuesta esperada: </strong>{String(evaluation.respuestas_esperadas.find(answer => Number(answer.numero) === Number(question.numero || index + 1))?.respuesta || 'Pendiente de confirmar')}</p>}
-          </article>)}
+          </article>)}</>}
           {canViewSolutions && evaluation.contenido_visual && 'cobertura' in evaluation.contenido_visual && <EvaluationSourceReview evaluationId={evaluation.id}
             versionId={evaluation.contenido_version_id} manifest={evaluation.contenido_visual}
             questions={evaluation.preguntas.filter(question => question.contenido_id).map(question => ({ id: String(question.contenido_id), label: `Pregunta ${question.numero}` }))} />}

@@ -11,3 +11,7 @@
 
 ## Fase 3: Integración
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
+
+## Coordinación 130 en curso
+
+La proyección documental pública procede exclusivamente de la revisión fijada a la entrega; respuestas conservan número académico e identidad. Una entrega anterior no hereda secciones nuevas del documento vivo. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

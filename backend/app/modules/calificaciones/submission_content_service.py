@@ -68,8 +68,10 @@ async def student_attempt_evaluation(db, evaluation, delivery) -> dict:
     from app.modules.evaluaciones.visual_serialization import visual_read_fields
 
     revision = await get_content_revision(db, evaluation.id, delivery.contenido_version_id)
-    result = _student_safe_evaluation(evaluation)
+    result = _student_safe_evaluation(SimpleNamespace(**{**vars(evaluation), 'estructura_documento': None}))
     source = revision.snapshot_json
+    # An older pinned attempt must never inherit a newer live document tree.
+    result['estructura_documento'] = None
     from app.modules.evaluaciones.reading_service import evaluation_reading
     result['lectura'] = evaluation_reading(source)
     for key in ('nombre', 'descripcion', 'nota_maxima', 'modalidad', 'tipo_origen', 'criterios',

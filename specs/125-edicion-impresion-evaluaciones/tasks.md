@@ -69,3 +69,7 @@ T001→T002→pruebas T003/T004. US1 T005→T006→T007; US2 T008→T009→T010;
 Oportunidades de ejecución simultánea sin agentes: prueba de cálculoT003 y contratoT011 están en archivos distintos; US1 y fundamentos backend de US3 pueden comprobarse separadamente; lectura de documentaciónT022 no requiere despliegue. No modificar un archivo compartido simultáneamente.
 
 MVP verificable: US1 visor/material ampliable. Se entrega primero localmente; no declarar completa la función125 hasta cerrar las cuatro historias. Los ítems siguen el formato ID/ruta/historia y mantienen pendientes los trabajos no implementados.
+
+## Coordinación 130 en curso
+
+Editor, vista estudiante y exportadores recorren el mismo documento validado, sin modificar las preferencias de compacta/media/amplia ni las soluciones privadas. El render PDF real continúa en herramientas/pdf_render.py; Word usa el exportador existente. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

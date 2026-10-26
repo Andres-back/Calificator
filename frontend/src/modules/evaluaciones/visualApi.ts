@@ -13,7 +13,7 @@ export interface VisualJob {
   resultado_json: { bloque?: TeacherVisualBlock; expected_version_id?: string | null };
 }
 export async function getVisualCapabilities() {
-  return (await api.get<{ editor: boolean; generacion: boolean; importacion: boolean; max_bytes: number }>('/evaluaciones/contenido-visual/capacidades')).data;
+  return (await api.get<{ editor: boolean; documento?: boolean; generacion: boolean; importacion: boolean; max_bytes: number }>('/evaluaciones/contenido-visual/capacidades')).data;
 }
 export async function uploadVisual(scope: VisualScope, file: File, kind: 'imagen' | 'dibujo') {
   const form = new FormData();

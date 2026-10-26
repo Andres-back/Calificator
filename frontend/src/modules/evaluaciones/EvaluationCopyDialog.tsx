@@ -8,18 +8,18 @@ import { queryClient } from '@/lib/queryClient';
 import { listMaterias } from '@/modules/materias/api';
 import { useAuth } from '@/stores/auth';
 import type { Evaluacion, Materia } from '@/types/api';
-import { getEvaluationCopy, getLatestEvaluationCopy, requestEvaluationCopy, type EvaluationCopyRequest, type EvaluationCopyStatus } from './api';
+import { getEvaluationCopy, getLatestEvaluationCopy, requestEvaluationCopy, type RecoveryDocumentRequest, type EvaluationCopyRequest, type EvaluationCopyStatus } from './api';
 
 const pending = (value?: EvaluationCopyStatus | null) => Boolean(value && ['queued', 'running', 'retrying'].includes(value.estado));
 
-export function EvaluationCopyDialog({ evaluation, onClose }: { evaluation: Evaluacion; onClose: () => void }) {
+export function EvaluationCopyDialog({ evaluation, onClose, recoveryDocument }: { evaluation: Evaluacion; onClose: () => void; recoveryDocument?: RecoveryDocumentRequest }) {
   const actor = useAuth(state => state.user);
   const [owner] = useState(actor?.id);
   const permitted = actor?.id === owner && Boolean(actor?.permissions?.includes('evaluations.create')) && Boolean(actor?.permissions?.includes('evaluations.read'))
-    && (actor?.rol === 'admin' || evaluation.profesor_id === actor?.id);
-  const storageKey = `xc-copy:${owner}:${evaluation.id}`;
+    && (actor?.rol === 'admin' || evaluation.profesor_id === actor?.id) && (!recoveryDocument || Boolean(actor?.permissions?.includes('evaluations.update')));
+  const storageKey = `${recoveryDocument ? 'xc-document-copy' : 'xc-copy'}:${owner}:${evaluation.id}`;
   const [subjects, setSubjects] = useState<Materia[]>([]);
-  const [target, setTarget] = useState('');
+  const [target, setTarget] = useState(recoveryDocument ? evaluation.materia_id : '');
   const [name, setName] = useState(evaluation.nombre);
   const [request, setRequest] = useState<EvaluationCopyRequest | null>(null);
   const [operation, setOperation] = useState<EvaluationCopyStatus | null>(null);
@@ -34,7 +34,8 @@ export function EvaluationCopyDialog({ evaluation, onClose }: { evaluation: Eval
   const formRef = useRef<HTMLDivElement>(null);
   const mobile = useMobileFormViewport(permitted, formRef);
   const actorValid = () => mounted.current && useAuth.getState().user?.id === owner
-    && Boolean(useAuth.getState().user?.permissions?.includes('evaluations.create')) && Boolean(useAuth.getState().user?.permissions?.includes('evaluations.read'));
+    && Boolean(useAuth.getState().user?.permissions?.includes('evaluations.create')) && Boolean(useAuth.getState().user?.permissions?.includes('evaluations.read'))
+    && (!recoveryDocument || Boolean(useAuth.getState().user?.permissions?.includes('evaluations.update')));
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
     let current = true;
@@ -42,9 +43,9 @@ export function EvaluationCopyDialog({ evaluation, onClose }: { evaluation: Eval
     setLoading(true); setDiscovered(false); setError('');
     void (async () => {
       try {
-        const [choices, latest] = await Promise.all([listMaterias(), getLatestEvaluationCopy(evaluation.id)]);
+        const [choices, latest] = await Promise.all([listMaterias(), getLatestEvaluationCopy(evaluation.id, Boolean(recoveryDocument))]);
         if (!current || !mounted.current) return;
-        setSubjects(choices.filter(item => item.estado === 'activa' && item.id !== evaluation.materia_id && item.profesor_id === evaluation.profesor_id));
+        setSubjects(choices.filter(item => item.estado === 'activa' && (recoveryDocument ? item.id === evaluation.materia_id : item.id !== evaluation.materia_id) && item.profesor_id === evaluation.profesor_id));
         let stored: EvaluationCopyRequest | null = null;
         try { stored = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null'); } catch { /* Browser storage can be unavailable. */ }
         if (stored && typeof stored.request_key === 'string' && typeof stored.materia_destino_id === 'string' && typeof stored.expected_updated_at === 'string') {
@@ -63,7 +64,7 @@ export function EvaluationCopyDialog({ evaluation, onClose }: { evaluation: Eval
       finally { if (current && mounted.current) setLoading(false); }
     })();
     return () => { current = false; };
-  }, [evaluation.id, evaluation.materia_id, evaluation.nombre, evaluation.profesor_id, permitted, reload, storageKey]);
+  }, [evaluation.id, evaluation.materia_id, evaluation.nombre, evaluation.profesor_id, permitted, recoveryDocument, reload, storageKey]);
   useEffect(() => {
     if (!operation || !pending(operation) || !permitted) return;
     let current = true;
@@ -83,9 +84,10 @@ export function EvaluationCopyDialog({ evaluation, onClose }: { evaluation: Eval
   async function copy() {
     if (!actorValid() || locked.current || loading || !discovered || pending(operation)) return;
     const payload = request ?? { materia_destino_id: target, request_key: crypto.randomUUID(), expected_updated_at: evaluation.updated_at,
-      expected_content_version_id: evaluation.contenido_version_id ?? null, nombre: name.trim() };
+      expected_content_version_id: evaluation.contenido_version_id ?? null, nombre: name.trim(),
+      ...(recoveryDocument ? { recuperacion_documental: recoveryDocument } : {}) };
     locked.current = true; setRequest(payload); setSending(true); setError(''); setResetAllowed(false);
-    // Only IDs/version/editorial title, never keys, student marks or evidence.
+    // Owner-scoped editorial data only; never student keys, marks or evidence.
     try { sessionStorage.setItem(storageKey, JSON.stringify(payload)); } catch { /* Optional browser storage. */ }
     try {
       const result = await requestEvaluationCopy(evaluation.id, payload);
@@ -103,20 +105,20 @@ export function EvaluationCopyDialog({ evaluation, onClose }: { evaluation: Eval
   }
   const destination = subjects.find(item => item.id === target);
   if (!permitted) return null;
-  return <Modal open className="bg-surface backdrop-blur-none" mobileViewport={mobile.viewport} mobileWriting={mobile.isWriting} title="Usar en otra materia" description="Crea un borrador independiente con lectura, preguntas, figuras, criterios y formato. No copia estudiantes, notas ni evidencias respondidas y no vuelve a usar IA." onClose={() => { mounted.current = false; onClose(); }}>
+  return <Modal open className="bg-surface backdrop-blur-none" mobileViewport={mobile.viewport} mobileWriting={mobile.isWriting} title={recoveryDocument ? 'Recuperar documento en una copia' : 'Usar en otra materia'} description="Crea un borrador independiente con lectura, preguntas, figuras disponibles, criterios y formato. No copia estudiantes, notas ni evidencias respondidas y no vuelve a usar IA." onClose={() => { mounted.current = false; onClose(); }}>
     <div ref={formRef} data-mobile-scroll className="min-w-0 space-y-4">
       {mobile.isWriting && <Button className="min-h-11" variant="ghost" onClick={mobile.finishWriting}>Listo</Button>}
       {loading ? <p role="status">Buscando tus materias y solicitudes guardadas…</p> : <>
         {!request && <>
-          <Field label="Materia destino"><Select className="min-h-11 text-base sm:text-sm" value={target} onChange={event => setTarget(event.target.value)}><option value="">Selecciona otra materia</option>{subjects.map(item => <option key={item.id} value={item.id}>{item.nombre}{item.grado ? ` · ${item.grado}` : ''}</option>)}</Select></Field>
-          {!subjects.length && <p role="status" className="text-sm">No hay otra materia activa del mismo docente. Crea o restaura una materia para usarla como destino.</p>}
+          {recoveryDocument ? <p className="text-sm">Se creará en la misma materia. El original no cambiará.</p> : <Field label="Materia destino"><Select className="min-h-11 text-base sm:text-sm" value={target} onChange={event => setTarget(event.target.value)}><option value="">Selecciona otra materia</option>{subjects.map(item => <option key={item.id} value={item.id}>{item.nombre}{item.grado ? ` · ${item.grado}` : ''}</option>)}</Select></Field>}
+          {!subjects.length && <p role="status" className="text-sm">No hay una materia activa disponible como destino de esta copia.</p>}
           <Field label="Nombre de la copia"><Input className="text-base sm:text-sm" value={name} onChange={event => setName(event.target.value)} maxLength={220} /></Field>
           {destination && <p className="text-sm text-muted">Revisa que las preguntas sean adecuadas para {destination.area ?? 'el área'} y {destination.grado ?? 'el grado elegido'}. No se adaptarán automáticamente.</p>}
         </>}
         {request && <p className="break-words text-sm">Solicitud guardada para {subjects.find(item => item.id === request.materia_destino_id)?.nombre ?? 'la materia seleccionada'}. Puedes cerrar esta ventana y volver a abrir «Usar en otra materia» para consultar el resultado.</p>}
         {pending(operation) && <p role="status" className="rounded-lg border border-border p-3">{operation?.estado === 'queued' ? 'Copia en cola.' : 'Preparando la copia y sus figuras…'} El original no cambiará.</p>}
         {operation?.estado === 'success' && <div className="space-y-3 rounded-lg border border-border p-3"><p role="status">Copia lista como borrador. Revísala antes de publicarla.</p><Link className="focus-ring inline-flex min-h-11 items-center rounded-lg border border-border px-3 font-semibold" to={`/app/materias/${operation.materia_destino_id}/evaluaciones`} onClick={onClose}>Ver materia destino</Link>
-          <Button variant="outline" className="min-h-11" onClick={() => { try { sessionStorage.removeItem(storageKey); } catch { /* Optional browser storage. */ } setRequest(null); setOperation(null); setError(''); setTarget(''); }}>Crear otra copia</Button></div>}
+          {!recoveryDocument && <Button variant="outline" className="min-h-11" onClick={() => { try { sessionStorage.removeItem(storageKey); } catch { /* Optional browser storage. */ } setRequest(null); setOperation(null); setError(''); setTarget(''); }}>Crear otra copia</Button>}</div>}
         {operation && !pending(operation) && operation.estado !== 'success' && <p role="alert" className="text-sm text-danger">{operation.error ?? 'La copia necesita revisión. El original sigue intacto.'}</p>}
         {error && <p role="alert" className="break-words text-sm text-danger">{error}</p>}
         {!pending(operation) && operation?.estado !== 'success' && <Button className="min-h-11 w-full" loading={sending} disabled={!discovered || sending || (!request && (!target || name.trim().length < 2))} onClick={() => void copy()}><Copy className="h-4 w-4" />{request ? 'Reintentar la misma copia' : 'Crear copia como borrador'}</Button>}

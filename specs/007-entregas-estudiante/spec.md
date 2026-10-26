@@ -60,3 +60,7 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 ## Inventario técnico
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
+
+## Contexto documental 130
+
+[Spec130](../130-digitalizacion-secciones/spec.md), issue #274, intercala secciones, lecturas, actividades y controles de respuesta de la versión fijada al comenzar el intento. Numeración visible repetida no altera el número académico de respuestas. Un intento anterior sin documento nunca hereda la estructura viva nueva; el DTO público excluye claves, inventario y revisión privados.

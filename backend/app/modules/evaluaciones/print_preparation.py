@@ -18,6 +18,7 @@ from app.modules.evaluaciones.print_settings import (
     validate_print_scope,
 )
 from app.modules.evaluaciones.visual_schemas import VisualManifest
+from app.modules.evaluaciones.document_schemas import EvaluationDocument
 
 JOB_TYPE = "evaluacion_impresion"
 TTL = timedelta(hours=24)
@@ -29,6 +30,7 @@ class PrintDraft(PrintContract):
     lectura: str | None = Field(default=None, max_length=60_000)
     preguntas: list[dict] | None = Field(default=None, min_length=1, max_length=500)
     contenido_visual: VisualManifest | None = None
+    estructura_documento: EvaluationDocument | None = None
 
     @model_validator(mode="after")
     def bounded(self):
@@ -129,6 +131,8 @@ async def material_for_request(db, evaluation, request):
             "respuestas_esperadas": [],
             "nota_maxima": evaluation.nota_maxima,
             "blueprint": evaluation.blueprint,
+            **({'estructura_documento': evaluation.estructura_documento}
+               if getattr(evaluation, 'estructura_documento', None) is not None else {}),
         }
     )
     blocks = []

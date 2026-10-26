@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { EvaluationCopyDialog } from './EvaluationCopyDialog';
+import { EvaluationDocumentRecovery } from './EvaluationDocumentRecovery';
+import { getVisualCapabilities } from './visualApi';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -515,6 +517,10 @@ export function EvaluacionesPage() {
   const [editingEval, setEditingEval] = useState<Evaluacion | null>(null);
   const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
   const [copyingEval, setCopyingEval] = useState<Evaluacion | null>(null);
+  const [recoveringEval, setRecoveringEval] = useState<Evaluacion | null>(null);
+  const [documentEditing, setDocumentEditing] = useState<Evaluacion | null>(null);
+  const documentCapabilities = useQuery({ queryKey: ['evaluation-visual-capabilities'], queryFn: getVisualCapabilities,
+    enabled: canCreate && canUpdate, retry: false, staleTime: 30000 });
   const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
   const [pending, setPending] = useState<Record<ListField, string>>(emptyPending);
 
@@ -603,6 +609,7 @@ export function EvaluacionesPage() {
   }
 
   function openEditModal(ev: Evaluacion) {
+    if (ev.estructura_documento) { setDocumentEditing(ev); return; }
     setEditingEval(ev);
     setForm(evaluacionToForm(ev));
     setPending(emptyPending);
@@ -783,6 +790,8 @@ export function EvaluacionesPage() {
                     </div>
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
                       {canCreate && permissions.has('evaluations.read') && <Button size="sm" className="min-h-11" variant="outline" onClick={() => setCopyingEval(ev)}>Usar en otra materia</Button>}
+                      {canCreate && canUpdate && permissions.has('evaluations.read') && documentCapabilities.data?.documento && !ev.estructura_documento && ev.tipo_origen === 'externa_digitalizada'
+                        && <Button size="sm" className="min-h-11" variant="outline" onClick={() => setRecoveringEval(ev)}>Recuperar secciones</Button>}
                       {user?.rol !== 'estudiante' && permissions.has('evaluations.read') && (
                         <Button size="sm" variant="outline" onClick={() => setPreviewEval(ev)}>
                           <Eye className="h-4 w-4" aria-hidden="true" /> Visualizar
@@ -823,6 +832,10 @@ export function EvaluacionesPage() {
       )}
 
       {copyingEval && canCreate && <EvaluationCopyDialog key={copyingEval.id + user?.id} evaluation={copyingEval} onClose={() => setCopyingEval(null)} />}
+      {recoveringEval && canCreate && canUpdate && <EvaluationDocumentRecovery key={recoveringEval.id + user?.id} evaluation={recoveringEval} onClose={() => setRecoveringEval(null)} />}
+      {documentEditing && user && canUpdate && <GenerationWizard open userId={user.id} initialEvaluation={documentEditing}
+        materias={materias} initialMateriaId={documentEditing.materia_id} onClose={() => setDocumentEditing(null)}
+        onCompleted={updated => { void queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(updated.materia_id) }); setDocumentEditing(null); toast.success('Documento y preguntas guardados.'); }} />}
       {previewEval && (
         <EvaluationPreviewModal evaluation={previewEval} onClose={() => setPreviewEval(null)}
           canEditPresentation={canUpdate}

@@ -48,7 +48,8 @@ def prepare_print_material(material: dict) -> dict:
     content["impresion_compacta"] = resolved.distribucion == "compacta"
     content["advertencias_impresion"] = []
     questions = content.get("preguntas") or []
-    for question in questions:
+    section_material = {'_evaluation_visuals': content.get('_document_visuals') or []}
+    for question in [*questions, section_material]:
         identifier = question.get("contenido_id")
         override = next(
             (
@@ -127,6 +128,8 @@ def prepare_print_material(material: dict) -> dict:
             if resolved.distribucion == "compacta" and not question["_print_lateral"]
             else 1
         )
+    if content.get('documento') is not None:
+        content['_document_visuals'] = section_material['_evaluation_visuals']
     try:
         scores = [Decimal(str(question["puntaje"])) for question in questions]
         if scores and all(score.is_finite() and score == scores[0] for score in scores):
@@ -156,8 +159,8 @@ def print_css(configuration: dict | None) -> str:
         color:#111!important; border-color:#999!important; font-size:{max(10, font - 0.5)}pt;
         line-height:1.1; padding:2pt 0 3pt; margin-bottom:3pt; }}
     .card {{ padding:{gap}pt 0!important; margin-bottom:{gap}pt!important; border-radius:0; border-color:#aaa; background:white; }}
-    .h3 {{ color:{accent}; }} .grid th {{ background:#eee; color:#111; }}
-    .grid td,.grid th {{ border-color:#999; }}
+    .h3 {{ color:{accent}; }} table.grid th {{ background:#eee; color:#111; }}
+    table.grid td,table.grid th {{ border-color:#999; }}
     .p {{ font-size:{font}pt; line-height:1.1; margin:0 0 2pt; }}
     .opt {{ font-size:{font}pt; line-height:1.05; margin:1pt 0; }}
     .opt {{ color:#111!important; }} .opt .circle,.pts {{ color:{accent}; }} .pts {{ font-size:{max(10, font - 0.5)}pt; }}
