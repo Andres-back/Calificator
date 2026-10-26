@@ -579,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1b61c29e666b8166c0447a98eb351c82a36b30fed133f9b5146bb9159bc1308a",
+  "source_digest": "fc6c2b6ab0891a83679da471a1ca41a4a3f20800ba2023b5933978655d846c58",
   "surfaces": [
     {
       "actors": [
@@ -4630,6 +4630,12 @@
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -21464,6 +21470,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -22166,6 +22178,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/FeedbackSharePanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/FeedbackToolsButton.test.tsx"
         },
         {
@@ -22173,12 +22191,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/FeedbackWorkspace.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/modules/feedback_sharing/IndividualLinks.test.tsx"
         },
         {
           "level": "unit",
@@ -22215,6 +22227,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/feedbackMotifs.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackPreparation.test.ts"
         },
         {
           "level": "unit",
@@ -22724,6 +22742,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -24043,6 +24067,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -27392,6 +27422,12 @@
           "level": "e2e",
           "reference": "/devolucion",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/devolucion",
+          "status": "direct",
           "test_path": "frontend/e2e/motif-library.spec.ts"
         },
         {
@@ -27410,13 +27446,13 @@
           "level": "unit",
           "reference": "/devolucion",
           "status": "direct",
-          "test_path": "frontend/src/modules/feedback_sharing/FeedbackToolsButton.test.tsx"
+          "test_path": "frontend/src/modules/feedback_sharing/FeedbackSharePanel.test.tsx"
         },
         {
           "level": "unit",
           "reference": "/devolucion",
           "status": "direct",
-          "test_path": "frontend/src/modules/feedback_sharing/IndividualLinks.test.tsx"
+          "test_path": "frontend/src/modules/feedback_sharing/FeedbackToolsButton.test.tsx"
         },
         {
           "level": "unit",
@@ -32421,6 +32457,12 @@
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
           "level": "e2e",
@@ -41376,6 +41418,12 @@
           "level": "e2e",
           "reference": "POST:/devoluciones/accesos/{id}/{action}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/devoluciones/accesos/{id}/{action}",
+          "status": "direct",
           "test_path": "frontend/e2e/motif-library.spec.ts"
         },
         {
@@ -49011,6 +49059,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
           "level": "e2e",

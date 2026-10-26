@@ -47,7 +47,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
     await expect(dialog.getByRole('button', { name: 'Preparar impresión', exact: true })).toBeDisabled();
-    await dialog.getByRole('button', { name: 'Todos los listos', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Listos del filtro', exact: true }).click();
     await dialog.getByRole('button', { name: 'Preparar impresión', exact: true }).click();
     await dialog.getByText('Ver motivos por área', { exact: true }).click();
     const gallery = dialog.getByRole('region', { name: 'Biblioteca de motivos' });

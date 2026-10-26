@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '@/stores/auth';
 import type { User } from '@/types/api';
@@ -23,5 +23,15 @@ describe('puerta de gestión común', () => {
   it('conserva compatibilidad cuando la función fue desactivada explícitamente', async () => {
     vi.mocked(feedbackAvailable).mockResolvedValue(false); show();
     expect(await screen.findByText('Editor anterior')).toBeInTheDocument();
+  });
+  it('129 conserva la misma entrada al renovar la sesión y la oculta al perder permisos', async () => {
+    vi.mocked(feedbackAvailable).mockResolvedValue(true); show();
+    await screen.findByText('Gestión común integrada');
+    act(() => useAuth.setState({ user: { ...useAuth.getState().user! } }));
+    expect(screen.getByText('Gestión común integrada')).toBeInTheDocument();
+    expect(feedbackAvailable).toHaveBeenCalledTimes(1);
+    act(() => useAuth.setState({ user: null }));
+    expect(screen.queryByText('Gestión común integrada')).toBeNull();
+    expect(screen.queryByText('Editor anterior')).toBeNull();
   });
 });

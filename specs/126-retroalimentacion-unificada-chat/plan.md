@@ -62,3 +62,7 @@ Alternativas rechazadas: historial global del token (revela preguntas de otro le
 5. Pruebas de impresión/regresión, revisión visual/accesible, CI completo y PR. Converge antes de declararlo terminado. No se ha realizado todavía ninguna de estas pruebas de implementación.
 
 Diseño detallado: [research.md](./research.md), [data-model.md](./data-model.md), [contratos](./contracts/retroalimentacion-chat.md) y [validación](./quickstart.md).
+
+## Presentación 129
+
+[Plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272, refactoriza únicamente el centro docente común: identidad estable en vez de referencia de objeto, lista compacta y panel que contiene preparación y copia. Conserva editor, protección de cambios, privacidad, impresión y todos los contratos del chat.

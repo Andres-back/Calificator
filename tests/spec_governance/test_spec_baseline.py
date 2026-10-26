@@ -123,6 +123,7 @@ ALL_SPECS = {
     "126-retroalimentacion-unificada-chat",
     "127-camara-nativa-movil",
     "128-materias-notas-reutilizacion",
+    "129-retroalimentacion-flujo-claro",
 }
 OWNED_SPECS = {
     name

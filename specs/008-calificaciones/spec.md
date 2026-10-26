@@ -121,6 +121,10 @@ La evolución [101 — contexto visual conservado](../101-digitalizacion-visual-
 
 [100-feedback-demo-movil](../100-feedback-demo-movil/spec.md) muestra feedback íntegro como texto, con Editar al inicio y editor creciente, guardado actual y descarte confirmado solo del mensaje. Conserva avisos provisionales sin reescribirlos. Identifica el cálculo incompleto como provisional e informa preguntas/criterios sin puntaje, diferenciando null de cero y propuesta de IA de decisión confirmada. El formato de edición quita ceros redundantes, preserva decimales significativos y máximo real sin marcar cambios por abrir. Sin alterar cálculos, APIs, notas, evidencias, versiones ni permisos.
 
+## Evolución 129: entrega de retroalimentaciones
+
+[129-retroalimentacion-flujo-claro](../129-retroalimentacion-flujo-claro/spec.md), issue #272, reorganiza únicamente la interacción docente: lista compacta, selección estable y acciones accesibles; preparación y copia en un panel, detalle individual común e impresión vigente. Compartir no confirma/publica notas, no cambia evidencia ni reinicia vigencias/cuotas. Mantiene fuente vigente, permisos y decisiones explícitas.
+
 ## Evolución 128: exportación explícita y de solo lectura
 
 [128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, separa el modelo de exportación del seguimiento. Mantiene política backend de intento vigente y solo_lectura: no genera ceros por vencimiento, confirma ni publica. CSV final usa decisión docente; provisional es elección explícita con estado. Conteos/vista previa evitan el éxito de un archivo sin notas finales; proceso/fallo/ausencia no se confunden con cero. Materias archivadas conservan consulta/exportación y resultados de trabajos ya admitidos; la copia editorial no incluye calificaciones.

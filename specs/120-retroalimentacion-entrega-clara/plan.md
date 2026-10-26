@@ -46,3 +46,7 @@ Resultado previo y posterior al diseño: no hay excepción constitucional ni acl
 4. Mantener retrocompatibilidad: devoluciones actualmente coherentes siguen elegibles sin revisión extra; enlaces existentes válidos conservan su huella y acceso, sin migración obligatoria.
 5. Agrupación conservadora del texto y salida plana equivalente para impresión; mensajes no clasificables quedan generales. No inferir aciertos a partir de una nota ni editar feedback con regex destructivas.
 6. La publicación de configuración de generación (versión 14) es una operación autorizada separada de este cambio; no incluir modelos ni operaciones del servidor en este PR.
+
+## Presentación 129
+
+El [plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272, adapta lista/detalle y las entradas individual/grupal. Reutiliza FeedbackDeliveryReview y la impresión íntegra, conserva permisos y estado actual y no reescribe mensajes para ocultar avisos. Aprobación/publicación y compartir permanecen decisiones distintas.

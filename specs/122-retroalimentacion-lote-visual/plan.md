@@ -51,3 +51,7 @@ Resultado previo y posterior al diseño: sin excepción constitucional ni aclara
 6. Los veinte motivos están definidos en [assets-brief.md](./assets-brief.md). Selección manual o mezcla determinista por estudiante, sin relacionar ilustración con su rendimiento. Mismo motivo en continuaciones; no generar ni descargar desde dominios externos al imprimir.
 7. Reservar una zona fija pequeña para ilustración/cabecera y reflejar exactamente sus medidas en `printPagination.ts`. Mantener cuerpo ≥12 pt y ancho útil, líneas de corte y fuente de texto completa. Añadir decoración solo una vez por ficha o con un marcador discreto en continuaciones; no fondos ni colores imprescindibles.
 8. Preparación actual exclusivamente documental. No aceptar notas reales, cambiar claves, crear enlaces, probar chat con proveedores ni actualizar producción hasta la fase y autorización correspondientes.
+
+## Presentación 129
+
+[Plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272: reutilizar FeedbackBatchPublish y FeedbackPrintSheet, no duplicar sus reglas. El centro conserva impresión/retorno/selección y entrega en el mismo panel; sustituye la lista separada de enlaces nuevos por resultados contextuales, manteniendo copia individual y privada.

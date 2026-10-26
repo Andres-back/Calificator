@@ -20,7 +20,7 @@ async function setup(page: Page, ready = false) {
       return route.fulfill({ json: { catalog_version: 'fixture', collection: 'general', total: 20, offset, limit: 12, items: general.slice(offset, offset + 12).map(id => ({ id, collection_id: 'general', label: id[0].toUpperCase() + id.slice(1), description: 'Motivo general', thumbnail_url: `/assets/feedback-motifs/${id}.png`, full_url: `/api/biblioteca-motivos/archivos/${id}/full/${'a'.repeat(64)}`, width: 320, height: 320 })) } });
     }
     if (path === '/api/devoluciones/disponibilidad') return route.fulfill({ json: { enabled: true } });
-    if (path === '/api/evaluaciones/e1/devoluciones/previsualizar') return route.fulfill({ json: { resultados: Array.from({ length: 30 }, (_, index) => ({ calificacion_id: `c${index + 1}`, elegible: published, seleccionable: true, fingerprint: published ? 'f'.repeat(64) : undefined, resultado: published ? publicResult(index + 1) : undefined, borrador_docente: { estado: 'requiere_revision', ...publicResult(index + 1) }, batch_candidate: { source_fingerprint: 'b'.repeat(64), nota: publicResult(index + 1).nota, feedback_text: publicResult(index + 1).retroalimentacion, scope: 'summary', avisos: ['Solo nota y retroalimentación, sin soluciones.'] } })) } });
+    if (path === '/api/evaluaciones/e1/devoluciones/previsualizar') return route.fulfill({ json: { resultados: Array.from({ length: 30 }, (_, index) => ({ calificacion_id: `c${index + 1}`, elegible: published, seleccionable: true, fingerprint: published ? 'f'.repeat(64) : undefined, resultado: published ? publicResult(index + 1) : undefined, borrador_docente: { estado: 'requiere_revision', ...publicResult(index + 1) }, batch_candidate: { source_fingerprint: 'b'.repeat(64), nota: publicResult(index + 1).nota, feedback_text: publicResult(index + 1).retroalimentacion, scope: 'summary', avisos: ['Solo nota y retroalimentación, sin soluciones.'] } })).filter(item => (route.request().postDataJSON().calificacion_ids as string[]).includes(item.calificacion_id)) } });
     if (path === '/api/evaluaciones/e1/devoluciones/aceptar-publicar') {
       const body = route.request().postDataJSON(); calls.push('publish'); published = true;
       expect(body.selecciones.length).toBeLessThanOrEqual(25);
@@ -46,15 +46,18 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.setViewportSize({ width, height: 850 });
     const { dialog, calls } = await setup(page);
     await page.evaluate(theme => document.documentElement.classList.toggle('dark', theme === 'dark'), theme);
+    await dialog.getByRole('button', { name: 'Revisar y publicar notas', exact: true }).click();
     await dialog.getByRole('button', { name: 'Aceptar todas y publicar', exact: true }).click();
     await expect(dialog.getByRole('region', { name: 'Resumen antes de publicar' })).toContainText('30 notas para aceptar');
     expect(calls).toEqual([]);
     await page.screenshot({ path: `../output/playwright/spec122-batch-${width}-${theme}-${browserName}.png` });
     await dialog.getByRole('button', { name: 'Confirmar y publicar 30', exact: true }).click();
-    await expect(dialog.getByText('30 estudiantes · 30 listos para entregar · 30 seleccionados')).toBeVisible();
+    await expect(dialog.getByText('30 estudiantes · 30 listos para entregar')).toBeVisible();
+    await expect(dialog.getByText('30 seleccionados', { exact: true })).toBeVisible();
     expect(calls).toEqual(['publish', 'publish']);
     await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('blocked for synthetic test'); } } }); });
-    await dialog.getByRole('button', { name: 'Copiar todos los enlaces activos', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Compartir', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Copiar 1 disponible', exact: true }).click();
     const manual = dialog.getByRole('textbox', { name: 'Enlaces para copiar manualmente' });
     await expect(manual).toHaveValue('Estudiante Prueba\nhttps://example.test/devolucion#' + 'a'.repeat(43));
     await expect(manual).toHaveCSS('font-size', '16px');
@@ -71,7 +74,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.setViewportSize({ width, height: 850 });
     const { dialog } = await setup(page, true);
     await page.evaluate(theme => document.documentElement.classList.toggle('dark', theme === 'dark'), theme);
-    await dialog.getByRole('button', { name: 'Todos los listos', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Listos del filtro', exact: true }).click();
     await dialog.getByRole('button', { name: 'Preparar impresión', exact: true }).click();
     const decoration = dialog.getByRole('combobox', { name: 'Decoración de las fichas' });
     await expect(decoration.locator('option')).toHaveCount(22);
@@ -109,5 +112,8 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     }
     await page.emulateMedia({ media: 'screen' });
     await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+    await dialog.getByRole('button', { name: 'Volver a la lista', exact: true }).click();
+    await expect(dialog.getByText('30 seleccionados', { exact: true })).toBeVisible();
+    await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(30);
   });
 }
