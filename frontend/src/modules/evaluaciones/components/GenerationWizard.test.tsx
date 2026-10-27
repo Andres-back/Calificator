@@ -218,7 +218,8 @@ describe('GenerationWizard', () => {
     renderWizard(vi.fn(), evaluation);
     await user.type(await screen.findByLabelText(/Enunciado/), ' corregida');
     await user.click(screen.getByRole('button', { name: 'Cerrar asistente' }));
-    expect(await screen.findByText('¿Salir sin guardar los cambios?')).toBeVisible();
+    // Presence alone can match the initial opening frame at opacity zero.
+    await waitFor(() => expect(screen.getByRole('dialog', { name: '¿Salir sin guardar los cambios?' })).toBeVisible());
     await user.click(screen.getByRole('button', { name: 'Seguir editando' }));
     expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Pregunta uno corregida');
     expect(mocks.update).not.toHaveBeenCalled();

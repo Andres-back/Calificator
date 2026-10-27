@@ -1,6 +1,6 @@
 # Validación prevista: digitalización con secciones
 
-**Estado**: implementación y validación local de las cuatro historias completas, PDF/Word revisados,27 tareas verificadas y Converge sin pendientes. Paquete de PR/CI preparado, sin validación ni activación de producción. CI remoto sigue siendo obligatorio antes de una fusión que no está autorizada en este alcance. El plan ampliado está aprobado mediante «aprobe» después de la pausa solicitada.
+**Estado**: implementación y validación local de las cuatro historias completas, PDF/Word revisados y28 tareas verificadas, incluida la corrección de sincronización de la prueba de CI. PR #275 abierto, sin validación ni activación de producción. CI remoto sigue siendo obligatorio antes de una fusión que no está autorizada en este alcance. El plan ampliado está aprobado mediante «aprobe» después de la pausa solicitada.
 
 ## Entorno
 
@@ -108,3 +108,15 @@ Regresiones adicionales de edición: una selección explícita de un capítulo c
 `EVALUATION_DOCUMENT_STRUCTURE_ENABLED=false` por defecto controla admisión y edición nuevas; la API de capacidades comunica `documento` al editor. Solo habilitarla después de migración y despliegue coordinado de backend, workers y frontend desde un commit aprobado. No requiere cambiar proveedores, modelos ni fórmulas de nota.
 
 Para revertir admisión, apagar esa bandera y conservar columna, documentos, snapshots y archivos. La migración impide un downgrade destructivo. Un ejecutable antiguo no se considera compatible para editar documentos nuevos. No se hizo backfill, recuperación real, recalificación ni alteración de evidencias o publicaciones históricas.
+
+## Corrección de CI del PR275
+
+El usuario autorizó «corrige y envia» tras revisar la ejecución40398687040 del commit05c5ab4. Backend, gobernanza y contenedores aprobaron; frontend tuvo1.019 pruebas aprobadas y una fallida en `GenerationWizard.test.tsx:221`, caso125 de salir sin guardar. Las suites E2E quedaron sin ejecutar por esa dependencia, no por fallos comprobados de navegador.
+
+La comprobación antigua encontraba el título en el DOM y evaluaba inmediatamente `toBeVisible`, aunque `Modal` comienza su animación con opacidad cero. Se cambió únicamente la prueba para esperar con `waitFor` al diálogo identificado por su rol/nombre y a su visibilidad real. Conserva el límite original y las aserciones de volver a editar, texto intacto y ninguna actualización al servidor. No se añadieron sleeps, reintentos ni cambios de aplicación, animaciones, dependencias o workflows.
+
+Comprobación Windows: las34 pruebas de `GenerationWizard.test.tsx` aprobaron en34,95s; TypeScript y lint estricto aprobados. En Node22/Linux, las1.020 pruebas de los165 archivos aprobaron en259,50s, sin pruebas omitidas. También aprobó el build de producción del frontend. El contenedor local de pruebas, sin red ni credenciales, necesitó montar en solo lectura las fixtures visuales y la configuración de nginx que ya están disponibles en el checkout de CI; la primera ejecución sin esos archivos falló por sus rutas ausentes, no por el editor.
+
+Gobernanza local:61 pruebas aprobadas en28,53s; inventario vigente de663 superficies. Se regeneró únicamente su digest, sin cambiar sus superficies. Converge de la corrección T028: cuatro requisitos pertinentes (FR-005/013/014/016), una decisión del plan y dos principios constitucionales (VII/VIII), sin hallazgos ni tareas adicionales; `tasks.md` quedó idéntico durante esa revisión. La convergencia completa de las cuatro historias ya consta arriba y no se cambió código funcional.
+
+El nuevo envío al mismo PR queda preparado para ejecutar CI; los resultados locales no afirman que esa nueva ejecución remota ya esté verde. No se modificó producción.
