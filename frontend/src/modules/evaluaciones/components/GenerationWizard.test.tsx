@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GenerationWizard } from './GenerationWizard';
 import { createEmptyWizardState, persistWizardDraft, evaluationToWizardState, loadVisualEditDraft } from './generationWizardModel';
 import type { Evaluacion, Materia } from '@/types/api';
+import { documentEvaluation, documentId } from '@/test/fixtures/documentEvaluation';
+import { getVisualCapabilities } from '../visualApi';
 
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
@@ -155,6 +157,7 @@ it('101 restores scoped visual editing without replacing local changes and persi
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(getVisualCapabilities).mockResolvedValue({ editor: false, generacion: false, importacion: false, max_bytes: 20971520 });
   mocks.listDba.mockResolvedValue([{
     id: 'dba-1',
     fuente: 'oficial',
@@ -174,6 +177,24 @@ beforeEach(() => {
   });
   mocks.update.mockResolvedValue(evaluation);
   mocks.sendMessage.mockResolvedValue({ respuesta: 'Aclara el enunciado.' });
+});
+
+it('130 edits and saves the document atomically without a second reading field or key renumbering', async () => {
+  vi.mocked(getVisualCapabilities).mockResolvedValue({ editor: false, generacion: false, importacion: false, documento: true, max_bytes: 20971520 });
+  const structured = { ...documentEvaluation(), materia_id: materia.id };
+  const user = userEvent.setup();
+  renderWizard(vi.fn(), structured);
+  const title = await screen.findByLabelText('Título de la sección');
+  fireEvent.change(title, { target: { value: 'Observamos juntos' } });
+  await user.click(screen.getByLabelText(/Comparé las secciones/));
+  await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalled());
+  const payload = mocks.update.mock.lastCall?.[1];
+  expect(payload.estructura_documento.nodos[0].titulo).toBe('Observamos juntos');
+  expect(payload.estructura_documento.revision.confirmado).toBe(true);
+  expect(payload).not.toHaveProperty('lectura');
+  expect(payload.claves_documentales_revisadas).toEqual([documentId(1), documentId(2)]);
+  expect(screen.queryByLabelText('Lectura o texto de apoyo')).not.toBeInTheDocument();
 });
 
 describe('GenerationWizard', () => {
@@ -197,7 +218,8 @@ describe('GenerationWizard', () => {
     renderWizard(vi.fn(), evaluation);
     await user.type(await screen.findByLabelText(/Enunciado/), ' corregida');
     await user.click(screen.getByRole('button', { name: 'Cerrar asistente' }));
-    expect(await screen.findByText('¿Salir sin guardar los cambios?')).toBeVisible();
+    // Presence alone can match the initial opening frame at opacity zero.
+    await waitFor(() => expect(screen.getByRole('dialog', { name: '¿Salir sin guardar los cambios?' })).toBeVisible());
     await user.click(screen.getByRole('button', { name: 'Seguir editando' }));
     expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Pregunta uno corregida');
     expect(mocks.update).not.toHaveBeenCalled();

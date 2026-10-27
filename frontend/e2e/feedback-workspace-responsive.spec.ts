@@ -44,7 +44,6 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   const list = dialog.locator('[data-feedback-list-scroll]');
   await list.evaluate(element => { element.scrollTop = element.scrollHeight; });
   for (const index of [39, 40]) await dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(index), exact: true }).check();
-  const position = await list.evaluate(element => element.scrollTop);
   const share = dialog.getByRole('button', { name: 'Compartir', exact: true });
   // IntersectionObserver can report 0.9999995 for a fully visible fractional pixel.
   await expect(share).toBeInViewport({ ratio: 0.999 });
@@ -53,6 +52,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   await expect(last).toBeInViewport({ ratio: 0.999 });
   expect(await dialog.locator('[data-feedback-actions]').evaluate(element => element.getBoundingClientRect().top)).toBeGreaterThan((await last.boundingBox())!.y);
   await page.screenshot({ path: `../output/playwright/spec129-list-${width}-${theme}-${browserName}.png` });
+  const position = await list.evaluate(element => element.scrollTop);
   await share.click();
   await expect(dialog.getByRole('button', { name: 'Copiar 1 disponible', exact: true })).toBeEnabled();
   expect(calls).toEqual([]);
@@ -73,8 +73,14 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   await dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true }).click();
   await expect(share).toBeFocused();
   await expect(dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(39), exact: true })).toBeChecked();
-  // Scroll position before sharing was at the last (alphabetically sorted) row.
-  expect(await list.evaluate(element => element.scrollTop)).toBeGreaterThanOrEqual(position);
+  await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(2);
+  // Keyboard/viewport changes and new link actions can reflow the list. Preserve
+  // the same visible student, not a stale document offset from before sharing.
+  await expect(last).toBeInViewport({ ratio: 0.999 });
+  expect(await list.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  // WebKit rounds scroll metrics at the limit; tolerate one CSS pixel, not a row.
+  await expect.poll(() => list.evaluate((element, saved) => element.scrollTop - Math.min(saved, Math.max(0, element.scrollHeight - element.clientHeight)), position)).toBeGreaterThanOrEqual(-1);
+  await page.screenshot({ path: `../output/playwright/spec129-return-${width}-${theme}-${browserName}.png` });
   expect(calls).toHaveLength(1);
   await dialog.getByRole('searchbox').fill('039');
   await expect(dialog.getByText('2 seleccionados · 1 fuera del filtro', { exact: true })).toBeVisible();

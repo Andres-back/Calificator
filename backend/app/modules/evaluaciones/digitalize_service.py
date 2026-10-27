@@ -19,6 +19,9 @@ from app.modules.calificaciones.agents import AgentContext, OpenCodeClient, visi
 from app.modules.dba.document_service import extraer_texto_docx, extraer_texto_pdf
 from app.modules.evaluaciones.visual_normalization import bind_visual_structure, visual_prompt_context
 from app.modules.evaluaciones.visual_schemas import VisualManifest
+from app.modules.evaluaciones.document_import import (
+    bind_import_document, build_document_inventory, document_import_prompt, prepare_document_questions,
+)
 from app.services.image_preprocessing import (
     prepare_orientation_variants,
     quality_warning_messages,
@@ -113,6 +116,8 @@ vacía o ya resuelta por un estudiante.
 
 Transcribe todo el contenido educativo visible:
 - título e instrucciones;
+- títulos de secciones, capítulos y subsecciones, en su orden original;
+- actividades compartidas, debates y recuadros educativos aunque no tengan pregunta o nota;
 - lectura y textos de apoyo completos, conservando sus párrafos aunque la hoja no tenga preguntas;
 - cada pregunta con su número;
 - todas las opciones de respuesta;
@@ -903,8 +908,14 @@ def normalize_detected_structure(
     initial_warnings: list[str] | None = None,
     contenido_visual: VisualManifest | None = None,
     visual_scope_id: UUID | None = None,
+    document_inventory: list[dict] | None = None,
+    document_scope_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Valida, completa pesos y produce el contrato persistible de una evaluación."""
+    if document_inventory is not None and isinstance(structure, dict):
+        if document_scope_id is None:
+            raise ValueError('La organización del documento necesita el identificador de su solicitud.')
+        structure = prepare_document_questions(structure)
     raw_questions = structure.get("preguntas") if isinstance(structure, dict) else None
     if not isinstance(raw_questions, list) or not raw_questions:
         raise HTTPException(
@@ -1071,7 +1082,12 @@ def normalize_detected_structure(
         "advertencias": warnings,
     }
     if contenido_visual is not None:
-        return bind_visual_structure(structure, normalized, contenido_visual, visual_scope_id)
+        normalized = bind_visual_structure(structure, normalized, contenido_visual, visual_scope_id)
+    if document_inventory is not None:
+        try:
+            normalized = bind_import_document(structure, normalized, document_inventory, document_scope_id)
+        except ValueError as exc:
+            raise HTTPException(422, 'No pudimos conservar el documento completo. Revisa el original o divídelo sin quitar contenido.') from exc
     return normalized
 
 
@@ -1084,6 +1100,7 @@ async def detectar_estructura_evaluacion(
     ai_config: dict[str, Any] | None = None,
     contenido_visual: VisualManifest | None = None,
     visual_scope_id: UUID | None = None,
+    document_scope_id: UUID | None = None,
 ) -> dict[str, Any]:
     """Detecta preguntas y propone una clave independiente para revisión docente."""
     if not contenido_texto.strip():
@@ -1115,10 +1132,15 @@ async def detectar_estructura_evaluacion(
     set_tracking = getattr(llm, "set_tracking", None)
     if callable(set_tracking):
         set_tracking(stage="structure")
+    document_inventory = build_document_inventory(contenido_preguntas) if document_scope_id is not None else None
     prompt = PROMPT_DETECTAR_ESTRUCTURA.format(
-        contenido=contenido_preguntas,
+        contenido=contenido_preguntas if document_inventory is None else 'Contenido íntegro en las líneas de origen al final de estas reglas.',
         nota_maxima=str(nota_maxima),
     ) + visual_context
+    if document_inventory is not None:
+        prompt += document_import_prompt(document_inventory)
+        if len(prompt) > settings.PHOTO_GRADING_CONTEXT_BUDGET_CHARS:
+            raise HTTPException(422, 'El documento y su organización superan el límite de lectura. Divídelo para conservar todo su contenido.')
     try:
         result = await llm.generate_json(DIGITALIZATION_STRUCTURE_TASK, prompt)
     except Exception as exc:
@@ -1139,6 +1161,8 @@ async def detectar_estructura_evaluacion(
                 initial_warnings=fallback_warnings,
                 contenido_visual=contenido_visual,
                 visual_scope_id=visual_scope_id,
+                document_inventory=document_inventory,
+                document_scope_id=document_scope_id,
             )
             logger.info(
                 "Evaluación recuperada localmente: %d preguntas",
@@ -1157,13 +1181,16 @@ async def detectar_estructura_evaluacion(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="El proveedor de IA no devolvió una estructura válida.",
         )
-    result = _apply_locally_verified_answers(result, contenido_preguntas)
+    if document_inventory is None:
+        result = _apply_locally_verified_answers(result, contenido_preguntas)
     normalized = normalize_detected_structure(
         result,
         nota_maxima=nota_maxima,
         initial_warnings=pipeline_warnings,
         contenido_visual=contenido_visual,
         visual_scope_id=visual_scope_id,
+        document_inventory=document_inventory,
+        document_scope_id=document_scope_id,
     )
     logger.info(
         "Evaluación digitalizada: %d preguntas, clave completa=%s, advertencias=%d",

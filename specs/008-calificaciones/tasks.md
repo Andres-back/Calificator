@@ -17,3 +17,7 @@
 - [X] T006 Incorporar el dominio a specs/README.md (FR-008)
 - [X] T032-REF Enlazar recuperación, revisión explicable y protección de la nota implementadas en `specs/032-calificacion-impacto-docente/` (FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-013, FR-018).
 - [x] T033 Referenciar la composición de entrega frontend en specs/129-retroalimentacion-flujo-claro/tasks.md, issue #272; conservar las operaciones académicas existentes y sus guardas (FR-005, FR-006, FR-008).
+
+## Coordinación 130 en curso
+
+Principal, segundo evaluador y confirmador reciben contexto educativo de la revisión de entrega. Los presupuestos ya compilados no añaden una segunda ponderación; notas y decisiones históricas permanecen intactas. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

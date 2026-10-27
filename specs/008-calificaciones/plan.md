@@ -27,3 +27,7 @@ La evolución [032](../032-calificacion-impacto-docente/plan.md) implementa recu
 ## Coordinación con 129
 
 [Plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272: composición frontend común sin modificar cálculo ni publicación. Marco de cabecera/cuerpo/pie; detalle integrado con acciones locales, sin otro pie global sobre las acciones de calificación. Contratos de 107/120/122 intactos; pruebas por identidad y permisos actuales.
+
+## Coordinación 130 en curso
+
+Principal, segundo evaluador y confirmador reciben contexto educativo de la revisión de entrega. Los presupuestos ya compilados no añaden una segunda ponderación; notas y decisiones históricas permanecen intactas. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

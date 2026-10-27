@@ -191,6 +191,7 @@ async def digitalize_from_file(
                 "modalidad": modalidad.value,
                 "hojas": metadata,
                 "_document_source_schema": 113,
+                "_document_structure_schema": 130 if settings.EVALUATION_DOCUMENT_STRUCTURE_ENABLED else None,
                 "_visual_import_schema": 1 if settings.EVALUATION_VISUAL_IMPORT_ENABLED else None,
             },
         )

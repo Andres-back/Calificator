@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, MessageSquareText, RefreshCw } from 'lucide-react';
 import { Button, Modal } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
@@ -16,6 +16,7 @@ import { FeedbackSelectionBar } from './FeedbackSelectionBar';
 import { FeedbackSharePanel } from './FeedbackSharePanel';
 import { FeedbackStudentList, type FeedbackStudentRow } from './FeedbackStudentList';
 import { queryClient } from '@/lib/queryClient';
+import { readFeedbackListPosition, restoreFeedbackListPosition, type FeedbackListPosition } from './feedbackListPosition';
 
 interface WorkspaceProps { evaluationId: string; initialGradeId?: string; initialSelectedIds?: string[]; suggestedArea?: string | null; embedded?: boolean; onDirtyChange?: (dirty: boolean) => void; onClose: () => void; onReview: (gradeId: string) => void }
 
@@ -58,7 +59,8 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   const returnFocus = useRef<HTMLElement | null>(null);
   const returnScope = useRef<HTMLElement | null>(null);
   const returnLabel = useRef('');
-  const listPosition = useRef(0);
+  const listScroller = useRef<HTMLDivElement>(null);
+  const listPosition = useRef<FeedbackListPosition>({ scrollTop: 0 });
   const initialSelection = useRef(initialSelectedIds ?? (initialGradeId ? [initialGradeId] : []));
   const valid = useCallback(() => {
     const actor = useAuth.getState().user;
@@ -120,7 +122,10 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   const visible = rows.filter(row => row.nombre.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es')) && (filter === 'all' || (filter === 'ready' ? row.preview?.elegible : !row.preview?.elegible)));
   const hiddenSelected = selectedRows.filter(row => !visible.includes(row)).length;
   const blocked = busy || reviewDirty;
-  const rememberFocus = (trigger?: HTMLElement) => { returnFocus.current = trigger ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null); returnLabel.current = returnFocus.current?.getAttribute('aria-label') ?? returnFocus.current?.textContent ?? ''; returnScope.current = returnFocus.current?.closest<HTMLElement>('[role="dialog"], section[aria-label="Retroalimentación del estudiante"]') ?? null; };
+  useLayoutEffect(() => {
+    if (listScroller.current) restoreFeedbackListPosition(listScroller.current, listPosition.current);
+  }, [accesses, detail, loading, printEntries, publishing, reviewing, rows, shareIds]);
+  const rememberFocus = (trigger?: HTMLElement) => { if (listScroller.current?.clientHeight) listPosition.current = readFeedbackListPosition(listScroller.current); returnFocus.current = trigger ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null); returnLabel.current = returnFocus.current?.getAttribute('aria-label') ?? returnFocus.current?.textContent ?? ''; returnScope.current = returnFocus.current?.closest<HTMLElement>('[role="dialog"], section[aria-label="Retroalimentación del estudiante"]') ?? null; };
   function restoreFocus() { requestAnimationFrame(() => { const scope = returnScope.current?.isConnected ? returnScope.current : listScope.current; const restored = returnFocus.current?.isConnected ? returnFocus.current : Array.from(scope?.querySelectorAll<HTMLElement>('input, button') ?? []).find(element => (element.getAttribute('aria-label') ?? element.textContent) === returnLabel.current); restored?.focus({ preventScroll: true }); }); }
   function openDetail(id: string, trigger?: HTMLElement) { if (blocked) return; rememberFocus(trigger); setDetail(id); setPublishing(false); }
   function openShare(ids: string[], trigger?: HTMLElement) { if (blocked || !canDeliver) return; rememberFocus(trigger); setShareIds([...ids]); }
@@ -194,7 +199,7 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
               {canDeliver && <><Button variant="link" className="px-2 text-xs" aria-label="Todos con nota del filtro" disabled={busy || !visible.some(row => row.preview?.seleccionable || row.preview?.elegible)} onClick={() => setSelected(current => [...new Set([...current, ...visible.filter(row => row.preview?.seleccionable || row.preview?.elegible).map(row => row.calificacion_id!)])])}>Con nota</Button><Button variant="link" className="px-2 text-xs" aria-label="Listos del filtro" disabled={busy || !visible.some(row => row.preview?.elegible)} onClick={() => setSelected(current => [...new Set([...current, ...visible.filter(row => row.preview?.elegible).map(row => row.calificacion_id!)])])}>Listos</Button><Button variant="link" className="px-2 text-xs" aria-label="Limpiar selección" disabled={busy} onClick={() => setSelected([])}>Limpiar</Button></>}</div>
               <div className="flex flex-wrap items-center gap-1" data-feedback-secondary><span className="text-xs text-muted">Seleccionar: solo el filtro actual</span><Button variant="link" className="ml-auto min-w-11 px-2" disabled={busy} aria-label="Actualizar estudiantes y devoluciones" title="Actualizar" onClick={() => setReload(value => value + 1)}><RefreshCw className="h-4 w-4" aria-hidden="true" /></Button>{canBatchPublish && <Button variant="link" className="px-2 text-xs" aria-label="Revisar y publicar notas" disabled={busy} onClick={event => { rememberFocus(event.currentTarget); setPublishing(true); }}>Revisar notas</Button>}</div>
             </header>
-            <div ref={element => { if (element) element.scrollTop = listPosition.current; }} onScroll={event => { listPosition.current = event.currentTarget.scrollTop; }} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3" data-mobile-scroll data-feedback-list-scroll><FeedbackStudentList rows={visible} accesses={accesses} selected={selected} detailId={detail} canDeliver={canDeliver} busy={busy} onToggle={(id, checked) => setSelected(current => checked ? [...new Set([...current, id])] : current.filter(item => item !== id))} onOpen={openDetail} onShare={(id, trigger) => openShare([id], trigger)} />{!visible.length && <p className="p-3 text-sm text-muted">No hay estudiantes que coincidan con la búsqueda.</p>}</div>
+            <div ref={listScroller} onScroll={event => { if (event.currentTarget.clientHeight) listPosition.current = readFeedbackListPosition(event.currentTarget); }} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3" data-mobile-scroll data-feedback-list-scroll><FeedbackStudentList rows={visible} accesses={accesses} selected={selected} detailId={detail} canDeliver={canDeliver} busy={busy} onToggle={(id, checked) => setSelected(current => checked ? [...new Set([...current, id])] : current.filter(item => item !== id))} onOpen={openDetail} onShare={(id, trigger) => openShare([id], trigger)} />{!visible.length && <p className="p-3 text-sm text-muted">No hay estudiantes que coincidan con la búsqueda.</p>}</div>
           </div>}
           <div className={`${initialGradeId || detail ? 'block' : 'hidden xl:block'} min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain`} data-mobile-scroll>{detailView ?? <div className="grid h-full place-content-center gap-3 p-8 text-center text-muted"><MessageSquareText className="mx-auto h-8 w-8" aria-hidden="true" /><p>Selecciona estudiantes para compartir o imprimir.</p><p className="text-sm">Abre una devolución para leerla o revisarla aquí.</p></div>}</div>
         </div>}

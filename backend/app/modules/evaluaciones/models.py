@@ -97,6 +97,7 @@ class Evaluacion(Base):
     preguntas: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
     respuestas_esperadas: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list)
     configuracion_impresion: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    estructura_documento: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     contenido_version_id: Mapped[PyUUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("evaluacion_contenido_versiones.id", name="fk_evaluaciones_contenido_version", use_alter=True),

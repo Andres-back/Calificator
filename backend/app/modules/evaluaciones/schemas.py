@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.modules.evaluaciones.visual_schemas import StudentVisualContent, VisualManifest
 from app.modules.evaluaciones.print_settings import PrintSettings
+from app.modules.evaluaciones.document_schemas import EvaluationDocument, PublicEvaluationDocument
 
 from app.shared.enums import (
     BlueprintNivelContexto,
@@ -18,6 +19,8 @@ from app.shared.enums import (
 
 
 class EvaluacionCreate(BaseModel):
+    confirmar_puntuacion_secciones: bool = Field(default=False, strict=True)
+    estructura_documento: EvaluationDocument | None = None
     configuracion_impresion: PrintSettings | None = None
     materia_id: UUID
     nombre: str = Field(min_length=2, max_length=220)
@@ -39,6 +42,9 @@ class EvaluacionCreate(BaseModel):
 
 
 class EvaluacionUpdate(BaseModel):
+    confirmar_puntuacion_secciones: bool = Field(default=False, strict=True)
+    estructura_documento: EvaluationDocument | None = None
+    claves_documentales_revisadas: list[UUID] = Field(default_factory=list, max_length=500)
     configuracion_impresion: PrintSettings | None = None
     lectura: str | None = Field(default=None, max_length=60_000)
     claves_visuales_revisadas: list[UUID] = Field(default_factory=list, max_length=500)
@@ -81,6 +87,7 @@ class EvaluacionBlueprintRead(BaseModel):
 
 
 class EvaluacionRead(BaseModel):
+    estructura_documento: PublicEvaluationDocument | EvaluationDocument | None = None
     configuracion_impresion: PrintSettings | None = None
     lectura: str | None = None
     claves_visuales_pendientes: list[UUID] = Field(default_factory=list)

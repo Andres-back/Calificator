@@ -1,5 +1,7 @@
-import type { Evaluacion, EvaluacionModalidad, EvaluationVisualManifest, EvaluationPrintSettings } from '@/types/api';
+import type { Evaluacion, EvaluacionModalidad, EvaluationVisualManifest, EvaluationPrintSettings, EvaluationDocumentStructure } from '@/types/api';
 import { defaultPrintSettings } from '../printSettings';
+import { reconcileDocumentQuestions, validateDocument } from './documentModel';
+import { compileSectionScores } from './sectionScoring';
 
 export const WIZARD_VERSION = 7;
 export const WIZARD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -61,6 +63,8 @@ export interface EditableRubricCriterion extends Record<string, unknown> {
   dba_ids: string[];
 }
 export interface WizardState {
+  estructuraDocumento?: EvaluationDocumentStructure | null;
+  documentKeysReviewed?: string[];
   printSettings?: EvaluationPrintSettings | null;
   lectura?: string;
   visualJobs?: Record<string, string>;
@@ -76,6 +80,7 @@ export interface WizardState {
   descripcion: string;
   modalidad: EvaluacionModalidad;
   notaMaxima: number;
+  sectionScoringConfirmed?: boolean;
   fechaLimiteEntrega: string;
   dbaIds: string[];
   dbaPersonalizadoIds: string[];
@@ -209,6 +214,17 @@ export function validateStep(state: WizardState, step = state.step): string | nu
       .map((question, index) => validateQuestion(question, index))
       .find(Boolean);
     if (firstError) return firstError;
+    if (state.estructuraDocumento) {
+      const documentError = validateDocument(state.estructuraDocumento, state.questions);
+      if (documentError) return documentError;
+      if (state.estructuraDocumento.puntuacion_secciones) {
+        if (!state.estructuraDocumento.puntuacion_secciones.confirmado) return 'Revisa y confirma el reparto de puntos por sección.';
+        try {
+          const compiled = compileSectionScores(state.estructuraDocumento, state.questions, state.notaMaxima);
+          if (compiled.some((question, index) => question.puntaje !== state.questions[index].puntaje)) return 'Los puntos cambiaron. Revisa y confirma de nuevo el reparto.';
+        } catch (issue) { return issue instanceof Error ? issue.message : 'Revisa el reparto de puntos.'; }
+      }
+    }
     if (state.modalidad === 'mixta') {
       const hasOnline = state.questions.some((question) => question.modalidadRespuesta === 'online');
       const hasPhysical = state.questions.some(
@@ -425,7 +441,7 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
     return {
       clientId: `${evaluation.id}-${index}-${Date.now()}`,
       contenidoId: typeof question.contenido_id === 'string' ? question.contenido_id : undefined,
-      numero: index + 1,
+      numero: evaluation.estructura_documento ? sourceNumber : index + 1,
       tipo,
       enunciado: String(question.enunciado ?? ''),
       opciones: options,
@@ -539,6 +555,7 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
     nombreAutomatico: false,
     descripcion: evaluation.descripcion ?? '',
     lectura: evaluation.lectura ?? '',
+    ...(evaluation.estructura_documento ? { estructuraDocumento: structuredClone(evaluation.estructura_documento), documentKeysReviewed: [] } : {}),
     modalidad: evaluation.modalidad ?? 'online',
     notaMaxima: Number(evaluation.nota_maxima),
     fechaLimiteEntrega: toDatetimeLocalValue(evaluation.fecha_limite_entrega),
@@ -581,8 +598,11 @@ export function updateQuestionVisual(state: WizardState, questionId: string, blo
 }
 
 export function reconcileVisualQuestions(state: WizardState, questions: EditableQuestion[], duplicateFrom?: string): Partial<WizardState> {
+  const documentUpdate = state.estructuraDocumento
+    ? reconcileDocumentQuestions(state.estructuraDocumento, state.questions, questions, duplicateFrom) : null;
+  if (documentUpdate) questions = documentUpdate.questions;
   const respuestas = Object.fromEntries(Object.entries(state.printSettings?.respuestas ?? {}).filter(([id]) => questions.some(question => question.contenidoId === id)));
-  if (!state.contenidoVisual) return { questions, ...(state.printSettings ? { printSettings: { ...state.printSettings, respuestas } } : {}) };
+  if (!state.contenidoVisual) return { questions, ...documentUpdate, ...(state.printSettings ? { printSettings: { ...state.printSettings, respuestas } } : {}) };
   const next = questions.map(question => ({ ...question, contenidoId: question.contenidoId || crypto.randomUUID() }));
   const ids = next.map(question => question.contenidoId!);
   const copied = duplicateFrom ? next.find(question => !state.questions.some(previous => previous.contenidoId === question.contenidoId))?.contenidoId : undefined;
@@ -594,7 +614,7 @@ export function reconcileVisualQuestions(state: WizardState, questions: Editable
   const kept = new Set(bloques.map(block => block.id));
   const avisos = state.contenidoVisual.cobertura.avisos.filter(warning => !warning.bloque_id || kept.has(warning.bloque_id))
     .map(warning => ({ ...warning, pregunta_ids: warning.pregunta_ids?.filter(id => ids.includes(id)) }));
-  return { questions: next, contenidoVisual: { ...state.contenidoVisual, pregunta_ids: ids, bloques,
+  return { questions: next, ...documentUpdate, contenidoVisual: { ...state.contenidoVisual, pregunta_ids: ids, bloques,
     recurso_ids: [...new Set(bloques.flatMap(block => block.recurso_id ? [block.recurso_id] : []))],
     cobertura: { ...state.contenidoVisual.cobertura, avisos, estado: avisos.length ? 'requiere_revision' : 'completa' } },
     ...(state.printSettings ? { printSettings: { ...state.printSettings, respuestas,
@@ -698,6 +718,8 @@ export function discardVisualEditDraft(storage: Storage | null, userId: string, 
 /** Comprueba estructura, no completitud: un borrador editable puede tener campos vacíos. */
 function hasDraftShape(state: WizardState): boolean {
   const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === 'string');
+  if (state.estructuraDocumento != null && (state.estructuraDocumento.schema_version !== 1
+    || !Array.isArray(state.questions) || validateDocument(state.estructuraDocumento, state.questions))) return false;
   return ['materiaId', 'nombre', 'descripcion', 'fechaLimiteEntrega', 'referenceText', 'instruccionesAdicionales'].every(key => typeof state[key as keyof WizardState] === 'string')
     && (state.lectura === undefined || typeof state.lectura === 'string' && state.lectura.length <= 60000)
     && (state.printSettings == null || Boolean(state.printSettings && state.printSettings.schema_version === 1
@@ -714,6 +736,7 @@ function hasDraftShape(state: WizardState): boolean {
       && !Array.isArray(state.visualJobs) && Object.values(state.visualJobs).every(value => typeof value === 'string')))
     && (!state.visualKeysPending || strings(state.visualKeysPending))
     && (!state.visualKeysReviewed || strings(state.visualKeysReviewed))
+    && (!state.documentKeysReviewed || strings(state.documentKeysReviewed))
     && strings(state.dbaIds) && strings(state.dbaPersonalizadoIds) && strings(state.rubricCriteria)
     && (!state.generationWarnings || strings(state.generationWarnings))
     && (state.generatedEvaluationId === null || typeof state.generatedEvaluationId === 'string')

@@ -12,7 +12,7 @@ import { cn } from '@/lib/cn';
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { sendMessage } from '@/modules/xali/api';
-import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad, Materia } from '@/types/api';
+import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad, EvaluationDocumentStructure, Materia } from '@/types/api';
 import { extraerReferenciaEvaluacion, generarBorradorEvaluacion, getEvaluacion, updateEvaluacion, type EvaluacionGenerarRequest } from '../api';
 import { EvaluationPreparation } from './EvaluationPreparation';
 import { TYPE_COPY } from './generationWizardOptions';
@@ -23,6 +23,9 @@ import { QuestionVisualEditor } from './QuestionVisualEditor';
 import { QuestionNavigator } from './QuestionNavigator';
 import { EvaluationPrintSettings, QuestionPrintSettings } from './EvaluationPrintSettings';
 import { EvaluationPrintPreparation } from './EvaluationPrintPreparation';
+import { EvaluationDocumentOutline } from './EvaluationDocumentOutline';
+import { SectionScoringEditor } from './SectionScoringEditor';
+import { createQuestionDocument, documentOrder, moveDocumentNode, pendingDocumentReview } from './documentModel';
 import { getVisualCapabilities } from '../visualApi';
 import { PasosGuia } from './PasosGuia';
 import {
@@ -35,7 +38,7 @@ import {
 } from './generationWizardModel';
 
 function QuestionCard({
-  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove, visualEditor,
+  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove, visualEditor, displayLabel,
 }: {
   question: EditableQuestion;
   index: number;
@@ -46,6 +49,7 @@ function QuestionCard({
   onDuplicate: () => void;
   onMove: (direction: -1 | 1) => void;
   visualEditor?: ReactNode;
+  displayLabel?: string;
 }) {
   const confirmAnswer = (respuestaEsperada: string): Partial<EditableQuestion> => ({
     respuestaEsperada,
@@ -70,7 +74,7 @@ function QuestionCard({
       <div className="writing-secondary flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand-100 font-bold text-brand-700">{index + 1}</span>
         <div className="min-w-0 flex-1">
-          <h4 className="font-semibold">Pregunta {index + 1} de {total}</h4>
+          <h4 className="font-semibold">{displayLabel ? `Pregunta ${displayLabel}` : `Pregunta ${index + 1} de ${total}`}</h4>
           <span className="text-sm text-muted">{TYPE_COPY[question.tipo].label}</span>
         </div>
       </div>
@@ -307,8 +311,10 @@ export function GenerationWizard({
   const [criteriaEditing, setCriteriaEditing] = useState<Evaluacion | null>(null);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [closePrompt, setClosePrompt] = useState(false);
+  const [deleteQuestionId, setDeleteQuestionId] = useState<string | null>(null);
   const editorBaseline = useRef<string | null>(null);
-  const activeQuestionIndex = Math.max(0, state.questions.findIndex(question => question.clientId === activeQuestionId));
+  const activeQuestionIndex = state.estructuraDocumento && activeQuestionId === null ? -1
+    : Math.max(0, state.questions.findIndex(question => question.clientId === activeQuestionId));
   const mobile = useMobileFormViewport(open && !criteriaEditing, formRef);
   const generationWarnings = state.generationWarnings ?? [];
   const selectedMateria = availableMaterias.find((materia) => materia.id === state.materiaId);
@@ -339,6 +345,8 @@ export function GenerationWizard({
         generatedUpdatedAt: evaluation.updated_at,
         printSettings: evaluation.configuracion_impresion ?? null,
         contenidoVersionId: evaluation.contenido_version_id ?? null,
+        estructuraDocumento: evaluation.estructura_documento ? structuredClone(evaluation.estructura_documento) : null,
+        documentKeysReviewed: [],
         generationWarnings: evaluation.blueprint?.reglas_feedback?.trazabilidad?.advertencias ?? [],
         generatedCriteria: normalizeRubricCriteria((evaluation.criterios ?? []) as Record<string, unknown>[]),
         questions: evaluationToEditableQuestions(evaluation),
@@ -405,7 +413,7 @@ export function GenerationWizard({
     const key = `${userId}:${initialEvaluation?.id ?? 'new'}:${materiaId}`;
     if (initializedKey.current === key) return;
     initializedKey.current = key;
-    setActiveQuestionId(null); setClosePrompt(false);
+    setActiveQuestionId(initialEvaluation?.estructura_documento ? evaluationToEditableQuestions(initialEvaluation)[0]?.clientId ?? null : null); setClosePrompt(false);
     editorBaseline.current = initialEvaluation ? JSON.stringify(evaluationPayload(evaluationToWizardState(initialEvaluation))) : null;
     savedEvaluation.current = initialEvaluation;
     initialSavedState.current = initialEvaluation ? evaluationToWizardState(initialEvaluation) : null;
@@ -420,6 +428,7 @@ export function GenerationWizard({
     if (initialEvaluation) {
       const restored = loadVisualEditDraft(getWizardStorage(), userId, initialEvaluation.id);
       setState(restored || initialSavedState.current!);
+      setActiveQuestionId((restored || initialSavedState.current!).questions[0]?.clientId ?? null);
       setRestorePrompt(Boolean(restored));
       setCanPersist(!restored);
       return;
@@ -436,7 +445,7 @@ export function GenerationWizard({
   }, [availableMaterias, initialEvaluation, initialMateriaId, open, userId]);
 
   useEffect(() => {
-    if (open && canPersist && state.materiaId && (!initialEvaluation || state.contenidoVisual || state.visualJobs)
+    if (open && canPersist && state.materiaId && (!initialEvaluation || state.contenidoVisual || state.estructuraDocumento || state.visualJobs)
         && !persistWizardDraft(getWizardStorage(), userId, state, Date.now(), initialEvaluation?.id)) setStorageNotice(true);
   }, [canPersist, initialEvaluation, open, state, userId]);
 
@@ -445,7 +454,28 @@ export function GenerationWizard({
   }, [open, state.step]);
 
   function patch(patchValue: Partial<WizardState>) {
-    setState((current) => ({ ...current, ...patchValue }));
+    setState((current) => {
+      let document = patchValue.estructuraDocumento ?? current.estructuraDocumento;
+      const changedWeights = (patchValue.notaMaxima !== undefined && patchValue.notaMaxima !== current.notaMaxima)
+        || (patchValue.questions && patchValue.questions.some(question => current.questions.find(old => old.contenidoId === question.contenidoId)?.puntaje !== question.puntaje));
+      if (document?.puntuacion_secciones && changedWeights && !patchValue.sectionScoringConfirmed) document = pendingDocumentReview(document, true);
+      return { ...current, ...patchValue, ...(document ? { estructuraDocumento: document } : {}) };
+    });
+  }
+
+  function changeDocument(document: EvaluationDocumentStructure, reviewed = false) {
+    const byId = new Map(state.questions.map(question => [question.contenidoId, question]));
+    patch({ estructuraDocumento: document,
+      questions: documentOrder(document).filter(node => node.tipo === 'pregunta').map(node => byId.get(node.pregunta_id!)!),
+      documentKeysReviewed: reviewed ? state.questions.map(question => question.contenidoId!) : [] });
+  }
+
+  function removeQuestion(clientId: string) {
+    const index = state.questions.findIndex(question => question.clientId === clientId);
+    const remaining = state.questions.filter(question => question.clientId !== clientId);
+    const next = reconcileVisualQuestions(state, state.estructuraDocumento ? remaining : renumberQuestions(remaining));
+    setActiveQuestionId(next.questions?.[Math.min(index, (next.questions?.length ?? 1) - 1)]?.clientId ?? null);
+    patch({ ...next, documentKeysReviewed: [] }); setDeleteQuestionId(null);
   }
 
   function selectQuestion(index: number) {
@@ -619,7 +649,7 @@ export function GenerationWizard({
     return {
       nombre: current.nombre.trim(), descripcion: current.descripcion.trim() || undefined,
       ...(current.printSettings !== undefined ? { configuracion_impresion: current.printSettings } : {}),
-      ...(current.lectura !== undefined ? { lectura: current.lectura.trim() || null } : {}),
+      ...(!current.estructuraDocumento && current.lectura !== undefined ? { lectura: current.lectura.trim() || null } : {}),
       modalidad: current.modalidad, nota_maxima: current.notaMaxima,
       fecha_limite_entrega: current.fechaLimiteEntrega ? new Date(current.fechaLimiteEntrega).toISOString() : null,
       dba_ids: current.useDba ? current.dbaIds : [],
@@ -627,6 +657,8 @@ export function GenerationWizard({
       criterios: current.useRubric ? prepareRubricCriteriaForSave(current.generatedCriteria, current.notaMaxima) : current.generatedCriteria,
       ...questionsToUpdatePayload(current.questions),
       ...(current.contenidoVisual ? { contenido_visual: current.contenidoVisual, claves_visuales_revisadas: current.visualKeysReviewed ?? [] } : {}),
+      ...(current.estructuraDocumento ? { estructura_documento: current.estructuraDocumento, claves_documentales_revisadas: current.documentKeysReviewed ?? [] } : {}),
+      ...(current.sectionScoringConfirmed ? { confirmar_puntuacion_secciones: true } : {}),
     };
   }
 
@@ -744,13 +776,25 @@ export function GenerationWizard({
                           <EvaluationPrintSettings value={state.printSettings} onChange={printSettings => patch({ printSettings })} />
                           {state.printSettings && savedEvaluation.current && <EvaluationPrintPreparation evaluation={savedEvaluation.current} settings={state.printSettings}
                             draft={{ nombre: state.nombre.trim(), descripcion: state.descripcion,
-                              ...(state.lectura !== undefined ? { lectura: state.lectura } : {}), preguntas: questionsToUpdatePayload(state.questions).preguntas,
+                              ...(state.estructuraDocumento ? { estructura_documento: state.estructuraDocumento }
+                                : state.lectura !== undefined ? { lectura: state.lectura } : {}), preguntas: questionsToUpdatePayload(state.questions).preguntas,
                               ...(state.contenidoVisual ? { contenido_visual: state.contenidoVisual } : {}) }}
                             onApply={printSettings => patch({ printSettings })} />}
                         </details>
                         <div className="grid min-w-0 gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
                         <QuestionNavigator questions={state.questions} activeIndex={activeQuestionIndex} onSelect={selectQuestion} />
                         <div role="list" aria-label="Preguntas editables" className="min-w-0 space-y-4">
+                          {state.estructuraDocumento ? <><EvaluationDocumentOutline document={state.estructuraDocumento} questions={state.questions}
+                            activeQuestionId={state.questions.find(question => question.clientId === activeQuestionId)?.contenidoId ?? null}
+                            onSelectQuestion={id => setActiveQuestionId(state.questions.find(question => question.contenidoId === id)?.clientId ?? null)}
+                            onChange={visualCapabilities.data?.documento ? document => changeDocument(document) : undefined}
+                            onReviewKeys={visualCapabilities.data?.documento ? document => changeDocument(document, true) : undefined} />
+                            {visualCapabilities.data?.documento && <SectionScoringEditor document={state.estructuraDocumento} questions={state.questions} maximum={state.notaMaxima}
+                              onChange={(document, questions, confirmed) => patch({ estructuraDocumento: document, questions, sectionScoringConfirmed: confirmed, documentKeysReviewed: [] })} />}</>
+                            : visualCapabilities.data?.documento && <Button type="button" variant="outline" onClick={() => {
+                              const next = createQuestionDocument(state.questions, state.lectura); patch({ ...next, documentKeysReviewed: [] });
+                              setActiveQuestionId(next.questions[0]?.clientId ?? null);
+                            }}>Organizar por secciones</Button>}
                           {visualCapabilities.isError && <div role="status" className="rounded-lg border border-border p-3 text-sm"><p>El contenido guardado sigue disponible. No pudimos cargar las opciones para añadir figuras.</p><Button variant="outline" onClick={() => { void visualCapabilities.refetch(); }}>Cargar opciones de figuras</Button></div>}
                           {state.contenidoVisual && state.generatedEvaluationId && <EvaluationSourceReview
                             evaluationId={state.generatedEvaluationId} versionId={state.contenidoVersionId} manifest={state.contenidoVisual}
@@ -763,6 +807,7 @@ export function GenerationWizard({
                               question={question}
                               index={index}
                               total={state.questions.length}
+                              displayLabel={state.estructuraDocumento?.nodos.find(node => node.pregunta_id === question.contenidoId)?.etiqueta_original ?? undefined}
                               evaluationModality={state.modalidad}
                               visualEditor={visualCapabilities.data?.editor && state.generatedEvaluationId ? <div className="min-w-0 space-y-3">
                                 <p className="text-sm font-semibold">Añade una figura, tabla o gráfica a esta pregunta</p>
@@ -788,9 +833,14 @@ export function GenerationWizard({
                                     visualKeysReviewed: checked ? [...new Set([...(current.visualKeysReviewed ?? []), question.contenidoId!])] : (current.visualKeysReviewed ?? []).filter(id => id !== question.contenidoId) })); }} />He comprobado la respuesta correcta con este material.</label>}
                               </div> : undefined}
                               onChange={(questionPatch) => patch({ questions: state.questions.map((current, currentIndex) => currentIndex === index ? { ...current, ...questionPatch } : current) })}
-                              onDelete={() => { const next = renumberQuestions(state.questions.filter((_, currentIndex) => currentIndex !== index)); setActiveQuestionId(next[Math.min(index, next.length - 1)]?.clientId ?? null); patch(reconcileVisualQuestions(state, next)); }}
+                              onDelete={() => state.estructuraDocumento ? setDeleteQuestionId(question.clientId) : removeQuestion(question.clientId)}
                               onDuplicate={() => { const next = duplicateQuestion(state.questions, index); setActiveQuestionId(next[index + 1].clientId); patch(reconcileVisualQuestions(state, next, question.contenidoId)); }}
-                              onMove={(direction) => patch(reconcileVisualQuestions(state, moveQuestion(state.questions, index, direction)))}
+                              onMove={(direction) => {
+                                if (!state.estructuraDocumento) { patch(reconcileVisualQuestions(state, moveQuestion(state.questions, index, direction))); return; }
+                                const node = state.estructuraDocumento.nodos.find(item => item.pregunta_id === question.contenidoId)!;
+                                const siblings = documentOrder(state.estructuraDocumento).filter(item => item.padre_id === node.padre_id);
+                                changeDocument(moveDocumentNode(state.estructuraDocumento, node.id, node.padre_id, siblings.findIndex(item => item.id === node.id) + direction));
+                              }}
                             />
                             <QuestionPrintSettings value={state.printSettings} questionId={question.contenidoId}
                               blocks={(state.contenidoVisual?.bloques ?? []).filter(block => block.pregunta_ids.includes(question.contenidoId ?? ''))}
@@ -799,13 +849,13 @@ export function GenerationWizard({
                           ))}
                         </div>
                         </div>
-                        <details className="rounded-xl border border-border bg-surface p-3" open={Boolean(state.lectura)}>
+                        {!state.estructuraDocumento && <details className="rounded-xl border border-border bg-surface p-3" open={Boolean(state.lectura)}>
                           <summary className="writing-secondary focus-ring min-h-11 cursor-pointer py-2 font-semibold">Lectura o texto de apoyo</summary>
                           <p className="writing-secondary mb-2 text-xs text-muted">Se muestra antes de las preguntas y se conserva al imprimir.</p>
                           <Textarea aria-label="Lectura o texto de apoyo" value={state.lectura ?? ''} maxLength={60000} rows={8}
                             className="min-h-48 text-base leading-7" placeholder="Añade o corrige aquí la lectura de la evaluación."
                             onChange={event => patch({ lectura: event.target.value })} />
-                        </details>
+                        </details>}
                         <details open={gradingOptionsOpen} onToggle={event => setGradingOptionsOpen(event.currentTarget.open)} className="rounded-xl border border-border bg-surface p-3">
                           <summary className="writing-secondary focus-ring min-h-12 cursor-pointer py-2 font-semibold">Cómo se calificará</summary>
                           {state.useRubric && <RubricEditor criteria={state.generatedCriteria} onChange={(generatedCriteria) => patch({ generatedCriteria })} />}
@@ -842,6 +892,9 @@ export function GenerationWizard({
       <ConfirmDialog open={closePrompt} onClose={() => setClosePrompt(false)} onConfirm={() => { setClosePrompt(false); resetDraft(true); }}
         title="¿Salir sin guardar los cambios?" description="Los cambios de esta edición se descartarán. Puedes seguir editando y guardarlos antes de salir."
         confirmLabel="Descartar y salir" cancelLabel="Seguir editando" tone="danger" />
+      <ConfirmDialog open={Boolean(deleteQuestionId)} onClose={() => setDeleteQuestionId(null)} onConfirm={() => removeQuestion(deleteQuestionId!)}
+        title="¿Retirar esta pregunta de la edición?" description="Se retirará de esta versión y de su sección. Las entregas y calificaciones anteriores conservarán la versión que usaron."
+        confirmLabel="Retirar pregunta" tone="danger" />
 
       {criteriaEditing && <EvaluationCriteriaEditor evaluation={criteriaEditing} onClose={() => setCriteriaEditing(null)} onCompleted={(evaluation) => {
         savedEvaluation.current = evaluation;

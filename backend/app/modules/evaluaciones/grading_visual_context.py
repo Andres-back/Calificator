@@ -129,3 +129,22 @@ async def load_grading_context(db, evaluation, delivery, *, expected_reference: 
     ) for item in visuals)
     describe_evaluation_material(agent_visuals, context.blueprint)
     return replace(context, visuals=visuals, agent_visuals=agent_visuals)
+
+
+async def evaluation_with_delivery_document(db, evaluation, delivery):
+    """Scope new document consumers without changing legacy publication identities.
+
+    Access and release policy remain current; educational fields come from the
+    delivery revision. Old publications have no new optional field added.
+    """
+    if getattr(evaluation, 'estructura_documento', None) is None:
+        return evaluation
+    values = {**vars(evaluation), 'estructura_documento': None}
+    if delivery and getattr(delivery, 'contenido_version_id', None):
+        definition = await read_grading_definition(db, evaluation, delivery)
+        frozen = definition.evaluation
+        if getattr(frozen, 'estructura_documento', None) is not None:
+            for key in ('nombre', 'descripcion', 'nota_maxima', 'preguntas', 'criterios',
+                        'metas_profesor', 'estructura_documento', 'contenido_visual'):
+                values[key] = getattr(frozen, key, None)
+    return SimpleNamespace(**values)

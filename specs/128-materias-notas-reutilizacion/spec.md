@@ -95,6 +95,10 @@ Como docente, quiero copiar a otra materia propia una evaluación que ya digital
 - **SC-004**: Una copia de la muestra con lectura y recursos se guarda, reabre y exporta conservando todo el contenido previsto; modificar origen/copia no afecta al otro. Reintentos generan una sola copia y cero llamadas a IA.
 - **SC-005**: Todos los casos de usuario sin permiso o recurso privado se deniegan sin filtrar claves/archivos; las vistas 360/390/1440, ambos temas, conservan acceso a las acciones y mensajes sin desbordamiento.
 
+## Coordinación documental 130
+
+[Spec130](../130-digitalizacion-secciones/spec.md), issue #274, amplía este contrato bajo aprobación registrada. Las copias remapean también nodos y referencias de presupuestos/pesos. Recuperación documental es una intención explícita revisada en la misma materia, con fuente comprobada y revalidada; la copia normal sigue exigiendo otra materia. No copia notas o alumnos. El estado de pruebas y las limitaciones están en su guía de validación; no supone activación en producción.
+
 ## Supuestos
 
 - El usuario aprobó spec/plan, eliminación recuperable y revisión de requisitos el 2026-10-25 mediante «si». Autoriza implementación, no fusión o despliegue.

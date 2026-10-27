@@ -5,6 +5,7 @@ import { AxiosError } from 'axios';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ResolverEvaluacionPage } from './ResolverEvaluacionPage';
+import { documentEvaluation } from '@/test/fixtures/documentEvaluation';
 
 const mocks = vi.hoisted(() => ({
   getEvaluation: vi.fn(),
@@ -119,6 +120,16 @@ beforeEach(() => {
 });
 
 describe('ResolverEvaluacionPage', () => {
+  it('130 retains typed answers for repeated visible labels in a structured pinned attempt', async () => {
+    const structured = { ...documentEvaluation(), id: 'evaluation-1', estado: 'publicada', modalidad: 'online', recepcion_habilitada: true };
+    mocks.getEvaluation.mockResolvedValue(structured);
+    mocks.startAttempt.mockResolvedValue({ entrega_id: 'attempt-document', evaluacion: structured });
+    renderPage();
+    const answer = (await screen.findAllByLabelText('Tu respuesta'))[0];
+    await userEvent.setup().type(answer, 'Necesita agua.');
+    await waitFor(() => expect(screen.getAllByLabelText('Tu respuesta')[0]).toHaveValue('Necesita agua.'));
+    expect(screen.getByText(/1 de 2 respondidas/)).toBeInTheDocument();
+  });
   it('waits for the pinned version before answering and sends its attempt identifier', async () => {
     const current = { ...await mocks.getEvaluation(), contenido_version_id: 'version-b' };
     mocks.getEvaluation.mockResolvedValue(current);

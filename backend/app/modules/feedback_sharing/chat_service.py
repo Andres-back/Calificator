@@ -35,6 +35,8 @@ def build_prompt(payload, message):
     # Segunda lista blanca: no confiar en campos adicionales del snapshot ni
     # enviar referencias ocultas al modelo con la simple orden de no revelarlas.
     safe = {key: payload.get(key) for key in ("evaluacion", "materia", "nota", "nota_maxima", "explicacion", "retroalimentacion")}
+    if isinstance(payload.get('contexto_documental'), str) and payload.get('alcance') != 'summary':
+        safe['contexto_documental'] = payload['contexto_documental']
     answers = []
     for item in payload.get("respuestas", []):
         answer = {key: item.get(key) for key in ("numero", "titulo", "respuesta_estudiante", "puntos_obtenidos", "puntos_maximos", "estado", "explicacion", "orientacion_mejora")}

@@ -12,11 +12,18 @@ from app.modules.users.models import User
 router = APIRouter(tags=['evaluaciones'])
 
 
+@router.get('/evaluaciones/{evaluacion_id}/recuperacion-documental')
+async def document_recovery(evaluacion_id: UUID, fuente_job_id: UUID | None = None,
+    actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from app.modules.evaluaciones.document_recovery import read_recovery
+    return await read_recovery(db, evaluacion_id, actor, fuente_job_id)
+
+
 @router.get('/evaluaciones/{evaluacion_id}/ultima-copia', response_model=CopyRead | None)
-async def latest_copy(evaluacion_id: UUID, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def latest_copy(evaluacion_id: UUID, recuperacion: bool = False, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     require_permission_now(actor, 'evaluations.read')
     require_permission_now(actor, 'evaluations.create')
-    return await copy_service.latest_copy(db, evaluacion_id, actor)
+    return await copy_service.latest_copy(db, evaluacion_id, actor, recovery=recuperacion)
 
 
 @router.post('/evaluaciones/{evaluacion_id}/copiar', response_model=CopyRead, status_code=202)

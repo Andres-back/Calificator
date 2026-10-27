@@ -125,3 +125,7 @@ F1 — partial, HIGH, constitución VII/VIII y T038: el job frontend encadena 26
 ## Phase 11: Corrección de regresiones de CI
 
 - [X] T045 Corregir el cierre de diálogos con movimiento reducido sin depender de fotogramas de salida y sincronizar la activación por teclado con los controles habilitados. Añadir regresión unitaria, repetir los casos WebKit afectados y mantener obligatorias las baterías CI completas, según FR-012/022, SC-008 y T038.
+
+## Coordinación 130 en curso
+
+El inventario documental reutiliza extracción/checkpoints y material visual autorizado. Se generaliza el escritor de versiones para texto sin fabricar un manifiesto visual vacío; cobertura documental y visual siguen verificándose por separado. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

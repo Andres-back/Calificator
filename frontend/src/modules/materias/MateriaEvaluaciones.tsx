@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { EvaluationCopyDialog } from '@/modules/evaluaciones/EvaluationCopyDialog';
+import { EvaluationDocumentRecovery } from '@/modules/evaluaciones/EvaluationDocumentRecovery';
+import { getVisualCapabilities } from '@/modules/evaluaciones/visualApi';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -106,6 +108,9 @@ export function MateriaEvaluaciones() {
   const [contentEditingEval, setContentEditingEval] = useState<Evaluacion | null>(null);
   const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
   const [copyingEval, setCopyingEval] = useState<Evaluacion | null>(null);
+  const [recoveringEval, setRecoveringEval] = useState<Evaluacion | null>(null);
+  const documentCapabilities = useQuery({ queryKey: ['evaluation-visual-capabilities'], queryFn: getVisualCapabilities,
+    enabled: canCopyEvaluation && canUpdateEvaluation, retry: false, staleTime: 30000 });
   const [criteriaEval, setCriteriaEval] = useState<Evaluacion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
@@ -371,10 +376,12 @@ export function MateriaEvaluaciones() {
                   <div className="flex flex-wrap gap-2 border-t border-border py-3 [&_button]:min-h-11">
                     {canCopyEvaluation && <Button size="sm" variant="outline" onClick={() => setCopyingEval(evaluation)}>Usar en otra materia</Button>}
                     {canUpdateEvaluation && <>
-                      <Button size="sm" variant="outline" onClick={() => openEdit(evaluation)}><Pencil className="h-4 w-4" /> Editar datos</Button>
+                      <Button size="sm" variant="outline" onClick={() => { if (evaluation.estructura_documento) { setContentEditingEval(evaluation); setWizardOpen(true); } else openEdit(evaluation); }}><Pencil className="h-4 w-4" /> Editar datos</Button>
                       <Button size="sm" variant="outline" onClick={() => { setContentEditingEval(evaluation); setWizardOpen(true); }}><ClipboardCheck className="h-4 w-4" /> Editar preguntas</Button>
                       <Button size="sm" variant="outline" onClick={() => setCriteriaEval(evaluation)}><ClipboardCheck className="h-4 w-4" /> Criterios y rúbrica</Button>
                     </>}
+                    {canCopyEvaluation && canUpdateEvaluation && documentCapabilities.data?.documento && !evaluation.estructura_documento && evaluation.tipo_origen === 'externa_digitalizada'
+                      && <Button size="sm" variant="outline" onClick={() => setRecoveringEval(evaluation)}>Recuperar secciones</Button>}
                     {canPublishEvaluation && !isDraft && (receptionEnabled
                       ? <Button size="sm" variant="outline" onClick={() => pauseReception.mutate(evaluation.id)} loading={pauseReception.isPending}><Eye className="h-4 w-4" /> Cerrar entregas</Button>
                       : <Button size="sm" variant="outline" onClick={() => activateReception.mutate(evaluation.id)} loading={activateReception.isPending}><PlayCircle className="h-4 w-4" /> Abrir entregas</Button>)}
@@ -406,6 +413,7 @@ export function MateriaEvaluaciones() {
       )}
       {canUpdateEvaluation && criteriaEval && <EvaluationCriteriaEditor evaluation={criteriaEval} onClose={() => setCriteriaEval(null)} onCompleted={() => { setCriteriaEval(null); refresh(); toast.success('Criterios actualizados; las notas anteriores se conservan'); }} />}
       {copyingEval && canCopyEvaluation && <EvaluationCopyDialog key={copyingEval.id + user?.id} evaluation={copyingEval} onClose={() => setCopyingEval(null)} />}
+      {recoveringEval && canCopyEvaluation && canUpdateEvaluation && <EvaluationDocumentRecovery key={recoveringEval.id + user?.id} evaluation={recoveringEval} onClose={() => setRecoveringEval(null)} />}
       {canCreateEvaluation && (
         <DigitalizarEvaluacionModal
           open={digitalizeOpen}

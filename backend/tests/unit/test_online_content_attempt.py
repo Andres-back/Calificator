@@ -72,3 +72,23 @@ async def test_submit_without_an_attempt_rejects_versioned_but_preserves_legacy(
         await attempts.get_online_content_attempt(db, SimpleNamespace(contenido_version_id=uuid4()), uuid4(), None)
     assert error.value.status_code == 409
     db.scalar.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_old_attempt_does_not_inherit_or_validate_new_live_document(monkeypatch):
+    from app.modules.evaluaciones import service, visual_serialization
+    live = SimpleNamespace(id=uuid4(), estructura_documento={'revision': {'confirmado': False}})
+    revision = SimpleNamespace(id=uuid4(), snapshot_json={'modalidad': 'online',
+        'preguntas': [{'numero': 7, 'tipo': 'abierta', 'enunciado': 'Versión anterior'}]})
+    monkeypatch.setattr(attempts, 'get_content_revision', AsyncMock(return_value=revision))
+    def base(value):
+        assert value.estructura_documento is None
+        return {'estado': 'publicada'}
+    monkeypatch.setattr(service, '_student_safe_evaluation', base)
+    fields = AsyncMock(return_value={'contenido_version_id': revision.id})
+    monkeypatch.setattr(visual_serialization, 'visual_read_fields', fields)
+    result = await attempts.student_attempt_evaluation(None, live, SimpleNamespace(contenido_version_id=revision.id))
+    assert result['estructura_documento'] is None
+    assert result['preguntas'][0]['numero'] == 7
+    assert live.estructura_documento is not None
+    fields.assert_awaited_once()

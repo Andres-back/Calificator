@@ -22,9 +22,11 @@ from app.modules.evaluaciones.digitalize_service import (
     detectar_estructura_evaluacion,
     detect_digitalization_mime,
     extract_evaluation_text,
+    _strip_student_answer_annotations,
 )
 from app.modules.evaluaciones.schemas import DigitalizarEvaluacionExternaRequest
 from app.modules.evaluaciones.document_visual_extractor import DocumentRendererUnavailable, EXTRACTOR_VERSION
+from app.modules.evaluaciones.document_import import build_document_inventory
 from app.modules.evaluaciones.visual_import_service import prepare_visual_import, read_visual_import
 from app.modules.materias.service import ensure_can_manage_materia
 from app.modules.jobs import service as jobs_service
@@ -92,7 +94,8 @@ async def _cancel_if_requested(db, job_id: UUID, result: dict) -> bool:
 
 
 async def _digitalize_visual_owned(*, db, user, job_id, materia_id, private_path, nombre,
-                                  descripcion, score, modalidad, ai_config, result, timings_ms, refresh_total):
+                                  descripcion, score, modalidad, ai_config, result, timings_ms, refresh_total,
+                                  visual_mode=True, document_mode=False, filename='evaluacion'):
     """Called after claiming the job. Every durable checkpoint checks the lease."""
     subject = await ensure_can_manage_materia(db, materia_id, user)
     claim_token = result["claim_token"]
@@ -114,7 +117,7 @@ async def _digitalize_visual_owned(*, db, user, job_id, materia_id, private_path
     await persist_result({"progreso": 15, "stage": "reading"})
     content = None
     saved = result.get("_visual_checkpoint")
-    if saved is None:
+    if saved is None and not (not visual_mode and isinstance(result.get('normalized_extraction'), dict)):
         try:
             async with aiofiles.open(private_path, "rb") as source:
                 content = await source.read(20 * 1024 * 1024 + 1)
@@ -122,26 +125,47 @@ async def _digitalize_visual_owned(*, db, user, job_id, materia_id, private_path
             # Never expose a private storage path in the teacher's job error.
             raise ValueError("No encontramos el archivo temporal y todavía no hay un original guardado. Vuelve a subir el documento.") from None
     started = time.monotonic()
-    saved = await prepare_visual_import(db, job_id=job_id, owner_id=subject.profesor_id, materia_id=materia_id,
-        content=content, checkpoint=saved, persist=checkpoint)
-    extracted_text, manifest = await read_visual_import(db, saved, user_id=user.id, ai_config=ai_config, persist=checkpoint)
+    manifest = None
+    extraction_warnings = []
+    if visual_mode:
+        saved = await prepare_visual_import(db, job_id=job_id, owner_id=subject.profesor_id, materia_id=materia_id,
+            content=content, checkpoint=saved, persist=checkpoint)
+        extracted_text, manifest = await read_visual_import(db, saved, user_id=user.id, ai_config=ai_config, persist=checkpoint)
+    else:
+        mime = detect_digitalization_mime(content, filename) if content else ''
+        extracted_text, extraction_warnings, _ = await _extract_once(result=result, content=content or b'',
+            mime=mime, filename=filename, user_id=user.id, ai_config=ai_config)
+        await persist_result({'normalized_extraction': result['normalized_extraction']})
+    if document_mode:
+        inventory = build_document_inventory(_strip_student_answer_annotations(extracted_text))
+        # The retained extraction is the text authority; checkpoint only bounded
+        # positional IDs/hashes, not another mutable copy of each source line.
+        await persist_result({'_document_inventory': [{key: value for key, value in item.items() if key != 'texto'} for item in inventory]})
     timings_ms["extraction"] = int((time.monotonic() - started) * 1000)
     refresh_total()
     await persist_result({"progreso": 50, "stage": "structuring"})
     # Separate from legacy normalized_extraction: cache is bound to full visual
     # context, extractor version and captured configuration, never text alone.
-    structure_key = hashlib.sha256(json.dumps({"extractor": EXTRACTOR_VERSION, "text": extracted_text,
-        "visual": manifest.model_dump(mode="json"), "ai_config": ai_config}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
-    cached = result.get("_visual_structure")
-    if isinstance(cached, dict) and result.get("_visual_structure_key") == structure_key:
+    key_payload = {'extractor': EXTRACTOR_VERSION, 'text': extracted_text,
+        'visual': manifest.model_dump(mode='json') if manifest else None, 'ai_config': ai_config}
+    if document_mode:
+        key_payload['document_schema'] = 130
+    structure_key = hashlib.sha256(json.dumps(key_payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    cache_name = '_visual_structure' if visual_mode else '_document_structure'
+    cached = result.get(cache_name)
+    if isinstance(cached, dict) and result.get(cache_name + '_key') == structure_key:
         structure = cached
     else:
         started = time.monotonic()
+        extra = {'document_scope_id': job_id} if document_mode else {}
+        if not visual_mode:
+            extra['initial_warnings'] = extraction_warnings
         structure = await detectar_estructura_evaluacion(user_id=user.id, contenido_texto=extracted_text,
-            nota_maxima=score, ai_config=ai_config, contenido_visual=manifest, visual_scope_id=job_id)
+            nota_maxima=score, ai_config=ai_config, contenido_visual=manifest,
+            visual_scope_id=job_id if visual_mode else None, **extra)
         timings_ms["structure"] = int((time.monotonic() - started) * 1000)
         refresh_total()
-        await persist_result({"_visual_structure": structure, "_visual_structure_key": structure_key})
+        await persist_result({cache_name: structure, cache_name + '_key': structure_key})
     await persist_result({"progreso": 80, "stage": "saving"})
     payload = DigitalizarEvaluacionExternaRequest(materia_id=materia_id, nombre=nombre, descripcion=descripcion,
         nota_maxima=score, modalidad=EvaluacionModalidad(modalidad), criterios=structure.get("criterios", []), estructura_detectada=structure)
@@ -153,21 +177,23 @@ async def _digitalize_visual_owned(*, db, user, job_id, materia_id, private_path
     evaluation = await evaluaciones_service.digitalize_external_evaluation(db, payload, user, commit=False)
     timings_ms["persistence"] = int((time.monotonic() - started) * 1000)
     refresh_total()
-    needs_review = manifest.cobertura.estado != "completa" or not structure.get("clave_completa")
+    document_review = structure.get('cobertura_documental') == 'requiere_revision'
+    needs_review = (manifest is not None and manifest.cobertura.estado != 'completa') or not structure.get('clave_completa') or document_review
     state = JobEstado.REQUIRES_REVIEW.value if needs_review else JobEstado.SUCCESS.value
     output = {**result, "status": state, "evaluacion_id": str(evaluation.id), "materia_id": str(evaluation.materia_id),
         "contenido_version_id": str(evaluation.contenido_version_id), "nombre": evaluation.nombre,
         "preguntas_count": len(structure.get("preguntas", [])), "respuestas_count": len(structure.get("respuestas_esperadas", [])),
         "clave_completa": bool(structure.get("clave_completa")), "claves_pendientes": structure.get("claves_pendientes", []),
-        "advertencias": structure.get("advertencias", []), "cobertura_visual": manifest.cobertura.estado,
+        "advertencias": structure.get("advertencias", []), "cobertura_visual": manifest.cobertura.estado if manifest else None,
+        **({'cobertura_documental': structure.get('cobertura_documental')} if document_mode else {}),
         "progreso": 100, "stage": "review_required" if needs_review else "completed",
-        "terminal_reason": "visual_review_required" if needs_review else "success", "timings_ms": timings_ms}
+        "terminal_reason": 'document_review_required' if document_review else "visual_review_required" if needs_review else "success", "timings_ms": timings_ms}
     finished = await jobs_service.finish_job(db, job_id, estado=state, resultado_json=output)
     if not finished:
         raise jobs_service.JobOwnershipLost("El trabajo cambió antes de confirmar el borrador")
     await db.commit()
     result.update(output)
-    result["_visual_saved"] = True
+    result['_visual_saved' if visual_mode else '_document_saved'] = True
     return result
 
 
@@ -216,12 +242,17 @@ async def _digitalize_async(
         job_input = await jobs_service.get_job_input(db, job_id)
         persisted_result = await jobs_service.get_job_result(db, job_id)
         visual_mode = job_input.get("_visual_import_schema") == 1
+        document_mode = job_input.get('_document_structure_schema') == 130
         if visual_mode:
             for key in ("_visual_checkpoint", "_visual_structure", "_visual_structure_key"):
                 if key in persisted_result:
                     result[key] = persisted_result[key]
         elif isinstance(persisted_result.get("normalized_extraction"), dict):
             result["normalized_extraction"] = persisted_result["normalized_extraction"]
+        if document_mode:
+            for key in ('_document_inventory', '_document_structure', '_document_structure_key'):
+                if key in persisted_result:
+                    result[key] = persisted_result[key]
         stored_snapshot = job_input.get("_ai_config")
         job_ai_config = stored_snapshot if isinstance(stored_snapshot, dict) else None
         try:
@@ -244,9 +275,9 @@ async def _digitalize_async(
                 JobEstado.REQUIRES_REVIEW.value,
                 JobEstado.FAILED_PERMANENT.value,
             }:
-                if visual_mode and persisted_result.get("evaluacion_id"):
+                if (visual_mode or document_mode) and persisted_result.get("evaluacion_id"):
                     result.update(persisted_result)
-                    result["_visual_saved"] = True
+                    result['_visual_saved' if visual_mode else '_document_saved'] = True
                     return {key: value for key, value in result.items() if not key.startswith("_") and key != "claim_token"}
                 return {**result, "status": state}
 
@@ -267,11 +298,14 @@ async def _digitalize_async(
                 raise ValueError(
                     "El profesor que inició la digitalización ya no existe"
                 )
-            if visual_mode:
-                result["strategy"] = {"visual_import_schema": 1, "text_structuring": True}
+            if visual_mode or document_mode:
+                result['strategy'] = {'text_structuring': True,
+                    **({'visual_import_schema': 1} if visual_mode else {}),
+                    **({'document_structure_schema': 130} if document_mode else {})}
                 await _digitalize_visual_owned(db=db, user=user, job_id=job_id, materia_id=materia_id,
                     private_path=private_path, nombre=nombre, descripcion=descripcion, score=Decimal(nota_maxima),
-                    modalidad=modalidad, ai_config=job_ai_config, result=result, timings_ms=timings_ms, refresh_total=refresh_total)
+                    modalidad=modalidad, ai_config=job_ai_config, result=result, timings_ms=timings_ms, refresh_total=refresh_total,
+                    visual_mode=visual_mode, document_mode=document_mode, filename=filename)
                 return {key: value for key, value in result.items() if not key.startswith("_") and key != "claim_token"}
 
             cached_extraction = result.get("normalized_extraction")

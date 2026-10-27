@@ -1,9 +1,18 @@
 import { api } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
-export type EvaluationCopyRequest = { materia_destino_id: string; request_key: string; expected_updated_at: string; expected_content_version_id: string | null; nombre?: string };
+export type RecoveryDocumentRequest = { source_job_id: string; source_fingerprint: string; documento: import('@/types/api').EvaluationDocumentStructure };
+export type DocumentRecovery = { disponible: false; fuentes: { id: string; fecha: string }[]; mensaje: string } | {
+  disponible: true; fuentes: []; source_job_id: string; source_fingerprint: string; texto: string;
+  documento: import('@/types/api').EvaluationDocumentStructure; preguntas: Record<string, unknown>[];
+  original_disponible: boolean; mensaje: string; expected_updated_at: string; expected_content_version_id: string | null;
+};
+export async function getDocumentRecovery(id: string, sourceJob?: string): Promise<DocumentRecovery> {
+  return (await api.get<DocumentRecovery>(`/evaluaciones/${id}/recuperacion-documental`, { params: sourceJob ? { fuente_job_id: sourceJob } : {} })).data;
+}
+export type EvaluationCopyRequest = { materia_destino_id: string; request_key: string; expected_updated_at: string; expected_content_version_id: string | null; nombre?: string; recuperacion_documental?: RecoveryDocumentRequest | null };
 export type EvaluationCopyStatus = { job_id: string; estado: string; progreso: number; materia_destino_id: string; evaluacion_id: string | null; error: string | null; solicitud?: EvaluationCopyRequest | null };
-export async function getLatestEvaluationCopy(id: string): Promise<EvaluationCopyStatus | null> {
-  const { data } = await api.get<EvaluationCopyStatus | null>(`/evaluaciones/${id}/ultima-copia`);
+export async function getLatestEvaluationCopy(id: string, recovery = false): Promise<EvaluationCopyStatus | null> {
+  const { data } = await api.get<EvaluationCopyStatus | null>(`/evaluaciones/${id}/ultima-copia`, recovery ? { params: { recuperacion: true } } : {});
   return data;
 }
 export async function requestEvaluationCopy(id: string, request: EvaluationCopyRequest): Promise<EvaluationCopyStatus> {
@@ -17,6 +26,8 @@ export async function getEvaluationCopy(id: string): Promise<EvaluationCopyStatu
 import type { EvaluationVisualManifest, DBARead, EntregaOnlineCreate, EntregaRead, Evaluacion, EvaluacionModalidad, GradeBreakdownData, IncidenciaRead, SolicitudRevisionMotivo, StudentActivity } from '@/types/api';
 
 export interface EvaluacionCreate {
+  confirmar_puntuacion_secciones?: boolean;
+  estructura_documento?: import('@/types/api').EvaluationDocumentStructure | null;
   configuracion_impresion?: import('@/types/api').EvaluationPrintSettings | null;
   materia_id: string;
   nombre: string;
@@ -61,6 +72,7 @@ export type EvaluacionUpdate = Partial<Omit<EvaluacionCreate, 'materia_id' | 'ti
   lectura?: string | null;
   expected_updated_at?: string; expected_content_version_id?: string | null;
   claves_visuales_revisadas?: string[];
+  claves_documentales_revisadas?: string[];
 };
 
 export interface ListDBAParams {

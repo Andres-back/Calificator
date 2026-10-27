@@ -76,6 +76,8 @@ async def load_source(db, grade_id: UUID, *, lock: bool = False, prepare_only: b
     delivery = await db.get(Entrega, grade.entrega_id, populate_existing=True) if grade.entrega_id else None
     if delivery and (delivery.estudiante_id != grade.estudiante_id or delivery.evaluacion_id != grade.evaluacion_id or delivery.materia_id != grade.materia_id):
         raise HTTPException(409, "La evidencia no corresponde a este resultado.")
+    from app.modules.evaluaciones.grading_visual_context import evaluation_with_delivery_document
+    evaluation = await evaluation_with_delivery_document(db, evaluation, delivery)
     evidence_identity = {"archivo": delivery.archivo_url, "metadata": delivery.visual_text_json} if delivery else None
     fingerprint = review_source_fingerprint(grade, evaluation, student.nombre, subject.nombre, breakdown, evidence_identity=evidence_identity)
     source = Source(grade, evaluation, subject, student, breakdown, delivery, None, evidence_identity, fingerprint)

@@ -23,3 +23,7 @@
 ## Evolución 097
 
 - [X] T008 Documentar presentación de escritura móvil opt-in y conservación de contratos con [tareas 097](../097-escritura-docente-movil/tasks.md), issue #204 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008).
+
+## Coordinación 130 en curso
+
+Documento editorial opcional JSONB, versiones textuales, revisión, editor y presupuestos compilados a máximos canónicos. El dominio005 mantiene la propiedad; la activación nueva queda cerrada por defecto. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

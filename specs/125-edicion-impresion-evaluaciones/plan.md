@@ -57,3 +57,7 @@ Revisión de diseño posterior: no hay excepción constitucional propuesta; las 
 - **Blanco y negro no equivale a transparencia**: el primero es una presentación derivada; la segunda requiere alpha real. Las imágenes originales y sus hashes no cambian. Si el color contiene información académica, pedir confirmación o conservarlo con advertencia.
 - **Sin gasto escondido**: reutilizar320 motivos existentes. Alinear el prompt de nueva ilustración con una figura, no una hoja completa; verificar documentación oficial/capacidades del destino antes de programar parámetros. Si no soporta transparencia, explicar la limitación y ofrecer biblioteca/subida; no cambiar silenciosamente de proveedor ni hacer llamadas adicionales.
 - **Sin editor libre**: se mantienen bloques y tamaños/alineación acotados; arrastrar capas o envolver texto alrededor de siluetas queda fuera. La nueva disposición se puede probar independientemente de Spec124.
+
+## Coordinación 130 en curso
+
+Editor, vista estudiante y exportadores recorren el mismo documento validado, sin modificar las preferencias de compacta/media/amplia ni las soluciones privadas. El render PDF real continúa en herramientas/pdf_render.py; Word usa el exportador existente. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

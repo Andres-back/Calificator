@@ -188,6 +188,10 @@ Precisión de entrega aprobada el 2026-10-23, issue #255 y [Spec120](../120-retr
 - **SC-009**: Una muestra de 30 estudiantes, con mensajes breves y otros de hasta 1500 caracteres, se previsualiza e imprime en Carta y A4 con el 100 % del texto conservado, identificación clara y recortes sin datos ajenos; cada continuación se identifica y la hoja completa no se ofrece para consulta familiar colectiva.
 - **SC-010**: En pruebas con tiempo controlado, las primeras cinco preguntas nuevas válidas se aceptan y la sexta se rechaza sin llamada al modelo hasta que salga una pregunta de la ventana móvil de 600 segundos. El 100 % de pruebas de concurrencia, reintentos, varios dispositivos, renovación/reactivación y apellidos coincidentes conserva el cupo por estudiante/evaluación sin cruces ni duplicados. El tiempo de espera mostrado coincide con la liberación real; lectura permitida durante la espera y bloqueo tras vencimiento/desactivación se comprueban por separado.
 
+## Coordinación documental 130
+
+[Spec130](../130-digitalizacion-secciones/spec.md), issue #274, amplía este contrato bajo aprobación registrada. Las devoluciones nuevas pueden incluir contexto educativo de la versión de entrega. Solo resumen mantiene su alcance limitado. Publicaciones antiguas sin el campo opcional mantienen payload y fingerprint; no cambia vigencia ni cuotas. El estado de pruebas y las limitaciones están en su guía de validación; no supone activación en producción.
+
 ## Supuestos
 
 - El teléfono necesita conexión a Internet para abrir el resultado y preguntar; no se instala una aplicación ni se exige computador. No se promete un tutor sin conexión.

@@ -99,3 +99,7 @@ No se omiten partes del alcance aprobado. Esta secuencia no autoriza activar una
 - [quickstart.md](./quickstart.md): guía de comprobación sin datos reales.
 
 La implementación sigue las aprobaciones y las fases de Checklist, Tasks y Analyze. Los checkpoints de pruebas y construcciones ejecutadas se registran en quickstart; los recorridos todavía pendientes no se dan por validados.
+
+## Coordinación 130 en curso
+
+El inventario documental reutiliza extracción/checkpoints y material visual autorizado. Se generaliza el escritor de versiones para texto sin fabricar un manifiesto visual vacío; cobertura documental y visual siguen verificándose por separado. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.

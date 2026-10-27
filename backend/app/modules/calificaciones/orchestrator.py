@@ -1242,7 +1242,8 @@ async def orchestrate_grading(
             return await comparator_agent(grading_a, grading_b,
                 umbral=float(settings.PHOTO_GRADING_ARBITRATION_SCORE_DELTA),
                 model=comparator_model, force_arbitration=arbiter_invoked,
-                client=recheck_client)
+                client=recheck_client,
+                **({'ctx': ctx_grading} if ctx_grading.blueprint.get('contexto_documental') else {}))
 
         if arbiter_invoked:
             final = await progress.run("targeted_recheck:consolidation", compare,

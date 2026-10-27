@@ -220,7 +220,31 @@ export interface EvaluationPrintSettings {
   materiales: Record<string, { ancho_porcentaje: number; disposicion: 'apilada' | 'lateral';
     alineacion: 'inicio' | 'centro' | 'fin'; convertir_color_confirmado: boolean }>;
 }
+export interface EvaluationDocumentNode {
+  id: string; padre_id: string | null; orden: number;
+  tipo: 'seccion' | 'texto' | 'pregunta' | 'material';
+  titulo?: string | null; etiqueta_original?: string | null;
+  proposito?: 'instruccion' | 'lectura' | 'actividad' | 'recuadro' | null;
+  texto?: string | null; pregunta_id?: string | null; bloque_id?: string | null;
+  fuente_ids?: string[];
+}
+export interface EvaluationDocumentStructure {
+  schema_version: 1;
+  nodos: EvaluationDocumentNode[];
+  puntuacion_secciones?: {
+    modo: 'por_seccion'; presupuestos: Record<string, string>;
+    pesos_base: Record<string, string>; confirmado: boolean;
+    ajustes?: Record<string, string>;
+  } | null;
+  revision?: {
+    detectados: string[]; conservados: string[];
+    exclusiones?: { elemento_id: string; motivo: string; confirmado: boolean }[];
+    avisos: { elemento_id?: string | null; nodo_id?: string | null; mensaje: string }[];
+    estado: 'completa' | 'requiere_revision'; confirmado: boolean;
+  };
+}
 export interface Evaluacion {
+  estructura_documento?: EvaluationDocumentStructure | null;
   configuracion_impresion?: EvaluationPrintSettings | null;
   lectura?: string | null;
   claves_visuales_pendientes?: string[];

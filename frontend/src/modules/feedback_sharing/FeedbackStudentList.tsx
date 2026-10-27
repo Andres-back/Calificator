@@ -14,7 +14,7 @@ export function FeedbackStudentList({ rows, accesses, selected, detailId, canDel
     const id = row.calificacion_id;
     const score = row.preview?.resultado ?? row.preview?.borrador_docente;
     const hasLink = accesses.some(access => access.calificacion_id === id && access.estado === 'active' && access.copy_available !== false);
-    return <li key={row.estudiante_id} className={`min-w-0 rounded-xl border bg-surface p-3 ${id && id === detailId ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
+    return <li key={row.estudiante_id} data-feedback-student-id={row.estudiante_id} className={`min-w-0 rounded-xl border bg-surface p-3 ${id && id === detailId ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
       <div className="flex items-start gap-2">
         {canDeliver && <label className="flex min-h-11 min-w-11 shrink-0 items-center justify-center"><input type="checkbox" className="h-5 w-5" aria-label={'Seleccionar ' + row.nombre} checked={selected.includes(id ?? '')} disabled={busy || !id || !(row.preview?.seleccionable || row.preview?.elegible)} onChange={event => { if (id) onToggle(id, event.target.checked); }} /></label>}
         <div className="min-w-0 flex-1"><p className="break-words font-semibold leading-6">{row.nombre}</p><p className="mt-1 text-sm text-muted">{row.preview?.elegible ? 'Lista para entregar' : row.preview?.motivo ?? 'Sin calificación todavía.'}</p></div>

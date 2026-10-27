@@ -1,9 +1,10 @@
 import { api } from '@/lib/api';
-import type { Evaluacion, EvaluationPrintSettings, EvaluationVisualManifest } from '@/types/api';
+import type { Evaluacion, EvaluationDocumentStructure, EvaluationPrintSettings, EvaluationVisualManifest } from '@/types/api';
 
 export interface PrintDraft {
   nombre?: string; descripcion?: string; lectura?: string | null;
   preguntas?: Record<string, unknown>[]; contenido_visual?: EvaluationVisualManifest;
+  estructura_documento?: EvaluationDocumentStructure;
 }
 export interface PrintJob {
   estado: string; error?: string;

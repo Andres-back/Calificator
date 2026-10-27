@@ -11,6 +11,7 @@ from fastapi import HTTPException
 
 from app.modules.calificaciones.breakdown_service import answers_released, serialize_breakdown
 from app.modules.feedback_sharing.quality_policy import ensure_feedback_coherence
+from app.modules.evaluaciones.document_structure import document_context
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,8 @@ def review_source_fingerprint(grade, evaluation, student_name, subject_name, bre
             'id', 'version', 'cobertura_estado', 'requiere_revision', 'nota_final', 'bloqueos_json',
         )} if breakdown else None,
         'components': components,
+        **({'contexto_documental': document_context(evaluation)}
+           if getattr(evaluation, 'estructura_documento', None) is not None else {}),
     })
 
 
@@ -127,6 +130,8 @@ def build_projection(grade, evaluation, student_name: str, subject_name: str, br
         "explicacion": "Nota revisada por tu docente. Consulta el detalle de las respuestas." if breakdown else "Nota revisada por tu docente. No hay explicación por pregunta registrada para este resultado.",
         "respuestas": json.loads(json.dumps(answers, default=str)),
         "claves_liberadas": released,
+        **({'contexto_documental': document_context(evaluation)}
+           if getattr(evaluation, 'estructura_documento', None) is not None else {}),
     }
     fingerprint = digest({
         "payload": payload, "grade": grade.id, "state": grade.estado,

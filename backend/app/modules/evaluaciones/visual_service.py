@@ -180,6 +180,8 @@ def content_hash(snapshot: dict) -> str:
 def _snapshot(evaluation: Evaluacion) -> dict:
     blueprint = evaluation.blueprint
     return deepcopy({
+        **({'estructura_documento': evaluation.estructura_documento}
+           if getattr(evaluation, 'estructura_documento', None) is not None else {}),
         "nombre": evaluation.nombre, "descripcion": evaluation.descripcion,
         "nota_maxima": str(evaluation.nota_maxima), "modalidad": evaluation.modalidad,
         "tipo_origen": evaluation.tipo_origen, "preguntas": evaluation.preguntas,
@@ -198,12 +200,13 @@ def _snapshot(evaluation: Evaluacion) -> dict:
 class ContentEdit:
     evaluation: Evaluacion
     previous: EvaluacionContenidoVersion | None
-    manifest: VisualManifest
+    manifest: VisualManifest | None = None
 
 
 async def prepare_content_edit(
     db: AsyncSession, evaluation_id: UUID, *, expected_version_id: UUID | None,
     expected_updated_at: datetime | None, manifest: VisualManifest | None = None,
+    document=None,
 ) -> ContentEdit:
     """Run before mutating any evaluation fields, under its transaction lock."""
     evaluation = await db.scalar(select(Evaluacion).where(
@@ -217,6 +220,10 @@ async def prepare_content_edit(
 
     if expected_updated_at is None or evaluation.contenido_version_id != expected_version_id or utc_naive(evaluation.updated_at) != utc_naive(expected_updated_at):
         raise HTTPException(409, "La evaluación cambió. Conservamos tu edición; vuelve a abrir la versión actual antes de guardar.")
+    if document is not None and evaluation.contenido_version_id is None:
+        from app.modules.calificaciones.models import Entrega
+        if await db.scalar(select(Entrega.id).where(Entrega.evaluacion_id == evaluation.id).limit(1)) is not None:
+            raise HTTPException(409, 'Esta evaluación ya tiene entregas guardadas. Recupera el documento en una copia para conservar su historial.')
     legacy_delivery = await db.scalar(text("""
         SELECT EXISTS (SELECT 1 FROM entregas WHERE evaluacion_id=CAST(:evaluation AS uuid)
             AND contenido_version_id IS NULL AND estado IN ('en_progreso','recibida','procesando'))
@@ -234,9 +241,9 @@ async def prepare_content_edit(
     previous = None
     if evaluation.contenido_version_id is not None:
         previous = await get_content_revision(db, evaluation.id, evaluation.contenido_version_id)
-        if manifest is None:
-            manifest = VisualManifest.model_validate(previous.snapshot_json["contenido_visual"])
-    if manifest is None:
+        if manifest is None and previous.snapshot_json.get('contenido_visual') is not None:
+            manifest = VisualManifest.model_validate(previous.snapshot_json['contenido_visual'])
+    if manifest is None and document is None and getattr(evaluation, 'estructura_documento', None) is None:
         raise HTTPException(422, "Indica el contenido visual que quieres guardar.")
     if previous is None:
         snapshot = _snapshot(evaluation)
@@ -244,7 +251,7 @@ async def prepare_content_edit(
         snapshot["claves_pendientes_revision"] = []
         previous = EvaluacionContenidoVersion(
             evaluacion_id=evaluation.id, numero_version=1, autor_id=evaluation.profesor_id,
-            content_hash=content_hash(snapshot), motivo="Estado observado antes de la primera edición visual",
+            content_hash=content_hash(snapshot), motivo="Estado observado antes de la primera edición visual" if manifest is not None else "Estado observado antes de la primera edición documental",
             origen="estado_observado", snapshot_json=snapshot, legacy_baseline=True,
         )
         db.add(previous)
@@ -279,10 +286,21 @@ async def save_content_revision(db: AsyncSession, edit: ContentEdit, *, reviewed
         question_ids = [UUID(question["contenido_id"]) for question in evaluation.preguntas]
     except (KeyError, ValueError, TypeError) as exc:
         raise HTTPException(422, "Cada pregunta necesita su identificador de contenido antes de guardar imágenes.") from exc
-    if len(set(question_ids)) != len(question_ids) or set(question_ids) != set(manifest.pregunta_ids):
+    if len(set(question_ids)) != len(question_ids) or (manifest is not None and set(question_ids) != set(manifest.pregunta_ids)):
         raise HTTPException(422, "Revisa qué material corresponde a cada pregunta antes de guardar.")
-    resource_ids = set(manifest.recurso_ids)
-    if manifest.original_recurso_id:
+    document = getattr(evaluation, 'estructura_documento', None)
+    if document is not None:
+        from app.modules.evaluaciones.document_schemas import EvaluationDocument
+        from app.modules.evaluaciones.document_structure import validate_document_scope
+        try:
+            validate_document_scope(EvaluationDocument.model_validate(document), evaluation.preguntas,
+                material_ids=[block.id for block in manifest.bloques] if manifest else [])
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+    elif manifest is None:
+        raise HTTPException(422, 'Indica el documento o material que quieres guardar.')
+    resource_ids = set(manifest.recurso_ids) if manifest else set()
+    if manifest is not None and manifest.original_recurso_id:
         resource_ids.add(manifest.original_recurso_id)
     resources = list(await db.scalars(select(EvaluacionRecurso).where(
         EvaluacionRecurso.id.in_(sorted(resource_ids)),
@@ -302,12 +320,14 @@ async def save_content_revision(db: AsyncSession, edit: ContentEdit, *, reviewed
         if published:
             resource.seguridad_contenido = "publicable_confirmado"
     snapshot = _snapshot(evaluation)
-    manifest_json = manifest.model_dump(mode="json")
+    manifest_json = manifest.model_dump(mode="json") if manifest else None
     snapshot["contenido_visual"] = manifest_json
     previous_snapshot = previous.snapshot_json if previous is not None else {}
     old_visuals = _question_visuals(previous_snapshot.get("contenido_visual"))
     new_visuals = _question_visuals(manifest_json)
     affected = {question for question in set(old_visuals) | set(new_visuals) if old_visuals.get(question) != new_visuals.get(question)}
+    if previous is not None and previous_snapshot.get('estructura_documento') != document:
+        affected.update(str(value) for value in question_ids)
     pending = set(previous_snapshot.get("claves_pendientes_revision", [])) | affected
     if previous is None:
         pending_numbers = set((snapshot.get("blueprint") or {}).get("reglas_feedback", {}).get("claves_pendientes", []))
@@ -333,8 +353,9 @@ async def save_content_revision(db: AsyncSession, edit: ContentEdit, *, reviewed
     revision = EvaluacionContenidoVersion(
         evaluacion_id=evaluation.id, numero_version=previous.numero_version + 1 if previous is not None else 1, autor_id=evaluation.profesor_id,
         content_hash=content_hash(snapshot), previous_version_id=previous.id if previous is not None else None,
-        source_resource_id=manifest.original_recurso_id, motivo="Edición docente de contenido" if previous is not None else "Contenido inicial conservado",
-        origen="edicion" if previous is not None else "importado", snapshot_json=snapshot, coverage_json=manifest.cobertura.model_dump(mode="json"),
+        source_resource_id=manifest.original_recurso_id if manifest else None, motivo="Edición docente de contenido" if previous is not None else "Contenido inicial conservado",
+        origen="edicion" if previous is not None else "importado", snapshot_json=snapshot,
+        coverage_json=manifest.cobertura.model_dump(mode="json") if manifest else {'estado': 'completa'},
         recurso_ids=[str(resource.id) for resource in resources],
     )
     db.add(revision)

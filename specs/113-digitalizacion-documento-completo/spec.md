@@ -83,6 +83,10 @@ La docente añade varias fotos sin preparar un PDF externo. Antes de enviar pued
 - No se añaden llamadas de generación de imágenes, proveedores ni modelos nuevos. Figuras existentes siguen el mecanismo visual actual.
 - La consolidación de fotos conserva una copia normalizada y ordenada; no se describe como archivo byte a byte idéntico a cada foto original.
 
+## Coordinación documental 130
+
+[Spec130](../130-digitalizacion-secciones/spec.md), issue #274, amplía este contrato bajo aprobación registrada. El inventario del texto reconocido conserva títulos, lecturas y actividades, no solo preguntas. Omisiones quedan como texto pendiente de revisión. No agrega llamadas IA ni sustituye el contrato de conservación del original. El estado de pruebas y las limitaciones están en su guía de validación; no supone activación en producción.
+
 ## Evolución 128: conservar lectura al reutilizar
 
 [128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, copia la lectura guardada en blueprint.reglas_feedback junto con preguntas, recursos y original privado verificable. El destino es borrador independiente de otra materia del mismo docente; no extrae de nuevo el documento ni hereda respuestas de estudiantes. Se verifica reapertura, original multipágina y exportación PDF/Word con datos sintéticos.

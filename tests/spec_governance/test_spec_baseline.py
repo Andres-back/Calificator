@@ -124,6 +124,7 @@ ALL_SPECS = {
     "127-camara-nativa-movil",
     "128-materias-notas-reutilizacion",
     "129-retroalimentacion-flujo-claro",
+    "130-digitalizacion-secciones",
 }
 OWNED_SPECS = {
     name

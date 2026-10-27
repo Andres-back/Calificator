@@ -82,6 +82,10 @@ La evolución [101 — digitalización y edición visual completa](../101-digita
 
 [097-escritura-docente-movil](../097-escritura-docente-movil/spec.md), issue #204, reduce la cabecera al escribir, evita enfoque textual automático en celular y adapta únicamente los formularios IA/manual al espacio visible. Listo termina la edición local sin generar ni guardar; preguntas/respuestas manuales usan áreas de texto y los ajustes siguen disponibles en Personalizar. Conserva datos, borradores, permisos y reglas académicas; las pruebas de viewport sintético no acreditan un teclado físico.
 
+## Evolución 130: documento organizado
+
+[130-digitalizacion-secciones](../130-digitalizacion-secciones/spec.md), issue #274, extiende este contrato con `estructura_documento` opcional y versiones textuales sin manifiestos visuales ficticios. Secciones y textos referencian preguntas por identidad; el reparto optativo se compila a máximos canónicos. Admisión desactivada por defecto; no reescribe evaluaciones históricas. La recuperación revisada usa una copia independiente. Validación y límites de entrega se registran en la guía130.
+
 ## Evolución 128: reutilización editorial entre materias propias
 
 [128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, crea un borrador independiente por solicitud durable en ai_jobs, sin OCR/IA ni migración. Fuente versionada conserva una revisión fija y la copia recibe nueva revisión/IDs/bytes; texto legacy sin versión mantiene su contrato de edición/publicación. Conserva lectura, preguntas, claves privadas, criterios, recursos revisados o pendientes y formato. No copia estudiantes, entregas, notas, chat, publicación ni recepción. Destino activo distinto del mismo propietario y permisos de lectura/creación/gestión en servidor; archivo corrupto, enlace externo no reproducible o recurso interactivo se explican sin éxito incompleto. Progreso privado, reintento con la misma identidad y recuperación sin duplicados.

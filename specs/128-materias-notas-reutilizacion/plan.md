@@ -72,3 +72,7 @@ Operación durable en ai_jobs, ID de solicitud único y actor/fingerprint origen
 ### Liberación
 
 Diagnóstico local actual: 17/17 pruebas existentes de exportación/modelo/formato aprobadas, incluida exclusión de sugeridas. Eso prueba contrato anterior, no reparación. Después de aprobación: archivo real, API/DB aisladas, concurrencia/conservación, revisión visual, inventario/gobernanza, PR y CI verde. Prueba posterior en producción solo con cuenta demo y alcance autorizado, nunca presumida por CI.
+
+## Coordinación 130 en curso
+
+La recuperación añade una intención expresa al copy/job durable, permite solo esa copia en la misma materia y revalida procedencia/permisos. La reutilización normal conserva destino distinto y remapea documento, material y presupuestos, sin copiar estudiantes o notas. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.
