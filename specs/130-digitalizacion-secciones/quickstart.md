@@ -1,6 +1,6 @@
 # Validación prevista: digitalización con secciones
 
-**Estado**: implementación y validación local de las cuatro historias completas, PDF/Word revisados y28 tareas verificadas, incluida la corrección de sincronización de la prueba de CI. PR #275 abierto, sin validación ni activación de producción. CI remoto sigue siendo obligatorio antes de una fusión que no está autorizada en este alcance. El plan ampliado está aprobado mediante «aprobe» después de la pausa solicitada.
+**Estado**: implementación y validación local de las cuatro historias completas, PDF/Word revisados y29 tareas verificadas, incluidas las correcciones de sincronización y conservación de contexto detectadas en CI. PR #275 abierto, sin validación ni activación de producción. CI remoto sigue siendo obligatorio antes de una fusión que no está autorizada en este alcance. El plan ampliado está aprobado mediante «aprobe» después de la pausa solicitada.
 
 ## Entorno
 
@@ -120,3 +120,21 @@ Comprobación Windows: las34 pruebas de `GenerationWizard.test.tsx` aprobaron en
 Gobernanza local:61 pruebas aprobadas en28,53s; inventario vigente de663 superficies. Se regeneró únicamente su digest, sin cambiar sus superficies. Converge de la corrección T028: cuatro requisitos pertinentes (FR-005/013/014/016), una decisión del plan y dos principios constitucionales (VII/VIII), sin hallazgos ni tareas adicionales; `tasks.md` quedó idéntico durante esa revisión. La convergencia completa de las cuatro historias ya consta arriba y no se cambió código funcional.
 
 El nuevo envío al mismo PR queda preparado para ejecutar CI; los resultados locales no afirman que esa nueva ejecución remota ya esté verde. No se modificó producción.
+
+### Regresión de contexto de retroalimentaciones (T029)
+
+La ejecución40437931033 del commit179c625 aprobó backend, frontend unitario/build, contenedores, gobernanza y E2E contextual. La partición general3 tuvo131 casos aprobados y uno fallido: WebKit390px oscuro, `feedback-workspace-responsive.spec.ts`, retorno de compartir. La comprobación esperaba `scrollTop >= 5883` y recibió5847, una diferencia de36px después de simular el teclado y volver a la lista.
+
+El caso original pasó tres veces sin modificar y otras tres con instrumentación temporal local. Esa instrumentación confirmó cambios de altura de las filas al añadir acciones de copia, sin pérdida de selección; se retiró por completo. No se afirma que esa muestra local reproduzca exactamente el ajuste de36px de Linux.
+
+La regresión reforzada comprueba directamente el contrato de Spec129: mismo estudiante final visible al volver, dos seleccionados conservados, foco restaurado y lista sin retorno al inicio; mantiene copia manual, destinatarios exactos, un único enlace nuevo y ninguna emisión al abrir Compartir. Sin modificar todavía la aplicación, esta comprobación reprodujo una pérdida real de contexto en WebKit360/390 claro/oscuro: la fila final quedaba fuera de vista tras añadir el botón de copia. Esa tanda RED se detuvo después de esos cuatro fallos, no se presenta como una ejecución completa aprobada.
+
+La corrección guarda identidad y desplazamiento relativo del último estudiante visible, no su nombre ni solo un `scrollTop`. `feedbackListPosition.ts` restaura ese punto tras montar la lista y actualizar los accesos; `ShareFeedbackDialog.tsx` utiliza un ref estable y una restauración de layout, y `FeedbackStudentList.tsx` identifica cada fila por el ID vigente. No persiste datos nuevos ni altera selección, foco o reglas de entrega. El fallback respeta el rango real de desplazamiento si desaparece una fila o crece la ventana; una lista oculta no sobreescribe la posición. Seis regresiones unitarias cubren reflujo, remontaje, homónimos por identidad, fila ausente, límites y lista oculta.
+
+La aserción de retorno no desplaza ni enfoca la fila para hacerla aparecer. Conserva además el control numérico del desplazamiento, capturado justo antes de salir y acotado al rango disponible al volver. Una tanda completa posterior tuvo28 casos aprobados y dos fallos únicamente por un píxel en WebKit768 claro/oscuro, con el mismo estudiante ya visible; el control admite exactamente ese redondeo de1px, no el salto original de36px ni la desaparición de la fila. No cambian timeouts, reintentos, particiones, modelos, notas ni producción. Los fallos RED reales acreditan que el control detecta pérdida de contexto, sin necesitar forzar otro fallo artificial.
+
+Validación definitiva de T029: **1.026/1.026 pruebas frontend** en166 archivos (258,02s), incluidas las seis nuevas, y **30/30 recorridos Chromium/WebKit** (6,0min, dos workers, cero reintentos). Son24 recorridos129 y seis126: grupo/individual,40/105 estudiantes,360/390/768/1440px, ambos temas, texto ampliado y viewport reducido. Se revisaron visualmente capturas de retorno WebKit360 oscuro y Chromium1440 claro: mismo estudiante visible, selección y acciones accesibles. No equivale a teléfonos físicos.
+
+TypeScript, lint estricto, build, auditoría de613 botones/122 enlaces y presupuesto de recursos aprobados. Partición efectiva de CI:564 casos,151/143/132/138, sin ausentes ni duplicados. Inventario663 actualizado y vigente. No se modificaron backend, esquema, contratos API, dependencias, workflows o datos académicos; la nueva ejecución remota seguirá comprobando todos sus controles.
+
+Cierre T029: gobernanza **61/61** (16,91s), inventario663 vigente y Converge enfocado sin pendientes (cinco FR, dos SC, dos escenarios, una decisión y cuatro principios). `tasks.md` permaneció byte a byte idéntico durante Converge, SHA256 `F5FF28D3234E3367BA06A3AE92D7D6BFF982CDC71449C59D2994B95B803DD0C3`; no se añadieron fases vacías ni se modificaron checklists o hooks. Los resultados locales no acreditan aún la nueva ejecución de CI remoto, fusión o despliegue.

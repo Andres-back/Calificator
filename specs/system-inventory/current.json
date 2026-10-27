@@ -579,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "642da9e301ebe1c3f9d0b4e8135a67651622dfdbeb5000a41f80a2c4eacf71f8",
+  "source_digest": "9cf1e679d9496ed59114347b24aa71b26a0d7290defbf84c30283b130b58ecc7",
   "surfaces": [
     {
       "actors": [
@@ -22371,6 +22371,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/conversation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackListPosition.test.ts"
         },
         {
           "level": "unit",
