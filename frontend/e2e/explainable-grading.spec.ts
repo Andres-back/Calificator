@@ -14,7 +14,7 @@ test('088 revisión amplia mantiene lista y detalle independientes', async ({ pa
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
   expect((await roster.boundingBox())!.width).toBeGreaterThanOrEqual(320);
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await page.getByRole('button', { name: 'Pregunta 20', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 20, Correcta', exact: true }).click();
   await detail.hover();
   await page.mouse.wheel(0, 700);
   await expect.poll(() => detail.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
@@ -459,7 +459,7 @@ test('docente llega a la respuesta 20, edita y recupera el scroll móvil', async
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await page.getByRole('button', { name: 'Pregunta 20', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 20, Correcta', exact: true }).click();
   const lastCard = page.locator('article').filter({ has: page.getByText('Pregunta 20', { exact: true }) }).last();
   await lastCard.scrollIntoViewIfNeeded();
   await expect(lastCard).toBeVisible();
@@ -576,7 +576,7 @@ test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobrev
   await page.goto('/app/calificaciones/workspace/e1?calificacion=c1');
   await expect(page).toHaveURL(/\/app\/calificaciones\?evaluacion=e1|\/app\/calificaciones\?calificacion=c1/);
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await page.getByRole('button', { name: 'Pregunta 2', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 2, Correcta', exact: true }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel('Motivo interno del cambio').fill('No perder este borrador');
@@ -584,7 +584,7 @@ test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobrev
   await expect(page.getByAltText('Hoja 2 de la evidencia del estudiante')).toBeVisible();
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('No perder este borrador');
-  await page.getByRole('button', { name: 'Pregunta 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
   await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
@@ -592,11 +592,11 @@ test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobrev
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
   await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
   await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('No perder este borrador');
-  await page.getByRole('button', { name: 'Pregunta 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true }).click();
   await page.getByRole('button', { name: 'Descartar y continuar', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true })).toHaveAttribute('aria-current', 'step');
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true })).toHaveAttribute('aria-current', 'step');
 });
 
 test('30 matriculados, ocho reclamos y alumno sin entrega sin nota ficticia', async ({ page }) => {
@@ -705,21 +705,21 @@ test('lectura docente y enlaces antiguos conservan contexto sin habilitar escrit
   await page.goto('/app/materias/m1/calificar?evaluacion=e1&estudiante=s1&pregunta=pregunta%3A1&hoja=1');
   await expect(page).toHaveURL(/\/app\/calificaciones\?/);
   await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true })).toHaveAttribute('aria-current', 'step');
   await expect(page.locator('#grade-component-q1')).toBeFocused();
   for (const name of ['Añadir entregas', 'Establecer nota', 'Ajustar puntaje y explicación', 'Publicar al estudiante', 'Resumen y publicación']) {
     await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
   await expect(page.getByText('Incidencias y solicitudes', { exact: false })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true })).toHaveAttribute('aria-current', 'step');
 });
 
 test('añadir otra entrega permite volver al alumno y pregunta anteriores', async ({ page }) => {
   await login(page, 'profesor');
   await page.route('**/api/materias/m1/estudiantes', (route) => json(route, { ...materia, estudiantes: [student, { ...student, id: 's2', nombre: 'Segundo estudiante' }] }));
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1&pregunta=pregunta%3A1&hoja=1');
-  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Añadir entregas', exact: true }).click();
   await page.getByRole('button', { name: 'Limpiar estudiante' }).click();
   const studentSearch = page.getByRole('combobox', { name: 'Buscar estudiante para esta entrega' });
@@ -730,7 +730,7 @@ test('añadir otra entrega permite volver al alumno y pregunta anteriores', asyn
   await expect(page).toHaveURL(/estudiante=s2/);
   await page.getByRole('button', { name: 'Volver a revisión', exact: true }).last().click();
   await expect(page).toHaveURL(/estudiante=s1/);
-  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true })).toHaveAttribute('aria-current', 'step');
 });
 
 test('PQRS versionada abre su pregunta; error de consulta no se muestra como lista vacía', async ({ page }) => {
@@ -748,7 +748,7 @@ test('PQRS versionada abre su pregunta; error de consulta no se muestra como lis
   await page.getByRole('button', { name: 'Reintentar consulta', exact: true }).click();
   await page.getByRole('button', { name: 'Ver pregunta vinculada · versión 1' }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A1/);
-  await expect(page.getByRole('button', { name: 'Pregunta 1', exact: true })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('button', { name: 'Pregunta 1, Correcta', exact: true })).toHaveAttribute('aria-current', 'step');
 });
 
 test('publicación parcial conserva solo el fallo y no repite notas exitosas', async ({ page }) => {
