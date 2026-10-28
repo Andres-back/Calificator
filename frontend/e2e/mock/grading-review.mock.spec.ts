@@ -252,8 +252,11 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(page.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Abrir en grande' })).toHaveAttribute('href', '/api/evidencia-sintetica/paginas/2');
       await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-      await page.getByRole('button', { name: 'Ver hoja 2 de la evidencia', exact: true }).click();
-      await expect(page.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante' })).toBeVisible();
+      const contextualEvidence = page.getByRole('region', { name: 'Evidencia de la respuesta seleccionada' });
+      await expect(contextualEvidence.getByRole('img', { name: 'Hoja 2 de la evidencia' })).toBeVisible();
+      await contextualEvidence.getByRole('button', { name: 'Ampliar evidencia', exact: true }).click();
+      await expect(page.getByRole('dialog', { name: 'Hoja 2 de la evidencia' })).toBeVisible();
+      await page.getByRole('button', { name: 'Volver a la respuesta' }).click();
       await page.getByRole('button', { name: 'Historial', exact: true }).click();
       await history.locator('summary').click();
       await expect(history).toContainText('En el análisis inicial, la IA propuso una nota distinta a la suma por preguntas.');

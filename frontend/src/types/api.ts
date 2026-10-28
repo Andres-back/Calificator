@@ -370,6 +370,13 @@ export interface GradeFormulaData {
   nota_final: number | string;
 }
 
+export interface GradeEvidenceRegion {
+  pagina: number;
+  bbox: [number, number, number, number];
+  marco: 'pagina_canonica_orientada';
+  evidencia_version: string;
+}
+
 export interface GradeComponentData {
   id: string;
   clave: string;
@@ -389,6 +396,7 @@ export interface GradeComponentData {
   origen: string;
   requiere_revision: boolean;
   evidencia_paginas: number[];
+  evidencia_regiones?: GradeEvidenceRegion[];
   fuentes?: Array<{ source_id?: string; chunk_id?: string; titulo?: string; version?: string; fragmento?: string }>;
   valoraciones?: Record<string, unknown>[];
 }
@@ -488,6 +496,7 @@ export interface CalificacionDetalle extends Calificacion {
   entrega_archivo_url: string | null;
   entrega_evidencia_paginas: number;
   entrega_evidencia_tipo: string | null;
+  entrega_original_disponible?: boolean;
   entrega_respuesta_texto: string | null;
   entrega_created_at: string | null;
   timeline: CalificacionTimelineEvent[];

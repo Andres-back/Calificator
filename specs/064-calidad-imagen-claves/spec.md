@@ -121,3 +121,7 @@ Como docente quiero que una hoja ilegible quede claramente pendiente y pueda ree
 - Las claves propuestas por IA siempre permanecen sujetas a revisión del docente antes de publicar la evaluación.
 - No se recalcularán evaluaciones ni calificaciones existentes automáticamente.
 - El mismo contrato de preparación se compartirá entre digitalización y calificación para evitar resultados divergentes.
+
+## Coordinación 131: evidencia docente revisable
+
+La ruta legacy conserva sus heurísticas. La nueva ruta docente opt-in usa calidad/preview serializados y una preparación canónica única; no exige escanear ni declara recuperables el desenfoque/reflejo. Las claves de evaluación quedan intactas. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

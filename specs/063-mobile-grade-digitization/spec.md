@@ -74,3 +74,7 @@ Como docente que digitaliza una evaluación ya contestada, quiero que el sistema
 - Se reutilizan los endpoints y datos de matrícula actuales.
 - No se añaden tablas ni migraciones.
 - El término de búsqueda se aplica en el backend para conservar cobertura sobre matrículas paginadas.
+
+## Coordinación 131: evidencia docente revisable
+
+La captura docente mantiene contexto, matrícula, hojas y envío expreso. El escaneo es posterior a la cámara nativa y solo opt-in; digitalizar el enunciado y otros consumidores no se activan automáticamente. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

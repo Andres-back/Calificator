@@ -36,6 +36,7 @@ from app.modules.calificaciones.agents import (
     merge_partition_results,
     partition_grading_context,
 )
+from app.modules.calificaciones.evidence_preparation import CanonicalEvidencePages
 from app.modules.calificaciones.schemas import GradingResult
 from app.modules.calificaciones.feedback_refinement import refine_feedback_if_needed
 from app.modules.calificaciones.execution_policy import execution_policy
@@ -579,6 +580,7 @@ async def orchestrate_grading(
     verifier_model: str = DEFAULT_VERIFIER_MODEL,
     comparator_model: str = DEFAULT_COMPARATOR_MODEL,
     evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
+    canonical_pages: CanonicalEvidencePages | None = None,
 ) -> GradingResult:
     """Orquesta el pipeline completo de calificación multi-agente.
 
@@ -603,7 +605,8 @@ async def orchestrate_grading(
     pipeline_started = time.monotonic()
     progress = review_progress or ReviewProgress(
         fingerprint=context_fingerprint({"evaluation": str(evaluacion_id), "blueprint": blueprint,
-            "configuration": ai_config, "response": student_response_text}), payload=None)
+            "configuration": ai_config, "response": student_response_text,
+            **({"canonical_evidence": canonical_pages.fingerprint} if canonical_pages is not None else {})}), payload=None)
     try:
         pipeline_run_id = str(UUID(str(progress.payload.get("pipeline_run_id") or pipeline_run_id)))
     except (ValueError, TypeError):
@@ -841,6 +844,7 @@ async def orchestrate_grading(
                 rag_context=rag_context,
                 image_bytes=image_bytes,
                 image_mime=image_mime,
+                canonical_pages=canonical_pages,
             )
             checkpoint_result = (
                 vision_checkpoint.get("vision_result")
@@ -1088,6 +1092,7 @@ async def orchestrate_grading(
             objective_validation=objective_validation,
             image_bytes=image_bytes,
             image_mime=image_mime_for_grading,
+            canonical_pages=canonical_pages,
             evaluation_visuals=evaluation_visuals,
         )
         grading_contexts = partition_grading_context(

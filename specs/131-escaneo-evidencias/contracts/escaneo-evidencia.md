@@ -1,0 +1,72 @@
+# Contrato propuesto: preparación fotográfica docente
+
+En implementación local, no activado en producción. Editor/Worker, capacidad contextual, envío desde ambos consumidores docentes, manifiesto privado nullable, preparación durable y lectores original/preparada tienen código y pruebas sintéticas. La admisión sigue apagada por defecto; conservación integral de trazos, presupuesto de recursos, regresión final y teléfonos físicos siguen siendo puertas de liberación. Extensión aditiva de los contratos existentes, no otro calificador. Los Blobs de preview son estado local y no forman parte del JSON de envío ni sustituyen al File original.
+
+## Interfaz
+
+**Encuadre aproximado aprobado (FR-032/033)**: sin alterar la respuesta remota cerrada, el editor convierte la propuesta asistida válida en una caja exterior con margen de6% por eje, limitada al marco de fuente. No es una garantía de localización; se mantiene comparación y aceptación manual. Un recorte ya completo se conserva completo; no se inventan partes ausentes. Esta caja final aceptada, no las coordenadas remotas originales, queda en la receta canónica. La propuesta local recta mantiene su perspectiva; un perímetro local curvo usa caja exterior con2.5% de margen. Editor fullscreen sin animación de escala para no desplazar coordenadas; encaje descuenta padding/alto real, ampliación manual y regreso restauran también el desplazamiento. Cambios de giro restablecen el encaje y cancelan ayuda tardía.
+
+La nueva fase de laboratorio comparte15 reservas durables entre pruebas locales y Android, con fallos incluidos y caché por foto/dimensiones, dos fotos simultáneas como máximo y contador visible. Es independiente de los presupuestos anteriores agotados; no incrementa el límite productivo de una petición por intención. Credencial solo en servidor, enlace privado temporal, foto sin identificadores y sin persistencia de imágenes. No publicar este relay como endpoint productivo.
+
+**Ampliación de historia6**: la frase «local/sin solicitudes» de este contrato aplica al modo local y al ajuste de preview. Tras abstención y capacidad positiva, un único `POST /calificaciones/sugerir-bordes` autenticado puede consultar ayuda visual: evaluación/estudiante/intención, hash/dimensiones y una imagen orientada sin EXIF≤1024px/1MB. Permiso/propiedad/matrícula, flag específico default-off, cuota y perfil visual comprobado antes de proveedor; no URLs libres ni valores académicos. El servidor verifica MIME/dimensiones/hash y reserva intención15min antes de invocar. Un único intento20s/512tokens, sin fallback. Respuesta cerrada con estado `proposed|abstained|pending|unavailable`, misma intención/huella y cuatro puntos TL/TR/BR/BL normalizados solo en proposed. Geometría inválida, proveedor fallido o ausencia de hoja se abstienen; detalles técnicos quedan fuera del mensaje docente. La ayuda no es la admisión de calificación ni persiste una entrega. Nueva consulta de capacidad incluye solo `corner_assistance_enabled`, sin modelos/claves internas.
+
+Edición manual/giro/cancelación/contexto invalidan su aplicación. «Buscando los bordes…» no bloquea original/manual. Mostrar «Bordes sugeridos: comprueba que no falte contenido» y reconstruir preview local desde fuente; docente confirma. No inferir confianza académica de un `found=true`, ni dar por buena una tabla interior. Misma intención/huella no vuelve a consumir proveedor; pendiente se consulta por ID autorizado sin reenviar foto. Caché temporal sin foto ni logs del contenido; no exponer endpoint en harness público ni enviar fotos reales en CI.
+
+- Se conserva «Tomar foto» nativa en móvil y la webcam de PC. Después de recibir el archivo se muestra una preview amplia con cuatro esquinas propuestas y estado de calidad.
+- Una sola revisión: Original/Preparada, ampliar, ajustar bordes/girar, Natural/Lectura suave, Restablecer y Usar foto original. Aceptar una preparación no envía a calificar.
+- Móvil: vista completa, controles de44px y alternativas de movimiento por botones/teclado; escritorio: comparación relacionada. No encadenar modales o pedir parámetros técnicos al docente.
+- Resumen de hasta diez hojas con orden y estado Original/Preparada/Revisar. El botón final declara estudiante/evaluación y envía solo por gesto explícito.
+- Ejemplos de mensajes: «Revisa que no falte ninguna respuesta en los bordes», «La foto sigue borrosa; repetirla puede ayudar», «No pudimos preparar esta foto. Puedes usar la original», «Esta corrección endereza la hoja; no cambia las respuestas».
+
+## Envío docente y cambio de evidencia
+
+La señalización añadida de «Respuestas y puntajes» reutiliza el DTO de desglose vigente; no altera estos envíos, roles, nota o decisiones de preparación. Véase la matriz de estado/color de `plan.md`: mismo tono y etiqueta en botón/tarjeta, selección por contorno, revisión individual prioritaria y estados parciales/ilegibles explícitos. Elegir una pregunta o mostrar un color no envía una escritura ni cambia la disponibilidad de compartir/publicar.
+
+Conservar rutas `/calificaciones/foto` y la ruta vigente de revisión de evidencia; archivos `foto[]`, asociación académica, rotaciones y permisos actuales. Añadir opcionalmente:
+
+- `solicitud_id`: UUID de intención estable al reintentar, opcional para el contrato legacy de foto y obligatorio al usar escaneo. En cambio de evidencia se reutiliza el `solicitud_id` de revisión existente; no crear dos identidades para la misma operación. No sustituye permisos/propiedad.
+- `escaneo`: objeto JSON cerrado `schema_version=1`, páginas en el mismo orden de `foto[]`; ID local/revisión, decisión original/preparada, dimensiones orientadas declaradas, giro y cuatro puntos normalizados TL/TR/BR/BL, perfil natural/lectura_suave y confirmación docente.
+
+Una receta por foto; cantidad, dimensión y asociación se verifican contra los bytes reales y el contexto admitido. Prohibir referencias externas, matrices de autoridad, campos arbitrarios, coordenadas NaN/inf/fuera de rango, cruces/área casi cero o perfiles desconocidos. El servidor calcula dimensiones, hash y transformación. Misma solicitud/payload recupera el mismo resultado; payload diferente bajo la misma intención devuelve409.
+
+Ausencia de `escaneo`: comportamiento legacy exacto. Escaneo + PDF o consumidor no habilitado: explicación y flujo compatible, no transformación silenciosa. Mantener máximo10 fotos,10MB por foto/40MB total del modo docente; no ampliar límites de otros consumidores. Validar píxeles/recursos antes de decodificar y no confiar en extensión.
+
+## Progreso y salida
+
+Nueva consulta de capacidad consumida por los dos flujos docentes: `GET /calificaciones/capacidades-evidencia?evaluacion_id=...&estudiante_id=...`, con autenticación, permiso para calificar, propiedad de evaluación y matrícula. Respuesta cerrada sin contenido académico: habilitación contextual, versión de receta, formatos, límites vigentes y perfiles de preparación disponibles. Caché aislada por actor/contexto; el servidor vuelve a comprobar la capacidad al admitir el envío. No exponer claves, modelos o allowlists internas.
+
+Capacidad de admisión versionada y default apagada; si la consulta falla, continuar con el modo actual sin escaneo. Durante el job, estado «Preparando evidencia, hoja N de M» antes de extracción/valoración, sin inventar progreso de IA. La preparación local no realiza solicitudes con la foto.
+
+El derivado canónico se crea desde la fuente una sola vez con receta/perfil fijados, respetando presupuesto de lectura. Si el perfil no conserva trazos o excede recursos/tamaño, no degradarlo silenciosamente: presentar estado recuperable y alternativa expresa sin escaneo. No enviar también el original como otra imagen para compensar un fallo ni aumentar llamadas.
+
+Lectura autenticada propuesta: extender el proxy de evidencia de entrega/revisión con `version=original|preparada` e identificador de página autorizado; sin parámetro se mantiene la vista existente. El original adicional se ofrece al docente propietario o administrador autorizado; la vista estudiante conserva su evidencia autorizada sin ampliar automáticamente el acceso a los archivos fuente/EXIF nuevos. Comprobar propiedad, permiso y versión, MIME/nosniff y no-store para originales. No permitir al cliente suministrar una clave de almacenamiento. Estado legacy muestra «Evidencia disponible; no se conservó el archivo original de cámara» cuando corresponda.
+
+Todos los roles IA de la ejecución leen el mismo manifest/checkpoint de páginas canónicas y hashes. Reintentar una etapa usa esos mismos bytes; cambiar perfil después requiere cambio de evidencia y revisión. Enlaces públicos no obtienen una variante original mediante query manipulada.
+
+## Acercamiento de lectura por pregunta
+
+Extensión opcional del DTO docente de desglose: cada componente conserva `evidencia_paginas` y puede incluir `evidencia_regiones`. Cada región tiene `pagina`1-based, `bbox=[x,y,ancho,alto]` normalizada en0..1, `marco=pagina_canonica_orientada` y `evidencia_version` opaca emitida por servidor. La identidad canónica es la del componente que contiene la región, no otro número impreso ni una asociación de alumno enviada por el cliente. Se presenta como «Ubicación sugerida»; varias regiones permiten continuaciones y dibujos/procedimientos en distintas páginas.
+
+La extracción existente puede devolver regiones opcionales asociadas a su pregunta/página. El servidor incorpora versión, marco, dimensiones y vinculación al activo a partir de la entrada real del job. Separar la validación de estos metadatos de la respuesta académica: coordenadas inválidas o no soportadas se omiten sin descartar respuestas/puntajes válidos. No pedir otra llamada, ampliar presupuesto o recalificar históricos para conseguir ubicaciones. Si no puede comprobarse el marco tras rotaciones legacy, no publicar esa caja.
+
+Extender el proxy de página existente con una referencia opaca `evidencia_version`, además de página/variante; no confundir la variante `version=original|preparada` con la identidad de la revisión. El servidor resuelve únicamente activos de entrega/revisión autorizados, comprueba que la referencia coincide con los bytes servidos y no acepta una URL/path/hash privado como selector libre. Referencia obsoleta o no disponible: devolver conflicto recuperable sin servir otra imagen silenciosamente; la interfaz limpia el fragmento y ofrece actualizar la evidencia. Sin referencia se conserva la lectura legacy, pero no se superpone una región que requiera una versión no comprobada.
+
+El visor abre el fragmento de la pregunta junto a su respuesta y, por gesto expreso, una vista amplia con zoom/desplazamiento, restablecer, «Ver hoja completa» y retorno. No cambiar automáticamente pestaña/foco al seleccionar ni perder ajustes de puntaje pendientes. Si faltan regiones, ofrecer hoja asociada o selector con zoom manual. PDF existente utiliza su página rasterizada autorizada; este permiso de lectura no incorpora escaneo de PDF ni altera su archivo.
+
+Cambiar a original solo transforma la caja cuando el servidor conoce la correspondencia de orientación/perspectiva; en otro caso muestra hoja completa. Los permisos de fuente adicional permanecen restringidos. Regiones y fragmentos no se añaden automáticamente a enlaces familiares/alumno. Seleccionar/ampliar solo lee evidencia: cero escrituras académicas, archivos de recorte o llamadas IA; los evaluadores siguen consumiendo las páginas completas fijadas para su ejecución. La ausencia de ubicación tampoco modifica colores, revisión o elegibilidad de publicación.
+
+## Fallos y rollback
+
+Configuración implementada: `EVIDENCE_SCAN_ENABLED=false` por defecto; `EVIDENCE_SCAN_TEACHER_IDS` permite delimitar UUIDs docentes/administrativos en el entorno aislado/piloto. La consulta autenticada `/calificaciones/capacidades-evidencia?evaluacion_id&estudiante_id` exige permiso, propiedad y matrícula antes de informar capacidad. No es una autorización reutilizable para otra cuenta o contexto. Desactivar nuevas admisiones no bloquea lectura ni recalificación de manifests existentes.
+
+Los proxies de entrega y revisión admiten `version=original|preparada`; páginas mediante `/evidencia/paginas/{numero}` y referencia opcional `evidencia_version`. Las fuentes nuevas son privadas y solo accesibles al docente propietario/administrador autorizado; el alumno conserva la vista preparada habitual. Cada variante usa identidad distinta y el original se consulta como hoja completa, sin trasladar cajas canónicas. Se verifica el contenido servido, no se reabre libremente una ruta tras calcular su huella. No se exponen claves de almacenamiento/manifests en los DTO públicos.
+
+- Worker local cancelado, receta obsoleta o contexto cambiado: descartar respuesta, conservar archivos correctos de la selección actual y no subir ni calificar.
+- Mal recorte, formatos/recursos no soportados: conservar la fuente y ofrecer original/repetir; no prometer completar información perdida.
+- Fallo fs/DB/cola: no emitir éxito sin confirmación, no borrar activos potencialmente referidos y recuperar por la misma intención.
+- Función apagada: no admitir nuevos manifests hasta activación coordinada; permitir entradas legacy y leer/versionar de forma compatible los ya creados. Sin downgrade destructivo o backfill.
+- Ubicación ausente/inválida o carga tardía: mantener hoja completa/zoom manual, descartar regiones e imágenes ajenas al contexto vigente y conservar el borrador de puntaje. El visor de lectura funciona sin cargar OpenCV ni habilitar admisión de escaneo.
+
+Implementación de primera entrega: `opencv-4.13.0-scan2`, preview PNG únicamente local y canónico JPEG96 sin subsampling dentro de2200px/2.5MB. Si la preparación falla, «Continuar sin escaneo» conserva los archivos y giros, retira solo las decisiones/preview y exige volver a enviar expresamente por la vía habitual; no publica ni recalifica por sí solo. La nueva intención no evita la serialización ni las confirmaciones del reemplazo.
+
+Recuperación operativa privada, sin endpoint nuevo: recibo versión2 inmutable antes de las fuentes, identidad determinista y bloqueo de solicitud compartido. CLI manual en modo auditoría por defecto; cuarentena solo expresa tras7 días, ausencia comprobada de referencias de entrega/historia/job/publicación y validación de hashes/paths. Cualquier referencia superviviente protege toda la intención; ante duda conservar. No programar borrado o aplicar a producción como parte de las pruebas.

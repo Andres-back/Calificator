@@ -21,6 +21,7 @@ def _route_payload(route: dict[str, Any], providers: dict[str, dict[str, Any]]) 
     primary_provider = str(route.get("primary_provider") or "")
     fallback_provider = str(route.get("fallback_provider") or "")
     return {
+        "active": bool(route.get("active", True)),
         "provider": primary_provider or None,
         "model": route.get("primary_model") or providers.get(primary_provider, {}).get("model"),
         "fallback_provider": fallback_provider or None,
@@ -207,6 +208,16 @@ def validate_control_center_payload(
         primary_provider = provider_map.get(primary)
         model_id = feature.get("primary_model") or (primary_provider or {}).get("model")
         registered_stage = stage_by_feature.get(feature_id)
+        if feature_id == "calificacion.bordes":
+            if capability != "vision" or feature.get("fallback_provider") or feature.get("rollout_enabled"):
+                errors.append({"field": field, "message": "La ayuda de encuadre requiere un único modelo visual institucional, sin respaldo ni API personal."})
+        if (feature_id == "calificacion.bordes" and feature.get("active") is False
+                and not feature.get("primary_provider") and not feature.get("primary_model")
+                and not feature.get("fallback_provider")):
+            # The new opt-in may remain unconfigured without blocking unrelated
+            # administrative saves. Enabling it still requires normal proofs.
+            normalized_features.append({**feature, "capability": "vision", "rollout_enabled": False})
+            continue
         if (
             registered_stage
             and registered_stage.supported_providers

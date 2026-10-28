@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
   calificar: vi.fn(),
   invalidateQueries: vi.fn(),
   pages: [] as EvidencePage[],
+  scan: false,
+}));
+vi.mock('@/components/evidence/useEvidenceScanCapability', () => ({
+  useEvidenceScanCapability: () => ({ available: mocks.scan, scope: 'teacher:evaluation-1:student-1' }),
 }));
 
 vi.mock('@/modules/calificaciones/api', () => ({ calificarFoto: mocks.calificar }));
@@ -80,10 +84,41 @@ function renderPanel({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.scan = false;
   mocks.pages = [{ id: 'page-1', file: new File(['evidence'], 'evidence.jpg', { type: 'image/jpeg' }), rotation: 0, quality: { status: 'good', warnings: [], width: 800, height: 1000 } }];
 });
 
 describe('GradingUploadPanel student picker', () => {
+  it('permite optar por carga habitual sin perder fotos ni enviar antes del gesto final', async () => {
+    const user = userEvent.setup();
+    mocks.scan = true;
+    mocks.pages = [{ ...mocks.pages[0], rotation: 90, scan: undefined, quality: undefined }];
+    const original = mocks.pages[0].file;
+    renderPanel({ studentId: 'student-1' });
+    await user.click(screen.getByRole('button', { name: 'Añadir hoja de prueba' }));
+    await user.click(screen.getByRole('button', { name: 'Continuar sin escaneo' }));
+    expect(mocks.calificar).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await waitFor(() => expect(mocks.calificar).toHaveBeenCalledWith('evaluation-1', 'student-1', [original], [90]));
+  });
+  it('131 requires reviewed pages and preserves the scan request after an uncertain response', async () => {
+    mocks.scan = true;
+    mocks.pages[0].id = crypto.randomUUID();
+    mocks.calificar.mockRejectedValue(new Error('Sin conexión'));
+    renderPanel({ studentId: 'student-1' });
+    fireEvent.click(screen.getByRole('button', { name: 'Añadir hoja de prueba' }));
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
+    mocks.pages = [{ ...mocks.pages[0], scan: { decision: 'original' } }];
+    fireEvent.click(screen.getByRole('button', { name: 'Añadir hoja de prueba' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await screen.findByRole('alert');
+    const first = mocks.calificar.mock.calls[0];
+    expect(first[2]).toEqual([mocks.pages[0].file]);
+    expect(first[4].submission.pages[0].confirmed).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await waitFor(() => expect(mocks.calificar).toHaveBeenCalledTimes(2));
+    expect(mocks.calificar.mock.calls[1][4].requestId).toBe(first[4].requestId);
+  });
   it('095 progreso cuenta IDs del grupo una vez y no confunde registro con nota final', () => {
     expect(summarizeCaptureRegistration([{ id: 's1' }, { id: 's1' }, { id: 's2' }], ['s1', 's1', 'other'])).toEqual({ total: 2, registered: 1 });
     renderPanel({ progress: { total: 30, registered: 6 } });

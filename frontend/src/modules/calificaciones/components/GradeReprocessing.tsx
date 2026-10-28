@@ -4,10 +4,13 @@ import { Camera, History, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, Field, Modal, Textarea } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
+import { evidenceIntentKey, scanPagesReviewed, scanSubmission, withoutEvidenceScan } from '@/components/evidence/scanSubmission';
+import { useEvidenceScanCapability } from '@/components/evidence/useEvidenceScanCapability';
 import { hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
+import { useAuth } from '@/stores/auth';
 import type { Calificacion, CalificacionDetalle } from '@/types/api';
 import { listGradingRevisions, reprocessGrade } from '../api';
 
@@ -16,14 +19,19 @@ const previousStateLabels: Record<string, string> = {
   confirmada: 'Confirmada', ajustada: 'Ajustada por el docente', publicada: 'Publicada',
 };
 
-export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = false }: {
+function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = false }: {
   cal: CalificacionDetalle; onAccepted: (grade: Calificacion) => void; onDirtyChange?: (dirty: boolean) => void; disabled?: boolean;
 }) {
   const [mode, setMode] = useState<'regrade' | 'replace' | null>(null);
   const [reason, setReason] = useState('');
   const [pages, setPages] = useState<EvidencePage[]>([]);
+  const [scanScope, setScanScope] = useState<string | null>(null);
+  const capability = useEvidenceScanCapability(cal.evaluacion_id, cal.estudiante_id, mode === 'replace');
+  const scanEnabled = pages.length ? scanScope === capability.scope : capability.available;
+  const usingScan = scanEnabled && pages.length > 0 && pages.every((page) => page.file.type.startsWith('image/'));
   const [confirmed, setConfirmed] = useState(false);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const [expectedVersion, setExpectedVersion] = useState(cal.updated_at);
   const [error, setError] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
   const scope = useRef<HTMLDivElement>(null);
@@ -33,8 +41,9 @@ export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = f
   useEffect(() => { onDirtyChange?.(mode !== null); }, [mode, onDirtyChange]);
   const history = useQuery({ queryKey: ['grading-revisions', cal.id], queryFn: () => listGradingRevisions(cal.id), enabled: historyOpen });
   const mutation = useMutation({
-    mutationFn: () => reprocessGrade(cal.id, { requestId, version: cal.updated_at, confirmed, reason,
-      ...(mode === 'replace' ? { files: pages.map((page) => page.file), rotations: pages.map((page) => page.rotation) } : {}) }),
+    mutationFn: () => reprocessGrade(cal.id, { requestId, version: expectedVersion, confirmed, reason,
+      ...(mode === 'replace' ? { files: pages.map((page) => page.file),
+        ...(usingScan ? { scan: scanSubmission(pages) } : { rotations: pages.map((page) => page.rotation) }) } : {}) }),
     onSuccess: (grade) => {
       setMode(null); setPages([]); setReason(''); setError('');
       for (const key of [['calificacion-detalle', cal.id], ['calificaciones', cal.evaluacion_id], ['evaluation-review', cal.evaluacion_id], ['grading-revisions', cal.id], ['grade-breakdown-history', cal.id]]) {
@@ -46,11 +55,11 @@ export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = f
     onError: (cause) => setError(toApiError(cause).detail),
   });
   const open = (next: 'regrade' | 'replace') => {
-    setMode(next); setReason(''); setPages([]); setConfirmed(false); setError(''); setRequestId(crypto.randomUUID());
+    setMode(next); setReason(''); setPages([]); setConfirmed(false); setError(''); setRequestId(crypto.randomUUID()); setExpectedVersion(cal.updated_at);
   };
   const changeRequest = () => { setRequestId(crypto.randomUUID()); setError(''); };
   const canSend = !disabled && !processing && !mutation.isPending && (!hasDecision || confirmed)
-    && (mode !== 'replace' || (pages.length > 0 && !hasUnusableEvidence(pages)));
+    && (mode !== 'replace' || (pages.length > 0 && !hasUnusableEvidence(pages) && (!usingScan || scanPagesReviewed(pages))));
 
   return <div className="min-w-0 space-y-3" aria-label="Corregir entrega y consultar historial">
     <details className="rounded-xl border border-border px-3">
@@ -73,6 +82,12 @@ export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = f
         {item.feedback_anterior && <details><summary className="focus-ring min-h-11 cursor-pointer py-3">Ver retroalimentación anterior</summary><p className="whitespace-pre-wrap leading-6">{item.feedback_anterior}</p></details>}
         {item.motivo && <p>Motivo: {item.motivo}</p>}
         {item.evidencia_url && <a href={item.evidencia_url} target="_blank" rel="noreferrer" className="focus-ring inline-flex min-h-11 items-center font-semibold text-brand-700 dark:text-brand-200">Abrir evidencia anterior</a>}
+        {item.evidencia_url && (item.originales_paginas ?? 0) > 0 && <details>
+          <summary className="focus-ring min-h-11 cursor-pointer py-3 font-semibold">Ver fotos originales anteriores</summary>
+          <div className="flex flex-wrap gap-2">{Array.from({ length: Math.min(10, item.originales_paginas ?? 0) }, (_, index) => <a
+            key={index} href={`${item.evidencia_url}/paginas/${index + 1}?version=original`} target="_blank" rel="noreferrer"
+            className="focus-ring inline-flex min-h-11 items-center rounded-lg border border-border px-3 font-semibold text-brand-700 dark:text-brand-200">Original · hoja {index + 1}</a>)}</div>
+        </details>}
       </article>)}
     </details>
       </div>
@@ -83,7 +98,21 @@ export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = f
       <div ref={scope} className="min-w-0 space-y-4">
         <p className="font-semibold [overflow-wrap:anywhere]">{cal.estudiante_nombre} · {cal.evaluacion_nombre}</p>
         <p className="text-sm leading-6 text-muted">{mode === 'replace' ? 'Selecciona todas las hojas de la entrega correcta. La evidencia anterior quedará en el historial.' : 'Usaremos la evidencia guardada. El resultado anterior quedará en el historial.'} La nueva nota necesitará tu revisión.</p>
-        {mode === 'replace' && <MultiPageEvidencePicker pages={pages} contextKey={`${cal.id}-${mode}`} onChange={(next) => { setPages(next); changeRequest(); }} disabled={mutation.isPending} onError={setError} />}
+        {mode === 'replace' && <MultiPageEvidencePicker pages={pages} contextKey={`${capability.scope}:${cal.id}:${mode}`} scanEnabled={scanEnabled} suggestCorners={capability.suggestCorners}
+          maxImageBytes={capability.limits?.max_file_bytes} maxTotalBytes={capability.limits?.max_total_bytes}
+          maxFiles={capability.limits?.max_pages}
+          onChange={(next) => {
+            if (!pages.length && next.length) setScanScope(capability.available ? capability.scope : null);
+            if (evidenceIntentKey(next) !== evidenceIntentKey(pages)) changeRequest();
+            setPages(next);
+          }} disabled={mutation.isPending} onError={setError} />}
+        {mode === 'replace' && usingScan && <div className="space-y-2 rounded-xl border border-border p-3">
+          <Button type="button" variant="outline" className="min-h-11" disabled={mutation.isPending} onClick={() => {
+            setScanScope(null); setPages(withoutEvidenceScan(pages)); changeRequest();
+          }}>Continuar sin escaneo</Button>
+          <p className="text-sm leading-6 text-muted">Conserva estas fotos en la selección y usa el envío habitual. No se guardará la copia original adicional del escáner. Todavía debes pulsar «Enviar a calificar».</p>
+        </div>}
+        {mode === 'replace' && usingScan && !scanPagesReviewed(pages) && <p role="status" className="text-sm text-muted">Revisa cada hoja o elige usar su foto original antes de enviar.</p>}
         <details><summary className="focus-ring min-h-11 cursor-pointer py-3 text-sm font-semibold">Añadir motivo (opcional)</summary>
           <Field label="Motivo (opcional)"><Textarea value={reason} maxLength={1000} disabled={mutation.isPending} onChange={(event) => { setReason(event.currentTarget.value); changeRequest(); }} /></Field>
         </details>
@@ -97,4 +126,9 @@ export function GradeReprocessing({ cal, onAccepted, onDirtyChange, disabled = f
       </div>
     </Modal>
   </div>;
+}
+
+export function GradeReprocessing(props: Parameters<typeof GradeReprocessingContent>[0]) {
+  const actorId = useAuth((state) => state.user?.id ?? '');
+  return <GradeReprocessingContent key={`${actorId}:${props.cal.id}`} {...props} />;
 }

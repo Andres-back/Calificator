@@ -44,6 +44,7 @@ export interface FeatureRouting {
 }
 
 export interface AIConfiguredRoute {
+  active?: boolean;
   provider: string | null;
   model: string | null;
   fallback_provider: string | null;

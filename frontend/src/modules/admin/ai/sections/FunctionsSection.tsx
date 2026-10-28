@@ -33,7 +33,7 @@ function routeForStage(stage: AIFunctionControl['stages'][number], features: Fea
     fallback_model: stage.configured.fallback_model,
     rollout_enabled: stage.configured.teacher_override_allowed,
     config_version: stage.configured.config_version,
-    active: true,
+    active: stage.configured.active ?? true,
   };
 }
 
@@ -118,6 +118,7 @@ export function FunctionsSection({
             )}
             {item.function_id === 'calificacion' && <GradingPipelineSummary stages={item.stages} policy={item.execution_policy} />}
             {item.stages.map((stage) => {
+              const cornerAssistance = stage.runtime_feature === 'calificacion.bordes';
               const route = routeForStage(stage, features);
               const supportedProviders = stage.supported_providers ?? [];
               const providerOptions = providers.filter((provider) => (
@@ -153,6 +154,7 @@ export function FunctionsSection({
 
                   {stage.editable && route ? (
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      {cornerAssistance && <label className="col-span-full flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={route.active} onChange={(event) => onUpsert({ ...route, active: event.currentTarget.checked, rollout_enabled: false, fallback_provider: null, fallback_model: null })} className="h-4 w-4 accent-brand-600" />Activar ayuda para encuadrar · un intento por foto, sin recalificar</label>}
                       <Field label="Proveedor">
                         <Select value={route.primary_provider} onChange={(event) => {
                           const provider = event.currentTarget.value;
@@ -165,17 +167,19 @@ export function FunctionsSection({
                             fallback_model: route.fallback_model,
                           });
                         }}>
+                          {cornerAssistance && !route.primary_provider && <option value="">Elige un proveedor</option>}
                           {currentProviderUnavailable && <option value={currentProviderUnavailable.id} disabled>{currentProviderUnavailable.label} (no disponible)</option>}
                           {providerOptions.map((provider) => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
                         </Select>
                       </Field>
                       <Field label="Modelo">
                         <Select value={route.primary_model ?? ''} onChange={(event) => onUpsert({ ...route, primary_model: event.currentTarget.value || null })}>
+                          {cornerAssistance && !route.primary_model && <option value="">Elige y comprueba un modelo visual</option>}
                           {currentModelUnavailable && <option value={currentModelUnavailable.model_id} disabled>{currentModelUnavailable.label} (no disponible)</option>}
                           {modelOptions.map((model) => <option key={model.model_id} value={model.model_id}>{model.label}</option>)}
                         </Select>
                       </Field>
-                      <Field label="Proveedor de respaldo">
+                      {!cornerAssistance && <><Field label="Proveedor de respaldo">
                         <Select value={route.fallback_provider ?? ''} onChange={(event) => {
                           const fallbackProvider = event.currentTarget.value || null;
                           const candidates = fallbackProvider ? compatibleModels(models, fallbackProvider, stage.capability).filter((model) => fallbackProvider !== route.primary_provider || model.model_id !== route.primary_model) : [];
@@ -194,10 +198,11 @@ export function FunctionsSection({
                           {fallbackModelOptions.map((model) => <option key={model.model_id} value={model.model_id}>{model.label}</option>)}
                         </Select>
                       </Field>
-                      <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium md:col-span-2 xl:col-span-4">
+                      </>}
+                      {!cornerAssistance && <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium md:col-span-2 xl:col-span-4">
                         <input type="checkbox" checked={Boolean(route.rollout_enabled)} onChange={(event) => onUpsert({ ...route, rollout_enabled: event.currentTarget.checked })} className="h-4 w-4 accent-brand-600" />
                         Permitir API del docente
-                      </label>
+                      </label>}
                     </div>
                   ) : (
                     <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">Esta etapa se ejecuta de forma determinista y no necesita seleccionar un modelo.</p>

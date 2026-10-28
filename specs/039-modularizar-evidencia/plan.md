@@ -55,3 +55,7 @@ tests/spec_governance/test_spec_baseline.py
 ## Verificación posterior al diseño
 
 El diseño conserva los ocho principios constitucionales. El nuevo servicio es interno, no modifica contratos ni datos y reduce el router sin introducir una segunda implementación. Las pruebas compararán los mismos resultados observables y el inventario confirmará una única propiedad de cada función.
+
+## Coordinación 131: evidencia docente revisable
+
+La lectura y autorización siguen centralizadas en evidence_service. Los lectores de manifiesto, preparación y reconciliación son colaboradores internos; no existe otra ruta libre de archivos. Evidencia legacy permanece compatible. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

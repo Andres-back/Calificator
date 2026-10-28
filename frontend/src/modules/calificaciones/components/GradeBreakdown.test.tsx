@@ -63,6 +63,19 @@ describe('GradeBreakdown', () => {
     expect(screen.getByTestId('grade-editor-p1')).toHaveTextContent('Editor contextual');
     expect(screen.queryByRole('button', { name: 'Ajustar puntaje y explicación' })).not.toBeInTheDocument();
   });
+  it('muestra evidencia contextual solo al docente y conserva el editor', () => {
+    const renderEvidence = vi.fn((component) => <p>Evidencia contextual de {component.id}</p>);
+    const view = render(<GradeBreakdown breakdown={breakdown} renderEvidence={renderEvidence} editingComponentId="p1" renderEditor={() => <input aria-label="Borrador de puntaje" defaultValue="0.5" />} />);
+    const draft = screen.getByRole('textbox', { name: 'Borrador de puntaje' });
+    fireEvent.change(draft, { target: { value: '0.75' } });
+    expect(screen.getByText('Evidencia contextual de p1')).toBeInTheDocument();
+    view.rerender(<GradeBreakdown breakdown={breakdown} renderEvidence={renderEvidence} editingComponentId="p1" renderEditor={() => <input aria-label="Borrador de puntaje" defaultValue="0.5" />} />);
+    expect(draft).toHaveValue('0.75');
+    renderEvidence.mockClear();
+    view.rerender(<GradeBreakdown breakdown={breakdown} renderEvidence={renderEvidence} student />);
+    expect(renderEvidence).not.toHaveBeenCalled();
+    expect(screen.queryByText('Evidencia contextual de p1')).not.toBeInTheDocument();
+  });
   it('abre directamente la hoja asociada a una respuesta', () => {
     const onEvidencePage = vi.fn();
     render(<GradeBreakdown breakdown={breakdown} onEvidencePage={onEvidencePage} />);
@@ -74,8 +87,8 @@ describe('GradeBreakdown', () => {
     const select = vi.fn();
     const view = render(<GradeBreakdown breakdown={two} selectedComponentId="p2" onSelectComponent={select} />);
     expect(screen.getAllByRole('article')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Pregunta 2, requiere revisión' })).toHaveAttribute('aria-current', 'step');
-    fireEvent.click(screen.getByRole('button', { name: 'Pregunta 1' }));
+    expect(screen.getByRole('button', { name: 'Pregunta 2, Por revisar' })).toHaveAttribute('aria-current', 'step');
+    fireEvent.click(screen.getByRole('button', { name: 'Pregunta 1, Correcta' }));
     expect(select).toHaveBeenCalledWith(breakdown.componentes[0].id);
     view.rerender(<GradeBreakdown breakdown={two} student selectedComponentId="p2" />);
     expect(screen.getAllByRole('article')).toHaveLength(2);
@@ -86,6 +99,28 @@ describe('GradeBreakdown', () => {
     render(<GradeBreakdown breakdown={hidden} student />);
     expect(screen.getByText('Se mostrará cuando el docente libere las respuestas.')).toBeInTheDocument();
     expect(screen.queryByText(/Material de apoyo consultado/)).not.toBeInTheDocument();
+  });
+
+  it('conserva colores, etiquetas e iconos aunque la pregunta esté seleccionada', () => {
+    const components = [
+      { ...breakdown.componentes[0], id: 'ok', estado: 'correcta' },
+      { ...breakdown.componentes[0], id: 'bad', numero: '2', estado: 'incorrecta', puntos_obtenidos: 0 },
+      { ...breakdown.componentes[0], id: 'review', numero: '3', estado: 'correcta', requiere_revision: true },
+      { ...breakdown.componentes[0], id: 'partial', numero: '4', estado: 'parcial', puntos_obtenidos: 0.5 },
+    ];
+    const view = render(<GradeBreakdown breakdown={{ ...breakdown, requiere_revision: true, componentes: components }} selectedComponentId="bad" onSelectComponent={vi.fn()} />);
+    const bad = screen.getByRole('button', { name: 'Pregunta 2, Incorrecta' });
+    expect(bad).toHaveAttribute('aria-current', 'step');
+    expect(bad).toHaveAttribute('data-grade-tone', 'error');
+    expect(bad).not.toHaveClass('bg-brand-600');
+    expect(screen.getByRole('button', { name: 'Pregunta 1, Correcta' })).toHaveAttribute('data-grade-tone', 'success');
+    expect(screen.getByRole('button', { name: 'Pregunta 3, Por revisar' })).toHaveAttribute('data-grade-tone', 'warning');
+    expect(screen.getByRole('button', { name: 'Pregunta 4, Parcial' })).toHaveAttribute('data-grade-tone', 'warning');
+    expect(screen.getByRole('article')).toHaveAttribute('data-grade-tone', 'error');
+    expect(screen.getByRole('article').querySelector('svg.lucide-circle-check-big')).toBeNull();
+    expect(screen.getByRole('article').querySelector('svg.lucide-circle-x')).not.toBeNull();
+    view.rerender(<GradeBreakdown breakdown={{ ...breakdown, componentes: components }} student />);
+    expect(screen.getAllByRole('article').map((item) => item.getAttribute('data-grade-tone'))).toEqual(['success', 'error', 'warning', 'warning']);
   });
 
   it('declara cuando no existe una fuente RAG pertinente', () => {

@@ -29,6 +29,11 @@ class AIStage:
 
 STAGES: tuple[AIStage, ...] = (
     AIStage(
+        "calificacion", "Calificación", "corners", "Ayuda para encuadrar la hoja",
+        "calificacion.bordes", "vision", "grading.evidence_scan_suggestion",
+        "Opcional, solo cuando no se detectan bordes locales; no califica",
+    ),
+    AIStage(
         "calificacion",
         "Calificación",
         "prepare",

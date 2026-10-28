@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 567,
+      "covered": 574,
       "missing": 96
     },
     "by_kind": {
-      "endpoint": 312,
-      "frontend_call": 209,
+      "endpoint": 316,
+      "frontend_call": 212,
       "frontend_route": 38,
       "integration": 7,
       "job": 28,
       "table": 69
     },
-    "total": 663
+    "total": 670
   },
   "exceptions": [],
   "findings": [
@@ -45,13 +45,16 @@
     },
     {
       "category": "orphan_candidate",
-      "description": "25 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
-      "id": "F-4EC9809ADA6E",
+      "description": "28 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
+      "id": "F-52C1F0C03994",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
+        "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
         "backend:GET:/calificaciones/{calificacion_id}/revisiones",
         "backend:GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia",
+        "backend:GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+        "backend:POST:/calificaciones/sugerir-bordes",
         "backend:POST:/calificaciones/{calificacion_id}/recalificar",
         "frontend:/",
         "frontend:/app/configuracion-ia",
@@ -579,7 +582,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "9cf1e679d9496ed59114347b24aa71b26a0d7290defbf84c30283b130b58ecc7",
+  "source_digest": "101f1f7f5c9db99220c1305f8775f8c7c2f3a1fef4cbd158625bf9b1169eaf55",
   "surfaces": [
     {
       "actors": [
@@ -733,7 +736,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 1101,
+      "source_line": 1152,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3707,7 +3710,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/bandeja-docente",
-      "source_line": 1588,
+      "source_line": 1671,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3764,6 +3767,80 @@
     {
       "actors": [
         "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "get_current_user",
+        "require_permission_now:grading.grade"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "capacidades_evidencia",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/calificaciones/capacidades-evidencia",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/capacidades-evidencia",
+      "source_line": 133,
+      "source_path": "backend/app/modules/calificaciones/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/api.scan.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
         "estudiante",
         "profesor"
       ],
@@ -3783,7 +3860,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia",
-      "source_line": 1414,
+      "source_line": 1467,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3847,7 +3924,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "GET:/calificaciones/entregas/{entrega_id}/evidencia/paginas/{numero}",
-      "source_line": 1459,
+      "source_line": 1524,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3910,7 +3987,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}",
-      "source_line": 911,
+      "source_line": 962,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -3973,7 +4050,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesion_id}/estudiantes",
-      "source_line": 935,
+      "source_line": 986,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4017,6 +4094,80 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "get_corner_suggestion",
+        "registered": false,
+        "router": "router"
+      },
+      "id": "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+      "source_line": 76,
+      "source_path": "backend/app/modules/calificaciones/evidence_scan_suggestion_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "estudiante",
         "profesor"
@@ -4036,7 +4187,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1709,
+      "source_line": 1792,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4105,7 +4256,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/desglose/historial",
-      "source_line": 1745,
+      "source_line": 1828,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4174,7 +4325,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/detalle",
-      "source_line": 1515,
+      "source_line": 1598,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4236,7 +4387,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1662,
+      "source_line": 1745,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4298,7 +4449,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones",
-      "source_line": 108,
+      "source_line": 131,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -4342,12 +4493,10 @@
     },
     {
       "actors": [
-        "admin",
-        "profesor"
+        "authenticated"
       ],
       "authorization": [
-        "get_current_user",
-        "require_permission_now:grading.grade"
+        "get_current_user"
       ],
       "consumers": [],
       "coverage": "covered",
@@ -4360,7 +4509,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia",
-      "source_line": 150,
+      "source_line": 210,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -4397,6 +4546,66 @@
         {
           "level": "unit",
           "reference": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "evidencia_revision_page",
+        "registered": false,
+        "router": "router"
+      },
+      "id": "backend:GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+      "source_line": 243,
+      "source_path": "backend/app/modules/calificaciones/revision_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
@@ -4705,7 +4914,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/boletin",
-      "source_line": 837,
+      "source_line": 888,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -4769,7 +4978,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudiante_id}/resumen-academico",
-      "source_line": 816,
+      "source_line": 867,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5391,7 +5600,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/calificaciones",
-      "source_line": 797,
+      "source_line": 848,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5492,7 +5701,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-desglose",
-      "source_line": 1770,
+      "source_line": 1853,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5560,7 +5769,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-entrega",
-      "source_line": 1128,
+      "source_line": 1179,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5623,7 +5832,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/mi-solicitud-revision",
-      "source_line": 1601,
+      "source_line": 1684,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -5824,7 +6033,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{evaluacion_id}/revision",
-      "source_line": 773,
+      "source_line": 824,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10501,7 +10710,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}",
-      "source_line": 981,
+      "source_line": 1032,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10563,7 +10772,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/ajustar",
-      "source_line": 722,
+      "source_line": 773,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10625,7 +10834,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/confirmar",
-      "source_line": 705,
+      "source_line": 756,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10687,7 +10896,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/publicar",
-      "source_line": 1536,
+      "source_line": 1619,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -10749,7 +10958,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacion_id}/revision-manual",
-      "source_line": 739,
+      "source_line": 790,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -11193,7 +11402,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas",
-      "source_line": 1757,
+      "source_line": 1840,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -11532,7 +11741,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidencia_id}/resolver",
-      "source_line": 1678,
+      "source_line": 1761,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13966,7 +14175,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/foto",
-      "source_line": 125,
+      "source_line": 157,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -13975,6 +14184,12 @@
           "reference": "POST:/calificaciones/foto",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/foto",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
         },
         {
           "level": "unit",
@@ -14052,7 +14267,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote",
-      "source_line": 389,
+      "source_line": 440,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14126,7 +14341,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 1575,
+      "source_line": 1658,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14188,7 +14403,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 502,
+      "source_line": 553,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14256,7 +14471,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 1565,
+      "source_line": 1648,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14318,7 +14533,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 1555,
+      "source_line": 1638,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14386,7 +14601,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 870,
+      "source_line": 921,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14448,7 +14663,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesion_id}/foto",
-      "source_line": 1024,
+      "source_line": 1075,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14492,6 +14707,80 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "suggest_evidence_corners",
+        "registered": false,
+        "router": "router"
+      },
+      "id": "backend:POST:/calificaciones/sugerir-bordes",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "POST:/calificaciones/sugerir-bordes",
+      "source_line": 39,
+      "source_path": "backend/app/modules/calificaciones/evidence_scan_suggestion_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -14510,7 +14799,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/incidencias",
-      "source_line": 1641,
+      "source_line": 1724,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14572,7 +14861,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/recalificar",
-      "source_line": 62,
+      "source_line": 70,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -14634,7 +14923,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/reintentar-foto",
-      "source_line": 273,
+      "source_line": 324,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -14696,7 +14985,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/solicitar-reemplazo",
-      "source_line": 344,
+      "source_line": 395,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -16143,7 +16432,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/calificaciones/manual",
-      "source_line": 756,
+      "source_line": 807,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -16320,7 +16609,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas",
-      "source_line": 1183,
+      "source_line": 1234,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -16382,7 +16671,7 @@
       "kind": "endpoint",
       "owner_spec": "007-entregas-estudiante",
       "signature": "POST:/evaluaciones/{evaluacion_id}/entregas/archivo",
-      "source_line": 1275,
+      "source_line": 1326,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -16444,7 +16733,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/iniciar-entrega",
-      "source_line": 1166,
+      "source_line": 1217,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -16583,7 +16872,7 @@
       "kind": "endpoint",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{evaluacion_id}/solicitud-revision",
-      "source_line": 1618,
+      "source_line": 1701,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -20393,7 +20682,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacion_id}/desglose",
-      "source_line": 1724,
+      "source_line": 1807,
       "source_path": "backend/app/modules/calificaciones/router.py",
       "states": [],
       "tests": [
@@ -20660,7 +20949,19 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/fixtures/compare_fpdf_upgrade_samples.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/fixtures/evaluation_visuals.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/fixtures/render_fpdf_upgrade_samples.py"
         },
         {
           "level": "unit",
@@ -20679,6 +20980,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/fixtures/render_visual_export_samples.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
         },
         {
           "level": "unit",
@@ -20817,6 +21130,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
         },
         {
           "level": "unit",
@@ -21074,6 +21399,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_concept_map_normalization.py"
         },
         {
@@ -21194,7 +21525,67 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
         },
         {
           "level": "unit",
@@ -21345,6 +21736,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_opencode_request.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_pdf_service.py"
         },
         {
           "level": "unit",
@@ -21554,6 +21951,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -21579,6 +21982,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -21734,13 +22143,91 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
         },
         {
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/imageHeader.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/components/evidence/nativeCapture.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/scanCanvasBridge.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/scanDetection.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/scanGeometry.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/scanLuminance.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/scanSource.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/scanSubmission.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/scanViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
         },
         {
           "level": "unit",
@@ -22016,6 +22503,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/api.scan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeBreakdown.test.tsx"
         },
         {
@@ -22034,6 +22527,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeFeedback.test.tsx"
         },
         {
@@ -22041,6 +22540,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeGlobalAdjustmentEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
         },
         {
           "level": "unit",
@@ -22058,7 +22563,19 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/gradeCalculationPresentation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/gradeComponentPresentation.test.ts"
         },
         {
           "level": "unit",
@@ -22916,6 +23433,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -24241,6 +24764,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -27815,6 +28344,12 @@
           "level": "e2e",
           "reference": "/login",
           "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -28651,7 +29186,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesionId}",
-      "source_line": 138,
+      "source_line": 158,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -29534,7 +30069,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 453,
+      "source_line": 454,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -29660,7 +30195,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 443,
+      "source_line": 444,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -29786,7 +30321,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/usage",
-      "source_line": 301,
+      "source_line": 302,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -29918,7 +30453,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center",
-      "source_line": 288,
+      "source_line": 289,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -30050,7 +30585,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 283,
+      "source_line": 284,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -30188,7 +30723,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 448,
+      "source_line": 449,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -32082,6 +32617,76 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
+        "backend_contract": "backend:GET:/calificaciones/capacidades-evidencia",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/calificaciones/capacidades-evidencia:frontend/src/modules/calificaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/capacidades-evidencia",
+      "source_line": 54,
+      "source_path": "frontend/src/modules/calificaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/capacidades-evidencia",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/api.scan.test.ts"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
         "backend_contract": "backend:GET:/calificaciones/modo-salon/{sesion_id}",
         "backend_contract_candidates": [],
         "contract_status": "matched"
@@ -32090,7 +32695,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesionId}",
-      "source_line": 106,
+      "source_line": 126,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -32137,6 +32742,229 @@
         "ambiguous"
       ],
       "authorization": [],
+      "consumers": [
+        "116-api-modelos-configurables",
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/calificaciones/sugerir-bordes/{id}:frontend/src/components/evidence/cornerAssistance.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/sugerir-bordes/{id}",
+      "source_line": 83,
+      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_coverage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -32148,7 +32976,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose/historial",
-      "source_line": 213,
+      "source_line": 233,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -32206,7 +33034,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose",
-      "source_line": 203,
+      "source_line": 223,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -32264,7 +33092,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/detalle",
-      "source_line": 155,
+      "source_line": 175,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -32322,7 +33150,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 189,
+      "source_line": 209,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -32380,7 +33208,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{id}/revisiones",
-      "source_line": 81,
+      "source_line": 99,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -32692,7 +33520,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/boletin",
-      "source_line": 141,
+      "source_line": 161,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -32750,7 +33578,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/resumen-academico",
-      "source_line": 147,
+      "source_line": 167,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -36640,7 +37468,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 342,
+      "source_line": 343,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -36772,7 +37600,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{id}",
-      "source_line": 424,
+      "source_line": 425,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -37268,7 +38096,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacionId}/publicar",
-      "source_line": 176,
+      "source_line": 196,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -37540,7 +38368,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
-      "source_line": 218,
+      "source_line": 238,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -38153,7 +38981,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidenciaId}/resolver",
-      "source_line": 199,
+      "source_line": 219,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -38760,7 +39588,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-api/models/discover",
-      "source_line": 176,
+      "source_line": 177,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -38880,7 +39708,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-api/models/probe",
-      "source_line": 183,
+      "source_line": 184,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39000,7 +39828,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 438,
+      "source_line": 439,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39120,7 +39948,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-control-center/validate",
-      "source_line": 314,
+      "source_line": 315,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39240,7 +40068,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/models/refresh",
-      "source_line": 358,
+      "source_line": 359,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39360,7 +40188,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/test",
-      "source_line": 350,
+      "source_line": 351,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39480,7 +40308,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 433,
+      "source_line": 434,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39600,7 +40428,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 429,
+      "source_line": 430,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -40872,7 +41700,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/foto",
-      "source_line": 61,
+      "source_line": 78,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -40881,6 +41709,12 @@
           "reference": "POST:/calificaciones/foto",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/foto",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
         },
         {
           "level": "unit",
@@ -40954,7 +41788,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 168,
+      "source_line": 188,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41012,7 +41846,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 134,
+      "source_line": 154,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41076,7 +41910,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 163,
+      "source_line": 183,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41134,7 +41968,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 181,
+      "source_line": 201,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41198,7 +42032,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 100,
+      "source_line": 120,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41256,7 +42090,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesionId}/foto",
-      "source_line": 114,
+      "source_line": 134,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41303,6 +42137,229 @@
         "ambiguous"
       ],
       "authorization": [],
+      "consumers": [
+        "116-api-modelos-configurables",
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/calificaciones/sugerir-bordes",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/calificaciones/sugerir-bordes:frontend/src/components/evidence/cornerAssistance.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "POST:/calificaciones/sugerir-bordes",
+      "source_line": 75,
+      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_coverage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -41314,7 +42371,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 194,
+      "source_line": 214,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41372,7 +42429,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/reintentar-foto",
-      "source_line": 70,
+      "source_line": 87,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41430,7 +42487,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/solicitar-reemplazo",
-      "source_line": 65,
+      "source_line": 82,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41488,7 +42545,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{id}/recalificar",
-      "source_line": 96,
+      "source_line": 116,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44312,7 +45369,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-control-center/publish",
-      "source_line": 331,
+      "source_line": 332,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -44438,7 +45495,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 416,
+      "source_line": 417,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -44570,7 +45627,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 399,
+      "source_line": 400,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -44696,7 +45753,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 368,
+      "source_line": 369,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -44946,7 +46003,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacionId}/desglose",
-      "source_line": 208,
+      "source_line": 228,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -45591,6 +46648,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_admin_route.py"
         },
         {
@@ -45825,6 +46888,12 @@
       "source_path": "backend/app/core/config.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
         {
           "level": "unit",
           "reference": "redis",
@@ -46520,7 +47589,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_batch",
-      "source_line": 901,
+      "source_line": 935,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -46574,7 +47643,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.grade_delivery",
-      "source_line": 955,
+      "source_line": 989,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -46986,7 +48055,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_grading_jobs",
-      "source_line": 1062,
+      "source_line": 1096,
       "source_path": "backend/app/workers/tasks_grading.py",
       "states": [
         "cancelled",
@@ -47459,6 +48528,12 @@
           "level": "unit",
           "reference": "ai_jobs",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
         },
         {
@@ -47484,6 +48559,12 @@
           "reference": "ai_jobs",
           "status": "direct",
           "test_path": "backend/tests/integration/test_visual_image_attempt.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
         }
       ]
     },
@@ -48719,7 +49800,7 @@
       "kind": "table",
       "owner_spec": "008-calificaciones",
       "signature": "calificacion_revisiones",
-      "source_line": 148,
+      "source_line": 155,
       "source_path": "backend/app/modules/calificaciones/models.py",
       "states": [
         "cambiar_evidencia",
@@ -48755,6 +49836,12 @@
           "reference": "calificacion_revisiones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_revisiones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
         },
         {
           "level": "unit",
@@ -48812,7 +49899,7 @@
       "kind": "table",
       "owner_spec": "008-calificaciones",
       "signature": "calificaciones",
-      "source_line": 97,
+      "source_line": 104,
       "source_path": "backend/app/modules/calificaciones/models.py",
       "states": [
         "ajustada",
@@ -48889,6 +49976,18 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
         },
         {
           "level": "unit",
@@ -49032,6 +50131,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_answer_key_guard.py"
         },
         {
@@ -49128,6 +50233,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_comparator_feedback.py"
         },
         {
@@ -49170,7 +50281,49 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
         },
         {
           "level": "unit",
@@ -49338,6 +50491,12 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -49357,6 +50516,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -49411,6 +50576,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
         },
         {
           "level": "unit",
@@ -49477,6 +50648,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/api.revision.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/api.scan.test.ts"
         },
         {
           "level": "unit",
@@ -49760,6 +50937,12 @@
           "level": "unit",
           "reference": "entregas",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_pipeline.py"
         },
         {
@@ -49808,7 +50991,25 @@
           "level": "unit",
           "reference": "entregas",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
         },
         {
           "level": "unit",
@@ -50343,6 +51544,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_explainable_grading_flow.py"
         },
         {
@@ -50655,7 +51862,19 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
         },
         {
           "level": "unit",
@@ -50787,6 +52006,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -50800,6 +52025,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -51967,6 +53198,12 @@
           "reference": "feedback_publications",
           "status": "domain",
           "test_path": "backend/tests/integration/test_feedback_sharing_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "feedback_publications",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
         },
         {
           "level": "unit",
@@ -53857,7 +55094,7 @@
       "kind": "table",
       "owner_spec": "008-calificaciones",
       "signature": "salon_sesion_estudiantes",
-      "source_line": 183,
+      "source_line": 190,
       "source_path": "backend/app/modules/calificaciones/models.py",
       "states": [],
       "tests": [
@@ -53929,7 +55166,7 @@
       "kind": "table",
       "owner_spec": "008-calificaciones",
       "signature": "salon_sesiones",
-      "source_line": 167,
+      "source_line": 174,
       "source_path": "backend/app/modules/calificaciones/models.py",
       "states": [],
       "tests": [
@@ -54125,6 +55362,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
         },
         {
           "level": "unit",

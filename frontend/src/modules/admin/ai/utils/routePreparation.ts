@@ -5,6 +5,7 @@ export type RoutePreparationIssue = ModelPreparationSelection & { slot: 'primary
 
 /** Advisory guidance only. The server still validates the actual proof and dependencies. */
 export function routePreparationIssues(route: FeatureRouting, previous: FeatureRouting | undefined, providers: AIProvider[], models: AIModel[]): RoutePreparationIssue[] {
+  if (route.feature === 'calificacion.bordes' && !route.active && !route.primary_provider && !route.primary_model && !route.fallback_provider) return [];
   const capability = route.capability ?? 'text';
   if (!['text', 'vision'].includes(capability)) return [];
   const fields = ['primary_provider', 'primary_model', 'fallback_provider', 'fallback_model', 'active', 'rollout_enabled'] as const;

@@ -162,3 +162,7 @@ Como profesor, quiero insertar imágenes, tablas, gráficas o dibujos en una pre
 ## Evolución 128: copia privada de contenido visual existente
 
 [128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, reutiliza contenido guardado sin redigitalizar. Copia bytes verificados en almacenamiento privado de destino y remapea preguntas, bloques, recursos, cobertura y revisión; no comparte permisos por referencia al origen ni publica originales. Conserva avisos/claves pendientes y material revisado. Snapshot fijado al admitir, staging determinista y compensación de archivos propios sin referencia persistida evitan copias incompletas o borrado tras un commit incierto. No añade IA ni inventa documentos ausentes.
+
+## Coordinación 131: evidencia docente revisable
+
+Distingue original de evaluación y original de respuesta estudiantil. Este incremento conserva fuentes nuevas de evidencia docente, sin modificar digitalización de figuras, contenido editorial, generación de imágenes o documentos históricos. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

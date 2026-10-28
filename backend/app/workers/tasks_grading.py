@@ -27,6 +27,9 @@ from app.modules.calificaciones.grading_service import grade_submission
 from app.modules.calificaciones.execution_policy import execution_policy
 from app.modules.calificaciones.recovery import ReviewProgress, context_fingerprint
 from app.modules.calificaciones.models import Calificacion, Entrega
+from app.modules.calificaciones.evidence_manifest import EvidenceManifestError, read_manifest
+from app.modules.calificaciones.evidence_preparation import resolve_canonical_pages
+from app.modules.calificaciones.evidence_preparation_jobs import guard_manifest_job, prepare_delivery_evidence
 from app.modules.calificaciones.salon_mode_service import update_estudiante_estado
 from app.modules.evaluaciones.grading_visual_context import load_grading_context
 from app.modules.calificaciones.grading_visuals import visual_provenance
@@ -53,7 +56,13 @@ async def _load_submission(entrega: Entrega) -> dict:
         "image_bytes": None,
         "image_mime": "image/jpeg",
     }
-    if entrega.archivo_url:
+    manifest = read_manifest(entrega)
+    if manifest is not None:
+        canonical = await resolve_canonical_pages(entrega, manifest)
+        payload["canonical_pages"] = canonical
+        payload["image_bytes"] = canonical.pages[0].content
+        payload["image_mime"] = canonical.pages[0].mime
+    elif entrega.archivo_url:
         path = resolve_upload_path(entrega.archivo_url)
         if not path.is_file():
             raise FileNotFoundError("No se encontro el archivo asociado a la entrega")
@@ -136,6 +145,7 @@ def _extraction_fingerprint(
     image_mime: str,
     blueprint: dict,
     ai_config: dict | None,
+    canonical_fingerprint: str | None = None,
 ) -> str | None:
     if not image_bytes:
         return None
@@ -153,6 +163,7 @@ def _extraction_fingerprint(
             "vision": vision_config,
             "max_side": settings.VISION_MAX_IMAGE_SIDE,
             "pdf_dpi": settings.GRADING_PDF_RENDER_DPI,
+            **({"canonical_fingerprint": canonical_fingerprint} if canonical_fingerprint is not None else {}),
             **({'evaluation_content': {'version_id': blueprint.get('contenido_version_id'), 'hash': blueprint.get('contenido_hash')}}
                if blueprint.get('contenido_version_id') else {}),
         },
@@ -167,7 +178,7 @@ def _extraction_fingerprint(
     return digest.hexdigest()
 
 
-async def _keep_job_alive(job_id: UUID, claim_token: str | None) -> None:
+async def _keep_job_alive(job_id: UUID, claim_token: str | None, *, preserve_stage: bool = False) -> None:
     """Renueva el lease mientras el proveedor continúa trabajando."""
     while True:
         await asyncio.sleep(max(5, settings.AI_JOB_HEARTBEAT_SECONDS))
@@ -177,7 +188,7 @@ async def _keep_job_alive(job_id: UUID, claim_token: str | None) -> None:
                     heartbeat_db,
                     job_id,
                     claim_token=claim_token,
-                    stage="model_inference",
+                    stage=None if preserve_stage else "model_inference",
                 )
                 await heartbeat_db.commit()
             if not renewed:
@@ -203,7 +214,17 @@ async def _grade_delivery(
 ) -> tuple[Calificacion, bool]:
     if job_id and claim_token:
         await jobs_service.lock_owned_job(db, job_id, claim_token)
+    manifest_bound = read_manifest(entrega) is not None or bool((expected_content_reference or {}).get("_evidence_manifest"))
     existing = await _existing_grade(db, entrega.id)
+    if manifest_bound:
+        if not job_id or not claim_token:
+            raise EvidenceManifestError("La preparación necesita su trabajo guardado. No se enviará otra imagen a calificar.")
+        # Same grade -> delivery lock order as an explicit teacher revision.
+        # Taking the delivery first and later updating a grade could deadlock
+        # against a revision that already owns that grade.
+        existing = await db.scalar(select(Calificacion).where(Calificacion.entrega_id == entrega.id)
+                                   .with_for_update().execution_options(populate_existing=True))
+        await guard_manifest_job(db, entrega.id, job_id, claim_token)
     queued_payload = (
         entrega.visual_text_json if isinstance(entrega.visual_text_json, dict) else {}
     )
@@ -244,7 +265,12 @@ async def _grade_delivery(
         existing.estado = CalificacionEstado.PROCESANDO.value
     await db.commit()
 
+    if read_manifest(entrega) is not None:
+        if not job_id or not claim_token:
+            raise EvidenceManifestError("La preparación necesita su trabajo guardado. No se enviará otra imagen a calificar.")
+        await prepare_delivery_evidence(db, delivery=entrega, job_id=job_id, claim_token=claim_token)
     submission = await _load_submission(entrega)
+    canonical = submission.get("canonical_pages")
     review_progress = None
     if job_id and claim_token:
         job_result = await jobs_service.get_job_result(db, job_id)
@@ -256,6 +282,7 @@ async def _grade_delivery(
             "image_sha256": hashlib.sha256(submission["image_bytes"] or b"").hexdigest(),
             "image_mime": submission["image_mime"], "extraction_version": VISION_EXTRACTION_VERSION,
             "vision_max_side": settings.VISION_MAX_IMAGE_SIDE, "pdf_dpi": settings.GRADING_PDF_RENDER_DPI,
+            **({"canonical_fingerprint": canonical.fingerprint} if canonical is not None else {}),
         })
 
         async def persist_review(payload: dict) -> None:
@@ -273,6 +300,7 @@ async def _grade_delivery(
         image_mime=submission["image_mime"],
         blueprint=blueprint,
         ai_config=ai_config,
+        **({"canonical_fingerprint": canonical.fingerprint} if canonical is not None else {}),
     )
     if (
         settings.GRADING_RETRY_CHECKPOINTS_ENABLED
@@ -326,6 +354,7 @@ async def _grade_delivery(
         on_vision_checkpoint=persist_checkpoint,
         **({"review_progress": review_progress} if review_progress is not None else {}),
         **({'evaluation_visuals': context.agent_visuals} if context.agent_visuals else {}),
+        **({'canonical_pages': canonical} if canonical is not None else {}),
     )
     if job_id and claim_token:
         await jobs_service.lock_owned_job(db, job_id, claim_token)
@@ -338,6 +367,10 @@ async def _grade_delivery(
         if existing and existing.revisado_por_docente:
             await db.commit()
             return existing, False
+        if canonical is not None:
+            current_manifest = await guard_manifest_job(db, entrega.id, job_id, claim_token)
+            if current_manifest.canonical_fingerprint != canonical.fingerprint:
+                raise jobs_service.JobOwnershipLost("La evidencia cambió durante la calificación; no se reemplazará su resultado.")
     evidence_metadata = queued_payload.get("evidencia_consolidada")
     if isinstance(evidence_metadata, dict):
         grading.raw_model_output = {
@@ -648,7 +681,8 @@ async def _grade_batch_async(
                         status_value=state or JobEstado.RUNNING.value,
                         processed=0, skipped=0, errors=[], calificacion_ids=[],
                     )
-                heartbeat_task = asyncio.create_task(_keep_job_alive(job_id, claim_token))
+                heartbeat_task = asyncio.create_task(_keep_job_alive(job_id, claim_token,
+                    **({"preserve_stage": True} if job_input.get("_evidence_manifest") else {})))
 
             evaluacion = await db.scalar(
                 select(Evaluacion)

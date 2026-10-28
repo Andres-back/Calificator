@@ -242,6 +242,16 @@ DEFAULT_MODELS: list[dict[str, Any]] = [
 
 DEFAULT_FEATURES: list[dict[str, Any]] = [
     {
+        "feature": "calificacion.bordes",
+        "label": "Ayuda para encuadrar la hoja",
+        "capability": "vision",
+        "primary_provider": "",
+        "primary_model": None,
+        "fallback_provider": None,
+        "rollout_enabled": False,
+        "active": False,
+    },
+    {
         "feature": "xali",
         "label": "Chatbot Xali",
         "primary_provider": "groq",
@@ -508,7 +518,7 @@ class AIConfigService:
                 )
         await self._db.execute(
             sql_text(
-                "UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr','calificacion.extraccion','digitalizacion.extraccion','importacion_estudiantes.extraccion') THEN 'vision' WHEN feature IN ('generacion_imagenes','presentaciones.imagenes') THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"
+                "UPDATE ai_feature_routing SET capability = CASE WHEN feature IN ('calificacion_foto','evaluacion_digitalizar','vision_ocr','calificacion.extraccion','calificacion.bordes','digitalizacion.extraccion','importacion_estudiantes.extraccion') THEN 'vision' WHEN feature IN ('generacion_imagenes','presentaciones.imagenes') THEN 'image' WHEN feature IN ('rag','embeddings') THEN 'embedding' ELSE 'text' END"
             )
         )
         await self._db.execute(
@@ -557,7 +567,11 @@ class AIConfigService:
     async def get_all_features(self) -> list[dict[str, Any]]:
         """Return the persisted feature routing, falling back to defaults."""
         features = await self._load_features_from_db()
-        return features or [dict(feature) for feature in DEFAULT_FEATURES]
+        result = features or [dict(feature) for feature in DEFAULT_FEATURES]
+        if not any(item["feature"] == "calificacion.bordes" for item in result):
+            # Visible but inactive until explicitly configured and published.
+            result = [*result, dict(next(item for item in DEFAULT_FEATURES if item["feature"] == "calificacion.bordes"))]
+        return result
 
     async def get_effective_providers(
         self, tipo: str = "texto"
@@ -599,6 +613,8 @@ class AIConfigService:
                     return item
         if require_persisted:
             raise RuntimeError("Esta función no tiene una ruta de IA guardada")
+        if feature == "calificacion.bordes":
+            return dict(next(item for item in DEFAULT_FEATURES if item["feature"] == feature))
         if feature in {"evaluacion_digitalizar", "importacion_estudiantes.extraccion"}:
             return {
                 "feature": feature,

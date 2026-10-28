@@ -148,3 +148,25 @@ def test_router_reexports_helpers_owned_by_evidence_service() -> None:
         helper = getattr(router, name)
         assert helper is getattr(evidence_service, name)
         assert inspect.getmodule(helper) is evidence_service
+
+
+def test_page_hash_and_pixels_use_the_same_snapshot_when_source_path_changes(tmp_path, monkeypatch):
+    import hashlib
+    from io import BytesIO
+
+    source = tmp_path / "evidence.png"
+    Image.new("RGB", (80, 120), "white").save(source)
+    expected = hashlib.sha256(source.read_bytes()).hexdigest()
+    real_open = Image.open
+
+    def swap_path_then_open(snapshot, *args, **kwargs):
+        if isinstance(snapshot, BytesIO):
+            Image.new("RGB", (80, 120), "red").save(source)
+        return real_open(snapshot, *args, **kwargs)
+
+    monkeypatch.setattr(evidence_service, "get_upload_dir", lambda: tmp_path)
+    monkeypatch.setattr(Image, "open", swap_path_then_open)
+    rendered, total, fingerprint = evidence_service._render_cached_evidence_page(source, 1)
+    assert total == 1 and fingerprint == expected
+    with real_open(rendered) as photo:
+        assert photo.getpixel((40, 40)) == (255, 255, 255)

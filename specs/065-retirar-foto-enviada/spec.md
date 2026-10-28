@@ -40,3 +40,7 @@ Como docente que fotografía evaluaciones, quiero que el estudiante desaparezca 
 - Una calificación existente, cualquiera que sea su estado, indica que la evidencia ya fue recibida o que existe una decisión manual; no se ofrece otra carga desde la lista general.
 - Los reemplazos de evidencia continúan por su flujo dedicado.
 - No se añaden endpoints, tablas ni migraciones.
+
+## Coordinación 131: evidencia docente revisable
+
+Escanear no envía ni crea otra entrega. Se mantiene aceptación confirmada y reemplazo dedicado con historial; un fallo de escaneo permite continuar expresamente con los mismos archivos por la vía habitual. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

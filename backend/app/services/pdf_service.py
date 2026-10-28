@@ -14,7 +14,7 @@ class XCalificatorPDF(FPDF):
     def header(self) -> None:
         self.set_font("Helvetica", "B", 12)
         self.cell(0, 10, "XCalificator", align="C")
-        self.ln(5)
+        self.ln(10)
 
     def footer(self) -> None:
         self.set_y(-15)
@@ -33,7 +33,7 @@ def generate_report_pdf(data: dict[str, Any], title: str) -> bytes:
     pdf.set_font("Helvetica", size=10)
     for key, value in data.items():
         line = f"{key}: {value}"
-        pdf.multi_cell(0, 8, line)
+        pdf.multi_cell(0, 8, line, new_x="LMARGIN", new_y="NEXT")
 
     return bytes(pdf.output())
 

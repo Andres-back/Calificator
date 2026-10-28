@@ -14,6 +14,7 @@ from app.services.ai_pricing import estimate_cost
 logger = get_logger(__name__)
 
 CANONICAL_STAGES = {
+    "corners",
     "extraction", "structure", "key_repair", "grading_primary",
     "grading_secondary", "targeted_recheck", "consolidation",
     "feedback_refinement",

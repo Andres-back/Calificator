@@ -38,6 +38,7 @@ class Entrega(Base):
     respuesta_texto: Mapped[str | None] = mapped_column(Text, nullable=True)
     archivo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     visual_text_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    evidencia_manifiesto: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     contenido_version_id: Mapped[PyUUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("evaluacion_contenido_versiones.id", name="fk_entregas_contenido_version"), nullable=True,
     )
@@ -52,6 +53,10 @@ class Entrega(Base):
     )
 
     def _evidence_document_metadata(self) -> dict:
+        manifest = self.evidencia_manifiesto
+        pages = manifest.get("pages") if isinstance(manifest, dict) else None
+        if isinstance(pages, list) and 1 <= len(pages) <= 10:
+            return {"paginas": len(pages), "tipo": "fotos" if len(pages) > 1 else "foto"}
         payload = self.visual_text_json if isinstance(self.visual_text_json, dict) else {}
         evidence = payload.get("evidencia_consolidada")
         if not isinstance(evidence, dict):
@@ -92,6 +97,8 @@ class Entrega(Base):
 Index("idx_entregas_evaluacion", Entrega.evaluacion_id)
 Index("idx_entregas_estudiante", Entrega.estudiante_id)
 Index("idx_entregas_materia", Entrega.materia_id)
+Index("uq_entregas_scan_request", Entrega.evidencia_manifiesto["request_id"].astext, unique=True,
+      postgresql_where=Entrega.evidencia_manifiesto.is_not(None))
 
 
 class Calificacion(Base):

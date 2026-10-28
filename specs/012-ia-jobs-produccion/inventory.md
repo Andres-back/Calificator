@@ -34,8 +34,8 @@
 | job | `tasks.generate_image` | system | covered | `backend/app/workers/tasks_images.py:5` |
 | job | `tasks.generate_presentation` | system | covered | `backend/app/workers/tasks_presentations.py:33` |
 | job | `tasks.get_ai_config_version` | system | missing | `backend/app/workers/tasks_ai_config.py:30` |
-| job | `tasks.grade_batch` | system | covered | `backend/app/workers/tasks_grading.py:901` |
-| job | `tasks.grade_delivery` | system | covered | `backend/app/workers/tasks_grading.py:955` |
+| job | `tasks.grade_batch` | system | covered | `backend/app/workers/tasks_grading.py:935` |
+| job | `tasks.grade_delivery` | system | covered | `backend/app/workers/tasks_grading.py:989` |
 | job | `tasks.ingest_rag` | system | missing | `backend/app/workers/tasks_rag.py:5` |
 | job | `tasks.prepare_evaluation_print` | system | missing | `backend/app/workers/tasks_evaluation_print.py:71` |
 | job | `tasks.recover_evaluation_print` | system | missing | `backend/app/workers/tasks_evaluation_print.py:95` |
@@ -43,7 +43,7 @@
 | job | `tasks.recover_expired_local_jobs` | system | missing | `backend/app/workers/tasks_ai_config.py:55` |
 | job | `tasks.recover_feedback_questions` | system | covered | `backend/app/workers/tasks_feedback_chat.py:40` |
 | job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:596` |
-| job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1062` |
+| job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1096` |
 | job | `tasks.recover_stale_presentation_jobs` | system | covered | `backend/app/workers/tasks_presentations.py:84` |
 | job | `tasks.recover_stale_roster_import_jobs` | system | covered | `backend/app/workers/tasks_roster_import.py:143` |
 | job | `tasks.send_password_reset_email` | system | missing | `backend/app/workers/tasks_password_recovery.py:116` |

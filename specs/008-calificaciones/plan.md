@@ -31,3 +31,7 @@ La evolución [032](../032-calificacion-impacto-docente/plan.md) implementa recu
 ## Coordinación 130 en curso
 
 Principal, segundo evaluador y confirmador reciben contexto educativo de la revisión de entrega. Los presupuestos ya compilados no añaden una segunda ponderación; notas y decisiones históricas permanecen intactas. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.
+
+## Coordinación 131: evidencia docente revisable
+
+Incorpora preparación opcional de evidencia docente, originales privados, misma página canónica para todos los roles, colores semánticos y acercamiento por pregunta. No modifica fórmulas, modelos, decisiones ni permisos de publicación. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

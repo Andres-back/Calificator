@@ -98,6 +98,18 @@ it('only applies visible-viewport positioning to explicitly opted-in dialogs', (
   expect(dialog.style.position).toBe('');
 });
 
+it('fullscreen dialogs trap focus without folded or hidden controls', () => {
+  render(<Modal open fullScreen title="Preparar hoja" onClose={vi.fn()}>
+    <details><summary>Ajuste preciso</summary><button type="button">Oculto</button></details>
+    <div style={{ display: 'none' }}><button type="button">Pestaña oculta</button></div>
+    <button type="button">Usar original</button>
+  </Modal>);
+  expect(screen.getByRole('dialog')).toHaveAttribute('data-full-screen', 'true');
+  screen.getByRole('button', { name: 'Usar original' }).focus();
+  fireEvent.keyDown(document, { key: 'Tab' });
+  expect(screen.getByRole('button', { name: 'Cerrar diálogo' })).toHaveFocus();
+});
+
 it('returns focus to the opener without scrolling the underlying list', () => {
   const opener = document.createElement('button');
   opener.textContent = 'Ver boletín';

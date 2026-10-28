@@ -24,6 +24,7 @@ from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado
+from app.services.answer_evidence_regions import attach_answer_regions, public_answer_regions
 
 
 _QUESTION_IN_ALERT = re.compile(r"\b(?:pregunta\s*|p\s*\.?\s*)(\d+)\b", re.IGNORECASE)
@@ -71,6 +72,7 @@ def _component_dict(component: CalificacionComponente, *, student: bool = False,
         "origen": component.origen,
         "requiere_revision": component.requiere_revision,
         "evidencia_paginas": list((component.evidencia_json or {}).get("paginas") or []),
+        "evidencia_regiones": [] if student else public_answer_regions((component.evidencia_json or {}).get("regiones")),
         # Las fuentes de apoyo pueden contener fragmentos privados del docente.
         # El estudiante recibe la explicación, nunca esa procedencia interna.
         "fuentes": [] if student else list((component.evidencia_json or {}).get("fuentes") or []),
@@ -211,6 +213,12 @@ async def create_automatic_breakdown(
             raw_output.get("graphic_uncertain_questions") or []
         ),
         verifier_disputed_questions=_verifier_disputed_questions(verifier_alerts),
+    )
+    vision_output = raw_output.get("vision")
+    attach_answer_regions(
+        components,
+        vision_output.get("extraction") if isinstance(vision_output, dict) else None,
+        getattr(calificacion, "entrega_id", None),
     )
     if grader_b.get("requiere_revision_docente") or verifier_alerts:
         if verifier_alerts:

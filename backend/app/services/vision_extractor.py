@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import json
 import re
 import time
@@ -13,7 +14,7 @@ from uuid import uuid4
 
 import httpx
 from PIL import Image
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -21,6 +22,8 @@ from app.modules.analytics.usage_logger import log_ai_usage
 from app.services.ai_provider_capacity import provider_capacity
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.services.image_preprocessing import prepare_orientation_variants
+from app.modules.calificaciones.evidence_preparation import CanonicalEvidencePages
+from app.services.answer_evidence_regions import model_answer_regions, rotate_answer_regions, sanitize_answer_regions
 from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderError
 from app.services.opencode_request import new_opencode_session_id, opencode_headers
 
@@ -71,6 +74,12 @@ class ExtractedAnswer(BaseModel):
     needs_review: bool = False
     correction_detected: bool = False
     partial: bool = False
+    regions: list[dict] = Field(default_factory=list)
+
+    @field_validator("regions", mode="before")
+    @classmethod
+    def optional_regions(cls, value: object) -> list[dict]:
+        return sanitize_answer_regions(value)
 
     @model_validator(mode="after")
     def preserve_uncertainty(self) -> "ExtractedAnswer":
@@ -107,6 +116,7 @@ class VisionPageResult(BaseModel):
 
 
 class VisionExtraction(BaseModel):
+    source_fingerprint: str | None = None
     student_detected: bool = False
     document_quality: float = Field(0, ge=0, le=1)
     pages_processed: int = 0
@@ -174,7 +184,11 @@ class VisionExtractionError(RuntimeError):
         self.code, self.temporary = code, temporary
 
 
-def _pages(content: bytes, mime: str) -> list[tuple[int, bytes, str, bool]]:
+def _pages(content: bytes, mime: str, *, canonical_pages: CanonicalEvidencePages | None = None) -> list[tuple[int, bytes, str, bool]]:
+    if canonical_pages is not None:
+        if not isinstance(canonical_pages, CanonicalEvidencePages):
+            raise VisionExtractionError("vision_invalid_file")
+        return [(page.number, page.content, page.mime, False) for page in canonical_pages.pages]
     if not content:
         raise VisionExtractionError("vision_invalid_file")
     try:
@@ -249,6 +263,7 @@ def _normalize(raw: dict[str, Any], page: int, size: int) -> VisionPageResult:
             needs_review=bool(item.get("needs_review", item.get("requiere_revision", False))),
             correction_detected=bool(item.get("correction_detected", False)),
             partial=bool(item.get("partial", item.get("respuesta_parcial", False))),
+            regions=model_answer_regions(item.get("regions"), page=page),
         ))
     quality = raw.get("document_quality", raw.get("confidence", 0))
     if isinstance(quality, dict):
@@ -282,6 +297,7 @@ def _merge(pages: list[VisionPageResult]) -> list[ExtractedAnswer]:
         observed = [a for a in candidates if a.answer or a.visual_description]
         current = (observed[0] if observed else candidates[0]).model_copy(deep=True)
         current.source_pages = sorted({p for a in candidates for p in a.source_pages})
+        current.regions = sanitize_answer_regions([region for answer in candidates for region in answer.regions])
         current.correction_detected = any(a.correction_detected for a in candidates)
         if observed:
             texts = list(dict.fromkeys(a.answer.strip() for a in observed if a.answer and a.answer.strip()))
@@ -421,6 +437,7 @@ el estudiante, los productos parciales y el resultado final. Si los operandos vi
 del enunciado, conserva exactamente lo visible y marca needs_review=true. Si un dígito no se
 distingue, usa answer=null, legible=false y needs_review=true; nunca lo completes calculando.
 {drawing_rule}
+{('Opcional: por respuesta, regions=[[x,y,ancho,alto]] puede contener UNA caja normalizada de 0 a 1 que abarque sus trazos y pasos sobre ESTA imagen. Nunca inventes otra hoja o ubicación. Si no estás seguro o falta espacio, omite regions. Prioriza siempre las respuestas completas.' if purpose == 'student_response' else '')}
 Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review=true.
 Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
 {{"student_detected":true,"page_role":"unknown","document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"present":true,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
@@ -577,6 +594,8 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         parsing_started = time.monotonic()
                         raw, repaired = _parse_json(content)
                         result = _normalize(raw, page, len(data))
+                        for answer in result.answers:
+                            answer.regions = rotate_answer_regions(answer.regions, rotation)
                         result.duration_ms = int((time.monotonic() - started) * 1000)
                         result.model = model
                         result.provider = str(selection.get("provider")) if selection else self.provider
@@ -682,10 +701,12 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             fallback_used=len(models) > 1,
             warnings=["Página no extraída automáticamente."],
         )
-    async def extract(self, content: bytes, mime: str, *, blueprint: dict | None = None, purpose: Literal["student_response", "evaluation_document"] = "student_response") -> VisionExtraction:
+    async def extract(self, content: bytes, mime: str, *, blueprint: dict | None = None, purpose: Literal["student_response", "evaluation_document"] = "student_response", canonical_pages: CanonicalEvidencePages | None = None) -> VisionExtraction:
         started = time.monotonic()
         preparation_started = time.monotonic()
-        prepared = _pages(content, mime)
+        if canonical_pages is not None and purpose != "student_response":
+            raise VisionExtractionError("vision_invalid_file")
+        prepared = _pages(content, mime, **({"canonical_pages": canonical_pages} if canonical_pages is not None else {}))
         preparation_ms = int((time.monotonic() - preparation_started) * 1000)
         self._total_pages = len(prepared)
         semaphore = asyncio.Semaphore(max(1, settings.VISION_MAX_CONCURRENCY))
@@ -743,6 +764,7 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             warnings.append("Faltan páginas; revisión docente obligatoria.")
         fallback = next((item for item in results if item.fallback_used), None)
         return VisionExtraction(
+            source_fingerprint=canonical_pages.fingerprint if canonical_pages is not None else hashlib.sha256(content).hexdigest(),
             student_detected=any(
                 answer.answer is not None or answer.visual_description is not None
                 for answer in answers

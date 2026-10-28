@@ -44,6 +44,8 @@ import { addPendingGrading } from './gradingJobs';
 import { GradingJobMonitor } from './GradingJobMonitor';
 import { RevisionGuide } from './RevisionGuide';
 import { GradeBreakdown } from './components/GradeBreakdown';
+import { GradeEvidenceViewer } from './components/GradeEvidenceViewer';
+import { GradeQuestionEvidence } from './components/GradeQuestionEvidence';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
 import { GradeFeedback } from './components/GradeFeedback';
 import { GradeReprocessing } from './components/GradeReprocessing';
@@ -653,6 +655,7 @@ function PanelDetalle({
   const [mobileTab, setMobileTab] = useState<ReviewSection>(() => detailParams.has('pregunta') ? 'revision' : detailParams.has('hoja') ? 'evidencia' : 'resumen');
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const detailPermissions = useAuth((state) => state.user?.permissions ?? []);
+  const detailActorId = useAuth((state) => state.user?.id ?? '');
   const reviewSectionRef = useRef<HTMLDivElement | null>(null);
   const detailViewRef = useRef<HTMLDivElement | null>(null);
   const incomingQuestion = useRef(detailParams.get('pregunta'));
@@ -698,7 +701,6 @@ function PanelDetalle({
       detailViewRef.current?.scrollIntoView({ block: 'start' });
     });
   };
-  const [evidenceLoadError, setEvidenceLoadError] = useState(false);
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
   const feedbackSectionRef = useRef<HTMLDivElement | null>(null);
   const adjustmentSectionRef = useRef<HTMLDivElement | null>(null);
@@ -789,7 +791,6 @@ function PanelDetalle({
     setAdjFeedback(originalFeedback);
     setAdjError('');
     setBreakdownSaveError('');
-    setEvidenceLoadError(false);
   }, [cal.id, cal.estado, originalNota, originalFeedback]);
 
   // Notify parent about dirty state
@@ -847,6 +848,9 @@ function PanelDetalle({
     ...(graderA?.requiere_revision_docente || graderB?.requiere_revision_docente || strategy?.arbiter_reason === 'verifier_requested' ? ['verificador_solicita_revision'] : []),
   ])];
   const evidenceUrl = cal.entrega_archivo_url;
+  const evidenceScope = `${detailActorId}:${cal.id}:${cal.updated_at}:${evidenceUrl ?? ''}`;
+  const [variantSelection, setVariantSelection] = useState<{ scope: string; value: 'original' | 'preparada' } | null>(null);
+  const evidenceVariant = cal.entrega_original_disponible && variantSelection?.scope === evidenceScope ? variantSelection.value : 'preparada';
   const evidencePages = Math.max(1, cal.entrega_evidencia_paginas || 1);
   const isPdfEvidence = Boolean(evidenceUrl) && (
     cal.entrega_evidencia_tipo?.toLowerCase() === 'pdf'
@@ -857,14 +861,13 @@ function PanelDetalle({
   if ((manualReview || activeBreakdown?.requiere_revision) && reviewTriage.exceptions.length === 0 && reviewTriage.globalBlockers.length === 0 && alertas.length === 0) alertas.push('revision_docente_pendiente');
   const hasReviewNotices = reviewTriage.items.length > 0 || reviewTriage.globalBlockers.length > 0 || alertas.length > 0;
   const hasInitialReviewNotices = reviewTriage.exceptions.length > 0 || reviewTriage.globalBlockers.length > 0 || alertas.length > 0;
-  const evidencePageUrl = evidenceUrl ? `${evidenceUrl}/paginas/${evidencePage}` : null;
+  const evidencePageUrl = evidenceUrl ? `${evidenceUrl}/paginas/${evidencePage}${evidenceVariant === 'original' ? '?version=original' : ''}` : null;
 
   function showEvidencePage(page: number) {
     if (!canChangeDetailView('evidencia')) return;
     mobileForm.finishWriting();
     const normalized = Math.min(evidencePages, Math.max(1, page));
     setEvidencePage(normalized);
-    setEvidenceLoadError(false);
     setMobileTab('evidencia');
     window.requestAnimationFrame(() => evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
@@ -939,6 +942,15 @@ function PanelDetalle({
       onSelectComponent={selectQuestion}
       onEdit={canGrade ? requestComponentEdit : undefined}
       onEvidencePage={evidenceUrl ? showEvidencePage : undefined}
+      renderEvidence={evidenceUrl && mobileTab === 'revision' ? (component) => <GradeQuestionEvidence
+        key={`${detailActorId}:${cal.id}:${activeBreakdown.version}:${component.id}`}
+        evidenceUrl={evidenceUrl}
+        pages={evidencePages}
+        associatedPages={component.evidencia_paginas}
+        regions={component.evidencia_regiones}
+        activePage={evidencePage}
+        onPageChange={setEvidencePage}
+      /> : undefined}
       editingComponentId={editingComponentId}
       renderEditor={(component) => (
         <GradeComponentEditor
@@ -1094,8 +1106,8 @@ function PanelDetalle({
             <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
           </div>
         )}
-        <div ref={detailViewRef} className={cn('min-w-0 scroll-mt-4', mobileTab === 'revision' && evidenceUrl && '2xl:grid 2xl:grid-cols-2 2xl:items-start 2xl:gap-3')} aria-label="Vista de la revisión">
-          <section hidden={mobileTab !== 'evidencia' && !(mobileTab === 'revision' && evidenceUrl)} className={cn('min-w-0 rounded-xl border border-border', mobileTab === 'revision' && 'hidden 2xl:block')}>
+        <div ref={detailViewRef} className="min-w-0 scroll-mt-4" aria-label="Vista de la revisión">
+          <section hidden={mobileTab !== 'evidencia'} className="min-w-0 rounded-xl border border-border">
           <div id="grade-evidence-panel" className="min-w-0 space-y-4 p-3">
             {evidenceUrl ? (
               <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2">
@@ -1114,6 +1126,13 @@ function PanelDetalle({
                     Abrir en grande <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
+                {cal.entrega_original_disponible && <div className="flex flex-wrap items-center gap-2 border-b border-border p-3" aria-label="Versión de la evidencia">
+                  <Button type="button" size="sm" className="min-h-11" variant={evidenceVariant === 'preparada' ? 'primary' : 'outline'}
+                    aria-pressed={evidenceVariant === 'preparada'} onClick={() => setVariantSelection({ scope: evidenceScope, value: 'preparada' })}>Foto preparada</Button>
+                  <Button type="button" size="sm" className="min-h-11" variant={evidenceVariant === 'original' ? 'primary' : 'outline'}
+                    aria-pressed={evidenceVariant === 'original'} onClick={() => setVariantSelection({ scope: evidenceScope, value: 'original' })}>Foto original</Button>
+                  <p className="basis-full text-xs leading-5 text-muted">La ubicación sugerida por pregunta corresponde a la foto preparada. El original se consulta como hoja completa.</p>
+                </div>}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
                   <Button type="button" size="sm" className="min-h-11" variant="ghost" disabled={evidencePage <= 1} onClick={() => showEvidencePage(evidencePage - 1)}>Anterior</Button>
                   <div className="flex max-w-full gap-1 overflow-x-auto py-1" aria-label="Páginas de evidencia">
@@ -1129,21 +1148,7 @@ function PanelDetalle({
                   </div>
                   <Button type="button" size="sm" className="min-h-11" variant="ghost" disabled={evidencePage >= evidencePages} onClick={() => showEvidencePage(evidencePage + 1)}>Siguiente</Button>
                 </div>
-                {evidenceLoadError ? (
-                  <div role="alert" className="flex min-h-56 flex-col items-center justify-center gap-3 bg-surface p-5 text-center">
-                    <FileImage className="h-8 w-8 text-muted" />
-                    <p className="text-sm text-muted">No se pudo mostrar esta hoja. Puedes abrir la evidencia completa.</p>
-                    <a href={evidenceUrl} target="_blank" rel="noreferrer" className="font-semibold text-brand-700 dark:text-brand-200">Abrir evidencia completa</a>
-                  </div>
-                ) : (
-                  <img
-                    key={evidencePageUrl}
-                    src={evidencePageUrl ?? evidenceUrl}
-                    alt={`Hoja ${evidencePage} de la evidencia del estudiante`}
-                    onError={() => setEvidenceLoadError(true)}
-                    className="max-h-[34rem] w-full bg-white object-contain p-2"
-                  />
-                )}
+                {mobileTab === 'evidencia' && <GradeEvidenceViewer key={`${evidenceScope}:${evidencePageUrl}`} src={evidencePageUrl ?? evidenceUrl} label={`Hoja ${evidencePage} de la evidencia del estudiante`} />}
                 <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs leading-5 text-muted">Si falta una hoja o la foto no corresponde, solicita todas las hojas de nuevo.</p>
                   {canReviewClaims && <Button type="button" size="sm" className="min-h-11" variant="outline" onClick={() => setReplacementOpen(true)}>

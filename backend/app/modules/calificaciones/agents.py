@@ -22,6 +22,7 @@ from app.modules.calificaciones.grading_visuals import (
     EvaluationVisualInput, VisualContextError, describe_evaluation_material, visual_image_groups,
 )
 from app.services.image_preprocessing import prepare_orientation_variants
+from app.modules.calificaciones.evidence_preparation import CanonicalEvidencePages
 from app.services.llm_router import (
     LLMOutputTruncatedError,
     LLMRouter,
@@ -196,7 +197,12 @@ def _normalize_anthropic_response(data: dict[str, Any]) -> dict[str, Any]:
 def _prepare_multimodal_images(
     file_bytes: bytes,
     mime_type: str,
+    *, canonical_pages: CanonicalEvidencePages | None = None,
 ) -> list[tuple[bytes, str, int]]:
+    if canonical_pages is not None:
+        if not isinstance(canonical_pages, CanonicalEvidencePages):
+            raise ValueError("La preparación de la evidencia no está verificada")
+        return canonical_pages.images()
     if mime_type != "application/pdf":
         return [(file_bytes, mime_type, 1)]
     try:
@@ -301,6 +307,7 @@ class AgentContext:
     image_bytes: bytes | None = None
     image_mime: str = "image/jpeg"
     evaluation_visuals: tuple[EvaluationVisualInput, ...] = ()
+    canonical_pages: CanonicalEvidencePages | None = None
 
     @property
     def requires_visual_material(self) -> bool:
@@ -679,6 +686,7 @@ class OpenCodeClient:
         max_attempts: int | None = None,
         stage: str = "extraction",
         evaluation_visuals: tuple[EvaluationVisualInput, ...] = (),
+        canonical_pages: CanonicalEvidencePages | None = None,
     ) -> dict[str, Any]:
         """Chat completions con imagen incluida (multimodal).
 
@@ -689,7 +697,8 @@ class OpenCodeClient:
         numerada para que ninguna respuesta quede fuera del analisis.
         """
         import base64
-        images = _prepare_multimodal_images(image_bytes, image_mime) if image_bytes else []
+        images = _prepare_multimodal_images(image_bytes or b"", image_mime,
+            **({"canonical_pages": canonical_pages} if canonical_pages is not None else {})) if image_bytes or canonical_pages is not None else []
         material_images = visual_image_groups(evaluation_visuals)
         total_images = len(images) + len(material_images)
         image_sizes = [len(data) for data, _, _ in images] + [len(group[0].image_bytes) for group in material_images]
@@ -791,7 +800,7 @@ async def vision_agent(
 ) -> AgentResult:
     """Extrae evidencia estructurada; nunca decide la nota."""
     del timeout, max_attempts
-    if not ctx.image_bytes:
+    if not ctx.image_bytes and ctx.canonical_pages is None:
         return AgentResult(
             nota_sugerida=None, confianza=0, feedback_estudiante="",
             proveedor="ollama" if provider == "ollama" else "opencode",
@@ -810,10 +819,11 @@ async def vision_agent(
             api_key=api_key or (client.api_key if client else None),
             provider=provider,
         ).extract(
-            ctx.image_bytes,
+            ctx.image_bytes or b"",
             ctx.image_mime,
             blueprint=ctx.blueprint,
             purpose=purpose,
+            **({"canonical_pages": ctx.canonical_pages} if ctx.canonical_pages is not None else {}),
         )
         parsed = extraction.legacy_payload()
         return AgentResult(
@@ -1138,6 +1148,7 @@ def partition_grading_context(
             ],
             image_bytes=ctx.image_bytes,
             image_mime=ctx.image_mime,
+            canonical_pages=ctx.canonical_pages,
             evaluation_visuals=tuple(item for item in ctx.evaluation_visuals
                 if str(question.get('contenido_id')) in item.question_ids),
         ))
@@ -1224,6 +1235,7 @@ async def grader_agent(
                 json_mode=True, max_tokens=output_tokens,
                 timeout=timeout, max_attempts=max_attempts, stage=stage,
                 **({'evaluation_visuals': ctx.evaluation_visuals} if ctx.evaluation_visuals else {}),
+                **({'canonical_pages': ctx.canonical_pages} if ctx.canonical_pages is not None else {}),
             )
         else:
             raw = await client.chat(
@@ -1412,6 +1424,7 @@ async def verification_agent(
                 image_bytes=ctx.image_bytes,
                 image_mime=ctx.image_mime,
                 **({'evaluation_visuals': ctx.evaluation_visuals} if ctx.evaluation_visuals else {}),
+                **({'canonical_pages': ctx.canonical_pages} if ctx.canonical_pages is not None else {}),
             )
         else:
             raw = await client.chat(

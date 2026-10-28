@@ -18,3 +18,7 @@
 - [x] T008 [FR-010] Ejecutar pruebas focalizadas frontend/backend, tipos, build y lint de archivos afectados.
 - [x] T009 [FR-004] Validar el recorrido móvil con Playwright en 360×800 y 390×844.
 - [x] T010 [FR-009] [FR-010] Actualizar trazabilidad, comprobar que no hay migraciones y abrir PR del issue #125.
+
+## Coordinación 131: evidencia docente revisable
+
+La captura docente mantiene contexto, matrícula, hojas y envío expreso. El escaneo es posterior a la cámara nativa y solo opt-in; digitalizar el enunciado y otros consumidores no se activan automáticamente. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

@@ -110,6 +110,17 @@ server {
         try_files $uri =404;
     }
 
+    # Only this local Worker compiles fixed WASM; never relax page script policy.
+    location ~ ^/assets/evidenceScan\.worker-[A-Za-z0-9_-]+\.js$ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "no-referrer" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Content-Security-Policy "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self';" always;
+        access_log off;
+    }
+
     location ~* \.(?:css|js|mjs|woff2?|ttf|png|jpe?g|webp|svg|ico)$ {
         try_files $uri =404;
         expires 1y;

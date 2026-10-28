@@ -129,3 +129,7 @@ F1 — partial, HIGH, constitución VII/VIII y T038: el job frontend encadena 26
 ## Coordinación 130 en curso
 
 El inventario documental reutiliza extracción/checkpoints y material visual autorizado. Se generaliza el escritor de versiones para texto sin fabricar un manifiesto visual vacío; cobertura documental y visual siguen verificándose por separado. El alcance y las pruebas nuevos se registran una sola vez en [Spec130](../130-digitalizacion-secciones/spec.md), [su plan](../130-digitalizacion-secciones/plan.md) y [sus tareas](../130-digitalizacion-secciones/tasks.md), issue #274. Esta referencia no acredita cierre, CI ni activación en producción.
+
+## Coordinación 131: evidencia docente revisable
+
+Distingue original de evaluación y original de respuesta estudiantil. Este incremento conserva fuentes nuevas de evidencia docente, sin modificar digitalización de figuras, contenido editorial, generación de imágenes o documentos históricos. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

@@ -91,3 +91,7 @@ Como docente en computador, quiero seguir viendo su cámara y elegir otra conect
 - Las pruebas automatizadas comprueban la solicitud de captura y el retorno de archivos sintéticos; no sustituyen una prueba de la cámara física, permisos o calidad de lente de un iPhone/Android.
 - Fuera de alcance: recorte automático, mejora mediante IA, conversión de formatos nueva, cambios en backend/base de datos/modelos, recalificación real, extracción de figuras o despliegue manual.
 - No se implementa antes de aprobar especificación/plan y revisar requisitos conforme a la constitución. Crear esta especificación no autoriza fusión o despliegue.
+
+## Coordinación 131: evidencia docente revisable
+
+Conserva captura nativa en teléfono y webcam/selector en PC. El editor revisable se abre después de recibir la foto; no reintroduce una cámara móvil en un recuadro pequeño. La prueba física sigue siendo un gate independiente. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

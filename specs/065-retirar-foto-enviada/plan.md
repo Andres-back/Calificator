@@ -38,3 +38,7 @@ La regla pura de exclusión reside en `submissionCandidates.ts` para mantener el
 - **Error de red**: no se llama el callback de aceptación y se conservan hojas/selección.
 - **Reemplazo legítimo**: continúa por el flujo específico de reemplazo, sin duplicar entregas desde la carga general.
 - **Panel de asistencia demasiado alto**: una regresión a 390×844 valida posición normal, acceso al reporte y ausencia de desbordamiento.
+
+## Coordinación 131: evidencia docente revisable
+
+Escanear no envía ni crea otra entrega. Se mantiene aceptación confirmada y reemplazo dedicado con historial; un fallo de escaneo permite continuar expresamente con los mismos archivos por la vía habitual. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

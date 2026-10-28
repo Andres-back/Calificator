@@ -44,6 +44,9 @@ class FakeDB:
         self.events: list[str] = []
         self.scalar_values = list(scalar_values or [])
 
+    async def execute(self, query, _params=None):
+        assert "pg_advisory_xact_lock" in str(query)
+
     async def scalar(self, _query):
         from app.modules.evaluaciones.models import Evaluacion
         if _query.column_descriptions[0].get('entity') is Evaluacion:

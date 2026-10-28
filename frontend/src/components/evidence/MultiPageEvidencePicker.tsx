@@ -1,15 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   AlertTriangle, ArrowDown, ArrowUp, Camera, CheckCircle2, FilePlus2, FileText, Images,
-  RotateCw, Trash2, ZoomIn,
+  RotateCw, ScanLine, Trash2, ZoomIn,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { Modal } from '@/components/ui';
 import type { EvidencePage, EvidenceRotation } from './evidencePayload';
-import { analyzeEvidenceImage } from './imageQuality';
+import { analyzeEvidenceImage, type ImageQualityResult } from './imageQuality';
 import { CameraCapture } from './CameraCapture';
 import { openEvidenceFilePicker, prefersNativeCapture } from './nativeCapture';
+import { EvidenceScanEditor } from './EvidenceScanEditor';
+import type { CornerAssistant } from './cornerAssistance';
 
 const MAX_FILES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -27,15 +29,21 @@ interface Props {
   allowPdf?: boolean;
   maxTotalBytes?: number;
   maxImageBytes?: number;
+  maxFiles?: number;
+  /** Only contextual capability may enable this. Legacy consumers stay unchanged. */
+  scanEnabled?: boolean;
+  suggestCorners?: CornerAssistant;
 }
 
-function PageVisual({ page, className }: { page: EvidencePage; className: string }) {
+function PageVisual({ page, className, scanEnabled }: { page: EvidencePage; className: string; scanEnabled: boolean }) {
   const [url, setUrl] = useState('');
+  const preview = page.scan?.decision === 'prepared' ? page.scan.preview : scanEnabled ? null : page.file;
   useEffect(() => {
-    const nextUrl = URL.createObjectURL(page.file);
+    if (!preview) { setUrl(''); return; }
+    const nextUrl = URL.createObjectURL(preview);
     setUrl(nextUrl);
     return () => URL.revokeObjectURL(nextUrl);
-  }, [page.file]);
+  }, [preview]);
 
   if (page.file.type === 'application/pdf') {
     return (
@@ -46,7 +54,7 @@ function PageVisual({ page, className }: { page: EvidencePage; className: string
   }
   return (
     <div className={`${className} grid place-items-center overflow-hidden bg-surface-2`}>
-      {url && <img src={url} alt="" className="max-h-full max-w-full object-contain transition-transform" style={{ transform: `rotate(${page.rotation}deg)` }} />}
+      {url ? <img src={url} alt="" className="max-h-full max-w-full object-contain transition-transform" style={{ transform: `rotate(${page.scan?.decision === 'prepared' ? 0 : page.rotation}deg)` }} /> : <ScanLine className="h-12 w-12 text-muted" aria-hidden="true" />}
     </div>
   );
 }
@@ -72,7 +80,8 @@ function PreviewModal({ page, pageNumber, onClose }: { page: EvidencePage | null
   );
 }
 
-export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '', allowPdf = true, maxTotalBytes = MAX_TOTAL_BYTES, maxImageBytes = MAX_IMAGE_BYTES }: Props) {
+export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '', allowPdf = true, maxTotalBytes = MAX_TOTAL_BYTES, maxImageBytes = MAX_IMAGE_BYTES, maxFiles = MAX_FILES, scanEnabled = false, suggestCorners }: Props) {
+  const pageLimit = Math.min(MAX_FILES, Math.max(1, maxFiles));
   const selectionCleanup = useRef<(() => void) | null>(null);
   const contextEpoch = useRef(0);
   const currentContext = useRef(contextKey);
@@ -84,16 +93,30 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [scanRequest, setScanRequest] = useState<{ id: string; epoch: number } | null>(null);
+  const qualityQueue = useRef<(() => Promise<void>)[]>([]);
+  const qualityRunning = useRef(false);
+  const drainQuality = async () => {
+    if (qualityRunning.current) return;
+    qualityRunning.current = true;
+    try {
+      while (qualityQueue.current.length) {
+        try { await qualityQueue.current.shift()!(); }
+        catch { /* Do not break the next explicit selection after a browser failure. */ }
+      }
+    } finally { qualityRunning.current = false; }
+  };
   useEffect(() => { pagesRef.current = pages; }, [pages]);
   useLayoutEffect(() => {
     contextEpoch.current++;
     setCameraRequest(null);
     setPreviewId(null);
+    setScanRequest(null);
     return () => {
       selectionCleanup.current?.();
       selectionCleanup.current = null;
     };
-  }, [contextKey, disabled]);
+  }, [contextKey, disabled, scanEnabled]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
@@ -101,7 +124,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   const reportError = (message: string) => onError ? onError(message) : toast.error(message);
   const canSelect = (replacementId: string | null) => !disabledRef.current && mounted.current
     && !pagesRef.current.some((page) => page.file.type === 'application/pdf')
-    && (replacementId ? pagesRef.current.some((page) => page.id === replacementId) : pagesRef.current.length < MAX_FILES);
+    && (replacementId ? pagesRef.current.some((page) => page.id === replacementId) : pagesRef.current.length < pageLimit);
   const openCamera = (replacementId: string | null = null) => {
     if (!canSelect(replacementId)) return;
     if (prefersNativeCapture()) { selectFiles(true, replacementId); return; }
@@ -142,8 +165,8 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
     if ((incomingPdf && (incoming.length > 1 || retainedPages.length > 0)) || existingPdf) {
       reportError('Entrega varias fotografías o un único PDF, pero no los mezcles.'); return;
     }
-    if (!incomingPdf && retainedPages.length + incoming.length > MAX_FILES) {
-      reportError(`Puedes seleccionar máximo ${MAX_FILES} fotografías.`); return;
+    if (!incomingPdf && retainedPages.length + incoming.length > pageLimit) {
+      reportError(`Puedes seleccionar máximo ${pageLimit} fotografías.`); return;
     }
     if (incoming.some((file) => file.type !== 'application/pdf' && file.size > maxImageBytes)) {
       reportError(`Cada fotografía debe pesar máximo ${maxImageBytes / 1024 / 1024} MB.`); return;
@@ -160,7 +183,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
     });
     if (!unique.length) { reportError('Esa hoja ya fue agregada.'); return; }
     const additions: EvidencePage[] = unique.map((file) => ({
-      id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       file,
       rotation: 0 as EvidenceRotation,
     }));
@@ -169,20 +192,26 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       : [...currentPages.slice(0, replacementIndex), ...additions, ...currentPages.slice(replacementIndex + 1)];
     pagesRef.current = nextPages;
     onChange(nextPages);
-    void Promise.all(additions.map(async (page) => ({
-      id: page.id,
-      quality: await analyzeEvidenceImage(page.file),
-    }))).then((assessments) => {
-      if (!mounted.current || disabledRef.current || currentContext.current !== addedContext || contextEpoch.current !== epoch) return;
-      const byId = new Map(assessments.map((item) => [item.id, item.quality]));
-      // Solo aplicar resultados a las mismas hojas que aún siguen en este paquete.
-      if (!pagesRef.current.some((page) => byId.has(page.id))) return;
-      const assessedPages = pagesRef.current.map((page) => (
-        byId.has(page.id) ? { ...page, quality: byId.get(page.id) } : page
-      ));
-      pagesRef.current = assessedPages;
-      onChange(assessedPages);
+    if (scanEnabled && !incomingPdf) {
+      // Quality is assessed in the same Worker decode as preview, never alongside it.
+      setScanRequest({ id: additions[0].id, epoch });
+      return;
+    }
+    // A single serial queue, including separate file-selection gestures.
+    qualityQueue.current.push(async () => {
+      for (const addition of additions) {
+        if (!mounted.current || disabledRef.current || currentContext.current !== addedContext || contextEpoch.current !== epoch) return;
+        if (!pagesRef.current.some((page) => page.id === addition.id && page.file === addition.file)) continue;
+        let quality: ImageQualityResult | null;
+        try { quality = await analyzeEvidenceImage(addition.file); }
+        catch { quality = { status: 'warning' as const, warnings: ['No pudimos comprobar la calidad. Revisa la foto antes de enviarla.'], width: 0, height: 0 }; }
+        if (!mounted.current || disabledRef.current || currentContext.current !== addedContext || contextEpoch.current !== epoch) return;
+        if (!pagesRef.current.some((page) => page.id === addition.id && page.file === addition.file)) continue;
+        const assessed = pagesRef.current.map((page) => page.id === addition.id && page.file === addition.file ? { ...page, quality } : page);
+        pagesRef.current = assessed; onChange(assessed);
+      }
     });
+    void drainQuality();
   };
 
   const updatePage = (id: string, changes: Partial<EvidencePage>) => {
@@ -209,17 +238,19 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   };
 
   const isPdf = pages[0]?.file.type === 'application/pdf';
+  const scanPageIndex = pages.findIndex((page) => page.id === scanRequest?.id);
+  const scanPage = scanPageIndex >= 0 ? pages[scanPageIndex] : null;
   const previewIndex = pages.findIndex((page) => page.id === previewId);
   const totalMb = pages.reduce((total, page) => total + page.file.size, 0) / 1024 / 1024;
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => selectFiles(false)} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/60 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-500/40 dark:bg-brand-500/10">
+        <button type="button" disabled={disabled || isPdf || pages.length >= pageLimit} onClick={() => selectFiles(false)} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/60 p-4 text-left transition hover:border-brand-500 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-brand-500/40 dark:bg-brand-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-brand-600 shadow-sm dark:bg-white/10 dark:text-brand-200"><FilePlus2 className="h-6 w-6" /></span>
           <span><strong className="block text-sm text-fg">{pages.length ? 'Agregar más fotos' : allowPdf ? 'Subir fotos o PDF' : 'Subir fotos'}</strong><span className="mt-1 block text-xs leading-5 text-muted">{allowPdf ? 'Hasta 10 fotos ordenadas o un PDF' : 'Hasta 10 fotos ordenadas'}</span></span>
         </button>
-        <button type="button" disabled={disabled || isPdf || pages.length >= MAX_FILES} onClick={() => openCamera()} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-sky-500/10">
+        <button type="button" disabled={disabled || isPdf || pages.length >= pageLimit} onClick={() => openCamera()} className="focus-ring flex min-h-24 items-center gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-sky-400 hover:bg-sky-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-sky-500/10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-200"><Camera className="h-6 w-6" /></span>
           <span><strong className="block text-sm text-fg">{pages.length ? 'Tomar otra foto' : 'Tomar foto'}</strong><span className="mt-1 block text-xs leading-5 text-muted">Abre la cámara y revisa la foto antes de añadirla</span></span>
         </button>
@@ -232,12 +263,17 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
         </div>
         <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {pages.map((page, index) => <li key={page.id} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-            <div className="relative"><PageVisual page={page} className="h-40 w-full" /><span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-3 py-1 text-xs font-bold text-white">{isPdf ? 'PDF' : `Hoja ${index + 1}`}</span></div>
+            <div className="relative"><PageVisual page={page} className="h-40 w-full" scanEnabled={scanEnabled} /><span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-3 py-1 text-xs font-bold text-white">{isPdf ? 'PDF' : `Hoja ${index + 1}`}</span></div>
             <div className="space-y-3 p-3">
               <p className="truncate text-sm font-semibold text-fg" title={page.file.name}>{page.file.name}</p>
+              {scanEnabled && !isPdf && <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted">{page.scan?.decision === 'prepared' ? 'Preparada y revisada' : page.scan?.decision === 'original' ? 'Se enviará la foto original' : 'Sin revisar · prepara la hoja o elige la original'}</p>
+                <button type="button" disabled={disabled} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-300 px-3 text-sm font-semibold text-brand-700 dark:text-brand-200" onClick={() => setScanRequest({ id: page.id, epoch: contextEpoch.current })}><ScanLine className="h-4 w-4" /> Preparar hoja {index + 1}</button>
+                {!page.scan && <button type="button" disabled={disabled} className="focus-ring min-h-11 text-sm font-semibold underline" onClick={() => updatePage(page.id, { scan: { decision: 'original' }, quality: page.quality ?? null })}>Usar original sin preparar</button>}
+              </div>}
               {page.quality?.status === 'good' && (
                 <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                  <CheckCircle2 className="h-4 w-4" /> Foto lista para leer
+                  <CheckCircle2 className="h-4 w-4" /> {scanEnabled ? 'Sin avisos automáticos. Revisa la foto.' : 'Foto lista para leer'}
                 </p>
               )}
               {page.quality?.status === 'warning' && (
@@ -259,9 +295,9 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                 {!isPdf && <>
                   <button type="button" disabled={disabled || index === 0} onClick={() => move(index, -1)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2 disabled:opacity-35" aria-label={`Subir hoja ${index + 1}`}><ArrowUp className="h-4 w-4" /></button>
                   <button type="button" disabled={disabled || index === pages.length - 1} onClick={() => move(index, 1)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2 disabled:opacity-35" aria-label={`Bajar hoja ${index + 1}`}><ArrowDown className="h-4 w-4" /></button>
-                  <button type="button" disabled={disabled} onClick={() => updatePage(page.id, { rotation: ((page.rotation + 90) % 360) as EvidenceRotation })} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2" aria-label={`Rotar hoja ${index + 1}`}><RotateCw className="h-4 w-4" /></button>
+                  <button type="button" disabled={disabled} onClick={() => updatePage(page.id, { rotation: ((page.rotation + 90) % 360) as EvidenceRotation, ...(scanEnabled ? { scan: undefined, quality: undefined } : {}) })} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2" aria-label={`Rotar hoja ${index + 1}`}><RotateCw className="h-4 w-4" /></button>
                 </>}
-                <button type="button" onClick={() => setPreviewId(page.id)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2" aria-label={isPdf ? 'Ampliar PDF' : `Ampliar hoja ${index + 1}`}><ZoomIn className="h-4 w-4" /></button>
+                <button type="button" disabled={scanEnabled && disabled} onClick={() => scanEnabled && !isPdf ? setScanRequest({ id: page.id, epoch: contextEpoch.current }) : setPreviewId(page.id)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2" aria-label={isPdf ? 'Ampliar PDF' : `Ampliar hoja ${index + 1}`}><ZoomIn className="h-4 w-4" /></button>
                 <button type="button" disabled={disabled} onClick={() => remove(page.id)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-500/30 dark:hover:bg-rose-500/10" aria-label={isPdf ? 'Quitar PDF' : `Quitar hoja ${index + 1}`}><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
@@ -270,6 +306,11 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
         {!isPdf && pages.length > 1 && <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">Revisa el orden: Xali leerá primero la hoja 1 y continuará hasta la hoja {pages.length}.</p>}
       </>}
       <PreviewModal page={previewIndex >= 0 ? pages[previewIndex] : null} pageNumber={previewIndex + 1} onClose={() => setPreviewId(null)} />
+      {scanEnabled && scanPage && scanRequest?.epoch === contextEpoch.current && !disabled && !isPdf && <EvidenceScanEditor key={`${scanRequest.epoch}:${scanPage.id}`} file={scanPage.file} rotation={scanPage.rotation} previous={scanPage.scan} suggestCorners={suggestCorners} pageNumber={scanPageIndex + 1} onClose={() => setScanRequest(null)} onAccept={(selection, quality) => {
+        if (scanRequest.epoch !== contextEpoch.current || disabledRef.current || !pagesRef.current.some((page) => page.id === scanPage.id && page.file === scanPage.file)) return;
+        updatePage(scanPage.id, { scan: selection, quality: quality ?? scanPage.quality ?? null, rotation: selection.decision === 'prepared' ? selection.recipe.rotation : scanPage.rotation });
+        setScanRequest(null);
+      }} />}
       {cameraRequest && cameraRequest.context === contextKey && cameraRequest.epoch === contextEpoch.current && !disabled && !isPdf && <CameraCapture key={cameraRequest.id}
         preferredCameraId={preferredCameraId} onCameraChange={setPreferredCameraId}
         onClose={() => setCameraRequest(null)}

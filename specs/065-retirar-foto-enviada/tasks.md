@@ -13,3 +13,7 @@
 - [x] T006 [FR-006] [FR-007] Ejecutar pruebas focalizadas, TypeScript, build y lint de archivos afectados.
 - [x] T007 Actualizar trazabilidad y abrir PR enlazado al issue #135.
 - [x] T008 [FR-008] Limitar el resumen flotante de asistencia a escritorio y añadir regresión de desplazamiento a 390×844.
+
+## Coordinación 131: evidencia docente revisable
+
+Escanear no envía ni crea otra entrega. Se mantiene aceptación confirmada y reemplazo dedicado con historial; un fallo de escaneo permite continuar expresamente con los mismos archivos por la vía habitual. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

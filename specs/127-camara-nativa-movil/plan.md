@@ -50,3 +50,7 @@ Revisión posterior al diseño: no hay excepción constitucional ni incógnita b
 Se rechaza ampliar solamente el modal móvil: puede seguir limitado por viewport/Safari y no satisface el uso normal de la cámara solicitado. También se rechaza enviar inmediatamente tras capturar, decidir solo por pantalla, borrar hojas al cancelar o cancelar indiscriminadamente con `visibilitychange`.
 
 Diseño detallado en [research.md](./research.md), [data-model.md](./data-model.md), [contrato de interfaz](./contracts/captura.md) y [guía de validación](./quickstart.md).
+
+## Coordinación 131: evidencia docente revisable
+
+Conserva captura nativa en teléfono y webcam/selector en PC. El editor revisable se abre después de recibir la foto; no reintroduce una cámara móvil en un recuadro pequeño. La prueba física sigue siendo un gate independiente. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.
