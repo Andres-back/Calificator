@@ -126,6 +126,7 @@ ALL_SPECS = {
     "129-retroalimentacion-flujo-claro",
     "130-digitalizacion-secciones",
     "132-listas-glm-flash",
+    "133-lectura-recalificacion-configurable",
 }
 OWNED_SPECS = {
     name

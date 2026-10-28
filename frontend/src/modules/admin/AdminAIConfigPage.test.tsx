@@ -378,7 +378,7 @@ describe('AdminAIConfigPage', () => {
     expect(within(summary!).getByText('Segundo evaluador')).toBeInTheDocument();
     expect(within(summary!).getByText('Árbitro ante discrepancias')).toBeInTheDocument();
     expect(within(summary!).getAllByText('open_code · glm-5.3-flash')).toHaveLength(2);
-    expect(within(summary!).getByText(/Si falla la lectura visual, se intenta ollama · gemma4:31b/)).toBeInTheDocument();
+    expect(within(summary!).getByText(/Si falla la lectura visual y queda un intento disponible, se intenta ollama · gemma4:31b/)).toBeInTheDocument();
   });
 
   it('offers Ollama Cloud and only its vision models as visual fallback', async () => {

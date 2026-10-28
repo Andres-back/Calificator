@@ -57,6 +57,7 @@ import { formatAIModelSource } from './aiPipelineLabels';
 import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submissionCandidates';
 import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
 import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
+import { PreviousGradeReference } from './components/PreviousGradeReference';
 import { formatTimelineScore } from './timeline';
 import { ReviewNavigation, type ReviewSection } from './ReviewNavigation';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, ReviewFilter } from '@/types/api';
@@ -1039,6 +1040,8 @@ function PanelDetalle({
             {!done && !presentation.processing && <VerificationPendingNotice status={cal.resultado_json?.verification_status} />}
           </div>
         </div>
+
+        {canGrade && <PreviousGradeReference gradeId={cal.id} enabled={presentation.score == null} onOpenHistory={() => { if (mobileTab !== 'historial') changeDetailView('historial'); }} />}
 
         <section aria-label="Cálculo y criterios registrados" className="text-sm">
           {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}

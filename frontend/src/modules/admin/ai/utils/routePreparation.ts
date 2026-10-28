@@ -8,7 +8,7 @@ export function routePreparationIssues(route: FeatureRouting, previous: FeatureR
   const capability = route.capability ?? 'text';
   if (!['text', 'vision'].includes(capability)) return [];
   const fields = ['primary_provider', 'primary_model', 'fallback_provider', 'fallback_model', 'active', 'rollout_enabled'] as const;
-  if (previous && fields.every((field) => route[field] === previous[field])) return [];
+  if (previous && fields.every((field) => route[field] === previous[field]) && JSON.stringify(route.runtime_limits ?? null) === JSON.stringify(previous.runtime_limits ?? null)) return [];
   const selections = (['primary', 'fallback'] as const).map((slot) => {
     const providerId = route[`${slot}_provider`] || '';
     const modelId = route[`${slot}_model`] || providers.find((p) => p.id === providerId)?.model || '';
@@ -19,6 +19,6 @@ export function routePreparationIssues(route: FeatureRouting, previous: FeatureR
     if (!s.providerId || s.providerId === 'template') return false;
     if (s.model?.runtime_profile) return !s.model.verification_id;
     const unchangedSelection = previous && (['primary', 'fallback'] as const).some((slot) => previous[`${slot}_provider`] === s.providerId && previous[`${slot}_model`] === s.modelId);
-    return profiled || (!unchangedSelection && s.providerId !== 'ollama');
+    return profiled || ((route.feature === 'calificacion.extraccion' || !unchangedSelection) && s.providerId !== 'ollama');
   }).map(({ slot, providerId, modelId, model }) => ({ slot, providerId, modelId, capability, label: model?.label || modelId }));
 }

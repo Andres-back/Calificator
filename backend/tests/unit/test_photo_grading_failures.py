@@ -181,6 +181,32 @@ def test_unusable_image_returns_no_score_and_stops_graders(monkeypatch) -> None:
     assert result.motivo_revision == "image_not_usable"
 
 
+@pytest.mark.parametrize('missing', [False, True])
+def test_managed_reading_never_escapes_to_outer_provider_cascades(monkeypatch, missing):
+    from unittest.mock import AsyncMock
+    from app.core.config import settings
+    _configure_orchestrator(monkeypatch)
+    class ManagedClient(FakeClient):
+        def __init__(self, **kwargs):
+            self._tracking = kwargs.get('tracking', {})
+            self.api_key = None
+    monkeypatch.setattr(orchestrator, 'OpenCodeClient', ManagedClient)
+    monkeypatch.setattr(settings, 'PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED', True)
+    seen = []
+    async def failed(_ctx, **kwargs):
+        seen.append(kwargs['client']._tracking)
+        return AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante='', error='vision_failed_temporary', raw_output={'usable':False})
+    monkeypatch.setattr(orchestrator, 'vision_agent', failed)
+    escape = AsyncMock(side_effect=AssertionError('Unselected provider must not be called'))
+    monkeypatch.setattr(orchestrator, 'vision_router_agent', escape)
+    monkeypatch.setattr(orchestrator, 'grader_agent', escape)
+    config = None if missing else {'feature':'calificacion.extraccion', 'primary':{'provider':'open_code','model':'synthetic-a'}, 'fallback':{'provider':'ollama','model':'synthetic-b'}}
+    result = asyncio.run(orchestrator.orchestrate_grading(object(), evaluacion_id=uuid4(), materia_id=uuid4(), blueprint={'nota_maxima':5}, image_bytes=b'synthetic', user_id=uuid4() if missing else None, ai_config=config))
+    assert result.nota_sugerida is None
+    assert len(seen) == 1 and seen[0]['_require_configured_route'] is True
+    escape.assert_not_awaited()
+
+
 def test_empty_extraction_never_grades_artificial_no_response(monkeypatch) -> None:
     async def empty_vision(*_args, **_kwargs):
         return AgentResult(
@@ -967,22 +993,20 @@ def test_photo_pipeline_uses_deepseek_extraction_and_fast_flash_verifier(monkeyp
     assert result.raw_model_output["grader_b"]["proveedor"] == "opencode"
 
 
-def test_photo_pipeline_uses_configured_ollama_cloud_visual_fallback(monkeypatch) -> None:
+def test_photo_pipeline_delegates_configured_native_fallback_to_bounded_reader(monkeypatch) -> None:
     _configure_orchestrator(monkeypatch)
     calls: list[tuple[str, str]] = []
+    class ManagedClient(FakeClient):
+        def __init__(self, **kwargs):
+            self._tracking = kwargs.get('tracking', {})
+            self.api_key = None
+    monkeypatch.setattr(orchestrator, 'OpenCodeClient', ManagedClient)
 
     async def routed_vision(*_args, model: str, provider: str = "open_code", **_kwargs):
         calls.append((provider, model))
-        if provider == "open_code":
-            return AgentResult(
-                nota_sugerida=None,
-                confianza=0,
-                feedback_estudiante="",
-                proveedor="opencode",
-                modelo=model,
-                error="vision_provider_failed",
-                raw_output={"usable": False, "vision_failure_temporary": True},
-            )
+        captured = _kwargs['client']._tracking
+        assert captured['_require_configured_route'] is True
+        assert captured['_ai_config']['fallback']['model'] == 'qwen3-vl:235b'
         return AgentResult(
             nota_sugerida=None,
             confianza=0.93,
@@ -994,7 +1018,7 @@ def test_photo_pipeline_uses_configured_ollama_cloud_visual_fallback(monkeypatch
                 "texto_extraido": "1. B) 36",
                 "preguntas_detectadas": [1],
                 "respuestas_detectadas": [{"pregunta": 1, "respuesta": "B) 36"}],
-                "vision_extraction": {"provider": "ollama", "fallback_used": False},
+                "vision_extraction": {"provider": "ollama", "fallback_used": True},
             },
         )
 
@@ -1028,7 +1052,7 @@ def test_photo_pipeline_uses_configured_ollama_cloud_visual_fallback(monkeypatch
         },
     ))
 
-    assert calls == [("open_code", "qwen3.7-plus"), ("ollama", "qwen3-vl:235b")]
+    assert calls == [("open_code", "qwen3.7-plus")]
     assert result.nota_sugerida == Decimal("5.0")
     assert result.raw_model_output["vision"]["proveedor"] == "ollama"
     assert result.raw_model_output["vision"]["extraction"]["fallback_used"] is True

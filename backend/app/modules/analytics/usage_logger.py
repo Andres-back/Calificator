@@ -32,6 +32,16 @@ def _safe_error_code(value: str | None) -> str | None:
         return None
     normalized = value.lower()
     if normalized in {
+        "vision_invalid_schema", "vision_no_content", "vision_no_student_answers",
+        "vision_output_truncated", "vision_output_incomplete", "vision_route_not_ready",
+        "vision_limits_invalid", "vision_auth_missing", "vision_auth_failed", "vision_incomplete_pages",
+        "vision_timeout", "vision_transport", "vision_provider_failed",
+    }:
+        return normalized
+    visual_http = re.fullmatch(r"vision_http_([45]\d{2})", normalized)
+    if visual_http:
+        return f"http_{visual_http.group(1)}"
+    if normalized in {
         "provider_read_timeout", "provider_connect_timeout", "provider_write_timeout",
         "provider_pool_timeout", "provider_deadline_exceeded", "provider_network_error",
         "capacity_unavailable",

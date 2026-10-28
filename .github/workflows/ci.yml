@@ -79,6 +79,7 @@ jobs:
       SPEC107_TEST_DATABASE_URL: postgresql+asyncpg://spec107:synthetic-ci-only@127.0.0.1:55417/spec107
       SPEC116_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec116
       SPEC128_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
+      SPEC133_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec133
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -126,6 +127,11 @@ jobs:
 
       - name: Run backend unit tests
         run: python -m pytest tests/unit -v
+
+      - name: Prepare isolated reading controls database
+        run: |
+          psql postgresql://xcalificator:test-password@127.0.0.1:5432/xcalificator_test -c 'CREATE DATABASE spec133'
+          DATABASE_URL="$SPEC133_TEST_DATABASE_URL" alembic upgrade head
 
       - name: Run backend integration tests
         run: python -m pytest tests/integration -v

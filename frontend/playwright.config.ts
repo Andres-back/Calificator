@@ -12,6 +12,7 @@ export default defineConfig({
   retries: 0,
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'webkit-reading-controls', testMatch: '**/reading-controls.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-document', testMatch: '**/evaluation-document-structure.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-feedback-workspace', testMatch: '**/feedback-workspace-responsive.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-subject-tools', testMatch: ['**/gradebook-export.spec.ts', '**/materia-lifecycle.spec.ts', '**/evaluation-copy.spec.ts'], use: { ...devices['Desktop Safari'] } },

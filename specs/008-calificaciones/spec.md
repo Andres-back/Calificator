@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 133: recalificación con lectura administrada
+
+[133-lectura-recalificacion-configurable](../133-lectura-recalificacion-configurable/spec.md), hotfix #279: la extracción de evidencias usa únicamente el principal y respaldo capturados desde Administración, con límites por hoja. Una lectura incompleta no se convierte en nota. Si no hay resultado nuevo, el docente autorizado puede consultar la última nota histórica como referencia privada; no se restaura, confirma, publica ni exporta como nota vigente.
+
 ### Evolución 102: captura explícita
 
 [102-camara-visor-completo](../102-camara-visor-completo/spec.md), issue #212, añade cámara visible con confirmación y recuperación por archivos. Capturar no califica; se conservan identidad de entrega, límites, calidad, orden, envío explícito, evidencias y permisos del docente/estudiante.
