@@ -20,7 +20,7 @@ async function json(route: Route, value: unknown, status = 200) {
   await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
 }
 
-async function installMocks(page: Page, loseResponse = false) {
+async function installMocks(page: Page, loseResponse = false, rosterError?: { codigo?: string }) {
   let loggedIn = false;
   let batchCreated = false;
   let confirmed = false;
@@ -42,7 +42,7 @@ async function installMocks(page: Page, loseResponse = false) {
     if (path === '/materias/m1/estudiantes-existentes/matricular' && method === 'POST') { enrolled = true; return json(route, { matriculados: 1, ya_matriculados: 0 }); }
     if (path === '/materias/m1/importaciones-estudiantes' && method === 'GET') return json(route, []);
     if (path === '/materias/m1/importaciones-estudiantes' && method === 'POST') { batchCreated = true; return json(route, { id: 'batch-1', job_id: 'job-1', estado: 'procesando' }, 202); }
-    const batch = { id: 'batch-1', materia_id: 'm1', job_id: null, archivo_nombre: 'lista.png', estado: confirmed ? 'confirmado' : 'revision', resultado_json: {}, filas: [candidate], created_at: '2026-01-01T00:00:00Z' };
+    const batch = { id: 'batch-1', materia_id: 'm1', job_id: null, archivo_nombre: 'lista.png', estado: rosterError ? 'error' : confirmed ? 'confirmado' : 'revision', resultado_json: rosterError ?? {}, filas: rosterError ? [] : [candidate], created_at: '2026-01-01T00:00:00Z' };
     if (path === '/materias/m1/importaciones-estudiantes/manual' && method === 'POST') { batchCreated = true; return json(route, batch, 201); }
     if (path === '/materias/m1/importaciones-estudiantes/batch-1' && method === 'GET') return json(route, batch);
     if (path === '/materias/m1/importaciones-estudiantes/batch-1' && method === 'PUT') { rowWrites++; return json(route, batch, confirmed ? 409 : 200); }
@@ -65,6 +65,30 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/app$/);
   await page.waitForLoadState('networkidle');
   await page.goto('/app/materias/m1');
+}
+
+for (const width of [360, 1440]) {
+  for (const [code, message] of [
+    ['service_unavailable', 'El servicio de lectura no está disponible.'],
+    ['no_names', 'No encontramos nombres en esta foto.'],
+    [undefined, 'No pudimos completar la lectura de la lista.'],
+  ] as const) {
+    test(`132 error ${code ?? 'legacy'} y recuperación en ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const state = await installMocks(page, false, { codigo: code });
+      await login(page);
+      await page.getByRole('button', { name: 'Importar foto' }).click();
+      await page.locator('input[type="file"]').setInputFiles({ name: 'lista.png', mimeType: 'image/png', buffer: Buffer.from('foto-simulada') });
+      await expect(page.getByRole('alert')).toContainText(message);
+      if (code !== 'no_names') await expect(page.getByRole('alert')).not.toContainText('buena luz');
+      await expect(page.getByRole('button', { name: 'Intentar con otra foto' })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      expect(state.confirmed()).toBe(false);
+      expect(state.rowWrites()).toBe(0);
+      await page.getByRole('button', { name: 'Intentar con otra foto' }).click();
+      await expect(page.getByText('Tomar foto o elegir imagen')).toBeVisible();
+    });
+  }
 }
 
 for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1366, height: 768 }, { width: 1920, height: 1080 }]) {

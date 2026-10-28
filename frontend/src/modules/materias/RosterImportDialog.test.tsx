@@ -48,6 +48,17 @@ it('shows an explicit retry when the private batch cannot be read', async () => 
   await waitFor(() => expect(screen.getByRole('button', { name: 'Reintentar' })).toBeVisible());
   expect(mocks.put).not.toHaveBeenCalled();
 });
+it('shows the classified service failure instead of blaming the photo', async () => {
+  mocks.get.mockResolvedValue({ ...batch, estado: 'error', resultado_json: { codigo: 'service_unavailable', mensaje: 'private technical message' } });
+  wrap(<RosterImportDialog open materiaId="m1" initialBatchId="b1" onClose={vi.fn()} />);
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent('El servicio de lectura no está disponible.');
+  expect(alert).not.toHaveTextContent('buena luz');
+  expect(alert).not.toHaveTextContent('private technical');
+  expect(screen.getByRole('button', { name: 'Intentar con otra foto' })).toBeEnabled();
+  expect(mocks.put).not.toHaveBeenCalled();
+  expect(mocks.confirm).not.toHaveBeenCalled();
+});
 it('creates a reviewed manual batch with a stable operation id and no photo request', async () => {
   mocks.manual.mockResolvedValue(batch);
   wrap(<RosterManualDialog materiaId="m1" onClose={vi.fn()} />);

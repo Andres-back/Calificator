@@ -13,7 +13,7 @@ from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal, engine
 from app.modules.importacion_estudiantes.models import ImportacionEstudiantesFila, ImportacionEstudiantesLote
 from app.modules.importacion_estudiantes.service import delete_private_photo_key, expire_abandoned_lotes, normalize_name
-from app.modules.importacion_estudiantes.vision_service import extract_student_names
+from app.modules.importacion_estudiantes.vision_service import extract_student_names, roster_error_result
 from app.modules.jobs import service as jobs_service
 from app.modules.materias.service import list_students
 from app.modules.materias.models import Materia
@@ -103,7 +103,7 @@ async def _run(job_id: UUID, lote_id: UUID) -> dict:
             if lote:
                 lote.estado = "error"
                 lote.archivo_key = None
-                lote.resultado_json = {"mensaje": "No fue posible leer la lista. Toma otra foto para intentarlo de nuevo."}
+                lote.resultado_json = roster_error_result(exc)
             logger.warning("Roster extraction failed: %s", type(exc).__name__, extra={"job_id": str(job_id)})
             await jobs_service.finish_job(db, job_id, estado=JobEstado.REQUIRES_REVIEW.value, resultado_json={"claim_token": claim_token, "terminal_reason": "roster_extraction_failed"}, error="No fue posible leer la fotografía")
             await db.commit()
