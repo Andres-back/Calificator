@@ -579,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "9cf1e679d9496ed59114347b24aa71b26a0d7290defbf84c30283b130b58ecc7",
+  "source_digest": "86b388a58c21d0e67243b0a8f7075c4d2aeba39be9f99500ecdd36a965b15f4f",
   "surfaces": [
     {
       "actors": [
@@ -21404,6 +21404,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_tasks_grading.py"
         },
         {
@@ -22605,6 +22611,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/gradingFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/rosterImportErrors.test.ts"
         },
         {
           "level": "unit",
@@ -45627,6 +45639,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_teacher_ai_credentials.py"
         },
         {
@@ -49291,6 +49309,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_real_photo_answer_regression.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
         },
         {
           "level": "unit",

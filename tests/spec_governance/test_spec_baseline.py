@@ -125,6 +125,7 @@ ALL_SPECS = {
     "128-materias-notas-reutilizacion",
     "129-retroalimentacion-flujo-claro",
     "130-digitalizacion-secciones",
+    "132-listas-glm-flash",
 }
 OWNED_SPECS = {
     name
