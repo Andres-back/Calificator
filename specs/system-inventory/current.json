@@ -579,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "f03837d022602c0bcc65a0694465dbf5b67979eb1b5ae586736fdddaea9380d6",
+  "source_digest": "14a60fde6e06e260a4d2e3faadf67a3684c3a67a423aba7cbe6746e831c29b52",
   "surfaces": [
     {
       "actors": [
@@ -22197,6 +22197,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeReprocessing.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/PreviousGradeReference.malformed.test.tsx"
         },
         {
           "level": "unit",

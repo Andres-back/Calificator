@@ -37,3 +37,7 @@
 T001→T002→T003→T004→T005. T006 sigueT003/T004 y precedeT007/T008. T009→T010 es independiente de transporte, pero se ejecuta secuencial para limitar cambios simultáneos. T011 sigueT004/T007; T012 sigueT005/T010. T013 yT014 cierran todo. MVP restaura gobernabilidad de lectura; referencia histórica no altera la validez de ninguna nota. No se requiere delegación ni llamadas a IA de producción para desarrollar/probar.
 
 Preparación de entrega completada con `pr-description.md` y revisión Converge. Los checks remotos se ejecutan al abrir el PR: marcar tareas de implementación no acredita CI verde ni autoriza fusión/despliegue.
+
+## Phase 6: Convergence
+
+- [X] T015 Rechazar una respuesta de historial que no sea lista y mostrar error recuperable, sin bloquear la vista ni inventar una nota, con regresión RED→GREEN en `PreviousGradeReference*.test.tsx` per FR-006 / US3-AC2 (partial).

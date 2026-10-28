@@ -22,3 +22,11 @@ Validación local del 28-10-2026:
 El workflow conserva todas las comprobaciones existentes y añade una base `spec133` independiente para estas regresiones de migración/publicación. No añade servicios productivos ni excepciones a CI. La política de extracción pasa a versión3 para no reutilizar una caché producida con semántica anterior; no reescribe jobs admitidos ni ejecuta reintentos reales por sí sola.
 
 Analyze previo:10 requisitos mapeados a14 tareas, cobertura100 %, sin contradicciones bloqueantes. Converge final revisó10 FR,4 SC,10 escenarios de aceptación,8 decisiones de implementación y8 principios constitucionales: cero brechas de construcción, sin tareas nuevas que añadir. No hay hooks de extensión. La tarea de preparación del PR no declara CI remoto aprobado: se comprueba después sobre el commit publicado; fusión y activación productiva requieren una nueva autorización.
+
+## Refinamiento de la revisión final
+
+Una segunda revisión Converge detectó una brecha parcial de FR-006/US3-AC2 y añadióT015 sin modificar tareas anteriores: un historial HTTP exitoso pero con formato inesperado podía producir `TypeError` en la vista. La regresión nueva reprodujo el fallo; se valida tanto la respuesta como la caché compartida antes de buscar una nota. Un objeto, una lista con null o texto inesperado muestran error recuperable, no bloquean la revisión ni producen nota.
+
+Después pasan las7 pruebas específicas de referencia histórica y nuevamente TypeScript, lint y build. El primer CI (`40757127355`, HEAD `ea35a29`) aprobó backend, calidad de frontend, contenedores y gobernanza, pero falló en el recorrido contextual «094 estado procesando no oculta avisos ni publica una nota». Ese mismo recorrido pasa localmente con la corrección, sin modificar su archivo, aserciones, timeout ni reintentos. El PR se actualiza y todo CI se vuelve a ejecutar sobre el nuevo HEAD; no se acepta el resultado anterior como validación del código nuevo.
+
+La revisión adicional ejecutó41 recorridos Chromium de lectura y revisión de notas existentes: todos pasan. El hallazgoT015 quedó resuelto; Converge posterior no encuentra brechas nuevas. La publicación productiva sigue pendiente de autorización y del CI completo del nuevo HEAD.
