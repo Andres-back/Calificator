@@ -579,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "86b388a58c21d0e67243b0a8f7075c4d2aeba39be9f99500ecdd36a965b15f4f",
+  "source_digest": "f03837d022602c0bcc65a0694465dbf5b67979eb1b5ae586736fdddaea9380d6",
   "surfaces": [
     {
       "actors": [
@@ -1010,6 +1010,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -1464,7 +1470,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "DELETE:/profesor/ai-credentials/{provider}",
-      "source_line": 1267,
+      "source_line": 1272,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1644,7 +1650,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 917,
+      "source_line": 922,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1665,6 +1671,12 @@
           "reference": "GET:/admin/ai-audit",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-audit",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         }
       ]
     },
@@ -1710,6 +1722,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/ai-config",
           "status": "direct",
@@ -1736,7 +1754,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 885,
+      "source_line": 890,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -1757,6 +1775,12 @@
           "reference": "GET:/admin/ai-config-hash",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         }
       ]
     },
@@ -1800,6 +1824,12 @@
           "reference": "GET:/admin/ai-control-center",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "unit",
@@ -1922,6 +1952,12 @@
           "reference": "GET:/admin/ai-settings",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-settings",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "unit",
@@ -3370,6 +3406,12 @@
           "reference": "GET:/auth/me",
           "status": "direct",
           "test_path": "frontend/e2e/profile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -5190,6 +5232,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -7354,6 +7402,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -7670,6 +7724,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -8758,7 +8818,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-config",
-      "source_line": 1065,
+      "source_line": 1070,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -8808,7 +8868,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/profesor/ai-providers/ollama/models",
-      "source_line": 1309,
+      "source_line": 1314,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -9645,6 +9705,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -9820,6 +9886,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/profile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -10269,6 +10341,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/ai-config",
           "status": "direct",
@@ -10295,7 +10373,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{provider_id}",
-      "source_line": 828,
+      "source_line": 833,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -11031,6 +11109,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -11728,6 +11812,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -11990,7 +12080,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/profesor/ai-config",
-      "source_line": 946,
+      "source_line": 951,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -12137,6 +12227,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/profile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -12443,6 +12539,12 @@
           "reference": "POST:/admin/ai-control-center/validate",
           "status": "direct",
           "test_path": "frontend/e2e/admin-compatible-api.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-control-center/validate",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         }
       ]
     },
@@ -12513,7 +12615,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 854,
+      "source_line": 859,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -12537,7 +12639,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 867,
+      "source_line": 872,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -13789,6 +13891,12 @@
           "reference": "POST:/auth/refresh",
           "status": "direct",
           "test_path": "frontend/e2e/profile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/auth/refresh",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -15473,6 +15581,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -18931,6 +19045,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -19534,7 +19654,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/ollama/models/refresh",
-      "source_line": 1289,
+      "source_line": 1294,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": []
@@ -19559,7 +19679,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/profesor/ai-providers/{provider}/test",
-      "source_line": 1344,
+      "source_line": 1349,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -20221,6 +20341,12 @@
           "test_path": "frontend/e2e/admin-compatible-api.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-control-center/publish",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-control-center/publish",
           "status": "direct",
@@ -20557,7 +20683,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-config",
-      "source_line": 1177,
+      "source_line": 1182,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -20607,7 +20733,7 @@
       "kind": "endpoint",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/profesor/ai-credentials/{provider}",
-      "source_line": 1242,
+      "source_line": 1247,
       "source_path": "backend/app/modules/admin_ai_config/router.py",
       "states": [],
       "tests": [
@@ -20961,6 +21087,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_self_profile_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_vision_runtime_limits.py"
         },
         {
           "level": "unit",
@@ -21440,6 +21572,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_vision_route_policy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_visual_digitalization_worker.py"
         },
         {
@@ -21669,6 +21807,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/profile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -22053,6 +22197,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeReprocessing.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/PreviousGradeReference.test.tsx"
         },
         {
           "level": "unit",
@@ -22999,6 +23149,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -23579,6 +23735,12 @@
           "reference": "/app/admin/configuracion-ia",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/admin/configuracion-ia",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -24283,6 +24445,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -25578,6 +25746,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-responsive.spec.ts"
         },
         {
@@ -25854,6 +26028,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -28949,6 +29129,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -29546,7 +29732,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-audit",
-      "source_line": 453,
+      "source_line": 462,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -29633,6 +29819,12 @@
           "reference": "GET:/admin/ai-audit",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-audit",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "unit",
@@ -29672,7 +29864,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-config-hash",
-      "source_line": 443,
+      "source_line": 452,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -29761,6 +29953,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-config-hash",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/ai-config-hash",
           "status": "domain",
@@ -29798,7 +29996,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center/usage",
-      "source_line": 301,
+      "source_line": 309,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -29930,7 +30128,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-control-center",
-      "source_line": 288,
+      "source_line": 296,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -30019,6 +30217,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-control-center",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/ai-control-center",
           "status": "domain",
@@ -30062,7 +30266,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-settings",
-      "source_line": 283,
+      "source_line": 291,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -30157,6 +30361,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/admin/ai-settings",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/admin/ai-settings",
           "status": "domain",
@@ -30200,7 +30410,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "GET:/admin/ai-usage",
-      "source_line": 448,
+      "source_line": 457,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -31810,6 +32020,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -33292,6 +33508,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -33805,6 +34027,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -35070,6 +35298,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -35653,6 +35887,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -36324,6 +36564,12 @@
           "level": "e2e",
           "reference": "GET:/users/me/authorization",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -36652,7 +36898,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-config",
-      "source_line": 342,
+      "source_line": 350,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -36741,6 +36987,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PATCH:/admin/ai-config",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PATCH:/admin/ai-config",
           "status": "domain",
@@ -36784,7 +37036,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PATCH:/admin/ai-providers/{id}",
-      "source_line": 424,
+      "source_line": 433,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -37798,6 +38050,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -38357,6 +38615,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -38680,6 +38944,12 @@
           "level": "e2e",
           "reference": "PATCH:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -38772,7 +39042,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-api/models/discover",
-      "source_line": 176,
+      "source_line": 184,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -38892,7 +39162,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-api/models/probe",
-      "source_line": 183,
+      "source_line": 191,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39012,7 +39282,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-cache/clear",
-      "source_line": 438,
+      "source_line": 447,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39132,7 +39402,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-control-center/validate",
-      "source_line": 314,
+      "source_line": 322,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39215,6 +39485,12 @@
           "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "POST:/admin/ai-control-center/validate",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "POST:/admin/ai-control-center/validate",
           "status": "domain",
@@ -39252,7 +39528,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/models/refresh",
-      "source_line": 358,
+      "source_line": 366,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39372,7 +39648,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-providers/{providerId}/test",
-      "source_line": 350,
+      "source_line": 358,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39492,7 +39768,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-defaults",
-      "source_line": 433,
+      "source_line": 442,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -39612,7 +39888,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "POST:/admin/ai-settings/restore-previous",
-      "source_line": 429,
+      "source_line": 438,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -42545,6 +42821,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -43574,6 +43856,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -44324,7 +44612,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-control-center/publish",
-      "source_line": 331,
+      "source_line": 339,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -44407,6 +44695,12 @@
           "test_path": "frontend/e2e/admin-icons.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "PUT:/admin/ai-control-center/publish",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "PUT:/admin/ai-control-center/publish",
           "status": "domain",
@@ -44450,7 +44744,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-features",
-      "source_line": 416,
+      "source_line": 425,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -44582,7 +44876,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-providers",
-      "source_line": 399,
+      "source_line": 407,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -44708,7 +45002,7 @@
       "kind": "frontend_call",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "PUT:/admin/ai-settings/publish",
-      "source_line": 368,
+      "source_line": 376,
       "source_path": "frontend/src/modules/admin/api.ts",
       "states": [],
       "tests": [
@@ -45460,6 +45754,12 @@
           "test_path": "backend/tests/unit/test_vision_extractor.py"
         },
         {
+          "level": "unit",
+          "reference": "ollama",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_vision_route_policy.py"
+        },
+        {
           "level": "e2e",
           "reference": "ollama",
           "status": "direct",
@@ -45648,6 +45948,12 @@
           "test_path": "backend/tests/unit/test_teacher_ai_credentials.py"
         },
         {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_vision_route_policy.py"
+        },
+        {
           "level": "e2e",
           "reference": "open_code",
           "status": "direct",
@@ -45670,6 +45976,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -47296,6 +47608,12 @@
           "reference": "ai_configuration_versions",
           "status": "direct",
           "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_configuration_versions",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_vision_runtime_limits.py"
         }
       ]
     },
@@ -47328,6 +47646,12 @@
       "source_path": "backend/alembic/versions/202606290008_admin_ai_config_providers.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "ai_feature_routing",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_vision_runtime_limits.py"
+        },
         {
           "level": "unit",
           "reference": "ai_feature_routing",
@@ -47496,6 +47820,12 @@
           "reference": "ai_jobs",
           "status": "direct",
           "test_path": "backend/tests/integration/test_multipage_recovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_vision_runtime_limits.py"
         },
         {
           "level": "unit",
@@ -49026,6 +49356,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_vision_runtime_limits.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
         },
         {
@@ -49423,6 +49759,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -50860,6 +51202,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",
@@ -52807,6 +53155,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -54377,6 +54731,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/profile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/reading-controls.spec.ts"
         },
         {
           "level": "e2e",

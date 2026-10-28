@@ -33,6 +33,7 @@ function routeForStage(stage: AIFunctionControl['stages'][number], features: Fea
     fallback_model: stage.configured.fallback_model,
     rollout_enabled: stage.configured.teacher_override_allowed,
     config_version: stage.configured.config_version,
+    runtime_limits: stage.configured.runtime_limits,
     active: true,
   };
 }
@@ -60,7 +61,7 @@ function GradingPipelineSummary({ stages, policy }: { stages: AIStageControl[]; 
       </div>
       {extraction?.fallback_provider && (
         <p className="mt-3 border-t border-brand-200 pt-2 text-xs text-muted dark:border-brand-500/30">
-          Si falla la lectura visual, se intenta {routeText(extraction.fallback_provider, extraction.fallback_model)}. Esta contingencia no reemplaza al segundo evaluador ni al árbitro.
+          Si falla la lectura visual y queda un intento disponible, se intenta {routeText(extraction.fallback_provider, extraction.fallback_model)}. Esta contingencia no reemplaza al segundo evaluador ni al árbitro.
         </p>
       )}
     </div>
@@ -205,11 +206,28 @@ export function FunctionsSection({
 
                   {stage.editable && route && <RouteModelReadiness route={route} previous={routeForStage(stage, []) ?? undefined} providers={providers} models={models} onUpsert={onUpsert} onPrepare={onPrepare} />}
 
+                  {route?.feature === 'calificacion.extraccion' && <fieldset className="min-w-0 rounded-lg border border-border p-3">
+                    <legend className="px-1 text-sm font-bold">Límites de lectura visual</legend>
+                    <p className="mb-3 text-xs text-muted">Solo se usan el modelo principal y el respaldo elegidos arriba. Los intentos se comparten por hoja; no se prueban otros modelos ocultos. La espera en cola y el total de hojas se cuentan aparte.</p>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      {([
+                        ['call_timeout_seconds', 'Tiempo por intento (segundos)', 5, 60, 60],
+                        ['max_attempts', 'Intentos totales por hoja', 1, 2, 2],
+                        ['max_output_tokens', 'Espacio de respuesta (tokens)', 1024, 10000, 10000],
+                      ] as const).map(([key, label, min, max, initial]) => <Field key={key} label={label}>
+                        <Input aria-label={label} type="number" min={min} max={max} step={1} value={route.runtime_limits?.[key] ?? initial} onChange={(event) => onUpsert({ ...route, runtime_limits: { call_timeout_seconds: 60, max_attempts: 2, max_output_tokens: 10000, ...route.runtime_limits, [key]: event.currentTarget.value === '' ? 0 : Number(event.currentTarget.value) } })} />
+                        <span className="text-xs text-muted">De {min} a {max}.</span>
+                      </Field>)}
+                    </div>
+                    <p className="mt-3 text-xs text-muted">Con un solo intento no se ejecuta el respaldo. Más espacio de respuesta puede aumentar el consumo. Estos cambios se aplican a nuevos trabajos después de guardar; los ya enviados conservan su configuración.</p>
+                  </fieldset>}
+
                   <div className="grid gap-2 md:grid-cols-3">
                     <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><Bot className="h-3.5 w-3.5" /> Guardado</span><p className="mt-1 break-words text-sm font-semibold">{routeText(stage.configured?.provider, stage.configured?.model)}</p><p className="mt-1 text-xs text-muted">Versión {stage.configured?.config_version ?? 'no registrada'}{stage.configured?.fallback_provider ? ` · Alternativa si falla esta etapa: ${routeText(stage.configured.fallback_provider, stage.configured.fallback_model)}` : ''}</p></div>
                     <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><ShieldCheck className="h-3.5 w-3.5" /> Efectivo</span><p className="mt-1 break-words text-sm font-semibold">{routeText(stage.effective?.provider, stage.effective?.model)}</p><p className="mt-1 text-xs text-muted">Origen: {stage.effective?.origin || 'institucional'} · Versión {stage.effective?.config_version ?? 'no registrada'}</p></div>
                     <div className="rounded-lg bg-surface-2 p-3"><span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-muted"><Activity className="h-3.5 w-3.5" /> Último observado</span><p className="mt-1 break-words text-sm font-semibold">{stage.observed ? routeText(stage.observed.provider, stage.observed.model) : 'No registrado'}</p><p className="mt-1 text-xs text-muted">{stage.observed ? `Versión ${stage.observed.config_version ?? 'no registrada'}${stage.observed.fallback_used ? ' · Usó respaldo' : ''}` : 'Aún no hay una ejecución trazable.'}</p></div>
                   </div>
+                  {stage.configured?.runtime_limits && <p className="text-xs text-muted">Límites guardados de lectura: {stage.configured.runtime_limits.call_timeout_seconds} s por intento · {stage.configured.runtime_limits.max_attempts} intentos por hoja · {stage.configured.runtime_limits.max_output_tokens} tokens. Efectivos para los trabajos nuevos.</p>}
                 </Card>
               );
             })}

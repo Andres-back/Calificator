@@ -18,6 +18,8 @@ from app.modules.calificaciones.execution_policy import execution_policy
 
 
 def _route_payload(route: dict[str, Any], providers: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    from app.services.vision_route_policy import effective_runtime_limits
+
     primary_provider = str(route.get("primary_provider") or "")
     fallback_provider = str(route.get("fallback_provider") or "")
     return {
@@ -27,6 +29,7 @@ def _route_payload(route: dict[str, Any], providers: dict[str, dict[str, Any]]) 
         "fallback_model": route.get("fallback_model") or providers.get(fallback_provider, {}).get("model"),
         "teacher_override_allowed": bool(route.get("rollout_enabled", False)),
         "config_version": int(route.get("config_version") or 1),
+        **({"runtime_limits": effective_runtime_limits(route.get("runtime_limits")).model_dump()} if route.get("feature") == "calificacion.extraccion" else {}),
     }
 
 

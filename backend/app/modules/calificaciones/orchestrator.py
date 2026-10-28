@@ -619,6 +619,7 @@ async def orchestrate_grading(
 
     on_vision_checkpoint = save_vision
     ai_snapshot: dict = dict(ai_config) if ai_config else {}
+    managed_vision_route = user_id is not None or bool(ai_snapshot)
     stage_snapshots = (
         ai_snapshot.get("stages")
         if isinstance(ai_snapshot.get("stages"), dict)
@@ -698,7 +699,7 @@ async def orchestrate_grading(
                 comparator_model = str(recheck_selected["model"])
 
         except Exception as exc:
-            logger.warning("Grading AI configuration unavailable; using institutional defaults: %s", type(exc).__name__)
+            logger.warning("Grading AI configuration unavailable; managed reading will reject an absent route: %s", type(exc).__name__)
 
     vision_client = OpenCodeClient(tracking={
         "pipeline_run_id": pipeline_run_id,
@@ -706,6 +707,7 @@ async def orchestrate_grading(
         "calificacion_id": None,
         "teacher_id": str(user_id) if user_id else None,
         "_ai_config": vision_snapshot,
+        "_require_configured_route": managed_vision_route,
     })
     client = OpenCodeClient(tracking={
         "pipeline_run_id": pipeline_run_id,
@@ -866,7 +868,7 @@ async def orchestrate_grading(
                 vision_result = await vision_agent(
                     ctx,
                     model=vision_model,
-                    client=vision_client if vision_provider == "open_code" or (vision_snapshot.get("primary") or {}).get("runtime_profile") else None,
+                    client=vision_client if managed_vision_route or vision_provider == "open_code" or (vision_snapshot.get("primary") or {}).get("runtime_profile") else None,
                     provider=vision_provider,
                     api_key=vision_client.api_key if (vision_snapshot.get("primary") or {}).get("runtime_profile") else vision_api_key,
                 )
@@ -875,6 +877,7 @@ async def orchestrate_grading(
                     not _vision_result_is_usable(vision_result)
                     or not _vision_result_has_student_answers(vision_result)
                 )
+                and not managed_vision_route
                 and vision_fallback_provider
                 and vision_fallback_model
                 and vision_fallback_provider != vision_provider
@@ -908,6 +911,7 @@ async def orchestrate_grading(
                     vision_result.error
                     or not _vision_result_has_student_answers(vision_result)
                 )
+                and not managed_vision_route
                 and settings.PHOTO_GRADING_CROSS_PROVIDER_FALLBACK_ENABLED
             ):
                 logger.warning(

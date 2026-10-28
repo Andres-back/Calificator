@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { AIFunctionControl, AIModel, AIProvider, FeatureRouting } from '../../api';
@@ -17,6 +17,19 @@ const functions: AIFunctionControl[] = [{ function_id: 'xali', label: 'Asistente
 }] }];
 
 describe('administración de IA de devoluciones', () => {
+  it('edits reading limits without touching other routes and reopens saved controls', () => {
+    const reading = { ...route, feature: 'calificacion.extraccion', capability: 'vision', runtime_limits: { call_timeout_seconds: 30, max_attempts: 2, max_output_tokens: 8192 } };
+    const stage = { ...functions[0].stages[0], stage_id: 'extraction', runtime_feature: reading.feature, capability: 'vision', configured: { ...functions[0].stages[0].configured!, runtime_limits: reading.runtime_limits } };
+    const upsert = vi.fn();
+    render(<FunctionsSection functions={[{ ...functions[0], stages: [stage] }]} features={[reading]} providers={providers} models={models.map((m) => ({ ...m, capabilities: ['vision'] }))} onUpsert={upsert} />);
+    const time = screen.getByRole('spinbutton', { name: 'Tiempo por intento (segundos)' });
+    expect(time).toHaveValue(30);
+    expect(time).toHaveAttribute('max', '60');
+    fireEvent.change(time, { target: { value: '45' } });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ feature: reading.feature, runtime_limits: { ...reading.runtime_limits, call_timeout_seconds: 45 } }));
+    expect(screen.getByRole('spinbutton', { name: 'Espacio de respuesta (tokens)' })).toHaveValue(8192);
+    expect(screen.getByText(/Límites guardados de lectura: 30 s/)).toBeInTheDocument();
+  });
   it('shows the effective grading deadline separately from shared provider settings', () => {
     render(<FunctionsSection functions={[{ ...functions[0], function_id: 'calificacion',
       execution_policy: { schema_version: 1, call_timeout_seconds: 60, max_stage_attempts: 2 },

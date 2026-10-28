@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 133: el lector consume la selección administrativa
+
+[133-lectura-recalificacion-configurable](../133-lectura-recalificacion-configurable/spec.md), hotfix #279: `calificacion.extraccion` ejecuta los perfiles y credenciales capturados de sus dos selecciones explícitas. Los límites opcionales se guardan, versionan y muestran en Administración; omitirlos desde un cliente anterior los conserva y null explícito restablece los valores recomendados. Cambiar una ruta requiere perfiles visuales comprobados; no se admiten modelos por su nombre ni se cambian funciones ajenas.
+
 ### Historia 1 - Elegir una API y sus modelos (Prioridad: P1)
 
 El administrador configura una API compatible, consulta sus modelos y decide cuál realiza cada función sin cambiar el código por cada modelo nuevo.
