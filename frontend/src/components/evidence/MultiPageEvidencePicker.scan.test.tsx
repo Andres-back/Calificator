@@ -25,6 +25,17 @@ const first = new File(['one'], 'one.png', { type: 'image/png' });
 const second = new File(['two'], 'two.png', { type: 'image/png' });
 
 describe('preparación opt-in del paquete', () => {
+  it('apagado conserva la selección habitual sin editor ni receta de escaneo', async () => {
+    const onChange = vi.fn();
+    render(<MultiPageEvidencePicker scanEnabled={false} contextKey="a" pages={[]} onChange={onChange} />);
+    selectFiles([first]);
+    await waitFor(() => expect(captured.analyze).toHaveBeenCalledOnce());
+    expect(captured.accept).toBeNull();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const selected = onChange.mock.calls.at(-1)![0] as EvidencePage[];
+    expect(selected[0].file).toBe(first);
+    expect(selected[0].scan).toBeUndefined();
+  });
   it('muestra la miniatura preparada pero conserva el original para el envío', async () => {
     const onChange = vi.fn();
     const objectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:prepared-evidence');

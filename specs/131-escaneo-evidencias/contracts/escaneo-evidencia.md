@@ -1,6 +1,6 @@
 # Contrato propuesto: preparación fotográfica docente
 
-En implementación local, no activado en producción. Editor/Worker, capacidad contextual, envío desde ambos consumidores docentes, manifiesto privado nullable, preparación durable y lectores original/preparada tienen código y pruebas sintéticas. La admisión sigue apagada por defecto; conservación integral de trazos, presupuesto de recursos, regresión final y teléfonos físicos siguen siendo puertas de liberación. Extensión aditiva de los contratos existentes, no otro calificador. Los Blobs de preview son estado local y no forman parte del JSON de envío ni sustituyen al File original.
+Entrega apagada aprobada el29 de octubre, sin activación productiva. Editor/Worker, capacidad contextual, envío desde ambos consumidores docentes, manifiesto privado nullable, preparación durable y lectores original/preparada tienen código y pruebas sintéticas. La incorporación requiere regresión/PR/gobernanza/CI verdes y ambas banderas apagadas; teléfonos y recursos nativos pendientes de [#285](https://github.com/Andres-back/Calificator/issues/285) bloquean la activación, no se declaran probados. Extensión aditiva de los contratos existentes, no otro calificador. Los Blobs de preview son estado local y no forman parte del JSON de envío ni sustituyen al File original.
 
 ## Interfaz
 

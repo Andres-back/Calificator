@@ -582,7 +582,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1eeba94535ea1e8e0f68921dd6f0e26792e1093f440d14d39a036a07ed88df51",
+  "source_digest": "73935cba5a35e39f80492d3901640bbf1a29cf7ff084e31edf928dd403734d2a",
   "surfaces": [
     {
       "actors": [
@@ -33238,6 +33238,12 @@
           "level": "unit",
           "reference": "GET:/calificaciones/sugerir-bordes/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
         },
         {
@@ -42741,6 +42747,12 @@
           "level": "unit",
           "reference": "POST:/calificaciones/sugerir-bordes",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
         },
         {
@@ -50876,6 +50888,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
         },
         {
           "level": "unit",

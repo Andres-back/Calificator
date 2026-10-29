@@ -1,5 +1,11 @@
 # Guía de validación propuesta
 
+## Entrega apagada aprobada —2026-10-29
+
+El usuario aprobó preparar la fusión sin activar el escáner. Las tareas físicas originales T032/T033/T044/T047/T048 siguen abiertas para activación en [activation-pending.md](activation-pending.md) y [#285](https://github.com/Andres-back/Calificator/issues/285), sin declararlas realizadas. La enmienda de spec/plan distingue la entrega apagada de esa activación; sustituye las anotaciones históricas que bloqueaban también el PR apagado. No se omite la gobernanza ni se modifica su validador.
+
+El CI de código [40950618711](https://github.com/Andres-back/Calificator/actions/runs/40950618711) terminó verde en el commit `5d5977a9cec8d848c986b85c3f8019828a03ef3c`:backend,frontend,cuatro shards generales,regresión contextual,E2E y contenedores. La consulta productiva de solo lectura encontró ambas variables de escaneo/ayuda ausentes; sus valores predeterminados son `false`. La entrega no cambia esas variables, no descarga evidencias y no hace llamadas a IA.
+
 ## Reanudación de integración —2026-10-29
 
 Seguimiento actual en [integration-20261029.md](integration-20261029.md). El usuario confirmó anteriormente una validación física en Android, sin resultados detallados de geometría/latencia/memoria. Esta confirmación no acredita iPhone ni sustituye esas métricas. Se solicitó comprobar disponibilidad de iPhone y encender Docker para persistencia aislada. No se reutiliza el presupuesto histórico de llamadas reales; esta reanudación no autoriza fusión ni activación productiva.

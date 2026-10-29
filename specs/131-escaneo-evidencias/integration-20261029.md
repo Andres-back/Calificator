@@ -2,7 +2,7 @@
 
 ## Alcance
 
-Autorización de reanudación para integrar, comprobar y publicar CI de la rama131. No autoriza fusión, activación productiva, inferencias de pago ni modificación de notas/evidencias reales.
+Autorización inicial de reanudación para integrar, comprobar y publicar CI de la rama131. Después de CI verde, el2026-10-29 el usuario aprobó preparar la fusión con el escáner desactivado y activarlo después de las pruebas físicas. No autoriza activación productiva, despliegues manuales, inferencias de pago ni modificación de notas/evidencias reales.
 
 Base de integración: `origin/main` en `33b8b1569b76ce6e56b96aefcd82982ba841c4fb`. Se conservan las entregas129/132/133/134: compartir con revisión integrada, lectura administrativa y límites versionados, edición directa de nota y prioridad de revisión por colores. En el docente los colores no se confunden con acierto/error.
 
@@ -25,6 +25,16 @@ El selector contextual abre el editor al recibir una fotografía. La propuesta d
 
 T050/T051/T052 quedan comprobadas localmente; no se identifican otros huecos funcionales nuevos en la integración. Inventario regenerado:670 superficies; sin archivos privados, credenciales o muestras reales incorporados al cambio. El entorno PostgreSQL/Redis temporal se eliminó tras las pruebas; otros servicios y producción no se modificaron.
 
-Se prepara la publicación de esta integración en `codex/131-escaneo-evidencias` y el despacho de `ci.yml` para su HEAD exacto. El resultado remoto no se anticipa como verde; se comprueba en GitHub. T049 mantiene pendiente el cierre de CI vigente. No se modifican ni omiten los controles de gobernanza.
+La integración se publicó en `codex/131-escaneo-evidencias`, commit `5d5977a9cec8d848c986b85c3f8019828a03ef3c`. Su [CI40950618711](https://github.com/Andres-back/Calificator/actions/runs/40950618711) terminó verde en los11 trabajos, incluidos todos los E2E y contenedores. Se prepara el PR de entrega apagada con CI/gobernanza propios; no se modifican ni omiten esos controles y no se anticipa el resultado del nuevo HEAD.
 
-Los pendientes T032/T033/T044/T047/T048 se conservan abiertos. Publicar rama y ejecutar CI de código no significa que exista un PR de entrega apto para fusionar ni que la función esté activada en producción. Solo hay confirmación humana general de Android; el usuario indicó que no dispone de iPhone por ahora.
+Los pendientes físicos T032/T033/T044/T047/T048 se conservan abiertos, trasladados sin marcar como realizados a [activation-pending.md](activation-pending.md) e [issue285](https://github.com/Andres-back/Calificator/issues/285), conforme al alcance de fusión apagada aprobado. Solo hay confirmación humana general de Android; el usuario indicó que no dispone de iPhone por ahora. La activación sigue bloqueada hasta cerrar el seguimiento y recibir autorización separada.
+
+## Comprobación de entrega apagada
+
+- Consulta SSH de solo lectura:las dos variables `EVIDENCE_SCAN_ENABLED` y `EVIDENCE_CORNER_ASSISTANCE_ENABLED` están ausentes del entorno del backend productivo; los defaults fijados por pruebas son `false`. No se escribieron `.env`, configuración, notas ni evidencias productivas.
+- Cuatro pruebas nuevas de backend comprueban defaults, capacidad apagada para docente/admin incluso en allowlist y rechazo409 antes de bloquear/escribir/persistir/encolar. Primera ejecución detectó un nombre incorrecto en el doble de prueba; corregido a `enqueue_persisted_grading`,4/4 pasan y Ruff es correcto, sin cambiar la aplicación.
+- Treinta y ocho pruebas focalizadas frontend pasan, incluida la nueva regresión de captura habitual sin editor/receta, capacidad por contexto y recalificación compatible.
+- Chequeo frontend completo de entrega apagada:1192 casos correctos/187 archivos en101,11s,lint/tipos/build/auditorías correctos. Backend completo Linux sin red:1795 correctos en130,20s,19 advertencias legacy. Un pase simultáneo anterior obtuvo1794 correctos y1 fallo marginal del benchmark sintético:razón1.1011418 frente al límite1.10,0.118ms extra por entrega y40 llamadas simuladas/20 entregas,sin llamadas reales. Se repitió la suite completa de forma serial y pasó; no se modificaron código de aplicación, umbrales o aserciones para ocultar ese resultado.
+- Convergencia del alcance de entrega apagada:33 FR,11 SC,25 escenarios,10 decisiones y8 principios revisados,0 hallazgos de construcción accionables. Las mediciones/pruebas físicas de activación no se acreditan:su alcance sigue en285. Durante Converge,tasks.md permaneció idéntico (SHA2567B95F0E8B76B6BBA3F2B0AB43F8F6DFD7213B343148C46B051E662293A15C722); no se añadió una fase vacía ni se modificaron validadores.
+- Cuerpo de PR preparado con `Closes #276`,alcance apagado,seguimiento285,riesgo/migración/rollback y CI de su HEAD obligatorio. Las pruebas físicas no se sustituyen por estas regresiones.
+- Gobernanza de la entrega apagada:61/61 pruebas locales correctas en20,10s e inventario670 vigente. No se cambiaron workflows,validadores ni pruebas de gobernanza. Las tareas físicas no se marcaron como realizadas:permanecen abiertas con su texto original en285/activation-pending.md; se cerraron únicamente las tareas del alcance de fusión apagada aprobado. No se anticipa aprobación de GitHub ni activación del escáner.

@@ -1,5 +1,11 @@
 # Plan: escaneo revisable y trazable antes de calificar
 
+## Enmienda de entrega aprobada —2026-10-29
+
+El usuario autorizó preparar la fusión con el escáner apagado y activar después de las pruebas físicas. Se divide explícitamente **integración apagada** de **activación**: la primera exige regresiones, gobernanza, PR y CI verdes, ambas banderas apagadas, migración aditiva y conservación del flujo habitual; la segunda exige los resultados físicos y nativos pendientes de [#285](https://github.com/Andres-back/Calificator/issues/285), consentimiento independiente y revisión de configuración. No se retiran ni aprueban ficticiamente esas pruebas: cambian de fase conforme al alcance aprobado, con descripción original en [activation-pending.md](activation-pending.md).
+
+Esta decisión sustituye exclusivamente las frases anteriores que condicionaban el PR/fusión apagada a finalizar T032/T033/T044/T047/T048. No altera fórmulas, evidencias, permisos, protección de secretos, integridad de notas, controles de CI o las condiciones para habilitar escaneo/ayuda. No hay autorización de despliegue manual ni activación. La lectura/zoom de evidencia existente son mejoras independientes y no preparan fotografías antiguas.
+
 **Rama**: `codex/131-escaneo-evidencias` | **Fecha**: 2026-10-26 | **Spec**: [spec.md](./spec.md) | **Issue**: [#276](https://github.com/Andres-back/Calificator/issues/276)
 
 **Estado**: el2026-10-27 el usuario aprobó implementar el diseño ampliado con «adelate aprove», incluidos colores y acercamiento por pregunta. Ejecución sujeta a tareas, análisis y pruebas, sin afirmar entrega. Base inspeccionada: main `0f4a3365284dc758ffc4724474b92ed43e36b3d3`, PR275 ya fusionado. Sin datos reales ni producción.
@@ -16,7 +22,7 @@ Añadir preparación conservadora por página al flujo docente existente: cámar
 
 La preparación no usa generación de imágenes. La vista previa se calcula en el dispositivo; el servidor valida parámetros y produce la copia canónica desde el original recibido, sin confiar en un JPEG derivado arbitrario del cliente. No añadir una segunda aplicación de cámara ni otro servicio de calificación.
 
-La ampliación visual se aplica en «Respuestas y puntajes»: verde/correcta, amarillo/revisión y rojo/incorrecta, derivados del estado efectivo. Es independiente de la calidad de la foto y no cambia cómo se calcula o confirma una nota.
+La ampliación visual de «Respuestas y puntajes» conserva la política posterior de Spec134: verde sin avisos, amarillo conviene comprobar y rojo revisión prioritaria. El estado académico se muestra por separado. No cambia cómo se calcula o confirma una nota.
 
 Al seleccionar una pregunta, mostrar su zona de evidencia ampliada cerca de la respuesta, con acceso a una vista amplia y a la hoja completa. Este zoom es solo de lectura: no confundirlo con el recorte de documento previo a calificar ni cambiar las imágenes de entrada de los modelos. La ubicación es opcional y sugerida; sin ella queda disponible la hoja con zoom manual.
 
@@ -113,7 +119,7 @@ No incorporar HEIC nuevo a ciegas: mantener tipos JPEG/PNG/WebP; si el dispositi
 1. **Puerta técnica y banco de seguridad**: validar Worker/WASM/CSP, imágenes de contenedor, EXIF,16MP, memory/time y geometría compartida con fixtures; congelar30 casos y marcas antes de ajustar parámetros. No prometer tiempos de escaneo sin medir.
 2. **Experiencia de captura/revisión**: vista amplia, propuesta, cuatro esquinas, botones de ajuste, zoom, dos perfiles, comparación y original; mismos controles en tomar/subir foto y orden de hasta diez hojas. Pruebas RED/GREEN y cero inferencias reales.
 3. **Evidencia canónica e historial**: migración, originales privados, receta admitida, preparación durable, mismo input por rol, lectura autenticada y cambio/recalificación reproducibles. Sin backfill; fallos y reintentos contra base aislada. Probar además veinte entregas sintéticas encoladas para comprobar que preparar imágenes no monopoliza la API ni rompe admisión, límites o recuperación de119; no repetir sus inferencias reales.
-4. **Validación y despliegue opt-in**: regresiones completas y muestras anotadas, iPhone/Android reales, benchmark opcional autorizado de hasta cinco entregas reales con referencia humana. Flag de admisión inicialmente apagada y piloto solo en cuenta demo/autorizada; monitorear latencia, abstenciones y almacenamiento sin PII. Activación general y fusión requieren autorización y CI verde.
+4. **Entrega apagada y activación separada**: incorporar únicamente con ambas banderas apagadas, regresiones completas, PR/gobernanza/CI verdes y el alcance humano aprobado. Antes de activar: muestras anotadas, iPhone/Android reales y recursos nativos pendientes de285; benchmark opcional solo con autorización adicional. El piloto futuro será en cuenta demo/autorizada, con latencia/abstenciones/almacenamiento sin PII. La fusión no habilita el piloto ni convierte esta validación pendiente en terminada.
 
 La historia4 de colores puede desarrollarse y verificarse como trabajo frontend independiente del escáner, manteniendo el mismo control de PR/CI. No depende de cargar OpenCV ni necesita una migración o llamadas a modelos; no se condiciona la lectura de los estados existentes a habilitar el escaneo.
 

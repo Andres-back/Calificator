@@ -1,10 +1,10 @@
 # Entidades y transiciones propuestas
 
-Diseño aprobado con implementación local parcial. La migración se comprobó en PostgreSQL sintético desechable, no en producción. No se añaden datos a entregas antiguas.
+Diseño implementado para la entrega apagada aprobada el29 de octubre. La migración se comprobó en PostgreSQL sintético desechable, no en producción. No se añaden datos a entregas antiguas. Las comprobaciones físicas pendientes de activar permanecen abiertas en [#285](https://github.com/Andres-back/Calificator/issues/285).
 
 ## Presentación de estado por respuesta
 
-Derivación local sin persistencia nueva: estado efectivo, `requiere_revision` y disponibilidad del puntaje del componente actual → tono, etiqueta e icono. Verde/correcta, amarillo/revisión o situación parcial/incompleta explícita, rojo/incorrecta; el aviso propio vigente tiene prioridad. Identidad/selección/foco son independientes del estado académico. No inferir error de un cero, una foto borrosa o una clasificación histórica; no crear campos o estados académicos para representar colores.
+Derivación local sin persistencia nueva. En la revisión docente se reutilizan la prioridad y presentación de Spec134:verde sin avisos, amarillo conviene comprobar, rojo revisión prioritaria. El estado académico conserva su etiqueta/icono propios; no clasifica por sí solo la prioridad. Identidad/selección/foco son independientes. No inferir error de un cero, una foto borrosa o una clasificación histórica; no crear campos o estados académicos para representar colores.
 
 ## Estado local por página
 

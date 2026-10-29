@@ -1,6 +1,12 @@
 # Especificación: escaneo conservador de evidencias para calificación
 
-**Rama**: `codex/131-escaneo-evidencias` | **Creada**: 2026-10-26 | **Actualizada**: 2026-10-27 | **Estado**: Especificación y plan ampliados aprobados por el usuario mediante «adelate aprove»; implementación autorizada, todavía no entregada | **Issue**: [#276](https://github.com/Andres-back/Calificator/issues/276)
+**Rama**: `codex/131-escaneo-evidencias` | **Creada**: 2026-10-26 | **Actualizada**: 2026-10-29 | **Estado**: implementación aprobada; entrega apagada aprobada el29 de octubre, activación no autorizada | **Issue**: [#276](https://github.com/Andres-back/Calificator/issues/276)
+
+## Alcance aprobado de esta entrega
+
+El2026-10-29 el usuario eligió expresamente «Preparar fusión con escáner desactivado; activar después de las pruebas físicas». Esta entrega permite incorporar el código, migración aditiva y lectores compatibles con `EVIDENCE_SCAN_ENABLED=false` y `EVIDENCE_CORNER_ASSISTANCE_ENABLED=false`; no habilita nuevas preparaciones ni consultas de bordes. La captura/subida y calificación habituales siguen disponibles. Las mejoras independientes de prioridad/zoom docente mantienen sus controles de permisos y pruebas.
+
+La validación física completa, memoria móvil e iPhone permanecen **pendientes**, registradas sin marcas de éxito en [activación pendiente](activation-pending.md) e [issue #285](https://github.com/Andres-back/Calificator/issues/285). Los requisitos y criterios que exigen teléfonos/mediciones nativas son puertas de esa activación, no resultados acreditados por esta fusión apagada. No se declara mejora de notas ni aprobación del piloto. Activar exige cerrar ese seguimiento, autorización humana separada y CI vigente; la aprobación actual no autoriza nuevas llamadas a IA.
 
 ## Escenarios de usuario y pruebas
 
