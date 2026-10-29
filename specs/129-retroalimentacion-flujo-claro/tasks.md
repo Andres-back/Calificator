@@ -75,3 +75,16 @@ Estrategia incremental: fundamentos y recorrido US1 primero, luego lista/detalle
 ## Fase 7: Convergencia
 
 - [x] T018 Añadir y ejecutar una muestra explícita de selección al inicio/mitad/final de cuarenta alumnos en frontend/e2e/feedback-workspace-responsive.spec.ts con Chromium/WebKit, conservando contador, acciones y destinatarios; documentar resultado en quickstart.md según SC-001, US1/AC1 y plan: muestra de aceptación (partial).
+
+## Fase 8: Hotfix #283 — revisar y compartir sin salir del panel
+
+- [x] T019 Añadir pruebas RED de nota publicada con detalle pendiente desde grupo/integrado y de mezcla con opciones conservadas en frontend/src/modules/feedback_sharing/{FeedbackSharePanel,ShareFeedbackDialog}.test.tsx, según FR-005, FR-007, FR-009 y SC-004.
+- [x] T020 Reutilizar revisión docente dentro de frontend/src/modules/feedback_sharing/FeedbackSharePanel.tsx, actualizar preview de la fila/lista y mantener crear/copiar separados de aprobar en ShareFeedbackDialog.tsx, según FR-005, FR-006, FR-007, FR-009 y FR-016.
+- [x] T021 Mostrar estado cero pendiente, acción clara y foco/restauración; conservar borrador, conflictos, permisos, accesos cerrados y manifiesto incierto; distinguir la nota publicada del enlace en CalificacionesWorkspace.tsx, según FR-008, FR-010, FR-011, FR-014 y FR-016.
+- [x] T022 Añadir/ejecutar frontend/e2e/feedback-share-review.spec.ts en Chromium/WebKit, grupo/integrado, 360/390/1440 y claro/oscuro; verificar copia y ninguna emisión al navegar/aprobar, según FR-013, SC-002 y SC-004.
+- [x] T023 Ejecutar regresiones frontend, tipos/lint/build y controles sintéticos backend existentes; documentar resultados reales y límites del hotfix en specs/129-retroalimentacion-flujo-claro/quickstart.md, según FR-016 y SC-003/005.
+- [x] T024 Actualizar propietarios/inventario, ejecutar gobernanza y Converge; preparar PR que cierre #283 sin fusionar ni desplegar, según FR-016 y constitución VII/VIII.
+
+## Phase 9: Convergence
+
+- [x] T025 Coordinar la barra móvil de calificación con el centro integrado habilitado en frontend/src/modules/{calificaciones/CalificacionesWorkspace,feedback_sharing/FeedbackWorkspace}.tsx, conservando las acciones del editor de compatibilidad cuando está desactivado; probar retorno, permisos y visibilidad completa de crear/copiar tras aprobar en frontend/e2e/feedback-share-review.spec.ts, según FR-004, FR-013, US3/AC2 y plan: barra única integrada (partial).

@@ -89,3 +89,15 @@ Después de la aprobación del plan y revisión de requisitos: pruebas RED de se
 Validar cuarenta estudiantes comenzando a mitad/final de lista, mezcla activo/faltante/cerrado/pendiente, estados parciales y 105 para lotes. Capturas de ambos temas, accesibilidad/foco, teclado/viewport y últimos controles visibles. Ejecutar TypeScript/lint/Vitest/build/auditorías, E2E y backend aplicables, inventario/gobernanza y Converge antes de PR.
 
 La preparación de este diseño no acredita que esté implementado, probado en dispositivos físicos ni desplegado.
+
+## Hotfix #283: revisión dentro del panel de compartir
+
+Autorización actual «resuelve y continua» (2026-10-29), dentro del recorrido ya aprobado. Reutilizar FeedbackDeliveryReview como vista interna de FeedbackSharePanel, sin desmontar este último: preservar selección capturada, días, evidencia y URLs preparadas únicamente en memoria. Ofrecerla solo con revision_docente vigente y permiso actual de publicar, sin sustituir la comprobación del servidor. Mantener la solicitud incierta inmutable: no permitir cambiar su intención mediante otra aprobación durante la recuperación.
+
+Una aprobación exitosa actualiza el preview recibido del servidor, la clasificación de ese destinatario y el resumen de la lista padre; no fija elegible=true por cuenta propia. Regresar a crear/copiar sin emitir por aprobar. Guardar mensaje sin aprobar conserva la revisión abierta y explica la decisión pendiente. Cancelar/errores preservan opciones y protecciones de borrador. Enlaces cerrados siguen en sus opciones, nunca se convierten automáticamente en faltantes nuevos. El footer usa texto/estado pendiente cuando hay cero preparados; la nota publicada en la plataforma se distingue de un enlace listo.
+
+Archivos: FeedbackSharePanel.tsx/.test.tsx, ShareFeedbackDialog.tsx/.test.tsx, mensaje informativo de CalificacionesWorkspace.tsx y frontend/e2e/feedback-share-review.spec.ts con inclusión explícita WebKit. Red de pruebas enteramente simulada; regresiones de devolución/selección/copia, tipos/lint/build, inventario, gobernanza y Converge. PR separado del #282, sin fusión/despliegue.
+
+Coordinar explícitamente la finalización del teclado entre el marco y FeedbackWorkspace integrado; el formulario de revisión recibe foco de lectura al abrirse y restaura acciones al aprobar/cancelar. No depender de que Safari emita focusout al retirar un textarea ni modificar el hook móvil compartido. Los errores mantienen el formulario y el borrador abiertos.
+
+El centro integrado comunica si está habilitado para el actor actual y asume su única barra de acciones; al salir o perder acceso libera ese estado. El editor de compatibilidad desactivado conserva las acciones académicas. Al devolver el foco a Crear se muestra mediante desplazamiento nativo dentro de los contenedores, sin exigir al profesor localizar un botón fuera de pantalla; cancelar conserva el contexto de revisión.

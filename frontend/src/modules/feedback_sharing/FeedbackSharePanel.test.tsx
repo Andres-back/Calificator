@@ -12,6 +12,11 @@ const row = { calificacion_id: 'g1', nombre: 'Ana', estudiante_id: 's1' };
 const preview = { calificacion_id: 'g1', elegible: true, fingerprint: 'f'.repeat(64) };
 const access = { id: 'a1', calificacion_id: 'g1', estudiante: 'Ana', estado: 'active' as const, copy_available: true, version: 1, fingerprint: 'f'.repeat(64), expires_at: '2099-01-01' };
 const url = 'https://example.test/devolucion#' + 'a'.repeat(43);
+const message = 'Identificaste al personaje. Explica qué frase del relato justifica su decisión.';
+const pending = { calificacion_id: 'g1', elegible: false, seleccionable: true, preparacion: 'needs_review' as const,
+  motivo: 'Revisa los puntajes por pregunta antes de compartir esta devolución.',
+  borrador_docente: { estado: 'publicada', nota: '3.5', nota_maxima: '5', retroalimentacion: message },
+  revision_docente: { source_fingerprint: 'b'.repeat(64), feedback_text: message, detail_available: false } };
 function show() { return render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row]} signal={new AbortController().signal} valid={() => useAuth.getState().user?.id === 't'} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />); }
 beforeEach(() => {
   vi.resetAllMocks(); sessionStorage.clear(); useAuth.setState({ user: teacher });
@@ -20,6 +25,99 @@ beforeEach(() => {
   Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockResolvedValue(undefined) }, configurable: true });
 });
 describe('129 mismo panel de compartir y copia', () => {
+  it('conserva opciones y otro enlace preparado al aprobar una devolución pendiente', async () => {
+    const approved = { ...preview, revision_docente: pending.revision_docente, borrador_docente: pending.borrador_docente };
+    vi.mocked(api.previewFeedback).mockResolvedValue([pending, { ...preview, calificacion_id: 'g2' }, { ...preview, calificacion_id: 'g3' }]);
+    vi.mocked(api.listFeedbackAccesses).mockResolvedValue([{ ...access, id: 'a2', calificacion_id: 'g2', estudiante: 'Luis' }]);
+    vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a2', calificacion_id: 'g2', estudiante: 'Luis', url }]);
+    vi.mocked(api.approveFeedbackReview).mockResolvedValue(approved);
+    render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }, { ...row, calificacion_id: 'g3', nombre: 'Eva' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
+    await screen.findByRole('button', { name: 'Copiar enlace de Luis' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    await screen.findByRole('button', { name: 'Crear 2 enlaces faltantes' });
+    expect(screen.getByRole('combobox', { name: 'Duración del enlace' })).toHaveValue('7');
+    expect(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Copiar enlace de Luis' })).toBeEnabled();
+    expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+    expect(api.changeFeedbackAccess).not.toHaveBeenCalled();
+  });
+
+  it('conserva borrador en conflicto y vuelve sin aprobar ni emitir', async () => {
+    vi.mocked(api.previewFeedback).mockResolvedValue([pending]);
+    vi.mocked(api.approveFeedbackReview).mockRejectedValue({ response: { data: { detail: 'La devolución cambió. Actualiza la lista.' } } });
+    show();
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' }), { target: { value: message + ' Añade una razón.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('La devolución cambió');
+    expect(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue(message + ' Añade una razón.');
+    fireEvent.click(screen.getByRole('button', { name: 'Volver sin aprobar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar cambios y volver' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Revisar y compartir devolución de Ana' })).toHaveFocus());
+    expect(screen.queryByRole('button', { name: 'Crear 1 enlace faltante' })).toBeNull();
+    expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+  });
+
+  it('guardar el mensaje no lo aprueba ni crea el enlace', async () => {
+    useAuth.setState({ user: { ...teacher, permissions: [...teacher.permissions!, 'grading.grade'] } });
+    vi.mocked(api.previewFeedback).mockResolvedValue([{ ...pending, mensaje_editable: pending.revision_docente }]);
+    vi.mocked(api.saveFeedbackMessage).mockResolvedValue({ ...pending, mensaje_editable: { ...pending.revision_docente, feedback_text: message + ' Relee el final.' }, revision_docente: { ...pending.revision_docente, feedback_text: message + ' Relee el final.' } });
+    show();
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' }), { target: { value: message + ' Relee el final.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar mensaje sin publicar' }));
+    expect(await screen.findByText(/Falta aprobar la devolución/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aprobar devolución' })).toBeEnabled();
+    expect(api.approveFeedbackReview).not.toHaveBeenCalled();
+    expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+  });
+
+  it('aprobar un resumen no reactiva ni sustituye enlaces cerrados', async () => {
+    vi.mocked(api.previewFeedback).mockResolvedValue([pending]);
+    vi.mocked(api.listFeedbackAccesses).mockResolvedValue([{ ...access, estado: 'suspended', copy_available: false }]);
+    vi.mocked(api.approveFeedbackReview).mockResolvedValue({ ...preview, revision_docente: pending.revision_docente, borrador_docente: pending.borrador_docente });
+    show();
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    expect(await screen.findByText(/no se reactivó ni creó otro/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Crear 1 enlace faltante' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Revisar enlace de Ana' })).toBeEnabled();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Revisar enlace de Ana' })).toHaveFocus());
+    expect(api.changeFeedbackAccess).not.toHaveBeenCalled();
+    expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+  });
+
+  it('no permite aprobar una nota sin confirmar ni cambiar la intención de una solicitud incierta', async () => {
+    vi.mocked(api.previewFeedback).mockResolvedValue([{ ...pending, revision_docente: undefined, preparacion: 'no_grade' }]);
+    const first = show();
+    await screen.findByRole('button', { name: 'Revisar enlace de Ana' });
+    expect(screen.queryByRole('button', { name: 'Revisar y compartir devolución de Ana' })).toBeNull();
+    first.unmount();
+    storeManifest(sessionStorage, createManifest('t', 'e1', [{ calificacion_id: 'g1', fingerprint: 'f'.repeat(64) }], 3, false));
+    vi.mocked(api.previewFeedback).mockResolvedValue([pending]);
+    show();
+    await screen.findByRole('button', { name: 'Recuperar la misma solicitud' });
+    expect(screen.queryByRole('button', { name: 'Revisar y compartir devolución de Ana' })).toBeNull();
+    expect(api.approveFeedbackReview).not.toHaveBeenCalled();
+    expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+  });
+
+  it('no expone una aprobación tardía al cambiar de cuenta', async () => {
+    vi.mocked(api.previewFeedback).mockResolvedValue([pending]);
+    let resolve!: (result: Awaited<ReturnType<typeof api.approveFeedbackReview>>) => void;
+    vi.mocked(api.approveFeedbackReview).mockImplementation(() => new Promise(done => { resolve = done; }));
+    show();
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    act(() => useAuth.setState({ user: { ...teacher, id: 'otro' } }));
+    await act(async () => resolve(preview));
+    expect(screen.queryByRole('region', { name: 'Compartir retroalimentaciones' })).toBeNull();
+    expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+  });
+
   it('abre sin emitir, confirma solo faltantes y copia con un gesto posterior', async () => {
     vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
     show();

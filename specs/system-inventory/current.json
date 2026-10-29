@@ -579,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "14a60fde6e06e260a4d2e3faadf67a3684c3a67a423aba7cbe6746e831c29b52",
+  "source_digest": "3c9fc664ea63f7e48a964c686d3a2fc100029f0d0fbe8c1b2029546873a633d6",
   "surfaces": [
     {
       "actors": [
@@ -980,6 +980,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -4689,6 +4695,12 @@
           "level": "e2e",
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
@@ -5202,6 +5214,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -11079,6 +11097,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -15551,6 +15575,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -21722,6 +21752,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
@@ -23083,6 +23119,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
@@ -24415,6 +24457,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -27806,6 +27854,12 @@
           "level": "e2e",
           "reference": "/devolucion",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/devolucion",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
@@ -29100,6 +29154,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -32894,6 +32954,12 @@
           "level": "e2e",
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
@@ -33484,6 +33550,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -34003,6 +34075,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -38026,6 +38104,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -41974,6 +42058,12 @@
           "level": "e2e",
           "reference": "POST:/devoluciones/accesos/{id}/{action}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/devoluciones/accesos/{id}/{action}",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
@@ -42792,6 +42882,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -49722,6 +49818,12 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
         },
         {
@@ -51172,6 +51274,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
           "level": "e2e",
