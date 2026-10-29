@@ -402,6 +402,7 @@ async def validate_compatible_publication(
     from sqlalchemy import text
     from app.services.ai_api_transport import ModelRuntimeProfile
     from app.services.ai_config_service import AIConfigService
+    from app.services.vision_route_policy import validate_runtime_limits
     from app.services.ai_credentials_service import (
         get_effective_ai_credentials,
         resolve_api_credential,
@@ -473,6 +474,7 @@ async def validate_compatible_publication(
         "capability",
         "active",
         "rollout_enabled",
+        "runtime_limits",
     )
     provider_fields = ("base_url", "active", "model")
     for feature in features:
@@ -481,6 +483,12 @@ async def validate_compatible_publication(
                 and not feature.get("fallback_provider")):
             continue  # Unconfigured opt-in; cannot execute or bypass a proof.
         old = old_features.get(feature["feature"], {})
+        try:
+            feature["runtime_limits"] = validate_runtime_limits(
+                feature["feature"], feature.get("runtime_limits", old.get("runtime_limits"))
+            )
+        except ValueError as exc:
+            raise APIConnectionError("Revisa los límites de lectura: tiempo de 5 a 60 s, de 1 a 2 intentos y de 1024 a 10000 tokens.") from exc
         affected = any(feature.get(k) != old.get(k) for k in route_fields)
         pairs = [
             (feature.get("primary_provider"), feature.get("primary_model")),
@@ -533,7 +541,7 @@ async def validate_compatible_publication(
                 (old.get("fallback_provider"), old.get("fallback_model")),
             }
             if (
-                selection_changed
+                (selection_changed or feature['feature'] == 'calificacion.extraccion')
                 and provider_id
                 and provider_id not in {"ollama", "template"}
                 and feature.get("capability") in {"text", "vision"}

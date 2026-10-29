@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 133: límites versionados de lectura
+
+[133-lectura-recalificacion-configurable](../133-lectura-recalificacion-configurable/spec.md), hotfix #279, añade controles administrativos de lectura visual: entre 5 y 60 segundos por intento, entre 1 y 2 intentos totales por hoja y entre 1024 y 10000 tokens de salida. Principal y respaldo comparten ese presupuesto. Se conservan snapshots admitidos y credenciales por destino, sin cascadas adicionales del entorno. Los diagnósticos distinguen capacidad, conexión, salida cortada y formato sin registrar contenido privado.
+
 ### Historia 1 - Flujo principal (Prioridad: P1)
 Como administrador o mantenedor, necesito configurar proveedores y operar trabajos y despliegues reproducibles para obtener un resultado claro, seguro y trazable.
 

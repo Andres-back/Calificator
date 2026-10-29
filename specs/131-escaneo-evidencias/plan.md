@@ -123,6 +123,8 @@ Rollback operativo: apagar nuevas admisiones de escaneo, conservar fuentes/manif
 
 ### 8. Colores semánticos de respuestas, sin otra regla de nota
 
+**Coordinación vigente del29 de octubre**: durante la integración se conserva Spec134, posterior y ya aprobado/fusionado. En la revisión docente, navegación y tarjeta reutilizan `buildReviewTriage` y `reviewPriorityPresentation`: verde «Sin avisos de revisión», amarillo «Conviene comprobar», rojo «Revisión prioritaria». No duplicar ese clasificador ni recuperar la correspondencia académica inicial descrita abajo para las prioridades docentes. `gradeComponentPresentation` se limita a la etiqueta/icono de estado académico y presentación autorizada del estudiante. La selección conserva el color de prioridad y añade su anillo; el zoom se compone mediante `renderEvidence` sin eliminar `reviewSummary`. El siguiente diseño inicial se conserva como antecedente, sustituido en esa superficie por esta coordinación y FR-019 actualizado.
+
 Crear una única función de presentación que reciba el componente actual y devuelva tono, etiqueta e icono. No inferir acierto desde `puntos_obtenidos === 0`, una cadena vacía o la calidad de la foto; no interpretar `valoraciones` históricas como el estado vigente. Orden de precedencia:
 
 | Situación vigente | Presentación | Aclaración |

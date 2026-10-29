@@ -4,6 +4,10 @@
 
 ## Escenarios de usuario y pruebas
 
+### Evolución 133: recalificación con lectura administrada
+
+[133-lectura-recalificacion-configurable](../133-lectura-recalificacion-configurable/spec.md), hotfix #279: la extracción de evidencias usa únicamente el principal y respaldo capturados desde Administración, con límites por hoja. Una lectura incompleta no se convierte en nota. Si no hay resultado nuevo, el docente autorizado puede consultar la última nota histórica como referencia privada; no se restaura, confirma, publica ni exporta como nota vigente.
+
 ### Evolución 102: captura explícita
 
 [102-camara-visor-completo](../102-camara-visor-completo/spec.md), issue #212, añade cámara visible con confirmación y recuperación por archivos. Capturar no califica; se conservan identidad de entrega, límites, calidad, orden, envío explícito, evidencias y permisos del docente/estudiante.
@@ -125,6 +129,8 @@ La evolución [101 — contexto visual conservado](../101-digitalizacion-visual-
 
 [129-retroalimentacion-flujo-claro](../129-retroalimentacion-flujo-claro/spec.md), issue #272, reorganiza únicamente la interacción docente: lista compacta, selección estable y acciones accesibles; preparación y copia en un panel, detalle individual común e impresión vigente. Compartir no confirma/publica notas, no cambia evidencia ni reinicia vigencias/cuotas. Mantiene fuente vigente, permisos y decisiones explícitas.
 
+El hotfix [#283](https://github.com/Andres-back/Calificator/issues/283) repara ese recorrido para notas publicadas con detalle pendiente: permite revisar/aprobar expresamente el resumen desde el propio panel, antes de crear/copiar por separado. Preserva restricciones del servidor, avisos, notas y evidencia; no autoriza a divulgar un desglose sin revisar ni reactiva enlaces. Resultados en la guía de validación de Spec129; no implica despliegue.
+
 ## Coordinación documental 130
 
 [Spec130](../130-digitalizacion-secciones/spec.md), issue #274, amplía este contrato bajo aprobación registrada. Contexto educativo conservado para los tres evaluadores. El reparto opcional se compila a máximos por pregunta antes de guardar; no cambia la fórmula, los modelos ni notas históricas. El estado de pruebas y las limitaciones están en su guía de validación; no supone activación en producción.
@@ -136,3 +142,6 @@ La evolución [101 — contexto visual conservado](../101-digitalizacion-visual-
 ## Coordinación 131: evidencia docente revisable
 
 Incorpora preparación opcional de evidencia docente, originales privados, misma página canónica para todos los roles, colores semánticos y acercamiento por pregunta. No modifica fórmulas, modelos, decisiones ni permisos de publicación. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.
+## Evolución 134: decisión docente directa y prioridad visual
+
+[134-revision-visual-nota-directa](../134-revision-visual-nota-directa/spec.md), issue #281, amplía el ajuste existente de forma compatible: nota final deseada, comentario opcional, actor, versión e idempotencia; una transacción conserva evidencias, puntos y propuesta original, registra el ajuste y suspende enlaces afectados. Editar una publicada deja ajustada y exige publicación separada, con advertencia previa. Los colores de revisión no representan acierto ni modifican notas. Sin nuevas inferencias, proveedores o migraciones; validación local y CI antes de fusión/despliegue autorizado.

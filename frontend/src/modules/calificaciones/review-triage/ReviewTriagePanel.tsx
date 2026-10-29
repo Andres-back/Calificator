@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, CheckCircle2, ShieldAlert, TriangleAlert } from 'lucide-react';
 import { Button, Card } from '@/components/ui';
 import { trackEvent } from '@/lib/analytics';
+import { reviewPriorityPresentation } from './reviewPriorityPresentation';
 import { describeReviewBlocker, type ReviewNoticeTarget, type ReviewTriageItem, type ReviewTriageLevel, type ReviewTriageSummary } from './buildReviewTriage';
 
 type Props = {
@@ -70,7 +71,7 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
     const mismatch = Boolean(primaryMessage || rawReasons[0]?.includes('nota_global_no_coincide_con_suma'));
     const hasNotices = Boolean(firstException || firstNotice || primaryMessage);
     return <section aria-label="Resumen de revisión" className="space-y-2">
-      {hasNotices ? <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+      {hasNotices ? <div role="alert" data-review-priority={firstException?.level ?? 'attention'} className={`rounded-xl border p-3 text-sm ${reviewPriorityPresentation[firstException?.level ?? 'attention'].classes}`}>
         <p className="font-semibold">{primaryMessage || (mismatch ? firstNotice?.message : firstException ? `${componentLabel(firstException)} necesita tu revisión.` : firstNotice?.message)}</p>
         {summary.exceptions.length > 1 && <p className="mt-1">{summary.exceptions.length} respuestas necesitan comprobación.</p>}
         <Button variant="outline" className="mt-2 min-h-11" onClick={() => {
@@ -103,11 +104,11 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
         </div>}
         {(!compact || summary.counts.attention > 0) && <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-500/30 dark:bg-amber-500/10 sm:p-3">
           <TriangleAlert className="h-5 w-5 text-amber-700 dark:text-amber-300" aria-hidden="true" />
-          <p className="mt-2 text-sm font-bold text-amber-900 dark:text-amber-100 sm:text-base">{summary.counts.attention} {historical ? 'con observaciones iniciales' : 'por revisar'}</p>
+          <p className="mt-2 text-sm font-bold text-amber-900 dark:text-amber-100 sm:text-base">{summary.counts.attention} {historical ? 'con observaciones iniciales' : '· Conviene comprobar'}</p>
         </div>}
         {(!compact || summary.counts.blocked > 0) && <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 dark:border-rose-500/30 dark:bg-rose-500/10 sm:p-3">
           <ShieldAlert className="h-5 w-5 text-rose-700 dark:text-rose-300" aria-hidden="true" />
-          <p className="mt-2 text-sm font-bold text-rose-900 dark:text-rose-100 sm:text-base">{summary.counts.blocked} {historical ? 'sin revisión completa al inicio' : 'necesita' + (summary.counts.blocked === 1 ? '' : 'n') + ' tu revisión'}</p>
+          <p className="mt-2 text-sm font-bold text-rose-900 dark:text-rose-100 sm:text-base">{summary.counts.blocked} {historical ? 'sin revisión completa al inicio' : '· Revisión prioritaria'}</p>
         </div>}
         {notices.length > 0 && <p className="self-center text-sm font-semibold text-amber-800 dark:text-amber-200">{notices.length} {notices.length === 1 ? 'aviso general' : 'avisos generales'}</p>}
       </div>
@@ -137,14 +138,15 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
                   type="button"
                   onClick={() => select(item, index + 1)}
                   aria-current={selectedComponentId === item.component.id ? 'step' : undefined}
-                  className="focus-ring flex min-h-11 w-full items-start justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-3 text-left hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                  data-review-priority={item.level}
+                  className={`focus-ring flex min-h-11 w-full flex-wrap items-start justify-between gap-3 rounded-xl border px-3 py-3 text-left ${reviewPriorityPresentation[item.level].classes} ${selectedComponentId === item.component.id ? 'ring-2 ring-brand-500' : ''}`}
                 >
                   <span className="min-w-0">
                     <span className="font-semibold">{componentLabel(item)} · {item.component.titulo}</span>
                     <span className="mt-1 block text-xs text-muted">{item.reasons.map((reason) => reason.label).join(' · ')}</span>
                   </span>
                   <span className={item.level === 'blocked' ? 'shrink-0 text-xs font-bold text-rose-700 dark:text-rose-300' : 'shrink-0 text-xs font-bold text-amber-700 dark:text-amber-300'}>
-                    {historical ? 'Aviso inicial' : item.level === 'blocked' ? 'Revisión necesaria' : 'Comprobar'}
+                    {historical ? 'Aviso inicial' : reviewPriorityPresentation[item.level].label}
                   </span>
                 </button>
               </li>

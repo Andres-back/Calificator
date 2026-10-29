@@ -253,10 +253,12 @@ async def resolve_ai_configuration(
         if not candidate:
             continue
         entry = next((m for m in catalog if m.get("provider_id") == candidate["provider"] and m.get("model_id") == candidate.get("model")), None)
-        if entry and entry.get("runtime_profile"):
+        if entry and (entry.get("runtime_profile") or feature == "calificacion.extraccion"):
             connection = await config_service.get_provider_config(candidate["provider"])
-            candidate["runtime_profile"] = dict(entry["runtime_profile"])
+            if entry.get("runtime_profile"):
+                candidate["runtime_profile"] = dict(entry["runtime_profile"])
             candidate["capabilities"] = list(entry.get("capabilities") or [])
+            candidate["available"] = bool(entry.get("active", True) and connection.get("active", True))
             candidate["connection"] = {key: connection.get(key) for key in ("id", "base_url", "credential_revision", "timeout_seconds", "max_retries")}
 
     core = {
@@ -271,6 +273,9 @@ async def resolve_ai_configuration(
         "teacher_config_version": teacher_version,
         "global_config_version": int(route.get("config_version") or 1),
     }
+    if feature == "calificacion.extraccion":
+        from app.services.vision_route_policy import effective_runtime_limits
+        core["runtime_limits"] = effective_runtime_limits(route.get("runtime_limits")).model_dump()
     core["config_hash"] = _hash_snapshot(core)
     core["captured_at"] = datetime.now(timezone.utc).isoformat()
     return core

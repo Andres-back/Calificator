@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.usage_logger import log_ai_usage
-from app.services.ai_provider_capacity import provider_capacity
+from app.services.ai_provider_capacity import ProviderCapacityUnavailable, provider_capacity
 from app.services.ai_credentials_service import get_effective_ai_credentials
 from app.services.image_preprocessing import prepare_orientation_variants
 from app.modules.calificaciones.evidence_preparation import CanonicalEvidencePages
@@ -28,7 +28,7 @@ from app.services.ollama_provider import OllamaCloudProvider, OllamaProviderErro
 from app.services.opencode_request import new_opencode_session_id, opencode_headers
 
 logger = get_logger(__name__)
-VISION_EXTRACTION_VERSION = 2
+VISION_EXTRACTION_VERSION = 3
 RETRYABLE_HTTP = {429, 502, 503, 504}
 RETRYABLE_ERRORS = (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError)
 _SOLUTION_CONTEXT_KEYS = {
@@ -375,11 +375,16 @@ class VisionExtractor:
     ) -> None:
         self.tracking = tracking or {}
         snapshot = self.tracking.get("_ai_config") or {}
-        if provider not in {"open_code", "ollama"} and not (snapshot.get("primary") or {}).get("runtime_profile"):
+        managed = snapshot.get("feature") == "calificacion.extraccion" or self.tracking.get("_require_configured_route")
+        if not managed and provider not in {"open_code", "ollama"} and not (snapshot.get("primary") or {}).get("runtime_profile"):
             raise ValueError("Proveedor visual no compatible")
         self.provider = provider
         self.base_url = settings.OPEN_CODE_BASE_URL.rstrip("/")
         self.primary_model = primary_model or settings.VISION_MODEL
+        if snapshot.get("feature") == "calificacion.extraccion" or self.tracking.get("_require_configured_route"):
+            selected = snapshot.get("primary") or {}
+            self.primary_model = str(selected.get("model") or "")
+            self.provider = str(selected.get("provider") or provider)
         self.api_key = (api_key or "").strip()
         self._session_id = new_opencode_session_id(
             self.tracking.get("pipeline_run_id")
@@ -469,6 +474,9 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
         )
 
     async def _one(self, item: tuple[int, bytes, str, bool], total: int, blueprint: dict, purpose: str) -> VisionPageResult:
+        snapshot = self.tracking.get("_ai_config") or {}
+        if snapshot.get("feature") == "calificacion.extraccion" or self.tracking.get("_require_configured_route"):
+            return await self._managed_one(item, total, blueprint, purpose)
         page, prepared_data, prepared_mime, allow_rotation = item
         models = [self.primary_model]
         snapshot = self.tracking.get("_ai_config") or {}
@@ -701,6 +709,277 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             fallback_used=len(models) > 1,
             warnings=["Página no extraída automáticamente."],
         )
+
+    async def _managed_one(
+        self, item, total: int, blueprint: dict, purpose: str
+    ) -> VisionPageResult:
+        from app.db.session import AsyncSessionLocal
+        from app.services.ai_api_connections import call_configured_api
+        from app.services.ai_api_transport import APIOutputError
+        from app.services.ai_credentials_service import (
+            get_teacher_ai_credential,
+            resolve_api_credential,
+        )
+        from app.services.vision_route_policy import effective_runtime_limits
+
+        page, data, mime, _allow_rotation = item
+        snapshot = self.tracking.get("_ai_config") or {}
+        operation_started = time.monotonic()
+        try:
+            limits = effective_runtime_limits(snapshot.get("runtime_limits"))
+        except ValueError:
+            return VisionPageResult(
+                page=page,
+                status="failed_permanent",
+                error_code="vision_limits_invalid",
+                size_bytes=len(data),
+            )
+        routes = [
+            value
+            for value in (snapshot.get("primary"), snapshot.get("fallback"))
+            if isinstance(value, dict) and value
+        ]
+        if (
+            not routes
+            or not isinstance(snapshot.get("primary"), dict)
+            or not (snapshot["primary"].get("model"))
+        ):
+            return VisionPageResult(
+                page=page,
+                status="failed_permanent",
+                error_code="vision_route_not_ready",
+                size_bytes=len(data),
+            )
+        route_index, last_error, temporary = 0, "vision_route_not_ready", False
+        selected = routes[0]
+        for attempt in range(1, limits.max_attempts + 1):
+            selected = routes[route_index]
+            model = str(selected.get("model") or "")
+            provider_id = str(selected.get("provider") or "")
+            if (
+                not model
+                or selected.get("available") is False
+                or (not selected.get("runtime_profile") and provider_id != "ollama")
+                or (
+                    selected.get("runtime_profile")
+                    and "vision" not in selected.get("capabilities", [])
+                )
+            ):
+                last_error, temporary = "vision_route_not_ready", False
+            else:
+                started, request_id = time.monotonic(), str(uuid4())
+                usage, http_status, temporary = {}, None, False
+                event_route = {"selection": selected, "fallback_used": route_index > 0}
+                await self._event(
+                    "vision.request_started",
+                    request_id,
+                    model,
+                    attempt,
+                    started,
+                    page,
+                    len(data),
+                    "started",
+                    **event_route,
+                )
+                try:
+                    connection = selected.get("connection") or {}
+                    try:
+                        async with AsyncSessionLocal() as credential_db:
+                            if selected.get("credential_source") == "teacher":
+                                teacher_id = self.tracking.get("teacher_id")
+                                if not teacher_id:
+                                    raise VisionExtractionError("vision_auth_missing")
+                                from uuid import UUID
+
+                                key = await get_teacher_ai_credential(
+                                    credential_db,
+                                    teacher_id=UUID(str(teacher_id)),
+                                    provider_id=provider_id,
+                                )
+                            else:
+                                key = await resolve_api_credential(
+                                    credential_db, connection
+                                )
+                    except ValueError as exc:
+                        raise VisionExtractionError("vision_auth_failed") from exc
+                    if not key:
+                        raise VisionExtractionError("vision_auth_missing")
+                    encoded = base64.b64encode(data).decode()
+                    prompt = self._prompt(blueprint, page, total, purpose)
+                    async with provider_capacity(strict=True):
+                        async with asyncio.timeout(limits.call_timeout_seconds):
+                            if selected.get("runtime_profile"):
+                                payload = await call_configured_api(
+                                    selected,
+                                    key,
+                                    [
+                                        {
+                                            "role": "user",
+                                            "content": [
+                                                {"type": "text", "text": prompt},
+                                                {
+                                                    "type": "image_url",
+                                                    "image_url": {
+                                                        "url": f"data:{mime};base64,{encoded}",
+                                                        "detail": "high",
+                                                    },
+                                                },
+                                            ],
+                                        }
+                                    ],
+                                    max_tokens=limits.max_output_tokens,
+                                    json_mode=True,
+                                    timeout=limits.call_timeout_seconds,
+                                    session_id=self._session_id,
+                                )
+                                usage, http_status = payload.get("usage") or {}, 200
+                                choice = (payload.get("choices") or [{}])[0]
+                                if choice.get("finish_reason") in {
+                                    "length",
+                                    "max_tokens",
+                                }:
+                                    raise VisionExtractionError(
+                                        "vision_output_truncated"
+                                    )
+                                content = (choice.get("message") or {}).get("content")
+                            else:
+                                native = OllamaCloudProvider(
+                                    key,
+                                    base_url=connection.get("base_url")
+                                    or settings.OLLAMA_CLOUD_BASE_URL,
+                                    timeout_seconds=limits.call_timeout_seconds,
+                                )
+                                payload = await native.chat(
+                                    model=model,
+                                    messages=[
+                                        {
+                                            "role": "user",
+                                            "content": prompt,
+                                            "images": [encoded],
+                                        }
+                                    ],
+                                    options={
+                                        "temperature": 0,
+                                        "num_predict": limits.max_output_tokens,
+                                    },
+                                )
+                                if payload.get("done_reason") == "length":
+                                    raise VisionExtractionError(
+                                        "vision_output_truncated"
+                                    )
+                                content = str(
+                                    (payload.get("message") or {}).get("content")
+                                    or payload.get("response")
+                                    or ""
+                                )
+                                usage = {
+                                    "prompt_tokens": payload.get("prompt_eval_count"),
+                                    "completion_tokens": payload.get("eval_count"),
+                                }
+                                http_status = 200
+                    raw, repaired = _parse_json(content)
+                    result = _normalize(raw, page, len(data))
+                    if not result.page_text and not result.answers:
+                        raise VisionExtractionError("vision_no_content")
+                    has_answer = any(
+                        bool(
+                            (answer.answer or "").strip()
+                            or (answer.visual_description or "").strip()
+                        )
+                        for answer in result.answers
+                    )
+                    if (
+                        purpose == "student_response"
+                        and blueprint.get("preguntas")
+                        and not has_answer
+                        and not (total > 1 and result.page_role == "reading")
+                    ):
+                        raise VisionExtractionError("vision_no_student_answers")
+                    result.duration_ms = int(
+                        (time.monotonic() - operation_started) * 1000
+                    )
+                    result.model, result.provider, result.fallback_used = (
+                        model,
+                        provider_id,
+                        route_index > 0,
+                    )
+                    if repaired:
+                        result.warnings.append("JSON reparado localmente una sola vez.")
+                    await self._event(
+                        "vision.request_completed",
+                        request_id,
+                        model,
+                        attempt,
+                        started,
+                        page,
+                        len(data),
+                        "success",
+                        usage=usage,
+                        http_status=http_status,
+                        **event_route,
+                    )
+                    return result
+                except VisionExtractionError as exc:
+                    last_error, temporary = exc.code, exc.temporary
+                except APIOutputError as exc:
+                    last_error = (
+                        "vision_output_truncated"
+                        if exc.code == "output_budget_exhausted"
+                        else "vision_output_incomplete"
+                    )
+                    usage = {
+                        "prompt_tokens": exc.input_tokens,
+                        "completion_tokens": exc.output_tokens,
+                    }
+                except ProviderCapacityUnavailable:
+                    last_error, temporary = "capacity_unavailable", True
+                except (httpx.TimeoutException, TimeoutError):
+                    last_error, temporary = "vision_timeout", True
+                except (httpx.NetworkError, httpx.RemoteProtocolError):
+                    last_error, temporary = "vision_transport", True
+                except httpx.HTTPStatusError as exc:
+                    http_status = exc.response.status_code
+                    last_error, temporary = (
+                        f"vision_http_{http_status}",
+                        http_status in RETRYABLE_HTTP,
+                    )
+                except OllamaProviderError as exc:
+                    last_error, temporary = "vision_provider_failed", exc.temporary
+                except Exception:
+                    last_error, temporary = "vision_invalid_schema", False
+                another = attempt < limits.max_attempts and (
+                    route_index == 0 and len(routes) > 1 or temporary
+                )
+                await self._event(
+                    "vision.request_failed",
+                    request_id,
+                    model,
+                    attempt,
+                    started,
+                    page,
+                    len(data),
+                    "retry" if another else "failed",
+                    last_error,
+                    usage=usage,
+                    http_status=http_status,
+                    **event_route,
+                )
+            if route_index == 0 and len(routes) > 1:
+                route_index = 1
+            elif not temporary:
+                break
+        return VisionPageResult(
+            page=page,
+            status="failed_temporary" if temporary else "failed_permanent",
+            size_bytes=len(data),
+            error_code=last_error,
+            model=str(selected.get("model") or ""),
+            provider=str(selected.get("provider") or ""),
+            fallback_used=len(routes) > 1 and selected is routes[1],
+            duration_ms=int((time.monotonic() - operation_started) * 1000),
+            warnings=["Página no extraída automáticamente."],
+        )
+
     async def extract(self, content: bytes, mime: str, *, blueprint: dict | None = None, purpose: Literal["student_response", "evaluation_document"] = "student_response", canonical_pages: CanonicalEvidencePages | None = None) -> VisionExtraction:
         started = time.monotonic()
         preparation_started = time.monotonic()
@@ -734,6 +1013,9 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             temporary = any(item.status == "failed_temporary" for item in results)
             raise VisionExtractionError("vision_failed_temporary" if temporary else "vision_failed_permanent", temporary)
         answers, failures = _merge(success), [item for item in results if item not in success]
+        snapshot = self.tracking.get("_ai_config") or {}
+        if failures and (snapshot.get("feature") == "calificacion.extraccion" or self.tracking.get("_require_configured_route")):
+            raise VisionExtractionError("vision_incomplete_pages", any(item.status == "failed_temporary" for item in failures))
         warnings = [warning for item in results for warning in item.warnings]
         graphic_uncertain_questions: list[int | str] = []
         if purpose == "student_response":

@@ -26,6 +26,10 @@ Versión del formato local, actor/evaluación, fecha de creación/caducidad (una
 
 No confundirlo con el manifiesto/recibo de aceptar-publicar académico (máximo 25), que permanece bajo su componente y contrato actuales.
 
+La revisión interna de compartir (hotfix #283) mantiene el mismo panel montado: reviewingId y estado sucio son locales, sin otra selección ni almacenamiento persistente. El preview posterior proviene del servidor y actualiza también la lista padre; guardar mensaje, aprobar devolución, emitir y copiar siguen siendo estados/gestos distintos. Cerrar la revisión coordina la escritura del marco y de la vista integrada antes de restaurar foco, sin cambiar valores del formulario ni el hook compartido.
+
+El estado activo del centro integrado es exclusivamente de presentación, ligado a disponibilidad y actor autorizado: permite retirar la barra académica competidora y se libera al salir. No representa aprobación, publicación, elegibilidad ni emisión, y no se persiste.
+
 ## Control de acceso e impresión
 
 Reutiliza id/version/estado/expires_at/copy_available/fingerprint recibidos. Renovar, reactivar y desactivar mantienen confirmaciones actuales. Copia no muta acceso/cuota; auditoría del acceso autorizado sigue el servidor existente. Impresión recibe las selecciones/fingerprints vigentes y devuelve fichas; volver restaura la vista sin convertirla en una entrega nueva.

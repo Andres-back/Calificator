@@ -1,0 +1,32 @@
+# Validación y entrega
+
+1. Tests RED antes del consumidor/controles/UI. Proveedores simulados; medir conteos y deadlines, no llamadas reales. Matriz de perfiles/credenciales/timeout/JSON cortado/páginas/configuración ausente y ausencia de tercer proveedor.
+2. PostgreSQL aislado: upgrade desde202610260001, datos/configuraciones previas conservados, publicación concurrente/versionada, clientes antiguos y revertir. Downgrade con controles utilizados debe rechazarse sin borrarlos.
+3. Vitest y E2E admin/docente a360/1440: editar/guardar/reabrir límites, error de validación y referencia previa con cero/reintentos vacíos; alumno sin consulta al historial. Confirmar que compartir/exportar usa solo nota actual.
+4. Suites backend/frontend, tipos/lint/build, integración aplicable, inventario y gobernanza. Registrar resultados y fallos reales; CI del HEAD exacto antes de declararlo listo. No fusionar bajo esta autorización.
+5. Tras nueva autorización de fusión y despliegue automático verificado: publicación administrativa versionada exclusivamente de `calificacion.extraccion` con Luna principal, GLM respaldo y controles visibles; conservar todas las otras funciones, listas, evaluadores, imágenes y embeddings. No reescribir trabajos anteriores ni recalificar/restaurar notas reales sin autorización adicional.
+
+## Evidencia
+
+La investigación productiva fue de solo lectura, sin nombres, respuestas, fotografías ni valores de notas. No se ha publicado configuración de calificación ni modificado datos académicos para este hotfix. El reporte físico Android corresponde a 131 y no acredita iPhone.
+
+Validación local del 28-10-2026:
+
+- RED inicial del lector: 6 fallos y 1 pase antes de implementar. La cascada previa efectuaba hasta 12 peticiones en el caso de un solo intento y aceptaba salida cortada. Después pasan las 20 regresiones específicas: principal/respaldo, presupuesto compartido, deadline real de 5 s, claves separadas institucionales/docentes, nativo explícito, capacidad indisponible, hoja fallida, salida cortada y límites inválidos. El refinamiento final de valores false/0/lista/texto vacíos tuvo RED de 4 fallos antes de corregirse. Sin red ni llamadas reales.
+- Historial: RED de componente ausente antes de crear la vista; después pasan cero válido, revisiones recientes vacías, negativos/no finitos, consulta fallida, reintento de lectura y ausencia de autorización. La referencia no se conecta a las acciones de confirmar, compartir, publicar o exportar.
+- PostgreSQL 16 aislado, sin puertos publicados: upgrade completo hasta `202610280001`, prueba de ida/vuelta en esquema sintético, rechazo de downgrade con controles usados en rutas/versiones/trabajos, publicación y reapertura, cliente antiguo, null explícito, restauración versionada, snapshots congelados y conservación de una fila académica sintética. Tres contratos pasan; dos administradores simultáneos obtienen un éxito y un conflicto409, y el docente recibe403 al publicar.
+- Frontend: suite completa de 1038 pruebas en 168 archivos pasa. La aserción antigua de respaldo incondicional se actualizó para exigir presupuesto disponible; los límites de pruebas, timeouts y auditorías existentes no se aflojaron. Una ficha E2E sintética sin perfil fue rechazada correctamente al cambiar límites: se corrigió la ficha para representar un modelo comprobado, no la validación de producción.
+- Navegador: 24 recorridos Chromium/WebKit pasan a 360/1440 px, temas claro/oscuro, con controles táctiles de al menos44 px, guardado/reapertura, borrador conservado ante rechazo y alumno sin consultar historial privado. Se revisaron las capturas de Administración y de referencia anterior; son datos ficticios, no prueba física de iPhone.
+- Backend completo final: 1565 pruebas pasan (5 warnings), sin red. Ruff con las mismas reglas de CI (`F401,F821,F822,F823,F841`) pasa. TypeScript, ESLint y build Vite pasan; la verificación focalizada final del frontend pasa28 pruebas. Se mantienen los avisos existentes de tamaño de algunos chunks, sin cambiar límites del build. Inventario regenerado:663 superficies; se conserva la propiedad008/012/116. Gobernanza y CI remoto del HEAD exacto son puertas de entrega, no se presumen verdes por los resultados locales.
+
+El workflow conserva todas las comprobaciones existentes y añade una base `spec133` independiente para estas regresiones de migración/publicación. No añade servicios productivos ni excepciones a CI. La política de extracción pasa a versión3 para no reutilizar una caché producida con semántica anterior; no reescribe jobs admitidos ni ejecuta reintentos reales por sí sola.
+
+Analyze previo:10 requisitos mapeados a14 tareas, cobertura100 %, sin contradicciones bloqueantes. Converge final revisó10 FR,4 SC,10 escenarios de aceptación,8 decisiones de implementación y8 principios constitucionales: cero brechas de construcción, sin tareas nuevas que añadir. No hay hooks de extensión. La tarea de preparación del PR no declara CI remoto aprobado: se comprueba después sobre el commit publicado; fusión y activación productiva requieren una nueva autorización.
+
+## Refinamiento de la revisión final
+
+Una segunda revisión Converge detectó una brecha parcial de FR-006/US3-AC2 y añadióT015 sin modificar tareas anteriores: un historial HTTP exitoso pero con formato inesperado podía producir `TypeError` en la vista. La regresión nueva reprodujo el fallo; se valida tanto la respuesta como la caché compartida antes de buscar una nota. Un objeto, una lista con null o texto inesperado muestran error recuperable, no bloquean la revisión ni producen nota.
+
+Después pasan las7 pruebas específicas de referencia histórica y nuevamente TypeScript, lint y build. El primer CI (`40757127355`, HEAD `ea35a29`) aprobó backend, calidad de frontend, contenedores y gobernanza, pero falló en el recorrido contextual «094 estado procesando no oculta avisos ni publica una nota». Ese mismo recorrido pasa localmente con la corrección, sin modificar su archivo, aserciones, timeout ni reintentos. El PR se actualiza y todo CI se vuelve a ejecutar sobre el nuevo HEAD; no se acepta el resultado anterior como validación del código nuevo.
+
+La revisión adicional ejecutó41 recorridos Chromium de lectura y revisión de notas existentes: todos pasan. El hallazgoT015 quedó resuelto; Converge posterior no encuentra brechas nuevas. La publicación productiva sigue pendiente de autorización y del CI completo del nuevo HEAD.

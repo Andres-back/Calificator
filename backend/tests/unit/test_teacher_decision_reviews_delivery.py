@@ -8,6 +8,7 @@ from uuid import uuid4
 import pytest
 
 from app.modules.calificaciones import service
+from app.modules.calificaciones.models import Calificacion
 from app.modules.calificaciones.schemas import (
     AjustarNota,
     ConfirmarNota,
@@ -17,9 +18,13 @@ from app.shared.enums import CalificacionEstado, EntregaEstado
 
 
 class FakeDB:
-    def __init__(self) -> None:
+    def __init__(self, grade=None) -> None:
         self.commits = 0
         self.refreshes = 0
+        self.grade = grade
+
+    async def scalar(self, query):
+        return self.grade if query.column_descriptions[0]["entity"] is Calificacion else None
 
     async def commit(self) -> None:
         self.commits += 1
@@ -32,6 +37,7 @@ def _grade() -> SimpleNamespace:
     return SimpleNamespace(
         id=uuid4(),
         evaluacion_id=uuid4(),
+        profesor_id=uuid4(),
         estudiante_id=uuid4(),
         nota_sugerida=Decimal("4.0"),
         nota_confirmada=None,
@@ -69,7 +75,7 @@ def test_teacher_decision_marks_the_persisted_delivery_as_reviewed(
     expected_state: str,
 ) -> None:
     grade = _grade()
-    db = FakeDB()
+    db = FakeDB(grade)
 
     async def get_evaluation(_db, selected_grade):
         assert selected_grade is grade

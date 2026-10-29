@@ -18,6 +18,8 @@ El conjunto se identifica por calificacion_id. Búsqueda/filtro no lo altera; se
 
 El resultado se muestra en el mismo panel con pie Copiar N enlaces; no genera secciones grupales separadas para nuevos/guardados/controlados al final del recorrido.
 
+Hotfix #283: si el preview vigente incluye revision_docente y falta preparar la devolución, «Revisar y compartir» abre el formulario existente dentro de ese mismo panel. Aprobar usa POST /evaluaciones/{id}/devoluciones/revisar con source_fingerprint, scope, feedback_text y request_id actuales. Si el detalle no está disponible, solo puede aprobarse el resumen; no se inventan puntajes. La respuesta del servidor, no un cambio local forzado, habilita preparar el enlace. Guardar el mensaje sin aprobar no lo habilita. Se preservan las opciones/URLs en memoria y se mantiene inmutable cualquier manifiesto incierto.
+
 ## Rutas existentes reutilizadas
 
 - Preview: POST /evaluaciones/{id}/devoluciones/previsualizar, grading.read, IDs de calificación.

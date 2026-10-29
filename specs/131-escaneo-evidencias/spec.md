@@ -44,16 +44,16 @@ Como docente, quiero preparar varias hojas sin mezclarlas con otro estudiante, c
 
 ### Historia 4 - Identificar las respuestas de un vistazo (Prioridad: P2)
 
-Como docente, quiero distinguir las respuestas correctas en verde, las que necesitan revisión en amarillo y las incorrectas en rojo, sin que seleccionar una pregunta o cambiar de pantalla oculte su estado.
+Como docente, quiero distinguir la prioridad de revisión en verde, amarillo y rojo, sin que seleccionar una pregunta o cambiar de pantalla oculte su estado. La integración del29 de octubre conserva la política posterior ya aprobada de Spec134: verde sin avisos propios, amarillo conviene comprobar y rojo revisión prioritaria; acierto/error sigue indicado por su etiqueta académica, no determina la prioridad.
 
 **Razón de prioridad**: permite concentrar la revisión en las respuestas dudosas y entender el desglose sin leer todos sus detalles. La señalización no debe convertirse en otra decisión de calificación.
 
 **Prueba independiente**: abrir un desglose sintético con respuestas correctas, incorrectas, parciales, ilegibles, sin puntaje y con avisos; seleccionar cada pregunta en celular y computador y contrastar color, etiqueta e icono con su estado vigente, sin modificar los datos.
 
 **Aceptación**:
-1. **Dada** una respuesta correcta ya evaluada y sin aviso propio pendiente, **cuando** se presenta su botón/tarjeta, **entonces** se identifica en verde con texto «Correcta» y símbolo de acierto.
-2. **Dada** una respuesta con revisión pendiente, parcial, ilegible, no evaluable o sin información suficiente, **cuando** se presenta, **entonces** se identifica en amarillo con una etiqueta que distingue su situación; una ausencia de lectura no se convierte en «Incorrecta» por defecto.
-3. **Dada** una respuesta cuyo estado vigente es incorrecto y no tiene revisión pendiente, **cuando** se presenta, **entonces** se identifica en rojo con texto «Incorrecta» y símbolo correspondiente, no con el icono de acierto.
+1. **Dada** una respuesta sin avisos propios de revisión, **cuando** se presenta su botón/tarjeta docente, **entonces** se identifica en verde con «Sin avisos de revisión», aunque su estado académico sea incorrecto; no promete exactitud.
+2. **Dada** una respuesta con confianza moderada o verificación insuficiente, **cuando** se presenta, **entonces** usa amarillo con «Conviene comprobar» conforme a Spec134, sin convertir la ausencia de lectura en error definitivo.
+3. **Dada** una respuesta de baja confianza, revisión manual, ilegible, no evaluable o sin puntaje válido, **cuando** se presenta, **entonces** usa rojo con «Revisión prioritaria» y sus razones vigentes. La etiqueta académica distingue correcta, incorrecta o parcial sin sustituir esa prioridad.
 4. **Dada** una pregunta seleccionada o un cambio de tema/tamaño, **cuando** se navega por el desglose, **entonces** su estado sigue identificable por color y texto/icono, y la selección tiene una marca distinta. No cambia nota, estado guardado, permisos o disponibilidad de publicación/enlaces.
 
 ### Historia 5 - Ver de cerca la evidencia de la pregunta seleccionada (Prioridad: P1)
@@ -121,7 +121,7 @@ Como docente en celular, quiero que al tomar una foto se propongan las cuatro es
 - **FR-016**: Mantener notas, decisiones docentes, evidencias antiguas, fórmulas, modelos y presupuestos de llamadas existentes; el procesamiento nuevo no recalifica ni migra registros anteriores automáticamente.
 - **FR-017**: Admitir el flujo actual cuando no se solicita escaneo; habilitar la nueva capacidad gradualmente y poder deshabilitar nuevas preparaciones sin perder originales, historial o lectura de versiones ya creadas.
 - **FR-018**: Verificar conservación de contenido, permisos, recuperación, uso de recursos y recorrido real en teléfonos antes de activación general; cualquier mejora de OCR o calificación debe demostrarse por comparación controlada, no deducirse solo de una foto más blanca.
-- **FR-019**: Identificar en la revisión de respuestas las correctas en verde, las que necesitan revisión en amarillo y las incorrectas en rojo, utilizando el estado efectivo vigente del componente y dando prioridad a sus avisos pendientes. Estados parciales/ilegibles/no evaluables/incompletos deben tener etiquetas explícitas y no aparecer como errores definitivos por defecto.
+- **FR-019**: Conservar en la revisión docente el clasificador común aprobado en Spec134: verde sin avisos, amarillo conviene comprobar y rojo revisión prioritaria. No volver a colorear la prioridad según acierto/error; mantener sus etiquetas académicas explícitas y no presentar ilegibilidad/incompletitud como errores definitivos. Esta coordinación sustituye la correspondencia de colores inicial de131, no crea reglas de calificación nuevas.
 - **FR-020**: Mantener color semántico, etiqueta e icono coherentes entre botón de pregunta y tarjeta, también al seleccionarla, en ambos temas y desde celular a escritorio. La comprensión no debe depender únicamente del color; la selección, el foco y los puntajes deben seguir siendo distinguibles.
 - **FR-021**: Limitar esta señalización a presentación: no recalcular notas, cambiar estados guardados, reabrir revisiones resueltas, alterar decisiones docentes o impedir publicar/compartir/imprimir. No confundir calidad de fotografía con corrección de una respuesta ni divulgar información adicional en vistas con permisos restringidos.
 - **FR-022**: Mostrar en el desglose docente un acercamiento a la evidencia fotográfica de la pregunta seleccionada cuando exista una ubicación válida, identificando la hoja y conservando contexto alrededor de la respuesta; abarcar también dibujos, procedimientos y continuaciones disponibles.

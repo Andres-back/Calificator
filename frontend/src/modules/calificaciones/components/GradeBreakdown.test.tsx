@@ -87,8 +87,8 @@ describe('GradeBreakdown', () => {
     const select = vi.fn();
     const view = render(<GradeBreakdown breakdown={two} selectedComponentId="p2" onSelectComponent={select} />);
     expect(screen.getAllByRole('article')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Pregunta 2, Por revisar' })).toHaveAttribute('aria-current', 'step');
-    fireEvent.click(screen.getByRole('button', { name: 'Pregunta 1, Correcta' }));
+    expect(screen.getByRole('button', { name: 'Pregunta 2, Revisión prioritaria' })).toHaveAttribute('aria-current', 'step');
+    fireEvent.click(screen.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión' }));
     expect(select).toHaveBeenCalledWith(breakdown.componentes[0].id);
     view.rerender(<GradeBreakdown breakdown={two} student selectedComponentId="p2" />);
     expect(screen.getAllByRole('article')).toHaveLength(2);
@@ -99,9 +99,20 @@ describe('GradeBreakdown', () => {
     render(<GradeBreakdown breakdown={hidden} student />);
     expect(screen.getByText('Se mostrará cuando el docente libere las respuestas.')).toBeInTheDocument();
     expect(screen.queryByText(/Material de apoyo consultado/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Colores de prioridad de revisión')).not.toBeInTheDocument();
+    expect(screen.getByRole('article')).not.toHaveAttribute('data-review-priority');
   });
 
-  it('conserva colores, etiquetas e iconos aunque la pregunta esté seleccionada', () => {
+  it('conserva el color rojo y el anillo al seleccionar, sin confundir una respuesta incorrecta con baja confianza', () => {
+    const low = { ...breakdown, componentes: [{ ...breakdown.componentes[0], origen: 'consenso_ia', valoraciones: [{ puntaje: 1, confianza: 0.4 }] }] };
+    render(<GradeBreakdown breakdown={low} selectedComponentId="p1" onSelectComponent={vi.fn()} />);
+    const button = screen.getByRole('button', { name: 'Pregunta 1, Revisión prioritaria' });
+    expect(button).toHaveClass('bg-rose-50', 'ring-2');
+    expect(button).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByRole('article')).toHaveAttribute('data-review-priority', 'blocked');
+  });
+
+  it('conserva la prioridad docente al seleccionar y el estado académico al mostrar al estudiante', () => {
     const components = [
       { ...breakdown.componentes[0], id: 'ok', estado: 'correcta' },
       { ...breakdown.componentes[0], id: 'bad', numero: '2', estado: 'incorrecta', puntos_obtenidos: 0 },
@@ -109,15 +120,15 @@ describe('GradeBreakdown', () => {
       { ...breakdown.componentes[0], id: 'partial', numero: '4', estado: 'parcial', puntos_obtenidos: 0.5 },
     ];
     const view = render(<GradeBreakdown breakdown={{ ...breakdown, requiere_revision: true, componentes: components }} selectedComponentId="bad" onSelectComponent={vi.fn()} />);
-    const bad = screen.getByRole('button', { name: 'Pregunta 2, Incorrecta' });
+    const bad = screen.getByRole('button', { name: 'Pregunta 2, Sin avisos de revisión' });
     expect(bad).toHaveAttribute('aria-current', 'step');
-    expect(bad).toHaveAttribute('data-grade-tone', 'error');
+    expect(bad).toHaveAttribute('data-review-priority', 'safe');
     expect(bad).not.toHaveClass('bg-brand-600');
-    expect(screen.getByRole('button', { name: 'Pregunta 1, Correcta' })).toHaveAttribute('data-grade-tone', 'success');
-    expect(screen.getByRole('button', { name: 'Pregunta 3, Por revisar' })).toHaveAttribute('data-grade-tone', 'warning');
-    expect(screen.getByRole('button', { name: 'Pregunta 4, Parcial' })).toHaveAttribute('data-grade-tone', 'warning');
-    expect(screen.getByRole('article')).toHaveAttribute('data-grade-tone', 'error');
-    expect(screen.getByRole('article').querySelector('svg.lucide-circle-check-big')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión' })).toHaveAttribute('data-review-priority', 'safe');
+    expect(screen.getByRole('button', { name: 'Pregunta 3, Revisión prioritaria' })).toHaveAttribute('data-review-priority', 'blocked');
+    expect(screen.getByRole('button', { name: 'Pregunta 4, Sin avisos de revisión' })).toHaveAttribute('data-review-priority', 'safe');
+    expect(screen.getByRole('article')).toHaveAttribute('data-review-priority', 'safe');
+    expect(screen.getByRole('article')).not.toHaveAttribute('data-grade-tone');
     expect(screen.getByRole('article').querySelector('svg.lucide-circle-x')).not.toBeNull();
     view.rerender(<GradeBreakdown breakdown={{ ...breakdown, componentes: components }} student />);
     expect(screen.getAllByRole('article').map((item) => item.getAttribute('data-grade-tone'))).toEqual(['success', 'error', 'warning', 'warning']);

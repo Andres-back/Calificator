@@ -102,6 +102,12 @@ Como docente, quiero la misma devolución y reglas en ambas pantallas, con una d
 - «Adelante» del 2026-10-26 aceptó preparar el diseño; «Aprueb» aprobó después este documento, el plan y la revisión de calidad para continuar implementando si está completa. No autoriza fusionar, desplegar ni probar con alumnos reales.
 - «Premium» significa jerarquía, legibilidad, consistencia y menos desplazamientos; no añade generación de imágenes, animaciones nuevas ni decoración que compita con el mensaje.
 - El alcance es organización e interacción del frontend, reutilizando reglas y operaciones existentes. Si los contratos no permiten conservar el comportamiento previsto, se explicará el límite antes de ampliar backend o esquema.
+
+## Corrección del recorrido de pendientes — 2026-10-29
+
+Hotfix [#283](https://github.com/Andres-back/Calificator/issues/283), autorizado mediante «resuelve y continua», después de mostrar el bloqueo de compartir una nota publicada. Concreta US1/AC2, US2/AC3–4 y FR-005/007/009/011/014/016 sin cambiar elegibilidad ni backend: ofrecer la revisión docente permitida por el servidor dentro del mismo panel de compartir. Una nota publicada no autoriza por sí sola un desglose pendiente; el docente puede aprobar expresamente solo nota/mensaje mediante la operación existente.
+
+Abrir o cancelar esta revisión no emite enlaces. Aprobar vuelve al mismo panel, conservando destinatarios, opciones y enlaces ya preparados; crear y copiar continúan siendo gestos separados. Guardar solo el mensaje no equivale a aprobarlo. Los accesos cerrados y solicitudes inciertas conservan su tratamiento, y cero enlaces preparados no se presenta como éxito. Casos de aceptación: ambas entradas, nota publicada con desglose pendiente, mezcla de listos/pendientes, borrador/conflicto, opciones conservadas y retirada de permisos. Sin datos reales ni cambios en producción; implementación y validación local del hotfix completadas, con evidencia y límites en quickstart.md.
 - Se mantienen enlaces individuales; copiar varios produce una lista privada para el docente que se entrega por separado. No se crea un enlace público con las notas del grupo.
 - Aprobar/publicar sigue siendo decisión explícita docente. No se añade un nuevo bloqueo académico ni se retiran protecciones para hacer parecer más corto el recorrido.
 - Los valores y límites vigentes de enlaces, evidencia y chat se conservan; las pruebas de navegador no acreditan por sí solas un iPhone/Android físico.

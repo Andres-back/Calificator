@@ -25,6 +25,12 @@ export interface AIProvider {
   last_test_at?: string | null;
 }
 
+export interface VisionRuntimeLimits {
+  call_timeout_seconds: number;
+  max_attempts: number;
+  max_output_tokens: number;
+}
+
 export interface FeatureRouting {
   feature: string;
   label: string;
@@ -41,10 +47,12 @@ export interface FeatureRouting {
   p50_ms?: number | null;
   p95_ms?: number | null;
   efficiency_warning?: string | null;
+  runtime_limits?: VisionRuntimeLimits | null;
 }
 
 export interface AIConfiguredRoute {
   active?: boolean;
+  runtime_limits?: VisionRuntimeLimits | null;
   provider: string | null;
   model: string | null;
   fallback_provider: string | null;
@@ -375,9 +383,9 @@ export async function publishAIConfiguration(
     models: models.map(({ provider_id, model_id, label, capabilities, recommended, active, max_context_tokens, runtime_profile, verification_id }) => ({
       provider_id, model_id, label, capabilities, recommended, active, max_context_tokens, runtime_profile, verification_id,
     })),
-    features: features.map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active }) => ({
+    features: features.map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active, runtime_limits }) => ({
       feature, label, capability, primary_provider, primary_model, fallback_provider,
-      fallback_model, rollout_enabled, config_version, active,
+      fallback_model, rollout_enabled, config_version, active, runtime_limits,
     })),
   });
   return data;
@@ -402,7 +410,7 @@ export async function saveProviders(providers: AIProvider[]): Promise<ApiRespons
 }
 
 export async function saveFeatures(features: FeatureRouting[], expectedVersion: number): Promise<ApiResponse> {
-  const payload = features.map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active }) => ({
+  const payload = features.map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active, runtime_limits }) => ({
     feature,
     label,
     capability,
@@ -413,6 +421,7 @@ export async function saveFeatures(features: FeatureRouting[], expectedVersion: 
     rollout_enabled,
     config_version,
     active,
+    runtime_limits,
   }));
   const { data } = await api.put<ApiResponse>('/admin/ai-features', {
     expected_version: expectedVersion,

@@ -25,6 +25,30 @@ const first = new File(['one'], 'one.png', { type: 'image/png' });
 const second = new File(['two'], 'two.png', { type: 'image/png' });
 
 describe('preparación opt-in del paquete', () => {
+  it('muestra la miniatura preparada pero conserva el original para el envío', async () => {
+    const onChange = vi.fn();
+    const objectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:prepared-evidence');
+    try {
+      const view = render(<MultiPageEvidencePicker scanEnabled contextKey="a" pages={[]} onChange={onChange} />);
+      selectFiles([first]);
+      const pages = onChange.mock.calls[0][0] as EvidencePage[];
+      view.rerender(<MultiPageEvidencePicker scanEnabled contextKey="a" pages={pages} onChange={onChange} />);
+      const preview = new Blob(['prepared'], { type: 'image/png' });
+      const selection: EvidenceScanSelection = { decision: 'prepared', preview, recipe: {
+        width: 800, height: 1100, corners: [[0, 0], [1, 0], [1, 1], [0, 1]],
+        rotation: 0, profile: 'natural', coordinate_frame: 'exif_oriented_source',
+      } };
+      act(() => captured.accept!(selection));
+      const reviewed = onChange.mock.calls.at(-1)![0] as EvidencePage[];
+      expect(reviewed[0].file).toBe(first);
+      expect(reviewed[0].scan).toBe(selection);
+      view.rerender(<MultiPageEvidencePicker scanEnabled contextKey="a" pages={reviewed} onChange={onChange} />);
+      await waitFor(() => expect(objectUrl).toHaveBeenCalledWith(preview));
+      expect(objectUrl).not.toHaveBeenCalledWith(first);
+      expect(view.container.querySelector('ol img')).toHaveAttribute('src', 'blob:prepared-evidence');
+      expect(screen.getByText('Preparada y revisada')).toBeInTheDocument();
+    } finally { objectUrl.mockRestore(); }
+  });
   it('revisa una hoja a la vez, conserva archivos y no inicia calidad paralela', () => {
     render(<Harness />); selectFiles([first, second]);
     expect(screen.getByRole('dialog', { name: 'Preparar hoja 1' })).toBeInTheDocument();

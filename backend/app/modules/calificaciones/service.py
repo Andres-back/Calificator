@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from decimal import Decimal
+import hashlib
+import json
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -14,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.modules.calificaciones.evidence_manifest import has_preserved_original
 from app.modules.feedback_sharing.invalidations import suspend_grade_publications
-from app.modules.calificaciones.breakdown_service import answers_released, create_manual_breakdown, get_active_breakdown, serialize_breakdown
+from app.modules.calificaciones.breakdown_service import answers_released, create_manual_breakdown, get_active_breakdown, prepare_final_grade_adjustment, serialize_breakdown
 from app.modules.calificaciones.models import (
     Calificacion,
     Entrega,
@@ -221,32 +223,70 @@ async def ajustar_nota(
     db: AsyncSession,
     cal: Calificacion,
     payload: AjustarNota,
+    *, actor: User | None = None,
 ) -> Calificacion:
+    # Reload after taking the row lock: another session may have changed this
+    # object since the router's authorization lookup.
+    cal = await db.scalar(select(Calificacion).where(Calificacion.id == cal.id)
+                          .options(selectinload(Calificacion.entrega))
+                          .with_for_update().execution_options(populate_existing=True))
+    if cal is None:
+        raise HTTPException(404, "Calificación no encontrada")
+    actor_id = actor.id if actor is not None else cal.profesor_id
+    observation = (payload.observacion or "").strip()
+    fingerprint = hashlib.sha256(json.dumps({
+        "nota": format(payload.nota_confirmada.normalize(), "f"),
+        "observacion": observation, "feedback": payload.feedback,
+        "actor": str(actor_id),
+    }, sort_keys=True).encode()).hexdigest()
+    if payload.operacion_id:
+        for event in (cal.resultado_json or {}).get("_timeline", []):
+            if isinstance(event, dict) and event.get("operacion_id") == str(payload.operacion_id):
+                if event.get("intencion_hash") != fingerprint:
+                    raise HTTPException(409, "Este guardado ya se usó para otro cambio. Recarga y compara la nota.")
+                return cal
+    if cal.estado in {CalificacionEstado.PROCESANDO.value, CalificacionEstado.ANULADA.value}:
+        raise HTTPException(409, "Espera a que termine la calificación antes de editar esta nota.")
+    active = await get_active_breakdown(db, cal.id, lock=True)
+    if payload.operacion_id:
+        def utc(value):
+            return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+        if (utc(cal.updated_at) != utc(payload.actualizado_en_esperado)
+                or (active.version if active else None) != payload.version_desglose_esperada):
+            raise HTTPException(409, "La nota cambió en otra sesión. Conserva tu borrador y recarga para comparar.")
+    nota_anterior = cal.nota_confirmada if cal.nota_confirmada is not None else cal.nota_sugerida
+    # Legacy callers used an empty feedback field to mean "leave it unchanged".
+    feedback_changed = bool(payload.feedback) and payload.feedback != cal.feedback
+    if payload.nota_confirmada == nota_anterior and not feedback_changed:
+        return cal
     evaluacion = await get_evaluation_for_calificacion(db, cal)
     from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
     await ensure_visual_grade_publishable(db, cal, evaluacion)
-    validate_score_within_evaluation(
-        payload.nota_confirmada, evaluacion, "nota_confirmada"
-    )
-    nota_anterior = cal.nota_confirmada or cal.nota_sugerida
-    cal.nota_confirmada = payload.nota_confirmada
-    if payload.feedback:
-        cal.feedback = payload.feedback
-    cal.revisado_por_docente = True
-    cal.estado = CalificacionEstado.AJUSTADA.value
-    if cal.entrega:
-        cal.entrega.estado = EntregaEstado.REVISADA.value
-    _append_timeline_event(
-        cal,
-        tipo="ajustada",
-        nota_anterior=nota_anterior,
-        nota_nueva=payload.nota_confirmada,
-        feedback=payload.feedback,
-        detalle="Ajustada por docente",
-    )
-    await _update_salon_estudiante_estado(db, cal, "confirmado")
-    await suspend_grade_publications(db, cal.id)
-    await db.commit()
+    if not payload.nota_confirmada.is_finite() or not 0 <= payload.nota_confirmada <= evaluacion.nota_maxima:
+        raise HTTPException(422, f"La nota debe estar entre 0 y {evaluacion.nota_maxima}.")
+    try:
+        if active and payload.nota_confirmada != nota_anterior:
+            await prepare_final_grade_adjustment(db, active=active, target=payload.nota_confirmada,
+                                                 actor_id=actor_id, observation=observation)
+        cal.nota_confirmada = payload.nota_confirmada
+        if feedback_changed:
+            cal.feedback = payload.feedback
+        cal.revisado_por_docente = True
+        cal.estado = CalificacionEstado.AJUSTADA.value
+        if cal.entrega:
+            cal.entrega.estado = EntregaEstado.REVISADA.value
+        _append_timeline_event(
+            cal, tipo="ajustada", nota_anterior=nota_anterior, nota_nueva=payload.nota_confirmada,
+            feedback=payload.feedback if feedback_changed else None, actor_id=actor_id, actor_nombre=getattr(actor, "nombre", None),
+            detalle=observation or "Nota final establecida por el docente",
+            operacion_id=payload.operacion_id, intencion_hash=fingerprint,
+        )
+        await _update_salon_estudiante_estado(db, cal, "confirmado")
+        await suspend_grade_publications(db, cal.id)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
     await db.refresh(cal)
     return cal
 
@@ -1008,6 +1048,8 @@ def _append_timeline_event(
     actor_id: UUID | None = None,
     actor_nombre: str | None = None,
     detalle: str | None = None,
+    operacion_id: UUID | None = None,
+    intencion_hash: str | None = None,
 ) -> None:
     result = dict(cal.resultado_json or {})
     timeline = list(result.get("_timeline") or [])
@@ -1026,6 +1068,8 @@ def _append_timeline_event(
         }
     )
     result["_timeline"] = timeline
+    if operacion_id:
+        timeline[-1].update({"operacion_id": str(operacion_id), "intencion_hash": intencion_hash})
     cal.resultado_json = result
 
 

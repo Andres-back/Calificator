@@ -5,10 +5,12 @@ import type { GradeBreakdownData } from '@/types/api';
 import { GradeFormula } from './GradeFormula';
 import { gradeCalculationPresentation } from './gradeCalculationPresentation';
 import { gradeComponentPresentation } from './gradeComponentPresentation';
+import { buildReviewTriage, classifyReviewComponent, type ReviewTriageSummary } from '../review-triage/buildReviewTriage';
+import { reviewPriorityPresentation } from '../review-triage/reviewPriorityPresentation';
 
 const stateIcons = { check: CheckCircle2, warning: AlertTriangle, x: XCircle };
 
-export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent }: {
+export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent, reviewSummary }: {
   breakdown: GradeBreakdownData;
   student?: boolean;
   compactTeacher?: boolean;
@@ -19,9 +21,11 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   renderEvidence?: (component: GradeBreakdownData['componentes'][number]) => ReactNode;
   selectedComponentId?: string;
   onSelectComponent?: (componentId: string) => void;
+  reviewSummary?: ReviewTriageSummary;
 }) {
   const compact = compactTeacher && !student;
   const calculation = student ? undefined : gradeCalculationPresentation(breakdown);
+  const priorities = new Map((student ? [] : (reviewSummary ?? buildReviewTriage(breakdown)).items).map((item) => [item.component.id, item]));
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -33,18 +37,20 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           {breakdown.requiere_revision ? 'Requiere revisión' : 'Puntajes registrados'}
         </Badge>
       </div>
+      {!student && <div aria-label="Colores de prioridad de revisión" className="space-y-2 text-xs"><p className="text-muted">El color indica qué conviene comprobar, no si el estudiante acertó ni una garantía de exactitud.</p><div className="flex flex-wrap gap-2">{Object.entries(reviewPriorityPresentation).map(([level, { label, Icon, classes }]) => <span key={level} className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 ${classes}`}><Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{label}</span>)}</div></div>}
       {onSelectComponent && !student ? <>
         <nav aria-label="Preguntas y criterios" className="flex flex-wrap gap-2">
           {breakdown.componentes.map((component) => {
-            const presentation = gradeComponentPresentation(component);
-            const StateIcon = stateIcons[presentation.icon];
+            const item = priorities.get(component.id) ?? classifyReviewComponent(component);
+            const { label, Icon, classes } = reviewPriorityPresentation[item.level];
             return <button
             key={component.id} type="button" onClick={() => onSelectComponent(component.id)}
             aria-current={component.id === selectedComponentId ? 'step' : undefined}
-            aria-label={`${component.tipo === 'pregunta' ? 'Pregunta' : 'Criterio'} ${component.numero ?? component.orden + 1}, ${presentation.label}`}
-            data-grade-tone={presentation.tone}
-            className={`focus-ring flex min-h-11 min-w-11 flex-wrap items-center justify-center gap-1.5 rounded-lg border px-3 py-2 font-semibold ${presentation.navigationClass} ${component.id === selectedComponentId ? 'ring-2 ring-brand-600 ring-offset-2 ring-offset-surface dark:ring-brand-300' : ''}`}
-          ><StateIcon aria-hidden="true" className="h-4 w-4 shrink-0" /><span>{component.numero ?? component.orden + 1}</span><span className="text-xs font-normal">{compact && <>{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · </>}{presentation.label}</span></button>;
+            aria-label={`${component.tipo === 'pregunta' ? 'Pregunta' : 'Criterio'} ${component.numero ?? component.orden + 1}, ${label}`}
+            title={[label, ...item.reasons.map((reason) => reason.label)].join('. ')}
+            data-review-priority={item.level}
+            className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-left font-semibold ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
+          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{component.numero ?? component.orden + 1}</span>{compact && <span className="text-xs font-normal">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
         </nav>
         <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">{calculation?.provisional ? calculation.label : 'Cómo se calcula la nota'} · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} /></details>
@@ -53,7 +59,11 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
         {breakdown.componentes.filter((component) => student || !selectedComponentId || component.id === selectedComponentId).map((component) => {
           const presentation = gradeComponentPresentation(component);
           const StateIcon = stateIcons[presentation.icon];
-          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-grade-tone={presentation.tone} className={`min-w-0 scroll-mt-24 rounded-xl border border-l-4 border-border bg-surface p-4 [overflow-wrap:anywhere] ${presentation.cardClass}`}>
+          const item = priorities.get(component.id);
+          const priority = item ? reviewPriorityPresentation[item.level] : null;
+          const PriorityIcon = priority?.Icon;
+          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 rounded-xl border p-4 [overflow-wrap:anywhere] ${priority ? `border-l-4 ${priority.classes}` : `border-border bg-surface border-l-4 ${presentation.cardClass}`}`}>
+            {priority && PriorityIcon && <div className="mb-3 space-y-1"><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{item.reasons.map((reason) => reason.label).join(' · ')}</p> : null}</div>}
             <div className={`flex flex-col gap-2 ${selectedComponentId && !student ? '' : 'sm:flex-row sm:items-start sm:justify-between'}`}>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">
@@ -96,7 +106,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             {!student && renderEvidence?.(component)}
             </div>
             <div className="mt-3 flex items-start gap-2 rounded-lg border border-border p-3 text-sm leading-6">
-              <StateIcon aria-hidden="true" className={`mt-0.5 h-4 w-4 shrink-0 ${presentation.iconClass}`} />
+              {PriorityIcon ? <PriorityIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : component.requiere_revision ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />}
               <p><strong>Por qué:</strong> {component.explicacion || 'No hay una explicación verificable; debe revisarla el docente.'}</p>
             </div>
             {component.orientacion_mejora && (

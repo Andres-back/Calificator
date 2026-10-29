@@ -20,6 +20,41 @@ beforeEach(() => {
   vi.mocked(teacherApi.listFeedbackAccesses).mockResolvedValue([]);
 });
 describe('devoluciones por evaluación', () => {
+  it.each([false, true])('revisa una publicada pendiente desde Compartir sin salir del panel (integrado=%s)', async (embedded) => {
+    const pending = { calificacion_id: 'g1', elegible: false, seleccionable: true, preparacion: 'needs_review' as const,
+      motivo: 'Revisa los puntajes por pregunta antes de compartir esta devolución.',
+      revision_docente: { source_fingerprint: 'a'.repeat(64), feedback_text: result.retroalimentacion, detail_available: false },
+      borrador_docente: { estado: 'publicada', nota: '3.5', nota_maxima: '5', retroalimentacion: result.retroalimentacion } };
+    const ready = { ...pending, elegible: true, preparacion: 'ready' as const, fingerprint: 'b'.repeat(64), resultado: { ...result, alcance: 'summary' as const } };
+    vi.mocked(teacherApi.previewFeedback).mockResolvedValue([pending]);
+    vi.mocked(teacherApi.approveFeedbackReview).mockResolvedValue(ready);
+    vi.mocked(teacherApi.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'new-access', credential_available: true, url: 'https://example.test/devolucion#' + 'b'.repeat(43) }]);
+    const onReview = vi.fn();
+    const onClose = vi.fn();
+    const finishEditing = vi.fn();
+    render(<ShareFeedbackDialog embedded={embedded} evaluationId="e1" initialGradeId={embedded ? 'g1' : undefined} onClose={onClose} onReview={onReview} onFinishEditing={finishEditing} />);
+    if (!embedded) fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Compartir' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana Pérez' }));
+    expect(screen.getByRole('combobox', { name: 'Contenido de la devolución' })).toHaveValue('summary');
+    expect(screen.queryByRole('option', { name: 'Incluir detalle por pregunta revisado' })).toBeNull();
+    expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+    const create = await screen.findByRole('button', { name: 'Crear 1 enlace faltante' });
+    expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+    expect(onReview).not.toHaveBeenCalled();
+    expect(finishEditing).toHaveBeenCalledOnce();
+    fireEvent.click(create);
+    expect(await screen.findByRole('button', { name: 'Copiar enlace de Ana Pérez' })).toBeEnabled();
+    expect(teacherApi.approveFeedbackReview).toHaveBeenCalledWith('e1', expect.objectContaining({ scope: 'summary', feedback_text: result.retroalimentacion }), expect.any(AbortSignal));
+    expect(teacherApi.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ selecciones: [{ calificacion_id: 'g1', fingerprint: ready.fingerprint }], duracion_dias: 3, evidencia: false }), expect.any(AbortSignal));
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a estudiantes' }));
+    if (!embedded) expect(screen.getByRole('checkbox', { name: 'Seleccionar Ana Pérez' })).toBeChecked();
+    expect(screen.getByText('Lista para entregar')).toBeInTheDocument();
+  });
+
   it('el modo integrado y el diálogo usan el mismo contenido, sin seleccionar todo al abrir', async () => {
     const { rerender } = render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
     await screen.findByText(result.retroalimentacion);
@@ -41,6 +76,9 @@ describe('devoluciones por evaluación', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Ver devolución de Ana Pérez' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Revisar devolución de Ana Pérez' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' }), { target: { value: 'Una explicación revisada.' } });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue('Una explicación revisada.');
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar diálogo' }));
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Volver sin aprobar' }));

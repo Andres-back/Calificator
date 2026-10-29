@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.shared.enums import EntregaTipo
 from app.modules.evaluaciones.schemas import EvaluacionRead
@@ -134,8 +134,23 @@ class ConfirmarNota(BaseModel):
 
 
 class AjustarNota(BaseModel):
-    nota_confirmada: Decimal = Field(ge=0)
+    nota_confirmada: Decimal = Field(ge=0, le=Decimal("9999.99"))
     feedback: str | None = None
+    observacion: str | None = Field(default=None, max_length=2000)
+    actualizado_en_esperado: datetime | None = None
+    version_desglose_esperada: int | None = Field(default=None, ge=1)
+    operacion_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def complete_preconditions(self):
+        guards = {"actualizado_en_esperado", "version_desglose_esperada", "operacion_id"}
+        if guards & self.model_fields_set:
+            if (not guards <= self.model_fields_set or self.actualizado_en_esperado is None
+                    or self.operacion_id is None):
+                raise ValueError("Recarga la nota antes de guardar: faltan datos de la versión abierta.")
+            if self.nota_confirmada != self.nota_confirmada.quantize(Decimal("0.01")):
+                raise ValueError("Escribe la nota con un máximo de dos decimales.")
+        return self
 
 
 class RevisionManualCreate(BaseModel):

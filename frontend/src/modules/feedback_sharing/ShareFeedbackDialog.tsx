@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { ArrowLeft, MessageSquareText, RefreshCw } from 'lucide-react';
 import { Button, Modal } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
@@ -18,7 +18,7 @@ import { FeedbackStudentList, type FeedbackStudentRow } from './FeedbackStudentL
 import { queryClient } from '@/lib/queryClient';
 import { readFeedbackListPosition, restoreFeedbackListPosition, type FeedbackListPosition } from './feedbackListPosition';
 
-interface WorkspaceProps { evaluationId: string; initialGradeId?: string; initialSelectedIds?: string[]; suggestedArea?: string | null; embedded?: boolean; onDirtyChange?: (dirty: boolean) => void; onClose: () => void; onReview: (gradeId: string) => void }
+interface WorkspaceProps { evaluationId: string; initialGradeId?: string; initialSelectedIds?: string[]; suggestedArea?: string | null; embedded?: boolean; onDirtyChange?: (dirty: boolean) => void; onFinishEditing?: () => void; onClose: () => void; onReview: (gradeId: string) => void }
 
 export function ShareFeedbackDialog(props: WorkspaceProps) {
   const user = useAuth(state => state.user);
@@ -28,7 +28,7 @@ export function ShareFeedbackDialog(props: WorkspaceProps) {
   return <FeedbackDialogContent key={context} {...props} />;
 }
 
-function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedIds, suggestedArea, embedded, onDirtyChange, onClose, onReview }: WorkspaceProps) {
+function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedIds, suggestedArea, embedded, onDirtyChange, onFinishEditing, onClose, onReview }: WorkspaceProps) {
   const user = useAuth(state => state.user);
   const actorId = user?.id;
   const permitted = Boolean(actorId) && ['profesor', 'admin'].includes(user?.rol ?? '') && Boolean(user?.permissions?.includes('grading.read'));
@@ -56,6 +56,8 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   const controller = useRef(new AbortController());
   const locked = useRef(false);
   const listScope = useRef<HTMLDivElement>(null);
+  const frameScope = useRef<HTMLDivElement>(null);
+  const viewport = useMobileFormViewport(!embedded, frameScope);
   const returnFocus = useRef<HTMLElement | null>(null);
   const returnScope = useRef<HTMLElement | null>(null);
   const returnLabel = useRef('');
@@ -130,13 +132,19 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   function openDetail(id: string, trigger?: HTMLElement) { if (blocked) return; rememberFocus(trigger); setDetail(id); setPublishing(false); }
   function openShare(ids: string[], trigger?: HTMLElement) { if (blocked || !canDeliver) return; rememberFocus(trigger); setShareIds([...ids]); }
   function leaveShare() { setShareIds(null); void refreshAccesses(); restoreFocus(); }
-  function approved(result: FeedbackPreview, action?: 'saved') {
+  function previewChanged(result: FeedbackPreview) {
     if (!valid()) return;
     setRows(current => current.map(row => row.calificacion_id === result.calificacion_id ? { ...row, preview: { ...row.preview, ...result, batch_candidate: result.batch_candidate } } : row));
+    void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', result.calificacion_id] });
+  }
+  function finishEditing() { viewport.finishWriting(); onFinishEditing?.(); }
+  function approved(result: FeedbackPreview, action?: 'saved') {
+    if (!valid()) return;
+    previewChanged(result);
+    finishEditing();
     setReviewing(null); setPendingPrint(false); setReviewDirty(false);
     setNotice(action !== 'saved' && result.elegible ? 'Devolución aprobada. Ya puedes incluirla en la impresión o compartir su enlace.' : 'Mensaje guardado. La nota y su estado no cambiaron.');
     setReload(value => value + 1);
-    void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', result.calificacion_id] });
   }
   async function published(results: FeedbackBatchResultItem[], skipped: number) {
     if (!valid()) return;
@@ -183,10 +191,10 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
     </div>
     {canDeliver && <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Opciones de sus enlaces</summary><FeedbackAccessList evaluationId={evaluationId} accesses={accesses.filter(access => access.calificacion_id === detailRow.calificacion_id)} previews={detailRow.preview ? [detailRow.preview] : []} signal={controller.current.signal} valid={valid} onBusy={setBusy} onChanged={refreshAccesses} onIssued={() => { setNotice('Cambio guardado. Abre Compartir devolución para recuperar y copiar el enlace vigente.'); }} /></details>}
   </section>;
-  return <FeedbackFrame embedded={embedded} onClose={close} canClose={!blocked} title={initialGradeId ? 'Retroalimentación del estudiante' : 'Retroalimentación del grupo'}>
+  return <FeedbackFrame scope={frameScope} viewport={viewport} embedded={embedded} onClose={close} canClose={!blocked} title={initialGradeId ? 'Retroalimentación del estudiante' : 'Retroalimentación del grupo'}>
     {reviewDirty && <p role="status" className="shrink-0 border-b border-amber-400 p-3 text-sm">Tienes un mensaje sin guardar. Guarda o descarta los cambios antes de cerrar o cambiar de estudiante.</p>}
     {notice && <p role="status" className="shrink-0 border-b border-border px-4 py-2 text-sm">{notice}</p>}
-    {shareIds && actorId ? <FeedbackSharePanel key={shareIds.join(':')} actorId={actorId} evaluationId={evaluationId} rows={rows.filter(row => shareIds.includes(row.calificacion_id ?? ''))} knownRows={rows} signal={controller.current.signal} valid={valid} onBusy={setBusy} onBack={leaveShare} onManage={id => { leaveShare(); if (rows.some(row => row.calificacion_id === id)) setDetail(id); else { setDetail(null); setNotice('Esta devolución ya no aparece en la lista actual. La consultaremos de nuevo antes de continuar.'); setReload(value => value + 1); } }} /> : printEntries ? <div className="min-h-0 flex-1 overflow-y-auto p-4" data-mobile-scroll><FeedbackPrintSheet entries={printEntries} suggestedArea={suggestedArea} onClose={() => { setPrintEntries(null); restoreFocus(); }} /></div> : reviewRow?.preview && (reviewRow.preview.revision_docente || reviewRow.preview.mensaje_editable) ? <div className="min-h-0 flex-1 overflow-y-auto p-4" data-mobile-scroll><FeedbackDeliveryReview key={reviewRow.calificacion_id} evaluationId={evaluationId} name={reviewRow.nombre} preview={reviewRow.preview} signal={controller.current.signal} valid={valid} onApproved={approved} onBusy={setBusy} onDirtyChange={setReviewDirty} onCancel={() => { setReviewDirty(false); setReviewing(null); restoreFocus(); }} /></div> : <>
+    {shareIds && actorId ? <FeedbackSharePanel key={shareIds.join(':')} actorId={actorId} evaluationId={evaluationId} rows={rows.filter(row => shareIds.includes(row.calificacion_id ?? ''))} knownRows={rows} signal={controller.current.signal} valid={valid} onBusy={setBusy} onBack={leaveShare} onPreviewChanged={previewChanged} onFinishEditing={finishEditing} onManage={id => { leaveShare(); if (rows.some(row => row.calificacion_id === id)) setDetail(id); else { setDetail(null); setNotice('Esta devolución ya no aparece en la lista actual. La consultaremos de nuevo antes de continuar.'); setReload(value => value + 1); } }} /> : printEntries ? <div className="min-h-0 flex-1 overflow-y-auto p-4" data-mobile-scroll><FeedbackPrintSheet entries={printEntries} suggestedArea={suggestedArea} onClose={() => { setPrintEntries(null); restoreFocus(); }} /></div> : reviewRow?.preview && (reviewRow.preview.revision_docente || reviewRow.preview.mensaje_editable) ? <div className="min-h-0 flex-1 overflow-y-auto p-4" data-mobile-scroll><FeedbackDeliveryReview key={reviewRow.calificacion_id} evaluationId={evaluationId} name={reviewRow.nombre} preview={reviewRow.preview} signal={controller.current.signal} valid={valid} onApproved={approved} onBusy={setBusy} onDirtyChange={setReviewDirty} onCancel={() => { finishEditing(); setReviewDirty(false); setReviewing(null); restoreFocus(); }} /></div> : <>
       {loading ? <p role="status" className="p-4">Cargando estudiantes y retroalimentaciones…</p> : <>
         {error && <div role="alert" className="shrink-0 space-y-2 border-b border-amber-400 p-3 text-sm"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => setReload(value => value + 1)}>Actualizar lista</Button></div>}
         {pendingPrint && <section role="status" className="shrink-0 space-y-2 border-b border-amber-400 p-3 text-sm"><p>{pendingRows.length} devoluciones seleccionadas necesitan revisión. No se entregarán sin tu aprobación.</p><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => { const row = pendingRows[0]; if (row?.preview?.revision_docente) setReviewing(row.calificacion_id!); else if (row?.calificacion_id) onReview(row.calificacion_id); }}>Revisar pendientes</Button>{chosen.length > 0 && <Button disabled={busy} onClick={() => void preparePrint()}>Entregar solo {chosen.length} {chosen.length === 1 ? 'lista' : 'listas'}</Button>}<Button variant="outline" onClick={() => setPendingPrint(false)}>Cancelar</Button></div></section>}
@@ -210,10 +218,12 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   </FeedbackFrame>;
 }
 
-function FeedbackFrame({ embedded, onClose, canClose, title, children }: { embedded?: boolean; onClose: () => void; canClose: boolean; title: string; children: ReactNode }) {
-  const scope = useRef<HTMLDivElement>(null);
-  const viewport = useMobileFormViewport(!embedded, scope);
+function FeedbackFrame({ scope, viewport, embedded, onClose, canClose, title, children }: { scope: RefObject<HTMLDivElement>; viewport: ReturnType<typeof useMobileFormViewport>; embedded?: boolean; onClose: () => void; canClose: boolean; title: string; children: ReactNode }) {
+  // Escape always delegates to the current guarded close callback. Toggling
+  // Modal's escape listener with busy/dirty would restart its focus lifecycle.
+  const closeRef = useRef(onClose); closeRef.current = onClose;
+  const requestClose = useCallback(() => closeRef.current(), []);
   const body = <div ref={scope} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden [overflow-wrap:anywhere]">{viewport.isWriting && <Button variant="link" className="shrink-0 self-end" onClick={viewport.finishWriting}>Listo</Button>}{children}</div>;
   if (embedded) return <section className="flex h-[min(70dvh,48rem)] min-h-80 min-w-0 flex-col rounded-xl border border-border bg-surface" aria-label={title}><h2 className="shrink-0 border-b border-border p-4 text-lg font-bold">{title}</h2>{body}</section>;
-  return <Modal open onClose={onClose} closeOnBackdrop={canClose} closeOnEscape={canClose} mobileViewport={viewport.viewport} mobileWriting={viewport.isWriting} title={<span className="block p-4 pt-[max(1rem,env(safe-area-inset-top))]">{title}</span>} className="flex h-[min(90dvh,56rem)] max-w-6xl flex-col !overflow-hidden !bg-surface !p-0 !backdrop-blur-none [&>h2]:!mb-0 [&>h2]:shrink-0 [&>h2]:border-b [&>h2]:border-border [&>button]:top-[max(.75rem,env(safe-area-inset-top))] [&[data-writing=true]_[data-feedback-secondary]]:hidden max-sm:!max-h-[100dvh] max-sm:!rounded-none">{body}</Modal>;
+  return <Modal open onClose={requestClose} closeOnBackdrop={canClose} mobileViewport={viewport.viewport} mobileWriting={viewport.isWriting} title={<span className="block p-4 pt-[max(1rem,env(safe-area-inset-top))]">{title}</span>} className="flex h-[min(90dvh,56rem)] max-w-6xl flex-col !overflow-hidden !bg-surface !p-0 !backdrop-blur-none [&>h2]:!mb-0 [&>h2]:shrink-0 [&>h2]:border-b [&>h2]:border-border [&>button]:top-[max(.75rem,env(safe-area-inset-top))] [&[data-writing=true]_[data-feedback-secondary]]:hidden max-sm:!max-h-[100dvh] max-sm:!rounded-none">{body}</Modal>;
 }

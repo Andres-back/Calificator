@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from app.services.ai_api_transport import ModelRuntimeProfile
+from app.services.vision_route_policy import VisionRuntimeLimits, READING_FEATURE
 
 
 class GlobalAIConfigUpdate(BaseModel):
@@ -120,6 +121,13 @@ class FeatureRouting(BaseModel):
     p50_ms: int | None = None
     p95_ms: int | None = None
     efficiency_warning: str | None = None
+    runtime_limits: VisionRuntimeLimits | None = None
+
+    @model_validator(mode="after")
+    def supported_runtime_limits(self):
+        if self.runtime_limits is not None and self.feature != READING_FEATURE:
+            raise ValueError("Los controles de lectura solo se admiten en la lectura visual de calificación.")
+        return self
 
     @property
     def teacher_override_allowed(self) -> bool:

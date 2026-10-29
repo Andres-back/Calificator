@@ -1,5 +1,11 @@
 # Guía de validación propuesta
 
+## Reanudación de integración —2026-10-29
+
+Seguimiento actual en [integration-20261029.md](integration-20261029.md). El usuario confirmó anteriormente una validación física en Android, sin resultados detallados de geometría/latencia/memoria. Esta confirmación no acredita iPhone ni sustituye esas métricas. Se solicitó comprobar disponibilidad de iPhone y encender Docker para persistencia aislada. No se reutiliza el presupuesto histórico de llamadas reales; esta reanudación no autoriza fusión ni activación productiva.
+
+Al combinar con Spec134, comprobar prioridad docente mediante su clasificador compartido: verde sin avisos, amarillo conviene comprobar, rojo revisión prioritaria; el acierto/error es una etiqueta académica independiente. Esta coordinación sustituye la matriz inicial de tonos docentes que figura como antecedente en esta guía. La vista estudiante no recibe regiones o fuentes privadas adicionales.
+
 **Estado**: implementación local del diseño aprobado el2026-10-27, issue276. Colores, zoom, editor/Worker, preparación canónica y recuperación conservadora implementados con admisión apagada. Ayuda opcional de esquinas configurable incorporada posteriormente, también apagada. Tres llamadas experimentales autorizadas agotadas, ninguna escritura/configuración productiva; no inferir que el enlace aislado de teléfono consulta IA. Actualización fpdf2 aprobada y auditada; muestra local anónima sin nuevas descargas. Cierre de gobernanza y teléfonos físicos pendiente, sin PR/fusión/despliegue. Los registros históricos conservan lo que faltaba en cada etapa, no acreditan puertas posteriores.
 
 ## Condiciones antes de implementar

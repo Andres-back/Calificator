@@ -18,7 +18,7 @@ export function providerSnapshot(providers: AIProvider[] | undefined) {
 }
 
 export function featureSnapshot(features: FeatureRouting[] | undefined) {
-  return JSON.stringify((features ?? []).map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, active }) => ({
+  return JSON.stringify((features ?? []).map(({ feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, active, runtime_limits }) => ({
     feature,
     label,
     capability,
@@ -27,6 +27,7 @@ export function featureSnapshot(features: FeatureRouting[] | undefined) {
     fallback_provider,
     fallback_model,
     rollout_enabled,
+    runtime_limits,
     active,
   })));
 }

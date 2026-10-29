@@ -113,6 +113,8 @@ Como docente, quiero seleccionar cuentas estudiantiles ya verificadas de mis otr
 
 ## Supuestos
 
+Corrección de interoperabilidad y errores: [132-listas-glm-flash](../132-listas-glm-flash/spec.md), issue #277. La selección del lector se captura desde administración, sin modelo retirado por omisión; sus conexiones reciben la revisión de credencial correcta. Distinguir error de servicio/respuesta inválida de lista sin nombres, sin cambiar permisos, confirmación ni retención temporal.
+
 - La foto de asistencia contiene solo nombres; no se presume que incluya correo, documento o identificador escolar.
 - El correo generado es un identificador de inicio de sesión, no un buzón real. La recuperación por correo no se ofrecerá para estas cuentas mientras no tengan un correo verificado.
 - La docente confirma el reconocimiento antes de crear alumnos. La similitud de nombres entre materias no autoriza una unión automática de identidades.

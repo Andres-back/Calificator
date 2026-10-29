@@ -53,6 +53,24 @@ def test_grading_review_routes_are_text_and_extraction_is_visual() -> None:
     assert resolver.capability_for("calificacion.revision_adicional") == "text"
 
 
+@pytest.mark.asyncio
+async def test_reading_limits_are_captured_and_later_changes_do_not_rewrite_snapshot(monkeypatch):
+    saved = FakeConfigService.route
+    try:
+        FakeConfigService.route = {**saved, 'rollout_enabled': False, 'runtime_limits': {'max_output_tokens':8192, 'call_timeout_seconds':30, 'max_attempts':1}}
+        first = await resolver.resolve_ai_configuration(SimpleNamespace(), feature='calificacion.extraccion')
+        assert first['runtime_limits'] == FakeConfigService.route['runtime_limits']
+        assert first['primary']['capabilities'] == ['text','vision']
+        assert first['primary']['connection']['id'] == 'open_code'
+        FakeConfigService.route = {**FakeConfigService.route, 'runtime_limits': None}
+        second = await resolver.resolve_ai_configuration(SimpleNamespace(), feature='calificacion.extraccion')
+        assert second['runtime_limits']['max_output_tokens'] == 10000
+        assert first['runtime_limits']['max_output_tokens'] == 8192
+        assert first['config_hash'] != second['config_hash']
+    finally:
+        FakeConfigService.route = saved
+
+
 @pytest.fixture(autouse=True)
 def fake_service(monkeypatch):
     monkeypatch.setattr(resolver, "AIConfigService", FakeConfigService)

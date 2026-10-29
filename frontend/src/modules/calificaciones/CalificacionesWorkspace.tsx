@@ -51,7 +51,7 @@ import { GradeFeedback } from './components/GradeFeedback';
 import { GradeReprocessing } from './components/GradeReprocessing';
 import { VerificationPendingNotice } from './components/VerificationPendingNotice';
 import { gradeCalculationPresentation } from './components/gradeCalculationPresentation';
-import { GradeGlobalAdjustmentEditor } from './components/GradeGlobalAdjustmentEditor';
+import { GradeFinalEditor } from './components/GradeFinalEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
@@ -59,9 +59,10 @@ import { formatAIModelSource } from './aiPipelineLabels';
 import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submissionCandidates';
 import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
 import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
+import { PreviousGradeReference } from './components/PreviousGradeReference';
 import { formatTimelineScore } from './timeline';
 import { ReviewNavigation, type ReviewSection } from './ReviewNavigation';
-import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, ReviewFilter } from '@/types/api';
+import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, GradeFinalAdjustment, ReviewFilter } from '@/types/api';
 
 type WorkspaceGrade = Pick<Calificacion, 'id' | 'estudiante_id' | 'nota_sugerida' | 'nota_confirmada' | 'estado' | 'resultado_json'>;
 
@@ -634,7 +635,7 @@ function PanelDetalle({
   const [adjNota, setAdjNota] = useState<number | ''>(effectiveGradeScore(cal) ?? '');
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
   const [feedbackDirty, setFeedbackDirty] = useState(false);
-  const [showAjustar, setShowAjustar] = useState(false);
+  const [feedbackWorkspaceActive, setFeedbackWorkspaceActive] = useState(false);
   const [adjError, setAdjError] = useState('');
   const [replacementOpen, setReplacementOpen] = useState(false);
   const [replacementReason, setReplacementReason] = useState('');
@@ -644,8 +645,10 @@ function PanelDetalle({
   const [editingComponentDirty, setEditingComponentDirty] = useState(false);
   const [breakdownSaveError, setBreakdownSaveError] = useState('');
   const [pendingEditorAction, setPendingEditorAction] = useState<string | 'close' | null>(null);
-  const [showGlobalAdjustment, setShowGlobalAdjustment] = useState(false);
-  const [globalAdjustmentSnapshot, setGlobalAdjustmentSnapshot] = useState<GradeBreakdownData | null>(null);
+  const [editingFinalGrade, setEditingFinalGrade] = useState(false);
+  const [finalGradeSnapshot, setFinalGradeSnapshot] = useState<CalificacionDetalle | null>(null);
+  const editGradeButtonRef = useRef<HTMLButtonElement>(null);
+  const finalGradeEditorRef = useRef<HTMLDivElement>(null);
   const [claimDirty, setClaimDirty] = useState(false);
   const panelScopeRef = useRef<HTMLDivElement>(null);
   const mobileForm = useMobileFormViewport(true, panelScopeRef);
@@ -703,7 +706,6 @@ function PanelDetalle({
   };
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
   const feedbackSectionRef = useRef<HTMLDivElement | null>(null);
-  const adjustmentSectionRef = useRef<HTMLDivElement | null>(null);
 
   const replacementMutation = useMutation({
     mutationFn: () => solicitarReemplazoEvidencia(cal.id, replacementReason.trim()),
@@ -757,25 +759,21 @@ function PanelDetalle({
       toast.error(parsed.detail);
     },
   });
-  const globalAdjustmentMutation = useMutation({
-    mutationFn: (adjustment: { valor: number; motivo_interno: string; explicacion_estudiante: string }) => {
-      if (!globalAdjustmentSnapshot) throw new Error('No hay desglose vigente');
-      return updateGradeBreakdown(cal.id, {
-        version_esperada: globalAdjustmentSnapshot.version,
-        cambios_componentes: [],
-        ajuste_global: adjustment,
-      });
+  const finalGradeMutation = useMutation({
+    mutationFn: (change: GradeFinalAdjustment) => {
+      const { nota_confirmada, ...options } = change;
+      return ajustarNota(cal.id, nota_confirmada, undefined, options);
     },
-    onSuccess: () => {
-      setShowGlobalAdjustment(false);
-      setGlobalAdjustmentSnapshot(null);
-      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
-      void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
-      void queryClient.invalidateQueries({ queryKey: ['evaluation-review', cal.evaluacion_id] });
-      void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
-      toast.success('Ajuste global registrado y nota recalculada.');
+    onSuccess: async (updated) => {
+      queryClient.setQueryData<CalificacionDetalle>(['calificacion-detalle', cal.id], (previous) => previous ? { ...previous, ...updated } : previous);
+      await queryClient.invalidateQueries({ predicate: (query) => query.queryKey.some((key) => [cal.id, cal.evaluacion_id, cal.materia_id, cal.estudiante_id].includes(String(key))) });
+      mobileForm.finishWriting();
+      setEditingFinalGrade(false);
+      setFinalGradeSnapshot(null);
+      onSaved();
+      toast.success('Nota guardada. Los puntos por pregunta se conservaron.');
+      window.requestAnimationFrame(() => editGradeButtonRef.current?.focus());
     },
-    onError: (error) => toast.error(toApiError(error).detail),
   });
   const done = DONE_STATES.has(cal.estado);
   const published = cal.estado === PUBLICADA;
@@ -795,8 +793,8 @@ function PanelDetalle({
 
   // Notify parent about dirty state
   useEffect(() => {
-    onDirtyChange?.(isDirty || editingComponentDirty || showGlobalAdjustment || breakdownMutation.isPending || claimDirty || reprocessingDirty);
-  }, [isDirty, editingComponentDirty, showGlobalAdjustment, breakdownMutation.isPending, claimDirty, reprocessingDirty, onDirtyChange]);
+    onDirtyChange?.(isDirty || editingComponentDirty || editingFinalGrade || breakdownMutation.isPending || claimDirty || reprocessingDirty);
+  }, [isDirty, editingComponentDirty, editingFinalGrade, breakdownMutation.isPending, claimDirty, reprocessingDirty, onDirtyChange]);
 
   function requestComponentEdit(componentId: string) {
     if (editingComponentId && editingComponentId !== componentId && editingComponentDirty) {
@@ -866,10 +864,11 @@ function PanelDetalle({
   function showEvidencePage(page: number) {
     if (!canChangeDetailView('evidencia')) return;
     mobileForm.finishWriting();
+    const enteringEvidence = mobileTab !== 'evidencia';
     const normalized = Math.min(evidencePages, Math.max(1, page));
     setEvidencePage(normalized);
     setMobileTab('evidencia');
-    window.requestAnimationFrame(() => evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    if (enteringEvidence) window.requestAnimationFrame(() => evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   function canChangeDetailView(nextView: ReviewSection) {
@@ -877,8 +876,8 @@ function PanelDetalle({
       toast('Termina o cancela el reclamo antes de cambiar de sección.');
       return false;
     }
-    if (showGlobalAdjustment && nextView !== 'historial') {
-      toast('Guarda o cancela el ajuste global antes de cambiar de sección.');
+    if (editingFinalGrade) {
+      toast('Guarda o cancela la edición de nota antes de cambiar de sección.');
       return false;
     }
     if (editingComponentDirty && nextView !== 'revision' && nextView !== 'evidencia') {
@@ -889,7 +888,7 @@ function PanelDetalle({
       toast('Guarda los cambios de retroalimentación antes de cambiar de sección.');
       return false;
     }
-    if (nextView === 'resumen' && (editingComponentId || showGlobalAdjustment || isDirty)) {
+    if (nextView === 'resumen' && (editingComponentId || editingFinalGrade || isDirty)) {
       toast('Guarda o cancela los cambios antes de volver al resumen.');
       return false;
     }
@@ -928,15 +927,19 @@ function PanelDetalle({
   }
 
   function openAdjustment() {
-    if (!canChangeDetailView('retroalimentacion')) return;
-    setMobileTab('retroalimentacion');
-    setShowAjustar(true);
-    window.requestAnimationFrame(() => adjustmentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    if (isDirty || editingComponentId || claimDirty || reprocessingDirty || !canChangeDetailView(mobileTab)) {
+      toast('Termina o cancela la edición actual antes de cambiar la nota.');
+      return;
+    }
+    setFinalGradeSnapshot(cal);
+    setEditingFinalGrade(true);
+    window.requestAnimationFrame(() => finalGradeEditorRef.current?.scrollIntoView({ block: 'nearest' }));
   }
 
   const questionReview = activeBreakdown ? (
     <GradeBreakdown
       breakdown={activeBreakdown}
+      reviewSummary={reviewTriage}
       compactTeacher
       selectedComponentId={selectedQuestion?.id}
       onSelectComponent={selectQuestion}
@@ -1031,7 +1034,7 @@ function PanelDetalle({
         <h2 className="sr-only">1. Nota y explicación</h2>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : done ? 'Nota confirmada' : 'Nota sugerida por la IA'}</p>
+            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : cal.estado === 'ajustada' ? 'Nota ajustada por el docente' : done ? 'Nota confirmada' : 'Nota sugerida por la IA'}</p>
             {presentation.score == null ? (
               <div className="mt-2 flex items-center gap-2 font-semibold text-brand-600 dark:text-brand-300">
                 {presentation.processing && <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />}
@@ -1049,8 +1052,13 @@ function PanelDetalle({
               {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : 'Por revisar'}
             </Badge>
             {!done && !presentation.processing && <VerificationPendingNotice status={cal.resultado_json?.verification_status} />}
+            {canGrade && !isGradeProcessing(cal) && cal.estado !== 'anulada' && <Button ref={editGradeButtonRef} type="button" variant="outline" className="mt-2 min-h-11" onClick={openAdjustment} disabled={editingFinalGrade || isDirty || Boolean(editingComponentId) || claimDirty || reprocessingDirty || confirmPending || publishPending}><Pencil className="h-4 w-4" aria-hidden="true" />Editar nota</Button>}
           </div>
         </div>
+
+        {canGrade && <PreviousGradeReference gradeId={cal.id} enabled={presentation.score == null} onOpenHistory={() => { if (mobileTab !== 'historial') changeDetailView('historial'); }} />}
+
+        {editingFinalGrade && finalGradeSnapshot && <div ref={finalGradeEditorRef} className="scroll-mt-24"><GradeFinalEditor grade={finalGradeSnapshot} maximum={Number(finalGradeSnapshot.nota_maxima ?? notaMaxima ?? 5)} onCancel={() => { mobileForm.finishWriting(); setEditingFinalGrade(false); setFinalGradeSnapshot(null); void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] }); window.requestAnimationFrame(() => editGradeButtonRef.current?.focus()); }} onSave={(change) => finalGradeMutation.mutateAsync(change)} /></div>}
 
         <section aria-label="Cálculo y criterios registrados" className="text-sm">
           {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}
@@ -1079,7 +1087,7 @@ function PanelDetalle({
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
         {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
         <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
-        {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
+        {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || editingFinalGrade || claimDirty}
           onAccepted={(grade) => {
             const jobId = grade.resultado_json?.job_id;
             if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
@@ -1181,7 +1189,7 @@ function PanelDetalle({
         </div>
 
         <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-4 sm:p-5 xl:scroll-mt-32">
-          {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || showGlobalAdjustment || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
+          {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onFinishEditing={mobileForm.finishWriting} onActiveChange={setFeedbackWorkspaceActive} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || editingFinalGrade || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
         </div>
 
         <div id="grade-history-panel" hidden={mobileTab !== 'historial'} className="space-y-3">
@@ -1207,8 +1215,8 @@ function PanelDetalle({
           />
         )}
 
-        <details open={advancedOpen || showGlobalAdjustment} className="rounded-xl border border-border p-3">
-          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={(event) => { event.preventDefault(); if (showGlobalAdjustment) { toast('Guarda o cancela el ajuste global antes de cerrar esta sección.'); return; } setAdvancedOpen((open) => !open); }}>Historial y opciones de la nota</summary>
+        <details open={advancedOpen} className="rounded-xl border border-border p-3">
+          <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold" onClick={(event) => { event.preventDefault(); setAdvancedOpen((open) => !open); }}>Historial y opciones de la nota</summary>
           {cal.confianza != null && cal.confianza > 0 && <p className="my-2 text-xs text-muted">Confianza informada: {(cal.confianza * 100).toFixed(0)} %. No sustituye la comprobación docente.</p>}
         {cal.desglose ? (
           <div className="space-y-4">
@@ -1221,20 +1229,6 @@ function PanelDetalle({
                 {cal.respuestas_liberadas ? 'Ocultar respuestas' : 'Liberar respuestas'}
               </Button>}
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-muted">Si un caso excepcional cambia la nota completa, quedará separado de los puntos por respuesta.</p>
-              {canGrade && <Button type="button" variant="outline" onClick={() => { setGlobalAdjustmentSnapshot(showGlobalAdjustment ? null : cal.desglose ?? null); setShowGlobalAdjustment((value) => !value); }}>
-                {showGlobalAdjustment ? 'Cancelar ajuste global' : 'Registrar ajuste global'}
-              </Button>}
-            </div>
-            {showGlobalAdjustment && globalAdjustmentSnapshot && (
-              <GradeGlobalAdjustmentEditor
-                formula={globalAdjustmentSnapshot.formula}
-                saving={globalAdjustmentMutation.isPending}
-                onCancel={() => setShowGlobalAdjustment(false)}
-                onSave={(adjustment) => globalAdjustmentMutation.mutate(adjustment)}
-              />
-            )}
             <GradeBreakdownHistory calificacionId={cal.id} />
           </div>
         ) : cal.desglose_heredado ? (
@@ -1252,13 +1246,10 @@ function PanelDetalle({
             {presentation.score != null && <Button
               onClick={() => onConfirm(cal.id, Number(adjNota))}
               loading={confirmPending}
-              disabled={confirmPending || adjNota === '' || isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}
+              disabled={confirmPending || adjNota === '' || isDirty || editingComponentDirty || editingFinalGrade || claimDirty}
             >
               <CheckCircle2 className="h-4 w-4" /> Confirmar nota
             </Button>}
-            <Button variant="outline" onClick={() => showAjustar ? setShowAjustar(false) : openAdjustment()}>
-              <Pencil className="h-4 w-4" /> {presentation.score == null ? 'Establecer nota' : 'Ajustar'}
-            </Button>
             {!manualReview && (
               <Button variant="ghost" onClick={() => onRechazar(cal.id)}>
                 <RotateCcw className="h-4 w-4" /> Revisar manualmente
@@ -1268,43 +1259,22 @@ function PanelDetalle({
         )}
         {canPublish && done && !published && (
           <div className="hidden flex-wrap gap-2 xl:flex">
-            <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending || isDirty || editingComponentDirty || showGlobalAdjustment || claimDirty}>
+            <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending || isDirty || editingComponentDirty || editingFinalGrade || claimDirty}>
               <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
             </Button>
           </div>
         )}
-        {published && <p className="text-sm text-muted">El estudiante ya puede ver su nota y retroalimentación.</p>}
+        {published && <p className="text-sm text-muted">Nota publicada en la plataforma. Compartir por enlace se prepara en Retroalimentación.</p>}
         {canGrade && !done && !presentation.processing && <details className="xl:hidden">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold text-muted">Opciones de la nota</summary>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={openAdjustment} disabled={claimDirty || editingComponentDirty || showGlobalAdjustment}>{presentation.score == null ? 'Establecer nota' : 'Ajustar nota'}</Button>
-            {!manualReview && <Button variant="ghost" disabled={isDirty || claimDirty || editingComponentDirty || showGlobalAdjustment} onClick={() => onRechazar(cal.id)}>Revisar manualmente</Button>}
+            {!manualReview && <Button variant="ghost" disabled={isDirty || claimDirty || editingComponentDirty || editingFinalGrade} onClick={() => onRechazar(cal.id)}>Revisar manualmente</Button>}
           </div>
         </details>}
 
-        {canGrade && showAjustar && !presentation.processing && (
-          <div ref={adjustmentSectionRef} className="scroll-mt-24">
-          <Card className="space-y-3 p-4">
-            <Field label="Nota" hint={notaMaxima != null ? `0 - ${notaMaxima}` : undefined}>
-              <Input
-                type="number"
-                step="0.1"
-                min={0}
-                max={notaMaxima}
-                value={adjNota}
-                onChange={(e) => { setAdjNota(e.target.value === '' ? '' : Number(e.target.value)); setAdjError(''); }}
-              />
-              {adjError && <span className="mt-1 block text-xs text-rose-500">{adjError}</span>}
-            </Field>
-            <Button onClick={submitAjuste} loading={adjustPending} className="w-full">
-              Guardar ajuste
-            </Button>
-          </Card>
-          </div>
-        )}
 
       </div>
-      <div hidden={mobileForm.isWriting}>
+      <div hidden={mobileForm.isWriting || (mobileTab === 'retroalimentacion' && feedbackWorkspaceActive)}>
       <MobileReviewActionBar
         processing={presentation.processing}
         done={done}
@@ -1314,7 +1284,7 @@ function PanelDetalle({
         canPublish={canPublish}
         dirty={isDirty}
         componentDirty={editingComponentDirty}
-        advancedEditOpen={showGlobalAdjustment}
+        advancedEditOpen={editingFinalGrade}
         claimsDirty={claimDirty}
         confirmPending={confirmPending}
         publishPending={publishPending}

@@ -520,7 +520,7 @@ async def _validate_publication(db: AsyncSession, payload: AIConfigurationPublic
     from app.services.ai_api_connections import APIConnectionError, validate_compatible_publication
     providers = [item.model_dump() for item in payload.providers]
     models = [item.model_dump() for item in payload.models]
-    features = [item.model_dump() for item in payload.features]
+    features = [item.model_dump() if "runtime_limits" in item.model_fields_set else item.model_dump(exclude={"runtime_limits"}) for item in payload.features]
     tools = [item.model_dump() for item in payload.tools] if payload.tools is not None else None
     try:
         providers, changed = await validate_compatible_publication(db, providers, models, features)
@@ -790,12 +790,17 @@ async def save_features(
         current_version = max((int(row.config_version or 1) for row in locked.fetchall()), default=1)
         if current_version != payload.expected_version:
             raise HTTPException(status_code=409, detail="La configuración global cambió en otra sesión. Recarga y vuelve a intentar.")
-        feature_payload = [item.model_dump() for item in payload.features]
+        feature_payload = [item.model_dump() if "runtime_limits" in item.model_fields_set else item.model_dump(exclude={"runtime_limits"}) for item in payload.features]
     else:
         feature_payload = payload
     providers = {item["id"]: item for item in await svc.get_all_providers()}
     models = {(item["provider_id"], item["model_id"]): item for item in await svc.get_all_models()}
     for feature in feature_payload:
+        from app.services.vision_route_policy import validate_runtime_limits
+        try:
+            validate_runtime_limits(feature.get("feature", ""), feature.get("runtime_limits"))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Revisa los límites de lectura: tiempo de 5 a 60 s, de 1 a 2 intentos y de 1024 a 10000 tokens.") from exc
         capability = str(feature.get("capability") or "text")
         primary_provider = str(feature.get("primary_provider") or "")
         primary_model = feature.get("primary_model")

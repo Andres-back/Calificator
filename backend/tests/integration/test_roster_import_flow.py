@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -24,6 +25,46 @@ from app.shared.enums import UserRole
 TEST_URL = os.getenv("SPEC061_TEST_DATABASE_URL")
 pytestmark = pytest.mark.skipif(not TEST_URL, reason="Requiere PostgreSQL aislado SPEC061_TEST_DATABASE_URL")
 import_models()
+
+
+@pytest.mark.asyncio
+async def test_failed_roster_worker_persists_safe_service_error_without_creating_users(monkeypatch, tmp_path):
+    from app.modules.jobs import service as jobs_service
+    from app.modules.importacion_estudiantes.vision_service import RosterExtractionError
+    from app.workers import tasks_roster_import as worker
+    engine = create_async_engine(TEST_URL)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with sessions() as setup:
+        teacher, subject = await _subject(setup)
+        job_id = await jobs_service.create_job(setup, user_id=teacher.id, tipo="importacion_estudiantes", input_json={"_ai_config": {"primary": {} }})
+        batch = ImportacionEstudiantesLote(materia_id=subject.id, creado_por=teacher.id, job_id=job_id, archivo_nombre="synthetic.png", archivo_sha256="2" * 64, archivo_key=".private/roster-imports/synthetic.png", estado="procesando")
+        setup.add(batch)
+        await setup.commit()
+        initial_users = await setup.scalar(select(func.count(User.id)))
+        initial_enrollments = await setup.scalar(select(func.count(Matricula.id)))
+    image = tmp_path / "synthetic.png"
+    image.write_bytes(b"synthetic")
+    monkeypatch.setattr(worker, "AsyncSessionLocal", sessions)
+    monkeypatch.setattr(worker, "resolve_private_upload_path", lambda _: image)
+    monkeypatch.setattr(worker, "validate_mime", lambda *_: "image/png")
+    extraction = AsyncMock(side_effect=RosterExtractionError("service_unavailable"))
+    deleted = Mock()
+    monkeypatch.setattr(worker, "extract_student_names", extraction)
+    monkeypatch.setattr(worker, "delete_private_photo_key", deleted)
+    try:
+        assert await worker._run(job_id, batch.id) == {"status": "failed"}
+        async with sessions() as check:
+            persisted = await check.get(ImportacionEstudiantesLote, batch.id)
+            assert persisted.estado == "error" and persisted.archivo_key is None
+            assert persisted.resultado_json["codigo"] == "service_unavailable"
+            assert "buena luz" not in str(persisted.resultado_json)
+            assert await check.scalar(select(func.count(User.id))) == initial_users
+            assert await check.scalar(select(func.count(Matricula.id))) == initial_enrollments
+        deleted.assert_called_once_with(".private/roster-imports/synthetic.png")
+        assert await worker._run(job_id, batch.id) == {"status": "duplicate"}
+        extraction.assert_awaited_once()
+    finally:
+        await engine.dispose()
 
 
 async def _session():

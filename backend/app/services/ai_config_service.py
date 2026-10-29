@@ -458,6 +458,7 @@ class AIConfigService:
                 label VARCHAR(100),
                 primary_provider VARCHAR(60),
                 fallback_provider VARCHAR(60),
+                runtime_limits JSONB,
                 active BOOLEAN NOT NULL DEFAULT true,
                 updated_by UUID,
                 updated_at TIMESTAMP DEFAULT NOW()
@@ -721,8 +722,18 @@ class AIConfigService:
     ) -> None:
         if not self._db:
             return
-        await self._db.execute(sql_text("DELETE FROM ai_feature_routing"))
+        from app.services.vision_route_policy import validate_runtime_limits
+
+        previous = {f["feature"]: f for f in await self.get_all_features()}
+        prepared = []
         for feature in features:
+            item = dict(feature)
+            limits = item.get("runtime_limits", previous.get(item["feature"], {}).get("runtime_limits"))
+            limits = validate_runtime_limits(item["feature"], limits)
+            item["runtime_limits"] = json.dumps(limits) if limits is not None else None
+            prepared.append(item)
+        await self._db.execute(sql_text("DELETE FROM ai_feature_routing"))
+        for feature in prepared:
             item = {
                 "capability": "text",
                 "primary_model": None,
@@ -735,9 +746,9 @@ class AIConfigService:
             await self._db.execute(
                 sql_text("""INSERT INTO ai_feature_routing
                     (feature, label, capability, primary_provider, primary_model, fallback_provider,
-                     fallback_model, rollout_enabled, config_version, active, updated_by)
+                     fallback_model, rollout_enabled, config_version, active, updated_by, runtime_limits)
                     VALUES (:feature, :label, :capability, :primary_provider, :primary_model, :fallback_provider,
-                     :fallback_model, :rollout_enabled, :config_version, :active, :admin)"""),
+                     :fallback_model, :rollout_enabled, :config_version, :active, :admin, CAST(:runtime_limits AS jsonb))"""),
                 item,
             )
         await self._db.commit()
@@ -813,6 +824,9 @@ class AIConfigService:
                 item,
             )
         for feature in features:
+            from app.services.vision_route_policy import validate_runtime_limits
+
+            limits = validate_runtime_limits(feature["feature"], feature.get("runtime_limits"))
             item = {
                 "feature": feature["feature"],
                 "label": feature.get("label") or feature["feature"],
@@ -825,13 +839,14 @@ class AIConfigService:
                 "config_version": version,
                 "active": bool(feature.get("active", True)),
                 "admin": actor,
+                "runtime_limits": json.dumps(limits) if limits is not None else None,
             }
             await self._db.execute(
                 sql_text("""INSERT INTO ai_feature_routing
                 (feature, label, capability, primary_provider, primary_model, fallback_provider,
-                 fallback_model, rollout_enabled, config_version, active, updated_by)
+                 fallback_model, rollout_enabled, config_version, active, updated_by, runtime_limits)
                 VALUES (:feature, :label, :capability, :primary_provider, :primary_model, :fallback_provider,
-                 :fallback_model, :rollout_enabled, :config_version, :active, :admin)"""),
+                 :fallback_model, :rollout_enabled, :config_version, :active, :admin, CAST(:runtime_limits AS jsonb))"""),
                 item,
             )
         if tools is not None:
@@ -1071,7 +1086,7 @@ class AIConfigService:
         try:
             r = await self._db.execute(
                 sql_text(
-                    "SELECT feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active FROM ai_feature_routing ORDER BY feature"
+                    "SELECT feature, label, capability, primary_provider, primary_model, fallback_provider, fallback_model, rollout_enabled, config_version, active, runtime_limits FROM ai_feature_routing ORDER BY feature"
                 )
             )
             rows = r.fetchall()

@@ -70,7 +70,7 @@ test('088 reflow equivalente a zoom 200 % y altura reducida conserva edición y 
   await login(page, 'profesor', { rosterSize: 30, questionCount: 20 });
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1&estudiante=s1');
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await page.getByRole('button', { name: 'Pregunta 20, Correcta', exact: true }).click();
+  await page.getByRole('button', { name: 'Pregunta 20, Sin avisos de revisión', exact: true }).click();
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación', exact: true }).click();
   const feedback = page.getByLabel('Explicación para el estudiante');
   await feedback.scrollIntoViewIfNeeded();
