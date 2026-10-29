@@ -129,6 +129,8 @@ La evolución [101 — contexto visual conservado](../101-digitalizacion-visual-
 
 [129-retroalimentacion-flujo-claro](../129-retroalimentacion-flujo-claro/spec.md), issue #272, reorganiza únicamente la interacción docente: lista compacta, selección estable y acciones accesibles; preparación y copia en un panel, detalle individual común e impresión vigente. Compartir no confirma/publica notas, no cambia evidencia ni reinicia vigencias/cuotas. Mantiene fuente vigente, permisos y decisiones explícitas.
 
+El hotfix [#283](https://github.com/Andres-back/Calificator/issues/283) repara ese recorrido para notas publicadas con detalle pendiente: permite revisar/aprobar expresamente el resumen desde el propio panel, antes de crear/copiar por separado. Preserva restricciones del servidor, avisos, notas y evidencia; no autoriza a divulgar un desglose sin revisar ni reactiva enlaces. Resultados en la guía de validación de Spec129; no implica despliegue.
+
 ## Coordinación documental 130
 
 [Spec130](../130-digitalizacion-secciones/spec.md), issue #274, amplía este contrato bajo aprobación registrada. Contexto educativo conservado para los tres evaluadores. El reparto opcional se compila a máximos por pregunta antes de guardar; no cambia la fórmula, los modelos ni notas históricas. El estado de pruebas y las limitaciones están en su guía de validación; no supone activación en producción.

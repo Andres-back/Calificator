@@ -633,6 +633,7 @@ function PanelDetalle({
   const [adjNota, setAdjNota] = useState<number | ''>(effectiveGradeScore(cal) ?? '');
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
   const [feedbackDirty, setFeedbackDirty] = useState(false);
+  const [feedbackWorkspaceActive, setFeedbackWorkspaceActive] = useState(false);
   const [adjError, setAdjError] = useState('');
   const [replacementOpen, setReplacementOpen] = useState(false);
   const [replacementReason, setReplacementReason] = useState('');
@@ -1182,7 +1183,7 @@ function PanelDetalle({
         </div>
 
         <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-4 sm:p-5 xl:scroll-mt-32">
-          {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || editingFinalGrade || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
+          {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onFinishEditing={mobileForm.finishWriting} onActiveChange={setFeedbackWorkspaceActive} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || editingFinalGrade || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
         </div>
 
         <div id="grade-history-panel" hidden={mobileTab !== 'historial'} className="space-y-3">
@@ -1257,7 +1258,7 @@ function PanelDetalle({
             </Button>
           </div>
         )}
-        {published && <p className="text-sm text-muted">El estudiante ya puede ver su nota y retroalimentación.</p>}
+        {published && <p className="text-sm text-muted">Nota publicada en la plataforma. Compartir por enlace se prepara en Retroalimentación.</p>}
         {canGrade && !done && !presentation.processing && <details className="xl:hidden">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold text-muted">Opciones de la nota</summary>
           <div className="flex flex-wrap gap-2">
@@ -1267,7 +1268,7 @@ function PanelDetalle({
 
 
       </div>
-      <div hidden={mobileForm.isWriting}>
+      <div hidden={mobileForm.isWriting || (mobileTab === 'retroalimentacion' && feedbackWorkspaceActive)}>
       <MobileReviewActionBar
         processing={presentation.processing}
         done={done}

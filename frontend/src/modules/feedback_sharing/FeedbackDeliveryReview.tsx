@@ -43,7 +43,7 @@ export function FeedbackDeliveryReview({ evaluationId, name, preview, signal, va
     }
   }
   const score = preview.resultado ?? preview.borrador_docente;
-  return <section className="space-y-4" aria-label={'Revisar devolución de ' + name}>
+  return <section className="space-y-4" tabIndex={-1} data-feedback-review-form aria-label={'Revisar devolución de ' + name}>
     <h3 className="text-lg font-bold">{name}</h3>
     <p className="font-semibold">{canApprove ? 'Nota confirmada' : 'Nota sugerida'}: {score?.nota} / {score?.nota_maxima}</p>
     <p className="text-sm leading-6">Revisa el mensaje que recibirá el estudiante. Aprobar esta devolución no cambia la nota ni elimina los avisos del análisis original.</p>
