@@ -579,7 +579,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "3c9fc664ea63f7e48a964c686d3a2fc100029f0d0fbe8c1b2029546873a633d6",
+  "source_digest": "e87c9410f73ed2a55fc5a102fbc8596b7aa53246133d1a8960be11e026373178",
   "surfaces": [
     {
       "actors": [
@@ -986,6 +986,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -5220,6 +5226,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -11103,6 +11115,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -15581,6 +15599,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -21050,6 +21074,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_grade_direct_adjustment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_grade_sum_migration.py"
         },
         {
@@ -21764,6 +21794,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -22226,7 +22262,7 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/modules/calificaciones/components/GradeGlobalAdjustmentEditor.test.tsx"
+          "test_path": "frontend/src/modules/calificaciones/components/GradeFinalEditor.test.tsx"
         },
         {
           "level": "unit",
@@ -23126,6 +23162,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -24469,6 +24511,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -29165,6 +29213,12 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -33556,6 +33610,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -34081,6 +34141,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -38105,6 +38171,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -42888,6 +42960,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -49422,6 +49500,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_grade_direct_adjustment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_gradebook_export_persistence.py"
         },
         {
@@ -49662,6 +49746,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_grade_direct_adjustment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_grading_component_consensus.py"
         },
         {
@@ -49825,6 +49915,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-workspace-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -50859,6 +50955,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_grade_direct_adjustment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_gradebook_export_persistence.py"
         },
         {
@@ -51280,6 +51382,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-direct-review.spec.ts"
         },
         {
           "level": "e2e",
@@ -53053,6 +53161,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_grade_direct_adjustment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_gradebook_export_persistence.py"
         },
         {
@@ -53598,6 +53712,12 @@
           "reference": "matriculas",
           "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_quota.py"
+        },
+        {
+          "level": "unit",
+          "reference": "matriculas",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_grade_direct_adjustment.py"
         },
         {
           "level": "unit",
@@ -54665,6 +54785,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_regression.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_grade_direct_adjustment.py"
         },
         {
           "level": "unit",

@@ -55,6 +55,9 @@ class FakeDB:
     async def commit(self):
         return None
 
+    async def execute(self, _query):
+        return None
+
 
 def test_teacher_change_creates_version_and_preserves_published_state():
     active = _active_breakdown()

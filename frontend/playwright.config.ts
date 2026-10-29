@@ -11,6 +11,7 @@ export default defineConfig({
   },
   retries: 0,
   projects: [
+    { name: 'webkit-grade-direct', testMatch: '**/grade-direct-review.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'webkit-reading-controls', testMatch: '**/reading-controls.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-document', testMatch: '**/evaluation-document-structure.spec.ts', use: { ...devices['Desktop Safari'] } },

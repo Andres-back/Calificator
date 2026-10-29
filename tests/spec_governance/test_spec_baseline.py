@@ -127,6 +127,7 @@ ALL_SPECS = {
     "130-digitalizacion-secciones",
     "132-listas-glm-flash",
     "133-lectura-recalificacion-configurable",
+    "134-revision-visual-nota-directa",
 }
 OWNED_SPECS = {
     name

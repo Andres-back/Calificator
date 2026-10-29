@@ -189,3 +189,7 @@ La [evolución 075](../075-revision-docente-compacta/spec.md) añade una compara
 El docente selecciona una pregunta/criterio y contrasta evidencia, respuesta, referencia, puntos, motivo y orientación en el mismo panel. La vista estudiante conserva el desglose completo autorizado. El editor captura la versión inicial: polling no reemplaza el borrador y 409 exige recargar o conservarlo. «Guardar y siguiente pregunta» y «Guardar y siguiente alumno» esperan persistencia, sin confirmar ni publicar implícitamente.
 
 Las PQRS conservan componente_id/desglose_version originales; el listado devuelve además la clave estable comprobada en su desglose de origen para abrir el equivalente actual. Si no existe equivalencia, muestra referencia obsoleta sin inventar asociación. La resolución y los ajustes invalidan el resumen del centro después de guardarse.
+
+## Evolución 134: nota final directa
+
+La [Spec 134](../134-revision-visual-nota-directa/spec.md), con plan y revisión aprobados, introduce la nota final deseada con comentario pedagógico opcional y auditoría mecánica obligatoria. Conserva puntos, evidencia, propuesta inicial y versiones; distingue editar de publicar y sustituye el editor global cotidiano duplicado. La implementación se valida en su rama; despliegue sujeto a PR y CI.

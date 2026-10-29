@@ -338,6 +338,8 @@ async def create_automatic_breakdown(
 
 
 async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expected_version: int, changes: list[dict], global_adjustment: dict | None, actor_id: UUID) -> CalificacionDesglose:
+    # Consistent grade -> breakdown lock order for concurrent teacher edits.
+    await db.execute(select(Calificacion.id).where(Calificacion.id == calificacion.id).with_for_update())
     active = await get_active_breakdown(db, calificacion.id, lock=True)
     if not changes and not global_adjustment:
         raise HTTPException(status_code=422, detail="Debes indicar al menos un cambio verificable.")
@@ -394,6 +396,56 @@ async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expe
     await suspend_grade_publications(db, calificacion.id)
     await db.commit()
     return await get_active_breakdown(db, calificacion.id)  # type: ignore[return-value]
+
+
+async def prepare_final_grade_adjustment(
+    db: AsyncSession, *, active: CalificacionDesglose, target: Decimal,
+    actor_id: UUID, observation: str | None,
+) -> CalificacionDesglose:
+    """Version only the global decision. Caller owns lock, commit and publication state."""
+    components = [{
+        name: getattr(old, name)
+        for name in (
+            "clave", "orden", "tipo", "numero", "titulo", "respuesta_estudiante",
+            "respuesta_referencia", "puntos_obtenidos", "puntos_maximos", "estado",
+            "explicacion_verificable", "explicacion_estudiante", "origen",
+            "requiere_revision", "evidencia_json", "valoraciones_json",
+        )
+    } for old in active.componentes]
+    base = calculate_formula(components, active.nota_maxima, 0, 2)["nota_base"]
+    adjustment = (target - base).quantize(Decimal("0.0001"))
+    formula = calculate_formula(components, active.nota_maxima, adjustment, 2)
+    if formula["nota_final"] != target:
+        raise HTTPException(422, "No se pudo representar la nota. Revisa la escala antes de guardar.")
+    explanation = observation or "La nota final fue establecida por el docente."
+    reason = f"Decisión docente sobre la nota final: {active.nota_final} → {target}."
+    provenance = dict(active.procedencia_json or {})
+    provenance.update({"version_anterior": active.version, "ajuste_global_detalle": {
+        "valor": float(adjustment), "motivo_interno": reason,
+        "explicacion_estudiante": explanation, "actor_id": str(actor_id),
+    }})
+    active.activo = False
+    # Flush the old active flag before inserting under the partial unique index.
+    # This is still in the caller's single transaction.
+    await db.flush()
+    new = CalificacionDesglose(
+        calificacion_id=active.calificacion_id, version=active.version + 1,
+        origen="docente", activo=True, cobertura_estado=active.cobertura_estado,
+        **formula, requiere_revision=active.requiere_revision,
+        bloqueos_json=list(active.bloqueos_json or []), procedencia_json=provenance,
+        creado_por=actor_id,
+    )
+    new.componentes = [CalificacionComponente(**component) for component in components]
+    db.add(new)
+    await db.flush()
+    db.add(CalificacionAjuste(
+        calificacion_id=active.calificacion_id, desglose_anterior_id=active.id,
+        desglose_nuevo_id=new.id, componente_clave=None, tipo="global",
+        valor_anterior_json={"valor": float(active.ajuste_global), "nota": float(active.nota_final)},
+        valor_nuevo_json={"valor": float(adjustment), "nota": float(target)},
+        motivo_interno=reason, explicacion_estudiante=explanation, actor_id=actor_id,
+    ))
+    return new
 
 
 def student_breakdown_is_publishable(calificacion: Calificacion, breakdown: CalificacionDesglose) -> bool:

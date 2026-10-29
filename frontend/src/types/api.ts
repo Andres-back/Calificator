@@ -458,6 +458,14 @@ export interface Calificacion {
 
 export type CalificacionEstado = 'procesando' | 'sugerida' | 'confirmada' | 'ajustada' | 'requiere_revision' | 'publicada' | 'anulada';
 
+export interface GradeFinalAdjustment {
+  nota_confirmada: number;
+  actualizado_en_esperado: string;
+  version_desglose_esperada: number | null;
+  operacion_id: string;
+  observacion?: string;
+}
+
 export interface CalificacionTimelineEvent {
   tipo: string;
   nota_anterior: number | string | null;

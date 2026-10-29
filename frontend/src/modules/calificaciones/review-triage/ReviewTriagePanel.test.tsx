@@ -124,4 +124,17 @@ describe('ReviewTriagePanel', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Hay información que debes comprobar antes de confirmar la nota.');
     expect(screen.queryByText(diagnostic)).not.toBeInTheDocument();
   });
+
+  it('comparte prioridad roja en resumen, lista y selección sin cambiar la nota', () => {
+    const summary = buildReviewTriage(breakdown([component('low', 0, {
+      origen: 'consenso_ia', valoraciones: [{ puntaje: 1, estado: 'correcta', confianza: 0.4 }],
+    })]));
+    const view = render(<ReviewTriagePanel focused summary={summary} onSelectComponent={vi.fn()} />);
+    expect(screen.getByRole('alert')).toHaveAttribute('data-review-priority', 'blocked');
+    view.rerender(<ReviewTriagePanel summary={summary} selectedComponentId="low" onSelectComponent={vi.fn()} />);
+    const button = screen.getByRole('button', { name: /Pregunta 1.*Revisión prioritaria/ });
+    expect(button).toHaveAttribute('data-review-priority', 'blocked');
+    expect(button).toHaveClass('bg-rose-50', 'ring-2');
+    expect(summary.items[0].component.puntos_obtenidos).toBe(1);
+  });
 });

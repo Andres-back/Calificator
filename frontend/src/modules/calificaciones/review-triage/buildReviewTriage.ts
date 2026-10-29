@@ -91,6 +91,7 @@ export function describeReviewBlocker(raw: string, context: 'pending' | 'histori
 }
 
 export const REVIEW_CONFIDENCE_THRESHOLD = 0.7;
+export const REVIEW_HIGH_CONFIDENCE_THRESHOLD = 0.85;
 
 export function hasVerifierReviewSignals(
   grader: Record<string, unknown> | undefined,
@@ -114,13 +115,14 @@ function questionNumbersInAlert(alert: string): Set<string> {
 }
 
 function numeric(value: unknown): number | null {
+  if ((typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '') return null;
   const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 function normalizedConfidence(value: unknown): number | null {
   const parsed = numeric(value);
-  if (parsed == null || parsed < 0) return null;
+  if (parsed == null || parsed < 0 || parsed > 100) return null;
   return parsed > 1 && parsed <= 100 ? parsed / 100 : parsed;
 }
 
@@ -128,8 +130,12 @@ function isAssisted(component: GradeComponentData): boolean {
   return !['objetivo', 'docente', 'manual'].includes(component.origen.toLowerCase());
 }
 
+function usableValuations(component: GradeComponentData): Record<string, unknown>[] {
+  return Array.isArray(component.valoraciones) ? component.valoraciones.filter((item) => item && typeof item === 'object' && !Array.isArray(item)) : [];
+}
+
 function valuationsContradict(component: GradeComponentData): boolean {
-  const valuations = component.valoraciones ?? [];
+  const valuations = usableValuations(component);
   if (valuations.length < 2) return false;
   const scores = valuations.map((item) => numeric(item.puntaje)).filter((value): value is number => value != null);
   const states = valuations.map((item) => String(item.estado ?? '')).filter(Boolean);
@@ -147,23 +153,34 @@ export function classifyReviewComponent(component: GradeComponentData): ReviewTr
   };
 
   if (component.requiere_revision) add(blocked, 'manual_review', 'Marcada para revisión manual');
+  if (!['correcta', 'parcial', 'incorrecta', 'sin_respuesta', 'ilegible', 'no_evaluable', 'revision_pendiente'].includes(component.estado)) add(attention, 'unknown_state', 'Falta confirmar el estado de esta valoración');
   if (['ilegible', 'no_evaluable', 'revision_pendiente'].includes(component.estado)) {
     add(blocked, `state_${component.estado}`, component.estado === 'ilegible'
       ? 'La respuesta no se pudo leer'
       : component.estado === 'no_evaluable' ? 'La respuesta no se pudo evaluar' : 'La valoración quedó pendiente');
   }
-  if (component.puntos_obtenidos == null) add(blocked, 'missing_score', 'No tiene puntaje verificable');
+  const points = numeric(component.puntos_obtenidos);
+  const maximum = numeric(component.puntos_maximos);
+  if (points == null || maximum == null || maximum <= 0 || points < 0 || points > maximum) add(blocked, 'missing_score', 'No tiene un puntaje válido y verificable');
 
-  const valuations = component.valoraciones ?? [];
+  const teacherReviewed = ['docente', 'manual'].includes(component.origen.toLowerCase())
+    && !component.requiere_revision && !['ilegible', 'no_evaluable', 'revision_pendiente'].includes(component.estado);
+  // Only a per-question correction makes original model assessments historical.
+  const valuations = teacherReviewed ? [] : usableValuations(component);
   const confidences = valuations
     .map((valuation) => normalizedConfidence(valuation.confianza))
     .filter((value): value is number => value != null);
   if (confidences.some((confidence) => confidence < REVIEW_CONFIDENCE_THRESHOLD)) {
-    add(attention, 'low_confidence', 'La IA indicó dudas al revisar esta respuesta');
+    add(blocked, 'low_confidence', 'La IA indicó baja confianza: contrasta esta respuesta con la evidencia');
   }
-  if (valuationsContradict(component)) add(attention, 'valuation_disagreement', 'Las verificaciones no coinciden');
+  if (!teacherReviewed && valuationsContradict(component)) add(blocked, 'valuation_disagreement', 'Las verificaciones tienen una diferencia importante');
+  const scores = valuations.map((item) => numeric(item.puntaje)).filter((value): value is number => value != null);
+  if (scores.length > 1 && Math.max(...scores) - Math.min(...scores) > 0.000001) add(attention, 'minor_disagreement', 'Los puntajes de las verificaciones tienen una diferencia');
+  if (confidences.some((confidence) => confidence >= REVIEW_CONFIDENCE_THRESHOLD && confidence < REVIEW_HIGH_CONFIDENCE_THRESHOLD)) add(attention, 'moderate_confidence', 'Conviene comprobar la valoración con la evidencia');
   if (!component.explicacion?.trim()) add(attention, 'missing_explanation', 'Falta explicar cómo se obtuvo el puntaje');
-  if (isAssisted(component) && valuations.length < 2 && confidences.length === 0) {
+  if (isAssisted(component) && (valuations.length < 2 || confidences.length !== valuations.length
+    || scores.length !== valuations.length || scores.some((value) => value < 0 || maximum == null || value > maximum)
+    || valuations.some((value) => !['correcta', 'parcial', 'incorrecta', 'sin_respuesta'].includes(String(value.estado))))) {
     add(attention, 'insufficient_verification', 'No hay información suficiente para comprobar la revisión de IA');
   }
 
@@ -184,7 +201,7 @@ export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifier
     .sort((a, b) => a.orden - b.orden)
     .map(classifyReviewComponent)
     .map((item) => {
-      if (item.level === 'blocked' || !item.component.numero || !targetedNumbers.has(String(item.component.numero))) return item;
+      if (item.level === 'blocked' || ['docente', 'manual'].includes(item.component.origen.toLowerCase()) || !item.component.numero || !targetedNumbers.has(String(item.component.numero))) return item;
       const reasons = [...item.reasons];
       if (!reasons.some((reason) => reason.code === 'verifier_alert')) {
         reasons.push({ code: 'verifier_alert', label: 'El verificador independiente pide revisar esta pregunta' });

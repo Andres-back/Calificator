@@ -88,3 +88,7 @@ Estrategia incremental: fundamentos y recorrido US1 primero, luego lista/detalle
 ## Phase 9: Convergence
 
 - [x] T025 Coordinar la barra móvil de calificación con el centro integrado habilitado en frontend/src/modules/{calificaciones/CalificacionesWorkspace,feedback_sharing/FeedbackWorkspace}.tsx, conservando las acciones del editor de compatibilidad cuando está desactivado; probar retorno, permisos y visibilidad completa de crear/copiar tras aprobar en frontend/e2e/feedback-share-review.spec.ts, según FR-004, FR-013, US3/AC2 y plan: barra única integrada (partial).
+
+## Fase 10: Integración con PR #282
+
+- [x] T026 Integrar main 26b8fdd en la rama del PR #284 sin reescribir historial: conservar edición directa de nota y estados de confianza de 134 junto con revisión, teclado y barra única de 129 en CalificacionesWorkspace.tsx; regenerar inventario y verificar tipos, pruebas unitarias y E2E de ambos flujos en Chromium/WebKit, registrando resultados en quickstart.md según FR-004/009/013/016 y constitución VII/VIII. Autorizado mediante «sí» el 2026-10-29; no incluye fusionar #284 ni desplegar.
