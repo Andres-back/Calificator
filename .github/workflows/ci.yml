@@ -80,6 +80,7 @@ jobs:
       SPEC116_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec116
       SPEC128_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
       SPEC133_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec133
+      SPEC134_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec134
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -132,6 +133,10 @@ jobs:
         run: |
           psql postgresql://xcalificator:test-password@127.0.0.1:5432/xcalificator_test -c 'CREATE DATABASE spec133'
           DATABASE_URL="$SPEC133_TEST_DATABASE_URL" alembic upgrade head
+
+      - name: Prepare isolated direct-grade database
+        # The fixture creates random schemas only in this empty synthetic DB.
+        run: psql postgresql://xcalificator:test-password@127.0.0.1:5432/xcalificator_test -c 'CREATE DATABASE spec134'
 
       - name: Run backend integration tests
         run: python -m pytest tests/integration -v

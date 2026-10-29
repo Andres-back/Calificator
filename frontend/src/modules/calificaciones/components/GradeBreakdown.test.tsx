@@ -74,8 +74,8 @@ describe('GradeBreakdown', () => {
     const select = vi.fn();
     const view = render(<GradeBreakdown breakdown={two} selectedComponentId="p2" onSelectComponent={select} />);
     expect(screen.getAllByRole('article')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Pregunta 2, requiere revisión' })).toHaveAttribute('aria-current', 'step');
-    fireEvent.click(screen.getByRole('button', { name: 'Pregunta 1' }));
+    expect(screen.getByRole('button', { name: 'Pregunta 2, Revisión prioritaria' })).toHaveAttribute('aria-current', 'step');
+    fireEvent.click(screen.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión' }));
     expect(select).toHaveBeenCalledWith(breakdown.componentes[0].id);
     view.rerender(<GradeBreakdown breakdown={two} student selectedComponentId="p2" />);
     expect(screen.getAllByRole('article')).toHaveLength(2);
@@ -86,6 +86,17 @@ describe('GradeBreakdown', () => {
     render(<GradeBreakdown breakdown={hidden} student />);
     expect(screen.getByText('Se mostrará cuando el docente libere las respuestas.')).toBeInTheDocument();
     expect(screen.queryByText(/Material de apoyo consultado/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Colores de prioridad de revisión')).not.toBeInTheDocument();
+    expect(screen.getByRole('article')).not.toHaveAttribute('data-review-priority');
+  });
+
+  it('conserva el color rojo y el anillo al seleccionar, sin confundir una respuesta incorrecta con baja confianza', () => {
+    const low = { ...breakdown, componentes: [{ ...breakdown.componentes[0], origen: 'consenso_ia', valoraciones: [{ puntaje: 1, confianza: 0.4 }] }] };
+    render(<GradeBreakdown breakdown={low} selectedComponentId="p1" onSelectComponent={vi.fn()} />);
+    const button = screen.getByRole('button', { name: 'Pregunta 1, Revisión prioritaria' });
+    expect(button).toHaveClass('bg-rose-50', 'ring-2');
+    expect(button).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByRole('article')).toHaveAttribute('data-review-priority', 'blocked');
   });
 
   it('declara cuando no existe una fuente RAG pertinente', () => {

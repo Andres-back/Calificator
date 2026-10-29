@@ -733,7 +733,7 @@ async def ajustar(
     await evaluaciones_service.ensure_can_manage_evaluation(
         db, cal.evaluacion_id, current_user
     )
-    return await service.ajustar_nota(db, cal, payload)
+    return await service.ajustar_nota(db, cal, payload, actor=current_user)
 
 
 @router.patch(

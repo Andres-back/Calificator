@@ -42,16 +42,59 @@ describe('classifyReviewComponent', () => {
     expect(new Set(result.reasons.map((reason) => reason.code)).size).toBe(result.reasons.length);
   });
 
-  it('envía a atención la baja confianza, discrepancia, explicación ausente o verificación insuficiente', () => {
+  it('prioriza en rojo baja confianza y contradicciones y en amarillo información insuficiente', () => {
     expect(classifyReviewComponent(component({
       valoraciones: [
         { evaluador: 'A', puntaje: 1, estado: 'correcta', confianza: 0.95 },
         { evaluador: 'B', puntaje: 0, estado: 'incorrecta', confianza: 0.92 },
       ],
-    }))).toMatchObject({ level: 'attention' });
-    expect(classifyReviewComponent(component({ valoraciones: [{ evaluador: 'A', puntaje: 1, estado: 'correcta', confianza: 0.4 }] }))).toMatchObject({ level: 'attention' });
+    }))).toMatchObject({ level: 'blocked' });
+    expect(classifyReviewComponent(component({ valoraciones: [{ evaluador: 'A', puntaje: 1, estado: 'correcta', confianza: 0.4 }] }))).toMatchObject({ level: 'blocked' });
     expect(classifyReviewComponent(component({ explicacion: '  ' }))).toMatchObject({ level: 'attention' });
     expect(classifyReviewComponent(component({ valoraciones: [] }))).toMatchObject({ level: 'attention' });
+  });
+
+  it.each([
+    [0.69, 'blocked'], [0.7, 'attention'], [0.84, 'attention'], [0.85, 'safe'],
+    [85, 'safe'], [69, 'blocked'], [null, 'attention'], ['', 'attention'],
+    [true, 'attention'], [101, 'attention'], [-1, 'attention'], ['NaN', 'attention'],
+  ])('normaliza confianza %s sin inventar seguridad: %s', (confidence, level) => {
+    expect(classifyReviewComponent(component({ valoraciones: [
+      { puntaje: 1, estado: 'correcta', confianza: confidence },
+      { puntaje: 1, estado: 'correcta', confianza: 0.95 },
+    ] })).level).toBe(level);
+  });
+
+  it('una valoración alta no sustituye una segunda comprobación', () => {
+    expect(classifyReviewComponent(component({ valoraciones: [{ puntaje: 1, estado: 'correcta', confianza: 0.99 }] })).level).toBe('attention');
+  });
+
+  it('una diferencia pequeña sigue amarilla y datos de puntaje inválidos son rojos', () => {
+    expect(classifyReviewComponent(component({ valoraciones: [
+      { puntaje: 1, estado: 'correcta', confianza: 0.95 },
+      { puntaje: 0.95, estado: 'parcial', confianza: 0.95 },
+    ] })).level).toBe('attention');
+    for (const points of ['', '-1', '2', 'Infinity']) {
+      expect(classifyReviewComponent(component({ puntos_obtenidos: points })).level).toBe('blocked');
+    }
+  });
+
+  it('la corrección individual docente distingue valoraciones iniciales sin limpiar nuevas banderas', () => {
+    const reviewed = component({ origen: 'docente', valoraciones: [{ puntaje: 1, confianza: 0.2 }] });
+    expect(classifyReviewComponent(reviewed).level).toBe('safe');
+    expect(classifyReviewComponent({ ...reviewed, requiere_revision: true }).level).toBe('blocked');
+  });
+
+  it('clasifica cien preguntas sin modificar el contenido ni perder motivos', () => {
+    const input = breakdown(Array.from({ length: 100 }, (_, index) => component({
+      id: `p${index}`, clave: `pregunta:${index}`, orden: index, numero: String(index),
+      requiere_revision: index % 3 === 0,
+    })));
+    const before = JSON.stringify(input);
+    const result = buildReviewTriage(input);
+    expect(result.items).toHaveLength(100);
+    expect(result.counts).toEqual({ safe: 66, attention: 0, blocked: 34 });
+    expect(JSON.stringify(input)).toBe(before);
   });
 
   it('no confunde el desempeño incorrecto, parcial o sin respuesta con incertidumbre', () => {
