@@ -74,8 +74,8 @@ Como responsable del piloto, quiero registrar el uso de la revisión por excepci
 
 - **FR-001**: El sistema DEBE clasificar cada componente del desglose como seguro, necesita atención o bloqueado usando señales auditables ya registradas.
 - **FR-002**: El sistema DEBE mostrar conteos y razones de clasificación sin ocultar el desglose completo.
-- **FR-003**: Una respuesta ilegible, no evaluable, sin puntaje o marcada para revisión DEBE clasificarse como bloqueada.
-- **FR-004**: Una respuesta con confianza insuficiente, verificaciones contradictorias, explicación ausente o evidencia insuficiente DEBE clasificarse como necesita atención.
+- **FR-003**: Una respuesta ilegible, no evaluable, sin puntaje válido, marcada para revisión, con baja confianza o contradicción material DEBE clasificarse como revisión prioritaria (bloqueada/roja), según las reglas de la evolución 134.
+- **FR-004**: Una respuesta con confianza intermedia, discrepancia menor, explicación ausente o verificación insuficiente/desconocida DEBE clasificarse como conviene comprobar (atención/amarilla). Las señales prioritarias de FR-003 prevalecen; ausencia de información no basta para verde.
 - **FR-005**: Una respuesta correcta, parcial, incorrecta o sin respuesta PUEDE ser segura cuando su lectura, referencia, explicación y verificaciones son consistentes.
 - **FR-006**: El docente DEBE poder saltar a la primera excepción y avanzar únicamente entre excepciones.
 - **FR-007**: Seleccionar una excepción DEBE conservar los flujos actuales de evidencia, edición de puntaje, explicación y navegación móvil.
@@ -111,3 +111,7 @@ Como responsable del piloto, quiero registrar el uso de la revisión por excepci
 - El primer incremento no cambia tablas, nota sugerida, fórmula, estados de publicación ni contratos públicos.
 - La revisión rápida no sustituye la muestra de control ni la decisión profesional del docente.
 - Los umbrales se definen de forma determinista y podrán calibrarse con datos del piloto en una especificación posterior.
+
+## Evolución 134: prioridad visible por pregunta
+
+La [Spec 134](../134-revision-visual-nota-directa/spec.md), con plan y revisión aprobados, comparte prioridad entre resumen, botones y detalle. No representa acierto del alumno ni exactitud comprobada, y no cambia puntajes. La implementación se valida en su rama; despliegue sujeto a PR y CI, sin activación productiva implícita.

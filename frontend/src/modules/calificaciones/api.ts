@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { ReviewEvaluation, ReviewFilter, BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, GradeBreakdownData, GradeBreakdownUpdate, GradeBreakdownVersion, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { ReviewEvaluation, ReviewFilter, BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, GradeBreakdownData, GradeBreakdownUpdate, GradeFinalAdjustment, GradeBreakdownVersion, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
 
 export async function getBandejaDocente(): Promise<BandejaDocenteRead> {
   const { data } = await api.get<BandejaDocenteRead>('/calificaciones/bandeja-docente');
@@ -36,8 +36,8 @@ export async function confirmarNota(id: string, nota: number): Promise<Calificac
   const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/confirmar`, { nota_confirmada: nota });
   return data;
 }
-export async function ajustarNota(id: string, nota: number, feedback?: string): Promise<Calificacion> {
-  const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/ajustar`, { nota_confirmada: nota, feedback });
+export async function ajustarNota(id: string, nota: number, feedback?: string, options?: Omit<GradeFinalAdjustment, 'nota_confirmada'>): Promise<Calificacion> {
+  const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/ajustar`, { nota_confirmada: nota, feedback, ...options });
   return data;
 }
 export async function marcarRevisionManual(id: string, motivo: string): Promise<Calificacion> {
