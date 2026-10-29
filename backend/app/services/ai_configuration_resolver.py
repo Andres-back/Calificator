@@ -14,6 +14,7 @@ from app.services.ai_config_service import AIConfigService
 
 
 CAPABILITY_BY_FEATURE: dict[str, str] = {
+    "calificacion.bordes": "vision",
     "calificacion_foto": "vision",
     "grading_photo": "vision",
     "evaluacion_digitalizar": "vision",

@@ -139,6 +139,9 @@ El hotfix [#283](https://github.com/Andres-back/Calificator/issues/283) repara e
 
 [128-materias-notas-reutilizacion](../128-materias-notas-reutilizacion/spec.md), issue #270, separa el modelo de exportación del seguimiento. Mantiene política backend de intento vigente y solo_lectura: no genera ceros por vencimiento, confirma ni publica. CSV final usa decisión docente; provisional es elección explícita con estado. Conteos/vista previa evitan el éxito de un archivo sin notas finales; proceso/fallo/ausencia no se confunden con cero. Materias archivadas conservan consulta/exportación y resultados de trabajos ya admitidos; la copia editorial no incluye calificaciones.
 
+## Coordinación 131: evidencia docente revisable
+
+Incorpora preparación opcional de evidencia docente, originales privados, misma página canónica para todos los roles, colores semánticos y acercamiento por pregunta. No modifica fórmulas, modelos, decisiones ni permisos de publicación. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.
 ## Evolución 134: decisión docente directa y prioridad visual
 
 [134-revision-visual-nota-directa](../134-revision-visual-nota-directa/spec.md), issue #281, amplía el ajuste existente de forma compatible: nota final deseada, comentario opcional, actor, versión e idempotencia; una transacción conserva evidencias, puntos y propuesta original, registra el ajuste y suspende enlaces afectados. Editar una publicada deja ajustada y exige publicación separada, con advertencia previa. Los colores de revisión no representan acierto ni modifican notas. Sin nuevas inferencias, proveedores o migraciones; validación local y CI antes de fusión/despliegue autorizado.

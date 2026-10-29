@@ -16,11 +16,12 @@ const FOCUSABLE_SELECTOR = [
 
 function getFocusableElements(container: HTMLElement | null) {
   if (!container) return [];
-  const selector = container.hasAttribute('data-writing') ? `${FOCUSABLE_SELECTOR}, summary` : FOCUSABLE_SELECTOR;
+  const scopedControls = container.hasAttribute('data-writing') || container.hasAttribute('data-full-screen');
+  const selector = scopedControls ? `${FOCUSABLE_SELECTOR}, summary` : FOCUSABLE_SELECTOR;
   return Array.from(container.querySelectorAll<HTMLElement>(selector))
     .filter((element) => {
       if (element.getAttribute('aria-hidden') === 'true') return false;
-      if (!container.hasAttribute('data-writing')) return true;
+      if (!scopedControls) return true;
       // Opt-in forms retain folded controls in the DOM to preserve editing.
       // Their hidden controls must not become endpoints of the focus trap.
       for (let node: HTMLElement | null = element; node && node !== container; node = node.parentElement) {
@@ -45,6 +46,7 @@ export function Modal({
   ariaLabel = 'Diálogo',
   mobileViewport,
   mobileWriting,
+  fullScreen = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -59,6 +61,7 @@ export function Modal({
   ariaLabel?: string;
   mobileViewport?: MobileFormViewport;
   mobileWriting?: boolean;
+  fullScreen?: boolean;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -157,6 +160,7 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         aria-label={title ? undefined : ariaLabel}
         data-writing={mobileWriting === undefined ? undefined : String(mobileWriting)}
+        data-full-screen={fullScreen ? 'true' : undefined}
         tabIndex={-1}
         style={mobileViewport ? {
           position: 'fixed', top: mobileViewport.top, left: 0, right: 0, bottom: 'auto',
@@ -164,9 +168,9 @@ export function Modal({
           '--mobile-form-height': `${mobileViewport.height}px`,
         } as CSSProperties : undefined}
         className={cn('safe-area-pb relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto card glass p-5 sm:p-6', className)}
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 12 }}
+        initial={reduceMotion || fullScreen ? false : { opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={reduceMotion ? { duration: 0 } : { type: 'spring', damping: 24, stiffness: 280 }}
+        transition={reduceMotion || fullScreen ? { duration: 0 } : { type: 'spring', damping: 24, stiffness: 280 }}
       >
         {title && <h2 id={titleId} className="mb-4 pr-10 font-display text-xl font-bold">{title}</h2>}
         {description && <div id={descriptionId} className="mb-4 text-sm leading-6 text-secondary">{description}</div>}

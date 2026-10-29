@@ -4,13 +4,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CalificacionDetalle } from '@/types/api';
 import { GradeReprocessing } from './GradeReprocessing';
 
-const mocks = vi.hoisted(() => ({ send: vi.fn(), history: vi.fn(), realPicker: false }));
+const mocks = vi.hoisted(() => ({ send: vi.fn(), history: vi.fn(), realPicker: false, scan: false }));
+vi.mock('@/components/evidence/useEvidenceScanCapability', () => ({
+  useEvidenceScanCapability: () => ({ available: mocks.scan, scope: 'teacher:e1:s1' }),
+}));
 vi.mock('../api', () => ({ reprocessGrade: mocks.send, listGradingRevisions: mocks.history }));
 vi.mock('@/components/evidence/MultiPageEvidencePicker', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/components/evidence/MultiPageEvidencePicker')>();
   return { MultiPageEvidencePicker: (props: React.ComponentProps<typeof actual.MultiPageEvidencePicker>) => mocks.realPicker
     ? <actual.MultiPageEvidencePicker {...props} />
-    : <button onClick={() => props.onChange([{ id: 'page', file: new File(['synthetic'], 'photo.jpg', { type: 'image/jpeg' }), rotation: 90 }])}>Tomar foto sintética</button> };
+    : <button onClick={() => props.onChange([{ id: crypto.randomUUID(), file: new File(['synthetic'], 'photo.jpg', { type: 'image/jpeg' }), rotation: 90,
+      ...(mocks.scan ? { scan: { decision: 'original' as const } } : {}) }])}>Tomar foto sintética</button> };
 });
 vi.mock('@/components/evidence/imageQuality', () => ({ analyzeEvidenceImage: vi.fn().mockResolvedValue(null) }));
 const cal = { id: 'c1', evaluacion_id: 'e1', materia_id: 'm1', estudiante_id: 's1', estudiante_nombre: 'Alumno sintético', evaluacion_nombre: 'Actividad sintética',
@@ -21,9 +25,36 @@ function setup(changes: Partial<CalificacionDetalle> = {}, expandOptions = true)
   if (expandOptions) fireEvent.click(screen.getByText('Recalificar y cambiar evidencia'));
   return accepted;
 }
-beforeEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); mocks.realPicker = false; mocks.history.mockResolvedValue([]); mocks.send.mockResolvedValue({ ...cal, estado: 'procesando', nota_confirmada: null, resultado_json: { job_id: 'job1' } }); });
+beforeEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); mocks.realPicker = false; mocks.scan = false; mocks.history.mockResolvedValue([]); mocks.send.mockResolvedValue({ ...cal, estado: 'procesando', nota_confirmada: null, resultado_json: { job_id: 'job1' } }); });
 
 describe('corregir una entrega desde la revisión docente', () => {
+  it('permite el reemplazo habitual sin preparación y conserva la confirmación docente', async () => {
+    mocks.scan = true;
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar evidencia' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tomar foto sintética' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar sin escaneo' }));
+    expect(mocks.send).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+    expect(mocks.send.mock.calls[0][1].scan).toBeUndefined();
+    expect(mocks.send.mock.calls[0][1].rotations).toEqual([90]);
+    expect(mocks.send.mock.calls[0][1].confirmed).toBe(true);
+  });
+  it('131 replaces evidence with raw photos and a closed reviewed recipe, not legacy rotations', async () => {
+    mocks.scan = true;
+    setup({ estado: 'sugerida', revisado_por_docente: false, nota_confirmada: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar evidencia' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tomar foto sintética' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+    await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+    const payload = mocks.send.mock.calls[0][1];
+    expect(payload.files[0]).toBeInstanceOf(File);
+    expect(payload.scan.pages[0]).toMatchObject({ decision: 'original', rotation: 90, confirmed: true });
+    expect(payload.rotations).toBeUndefined();
+  });
   it('127 native replacement requires explicit reopening confirmation and preserves file/rotation payload', async () => {
     mocks.realPicker = true;
     vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('iPhone');

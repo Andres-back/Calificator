@@ -17,6 +17,24 @@ const functions: AIFunctionControl[] = [{ function_id: 'xali', label: 'Asistente
 }] }];
 
 describe('administración de IA de devoluciones', () => {
+  it('mantiene el encuadre opcional apagado, sin respaldo o API personal, y deja elegir cualquier API visual', async () => {
+    const update = vi.fn();
+    const corner: FeatureRouting = { ...route, feature: 'calificacion.bordes', label: 'Ayuda para encuadrar la hoja',
+      capability: 'vision', primary_provider: '', primary_model: null, active: false };
+    const configured = { ...functions[0].stages[0].configured!, provider: null, model: null, active: false };
+    const stage = { ...functions[0].stages[0], stage_id: 'corners', label: corner.label, runtime_feature: corner.feature,
+      capability: 'vision', supported_providers: [], configured, effective: configured };
+    const custom: AIProvider = { ...providers[0], id: 'api_independent', name: 'api_independent', label: 'Mi API visual' };
+    const visual: AIModel = { ...models[0], provider_id: custom.id, model_id: 'vision-available-tomorrow', label: 'Visión configurable', capabilities: ['vision'], runtime_profile: { protocol: 'chat_completions' }, verification_id: 'checked' };
+    render(<FunctionsSection functions={[{ ...functions[0], stages: [stage] }]} features={[corner]} providers={[custom]} models={[visual]} onUpsert={update} />);
+    expect(screen.getByRole('checkbox', { name: /Activar ayuda para encuadrar/ })).not.toBeChecked();
+    expect(screen.queryByRole('combobox', { name: 'Proveedor de respaldo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Permitir API del docente' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Falta preparar esta selección antes de guardar')).not.toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Proveedor' }), custom.id);
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ feature: corner.feature, primary_provider: custom.id,
+      primary_model: visual.model_id, active: false }));
+  });
   it('edits reading limits without touching other routes and reopens saved controls', () => {
     const reading = { ...route, feature: 'calificacion.extraccion', capability: 'vision', runtime_limits: { call_timeout_seconds: 30, max_attempts: 2, max_output_tokens: 8192 } };
     const stage = { ...functions[0].stages[0], stage_id: 'extraction', runtime_feature: reading.feature, capability: 'vision', configured: { ...functions[0].stages[0].configured!, runtime_limits: reading.runtime_limits } };

@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.modules.calificaciones.evidence_manifest import has_preserved_original
 from app.modules.feedback_sharing.invalidations import suspend_grade_publications
 from app.modules.calificaciones.breakdown_service import answers_released, create_manual_breakdown, get_active_breakdown, prepare_final_grade_adjustment, serialize_breakdown
 from app.modules.calificaciones.models import (
@@ -1145,6 +1146,7 @@ async def get_calificacion_detalle(
             cal.entrega.evidencia_paginas if cal.entrega else 0
         ),
         "entrega_evidencia_tipo": (cal.entrega.evidencia_tipo if cal.entrega else None),
+        "entrega_original_disponible": has_preserved_original(cal.entrega),
         "entrega_respuesta_texto": cal.entrega.respuesta_texto if cal.entrega else None,
         "entrega_created_at": cal.entrega.created_at if cal.entrega else None,
         "timeline": timeline_raw,

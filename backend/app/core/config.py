@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     MAX_EVIDENCE_FILES: int = 10
     MAX_EVIDENCE_FILE_MB: int = 10
     MAX_EVIDENCE_TOTAL_MB: int = 40
+    # Admission only. Existing private manifests remain readable when disabled.
+    EVIDENCE_SCAN_ENABLED: bool = False
+    EVIDENCE_SCAN_TEACHER_IDS: str = ""
+    EVIDENCE_CORNER_ASSISTANCE_ENABLED: bool = False
     MAX_GRADING_PDF_PAGES: int = 20
     # New writes stay off until readers, exports and grading support revisions.
     EVALUATION_VISUAL_EDITOR_ENABLED: bool = False

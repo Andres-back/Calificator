@@ -52,6 +52,19 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
+      scan-postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: spec131
+          POSTGRES_USER: spec131
+          POSTGRES_PASSWORD: synthetic-ci-only
+        ports:
+          - 55431:5432
+        options: >-
+          --health-cmd "pg_isready -U spec131 -d spec131"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
@@ -79,6 +92,8 @@ jobs:
       SPEC107_TEST_DATABASE_URL: postgresql+asyncpg://spec107:synthetic-ci-only@127.0.0.1:55417/spec107
       SPEC116_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec116
       SPEC128_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/xcalificator_test
+      SPEC131_TEST_DATABASE_URL: postgresql+asyncpg://spec131:synthetic-ci-only@127.0.0.1:55431/spec131
+      SPEC131_CORNER_TEST_REDIS_URL: redis://127.0.0.1:6379/15
       SPEC133_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec133
       SPEC134_TEST_DATABASE_URL: postgresql+asyncpg://xcalificator:test-password@127.0.0.1:5432/spec134
     steps:
@@ -120,6 +135,9 @@ jobs:
 
       - name: Apply isolated feedback database migrations
         run: DATABASE_URL="$SPEC107_TEST_DATABASE_URL" alembic upgrade head
+
+      - name: Apply isolated scan database migrations
+        run: DATABASE_URL="$SPEC131_TEST_DATABASE_URL" alembic upgrade head
 
       - name: Prepare isolated compatible API database
         run: |
@@ -199,11 +217,17 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
+      - name: Type-check isolated phone scan QA
+        run: npx tsc --noEmit --project e2e/phone-scan/tsconfig.json
+
       - name: Lint with zero warnings
         run: npm run lint:strict
 
       - name: Run unit tests
         run: npm run test:run
+
+      - name: Verify isolated phone QA cannot accept uploads
+        run: node --test ../scripts/evidence-scan/phone-qa-server.test.mjs
 
       - name: Verify complete and non-overlapping E2E partitions
         run: node scripts/verify-e2e-shards.mjs 4

@@ -73,3 +73,7 @@ specs/063-mobile-grade-digitization/
 - **Sobrescribir respuestas abiertas**: la verificación solo actúa cuando el enunciado puede resolverse de forma determinista.
 - **Eliminar contenido impreso**: el saneamiento se limita a etiquetas explícitas de respuesta estudiantil.
 - **Cambiar datos previos**: no se incluye migración ni tarea de reparación masiva.
+
+## Coordinación 131: evidencia docente revisable
+
+La captura docente mantiene contexto, matrícula, hojas y envío expreso. El escaneo es posterior a la cámara nativa y solo opt-in; digitalizar el enunciado y otros consumidores no se activan automáticamente. Contratos y validación se registran en [Spec131](../131-escaneo-evidencias/spec.md), [plan](../131-escaneo-evidencias/plan.md) y [tareas](../131-escaneo-evidencias/tasks.md), issue #276. Esta coordinación no certifica cierre, CI, teléfonos físicos ni activación productiva.

@@ -24,6 +24,8 @@ openai==1.59.6
 celery[redis]==5.4.0
 # File & image processing
 Pillow==13.0.0
+opencv-python-headless==4.13.0.92
+numpy==2.4.6
 aiofiles==24.1.0
 # Token counting / RAG
 tiktoken==0.8.0

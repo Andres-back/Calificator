@@ -14,6 +14,16 @@ export default defineConfig(({ mode }) => {
       name: 'pdfjs-local-resources',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
+          if (req.url?.split('?')[0] === '/vendor/opencv/4.13.0-csp1/opencv-module.js') {
+            // Public fixed ESM must remain byte-identical, not Vite import-rewritten.
+            res.setHeader('Content-Type', 'text/javascript');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            res.end(readFileSync(path.resolve(__dirname, 'public/vendor/opencv/4.13.0-csp1/opencv-module.js')));
+            return;
+          }
+          if (req.url?.split('?')[0] === '/src/components/evidence/evidenceScan.worker.ts') {
+            res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self';");
+          }
           const match = req.url?.split('?')[0].match(/^\/pdfjs\/(cmaps|standard_fonts|wasm)\/([a-zA-Z0-9_.-]+)$/);
           if (!match) return next();
           try {

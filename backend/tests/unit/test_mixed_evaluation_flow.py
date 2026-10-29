@@ -131,6 +131,9 @@ def test_photo_endpoint_reuses_online_delivery_and_grades_both_mixed_sections(mo
             self.scalar_calls = 0
             self.added: list[object] = []
 
+        async def execute(self, query, _params=None):
+            assert "pg_advisory_xact_lock" in str(query)
+
         async def scalar(self, _query):
             self.scalar_calls += 1
             return delivery if self.scalar_calls == 1 else None

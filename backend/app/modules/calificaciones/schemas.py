@@ -74,6 +74,7 @@ class CalificacionRevisionRead(BaseModel):
     nota_anterior: Decimal | None = None
     feedback_anterior: str | None = None
     evidencia_url: str | None = None
+    originales_paginas: int = Field(default=0, ge=0, le=10)
 
 
 class EntregaRead(BaseModel):
@@ -319,6 +320,7 @@ class CalificacionDetalleRead(BaseModel):
     entrega_archivo_url: str | None = None
     entrega_evidencia_paginas: int = 0
     entrega_evidencia_tipo: str | None = None
+    entrega_original_disponible: bool = False
     entrega_respuesta_texto: str | None = None
     entrega_created_at: datetime | None = None
     timeline: list[CalificacionTimelineEvent] = []

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.calificaciones import photo_service
 from app.modules.calificaciones.models import Calificacion, Entrega
+from app.modules.calificaciones.evidence_preparation_jobs import manifest_job_reference
 from app.modules.evaluaciones.grading_visual_context import grading_job_reference
 from app.modules.jobs import service as jobs_service
 from app.shared.enums import JobTipo
@@ -23,7 +24,7 @@ async def enqueue_persisted_grading(
     calificacion: Calificacion | None = None,
 ) -> Calificacion:
     """Crea un trabajo persistente y devuelve sin esperar a los modelos."""
-    content_reference = await grading_job_reference(db, evaluacion, entrega)
+    content_reference = {**await grading_job_reference(db, evaluacion, entrega), **manifest_job_reference(entrega)}
     parent_job_id = await jobs_service.create_job(
         db,
         user_id=profesor_id,

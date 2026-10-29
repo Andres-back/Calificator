@@ -6,6 +6,7 @@ from contextlib import suppress
 import mimetypes
 from datetime import datetime, timezone
 from uuid import UUID
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
@@ -26,6 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.permissions import get_current_user, is_student_enrolled, require_any_permission_now, require_permission_now
+from app.services.answer_evidence_regions import evidence_version
 from app.db.session import get_db
 from app.modules.calificaciones import (
     breakdown_service,
@@ -42,6 +44,10 @@ from app.modules.calificaciones.breakdown_schemas import (
     LiberarRespuestas,
     ResumenVersion,
 )
+from app.modules.calificaciones.evidence_manifest import EvidenceManifestError, parse_scan_submission, read_manifest
+from app.modules.calificaciones.evidence_preparation import validate_scan_sources
+from app.modules.calificaciones.evidence_scan_admission import admit_scan_grading, capability, lock_evidence_student, require_scan_enabled
+from app.modules.calificaciones.evidence_scan_reads import EvidenceVariant, manifest_response, require_original_access
 from app.modules.calificaciones.models import Calificacion, Entrega, SalonSesion
 from app.modules.calificaciones.salon_mode_service import (
     create_sesion_id,
@@ -101,9 +107,11 @@ from app.shared.enums import (
 from app.workers.tasks_grading import grade_delivery
 
 from app.modules.calificaciones.revision_router import router as revision_router
+from app.modules.calificaciones.evidence_scan_suggestion_router import router as scan_suggestion_router
 
 router = APIRouter(tags=["calificaciones"])
 router.include_router(revision_router)
+router.include_router(scan_suggestion_router)
 MAX_ASYNC_BATCH_FILES = 30
 MAX_ASYNC_BATCH_BYTES = 100 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 15 * 1024 * 1024
@@ -122,6 +130,30 @@ _mixed_evidence_metadata = evidence_service._mixed_evidence_metadata
 _enqueue_persisted_grading = grading_queue_service.enqueue_persisted_grading
 
 
+@router.get("/calificaciones/capacidades-evidencia")
+async def capacidades_evidencia(
+    evaluacion_id: UUID,
+    estudiante_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    require_permission_now(current_user, "grading.grade")
+    evaluation = await evaluaciones_service.ensure_can_manage_evaluation(db, evaluacion_id, current_user, admission=True)
+    if not await is_student_enrolled(db, evaluation.materia_id, estudiante_id):
+        raise HTTPException(403, "El estudiante no está matriculado en esta materia.")
+    result = capability(current_user)
+    result["corner_assistance_enabled"] = False
+    if result["enabled"]:
+        from app.core.config import settings
+        if settings.EVIDENCE_CORNER_ASSISTANCE_ENABLED:
+            from app.modules.calificaciones.evidence_scan_suggestion import resolve_corner_route
+            result["corner_assistance_enabled"] = bool(await resolve_corner_route(db, load_secret=False))
+    if getattr(evaluation, "modalidad", None) == EvaluacionModalidad.ONLINE.value:
+        result["enabled"] = False
+        result["corner_assistance_enabled"] = False
+    return result
+
+
 @router.post(
     "/calificaciones/foto",
     response_model=CalificacionRead,
@@ -132,6 +164,8 @@ async def calificar_foto(
     estudiante_id: UUID = Form(...),
     foto: list[UploadFile] = File(...),
     rotaciones: str | None = Form(default=None),
+    escaneo: Annotated[str | None, Form(max_length=16384)] = None,
+    solicitud_id: Annotated[UUID | None, Form()] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
@@ -151,6 +185,18 @@ async def calificar_foto(
             detail="El estudiante no esta matriculado en esta materia",
         )
 
+    if escaneo is not None:
+        require_scan_enabled(current_user)
+        if solicitud_id is None or rotaciones:
+            raise HTTPException(400, "Revisa la preparación y vuelve a enviarla con su solicitud de fotos.")
+        try:
+            submission = parse_scan_submission(escaneo)
+            sources = await validate_scan_sources(foto, submission)
+            return await admit_scan_grading(db, evaluation=evaluacion, student_id=estudiante_id, actor=current_user,
+                                            request_id=solicitud_id, submission=submission, sources=sources)
+        except EvidenceManifestError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
     try:
         bundle = await build_evidence_bundle(
             foto,
@@ -163,6 +209,9 @@ async def calificar_foto(
         ) from exc
 
     existing_calificacion: Calificacion | None = None
+    # Share admission serialization with scanner requests, including a missing
+    # delivery row. A stale legacy form must not overwrite a newly admitted scan.
+    await lock_evidence_student(db, evaluacion.id, estudiante_id)
     if getattr(evaluacion, "modalidad", None) == EvaluacionModalidad.MIXTA.value:
         entrega = await db.scalar(
             select(Entrega)
@@ -216,6 +265,8 @@ async def calificar_foto(
 
     if existing_calificacion is not None:
         raise HTTPException(409, "Esta entrega ya tiene una calificación. Ábrela y usa «Cambiar evidencia» para conservar lo anterior.")
+    if read_manifest(entrega) is not None:
+        raise HTTPException(409, "Conservamos la preparación anterior. Abre su calificación para cambiar la evidencia.")
     if getattr(evaluacion, "modalidad", None) != EvaluacionModalidad.MIXTA.value:
         entrega.respuesta_texto = None
     await grading_job_reference(db, evaluacion, entrega)
@@ -1313,6 +1364,7 @@ async def crear_entrega_archivo_estudiante(
             detail=str(exc),
         ) from exc
 
+    await lock_evidence_student(db, evaluacion.id, current_user.id)
     latest = await db.scalar(
         select(Entrega)
         .where(
@@ -1358,6 +1410,7 @@ async def crear_entrega_archivo_estudiante(
 
     await grading_job_reference(db, evaluacion, entrega)
     previous_url = entrega.archivo_url
+    await revision_service.archive_scan_before_legacy_replacement(db, entrega, current_user.id)
     new_url = await save_upload(
         bundle.content,
         bundle.filename,
@@ -1414,9 +1467,10 @@ async def crear_entrega_archivo_estudiante(
 @router.get("/calificaciones/entregas/{entrega_id}/evidencia")
 async def get_entrega_evidencia(
     entrega_id: UUID,
+    version: EvidenceVariant = "preparada",
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> FileResponse:
+) -> Response:
     entrega = await db.scalar(select(Entrega).where(Entrega.id == entrega_id))
     if not entrega:
         raise HTTPException(status_code=404, detail="Entrega no encontrada")
@@ -1430,6 +1484,17 @@ async def get_entrega_evidencia(
             entrega.evaluacion_id,
             current_user,
         )
+
+    if version == "original":
+        require_original_access(current_user, is_owner_student=entrega.estudiante_id == current_user.id)
+    try:
+        manifest = read_manifest(entrega)
+    except EvidenceManifestError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if manifest is not None:
+        return await manifest_response(manifest, variant=version)
+    if version == "original":
+        raise HTTPException(404, "Esta entrega conserva la evidencia disponible, pero no un original de cámara separado.")
 
     if not entrega.archivo_url:
         raise HTTPException(
@@ -1460,9 +1525,11 @@ async def get_entrega_evidencia(
 async def get_entrega_evidencia_page(
     entrega_id: UUID,
     numero: int = ApiPath(ge=1, le=MAX_EVIDENCE_PAGES),
+    evidencia_version: Annotated[str | None, Query(pattern=r"^[a-f0-9]{32}$")] = None,
+    version: EvidenceVariant = "preparada",
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> FileResponse:
+) -> Response:
     entrega = await db.scalar(select(Entrega).where(Entrega.id == entrega_id))
     if not entrega:
         raise HTTPException(status_code=404, detail="Entrega no encontrada")
@@ -1476,6 +1543,17 @@ async def get_entrega_evidencia_page(
             entrega.evaluacion_id,
             current_user,
         )
+
+    if version == "original":
+        require_original_access(current_user, is_owner_student=entrega.estudiante_id == current_user.id)
+    try:
+        manifest = read_manifest(entrega)
+    except EvidenceManifestError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    if manifest is not None:
+        return await manifest_response(manifest, variant=version, page_number=numero, requested_version=evidencia_version)
+    if version == "original":
+        raise HTTPException(404, "Esta entrega no conserva un original de cámara separado.")
 
     if not entrega.archivo_url:
         raise HTTPException(status_code=404, detail="La entrega no tiene evidencia adjunta")
@@ -1498,15 +1576,20 @@ async def get_entrega_evidencia_page(
             detail=exc.detail,
         ) from exc
 
+    actual_version = evidence_version(entrega.id, fingerprint)
+    if evidencia_version is not None and evidencia_version != actual_version:
+        raise HTTPException(status_code=409, detail="La evidencia cambió. Actualiza la revisión para consultar su hoja vigente.")
+
     return FileResponse(
         rendered_path,
         media_type="image/png",
         headers={
-            "Cache-Control": "private, max-age=3600",
+            "Cache-Control": "private, no-store" if evidencia_version else "private, max-age=3600",
             "Content-Disposition": f'inline; filename="evidencia-hoja-{numero}.png"',
             "ETag": f'"{fingerprint}-p{numero}"',
             "X-Evidence-Page": str(numero),
             "X-Evidence-Pages": str(total_pages),
+            "X-Evidence-Version": actual_version,
             "X-Content-Type-Options": "nosniff",
         },
     )

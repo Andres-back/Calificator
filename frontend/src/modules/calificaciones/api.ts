@@ -44,20 +44,37 @@ export async function marcarRevisionManual(id: string, motivo: string): Promise<
   const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/revision-manual`, { motivo });
   return data;
 }
+export interface EvidenceScanCapability {
+  corner_assistance_enabled?: boolean;
+  schema_version: 1; enabled: boolean; algorithm: string;
+  max_pages: number; max_file_bytes: number; max_total_bytes: number; max_scan_pixels: number;
+}
+
+export async function getEvidenceScanCapability(evaluationId: string, studentId: string, signal?: AbortSignal): Promise<EvidenceScanCapability> {
+  const { data } = await api.get<EvidenceScanCapability>('/calificaciones/capacidades-evidencia', {
+    params: { evaluacion_id: evaluationId, estudiante_id: studentId }, signal,
+  });
+  return data;
+}
+
 export async function calificarFoto(
   evaluacionId: string,
   estudianteId: string,
   evidence: File | File[],
   rotations: number[] = [],
+  scan?: { requestId: string; submission: import('@/components/evidence/scanSubmission').ScanSubmission },
 ): Promise<Calificacion> {
   const formData = new FormData();
   formData.append('evaluacion_id', evaluacionId);
   formData.append('estudiante_id', estudianteId);
   const files = Array.isArray(evidence) ? evidence : [evidence];
   files.forEach((file) => formData.append('foto', file));
-  formData.append('rotaciones', JSON.stringify(
-    rotations.length ? rotations : files.map(() => 0),
-  ));
+  if (scan) {
+    formData.append('solicitud_id', scan.requestId);
+    formData.append('escaneo', JSON.stringify(scan.submission));
+  } else {
+    formData.append('rotaciones', JSON.stringify(rotations.length ? rotations : files.map(() => 0)));
+  }
   const { data } = await api.post<Calificacion>('/calificaciones/foto', formData);
   return data;
 }
@@ -75,6 +92,7 @@ export interface GradingRevision {
   id: string; created_at: string; actor_nombre: string; accion: string;
   motivo: string | null; estado_anterior: string | null; nota_anterior: string | number | null;
   feedback_anterior: string | null; evidencia_url: string | null;
+  originales_paginas?: number;
 }
 
 export async function listGradingRevisions(id: string): Promise<GradingRevision[]> {
@@ -85,6 +103,7 @@ export async function listGradingRevisions(id: string): Promise<GradingRevision[
 export async function reprocessGrade(id: string, payload: {
   requestId: string; version: string; confirmed: boolean; reason: string;
   files?: File[]; rotations?: number[];
+  scan?: import('@/components/evidence/scanSubmission').ScanSubmission;
 }): Promise<Calificacion> {
   const body = new FormData();
   body.append('solicitud_id', payload.requestId);
@@ -92,7 +111,8 @@ export async function reprocessGrade(id: string, payload: {
   body.append('confirmar_reapertura', String(payload.confirmed));
   if (payload.reason.trim()) body.append('motivo', payload.reason.trim());
   payload.files?.forEach((file) => body.append('foto', file));
-  if (payload.files?.length) body.append('rotaciones', JSON.stringify(payload.rotations ?? payload.files.map(() => 0)));
+  if (payload.scan) body.append('escaneo', JSON.stringify(payload.scan));
+  else if (payload.files?.length) body.append('rotaciones', JSON.stringify(payload.rotations ?? payload.files.map(() => 0)));
   const { data } = await api.post<Calificacion>(`/calificaciones/${id}/recalificar`, body);
   return data;
 }

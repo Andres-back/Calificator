@@ -1,4 +1,5 @@
 import type { ImageQualityResult } from './imageQuality';
+import type { EvidenceScanSelection } from './scanTypes';
 
 export type EvidenceRotation = 0 | 90 | 180 | 270;
 
@@ -7,6 +8,7 @@ export interface EvidencePage {
   file: File;
   rotation: EvidenceRotation;
   quality?: ImageQualityResult | null;
+  scan?: EvidenceScanSelection;
 }
 
 export const evidenceFiles = (pages: EvidencePage[]) => pages.map((page) => page.file);

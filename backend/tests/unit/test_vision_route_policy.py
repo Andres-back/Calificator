@@ -116,6 +116,38 @@ def test_reading_limits_are_typed_and_bounded():
 
 
 @pytest.mark.asyncio
+async def test_configured_reader_receives_the_exact_canonical_pages_in_order(transport, monkeypatch):
+    import base64
+
+    from tests.unit.test_canonical_evidence_consumers import canonical
+
+    images = canonical()
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("The configured reader must not prepare canonical pixels again")
+
+    monkeypatch.setattr(module, "prepare_orientation_variants", forbidden)
+    snapshot = {
+        "feature": "calificacion.extraccion",
+        "primary": selection(),
+        "runtime_limits": {"call_timeout_seconds": 60, "max_attempts": 1, "max_output_tokens": 10000},
+    }
+    result = await module.VisionExtractor(tracking={"_ai_config": snapshot}).extract(
+        b"not-the-image", "application/pdf", blueprint={"preguntas": [{"numero": 1}]},
+        canonical_pages=images,
+    )
+    actual = []
+    for call in transport.await_args_list:
+        blocks = call.args[2][0]["content"]
+        actual.extend(base64.b64decode(block["image_url"]["url"].split(",", 1)[1])
+                      for block in blocks if block.get("type") == "image_url")
+    assert actual == [page.content for page in images.pages]
+    assert transport.await_count == len(images.pages)
+    assert result.source_fingerprint == images.fingerprint
+    assert result.pages_processed == len(images.pages)
+
+
+@pytest.mark.asyncio
 async def test_captured_limits_and_connection_control_the_real_request(transport):
     result = await read(
         {

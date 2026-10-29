@@ -51,6 +51,7 @@ export interface FeatureRouting {
 }
 
 export interface AIConfiguredRoute {
+  active?: boolean;
   runtime_limits?: VisionRuntimeLimits | null;
   provider: string | null;
   model: string | null;

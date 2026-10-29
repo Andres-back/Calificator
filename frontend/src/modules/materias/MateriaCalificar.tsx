@@ -4,11 +4,14 @@ import { Check, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button, Card, Field } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
+import { evidenceIntentKey, scanPagesReviewed, scanSubmission, withoutEvidenceScan, type ScanSubmission } from '@/components/evidence/scanSubmission';
+import { useEvidenceScanCapability } from '@/components/evidence/useEvidenceScanCapability';
 import { evidenceFiles, evidenceRotations, hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
 import { calificarFoto } from '@/modules/calificaciones/api';
 import { addPendingGrading } from '@/modules/calificaciones/gradingJobs';
 import { queryClient } from '@/lib/queryClient';
 import { toApiError } from '@/lib/api';
+import { useAuth } from '@/stores/auth';
 
 function normalizeStudentSearch(value: string) {
   return value
@@ -120,7 +123,7 @@ function StudentPicker({ students, studentId, disabled, onStudentChange }: {
 }
 
 /** Carga contextual: las decisiones sobre la nota pertenecen al centro de revisión. */
-export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, eligibilityVerified, students, studentId, onStudentChange, onDirtyChange, onUploadAccepted, progress, suggestNextStudent = false }: {
+function GradingUploadPanelContent({ evaluationId, evaluationName, materiaName, eligibilityVerified, students, studentId, onStudentChange, onDirtyChange, onUploadAccepted, progress, suggestNextStudent = false }: {
   evaluationId: string;
   evaluationName: string;
   materiaName: string;
@@ -135,6 +138,11 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
 }) {
   const [pages, setPages] = useState<EvidencePage[]>([]);
   const [error, setError] = useState('');
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const [scanScope, setScanScope] = useState<string | null>(null);
+  const capability = useEvidenceScanCapability(evaluationId, studentId, eligibilityVerified);
+  const scanEnabled = pages.length ? scanScope === capability.scope : capability.available;
+  const usingScan = scanEnabled && pages.length > 0 && pages.every((page) => page.file.type.startsWith('image/'));
   const sending = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -142,8 +150,9 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
     return () => { mounted.current = false; };
   }, []);
   const upload = useMutation({
-    mutationFn: (request: { evaluationId: string; studentId: string; name: string; pages: EvidencePage[] }) => calificarFoto(
-      request.evaluationId, request.studentId, evidenceFiles(request.pages), evidenceRotations(request.pages),
+    mutationFn: (request: { evaluationId: string; studentId: string; name: string; pages: EvidencePage[]; scan?: { requestId: string; submission: ScanSubmission } }) => (
+      request.scan ? calificarFoto(request.evaluationId, request.studentId, evidenceFiles(request.pages), [], request.scan)
+        : calificarFoto(request.evaluationId, request.studentId, evidenceFiles(request.pages), evidenceRotations(request.pages))
     ),
     onSuccess: (grade, request) => {
       if (mounted.current) {
@@ -171,12 +180,16 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
   }, [onDirtyChange, pages.length, upload.isPending]);
   const student = students.find((item) => item.id === studentId);
   const qualityPending = pages.some((page) => page.file.type.startsWith('image/') && page.quality === undefined);
-  const canSend = eligibilityVerified && Boolean(student) && pages.length > 0 && !qualityPending && !hasUnusableEvidence(pages) && !upload.isPending;
+  const canSend = eligibilityVerified && Boolean(student) && pages.length > 0 && !qualityPending && !hasUnusableEvidence(pages) && !upload.isPending
+    && (!usingScan || scanPagesReviewed(pages));
   const submit = () => {
     if (sending.current || !canSend || !student) return;
-    sending.current = true;
-    setError('');
-    upload.mutate({ evaluationId, studentId: student.id, name: student.nombre, pages: pages.map((page) => ({ ...page })) });
+    try {
+      const scan = usingScan ? { requestId, submission: scanSubmission(pages) } : undefined;
+      sending.current = true;
+      setError('');
+      upload.mutate({ evaluationId, studentId: student.id, name: student.nombre, pages: pages.map((page) => ({ ...page })), ...(scan ? { scan } : {}) });
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Revisa las hojas antes de enviarlas.'); }
   };
   return <Card className="mx-4 mb-4 space-y-4 p-4" aria-label="Añadir entrega a la evaluación">
     <h2 className="text-lg font-bold">Añadir entregas</h2>
@@ -192,7 +205,22 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
     <p className="text-sm text-muted">Un paquete por estudiante: hasta 10 fotos ordenadas o un PDF de hasta 20 páginas.</p>
     <StudentPicker students={students} studentId={studentId} disabled={upload.isPending || !eligibilityVerified} onStudentChange={onStudentChange} />
     {studentId && !student && <p role="status" className="text-sm text-muted">Este estudiante no está disponible para otra entrega. Revisa su nota o elige uno pendiente.</p>}
-    <MultiPageEvidencePicker contextKey={`${evaluationId}:${studentId}`} pages={pages} onChange={(next) => { setPages(next); setError(''); }} disabled={!student || upload.isPending} onError={setError} />
+    <MultiPageEvidencePicker contextKey={capability.scope} pages={pages} scanEnabled={scanEnabled} suggestCorners={capability.suggestCorners}
+      maxImageBytes={capability.limits?.max_file_bytes} maxTotalBytes={capability.limits?.max_total_bytes}
+      maxFiles={capability.limits?.max_pages}
+      onChange={(next) => {
+        if (!pages.length && next.length) setScanScope(capability.available ? capability.scope : null);
+        if (evidenceIntentKey(next) !== evidenceIntentKey(pages)) setRequestId(crypto.randomUUID());
+        setPages(next); setError('');
+      }} disabled={!student || upload.isPending} onError={setError} />
+    {usingScan && <div className="space-y-2 rounded-xl border border-border p-3">
+      <Button type="button" variant="outline" className="min-h-11" disabled={upload.isPending} onClick={() => {
+        if (sending.current) return;
+        setScanScope(null); setRequestId(crypto.randomUUID()); setPages(withoutEvidenceScan(pages)); setError('');
+      }}>Continuar sin escaneo</Button>
+      <p className="text-sm leading-6 text-muted">Conserva estas fotos en la selección y usa el envío habitual. No se guardará la copia original adicional del escáner. Todavía debes pulsar «Enviar a calificar».</p>
+    </div>}
+    {usingScan && !scanPagesReviewed(pages) && <p role="status" className="text-sm text-muted">Revisa cada hoja o elige usar su foto original antes de enviar.</p>}
     {error && <p role="alert" className="text-sm text-rose-600 dark:text-rose-300">{error} Conservamos las hojas para que puedas corregir o reintentar.</p>}
     {qualityPending && <p role="status" className="text-sm text-muted">Comprobando la calidad de las fotos…</p>}
     {pages.length > 0 && <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm">
@@ -202,4 +230,9 @@ export function GradingUploadPanel({ evaluationId, evaluationName, materiaName, 
     </div>}
     <Button className="min-h-11 w-full sm:w-auto" disabled={!canSend} loading={upload.isPending} onClick={submit}>Enviar a calificar</Button>
   </Card>;
+}
+
+export function GradingUploadPanel(props: Parameters<typeof GradingUploadPanelContent>[0]) {
+  const actorId = useAuth((state) => state.user?.id ?? '');
+  return <GradingUploadPanelContent key={`${actorId}:${props.evaluationId}:${props.studentId}`} {...props} />;
 }

@@ -478,6 +478,10 @@ async def validate_compatible_publication(
     )
     provider_fields = ("base_url", "active", "model")
     for feature in features:
+        if (feature.get("feature") == "calificacion.bordes" and feature.get("active") is False
+                and not feature.get("primary_provider") and not feature.get("primary_model")
+                and not feature.get("fallback_provider")):
+            continue  # Unconfigured opt-in; cannot execute or bypass a proof.
         old = old_features.get(feature["feature"], {})
         try:
             feature["runtime_limits"] = validate_runtime_limits(

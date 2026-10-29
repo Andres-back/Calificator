@@ -20,6 +20,13 @@ class FormulaRead(BaseModel):
     nota_final: Decimal
 
 
+class EvidenceRegionRead(BaseModel):
+    pagina: int = Field(ge=1, le=20)
+    bbox: tuple[float, float, float, float]
+    marco: Literal["pagina_canonica_orientada"]
+    evidencia_version: str = Field(pattern=r"^[a-f0-9]{32}$")
+
+
 class ComponenteRead(BaseModel):
     id: UUID
     clave: str
@@ -39,6 +46,7 @@ class ComponenteRead(BaseModel):
     origen: str = ""
     requiere_revision: bool = False
     evidencia_paginas: list[int] = Field(default_factory=list)
+    evidencia_regiones: list[EvidenceRegionRead] = Field(default_factory=list)
     fuentes: list[dict] = Field(default_factory=list)
     valoraciones: list[dict] = Field(default_factory=list)
 

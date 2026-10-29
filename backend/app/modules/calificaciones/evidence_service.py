@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, status
 from PIL import Image, ImageOps, UnidentifiedImageError
+from app.core.config import settings
 
 from app.modules.calificaciones.models import Entrega
 from app.modules.evaluaciones.modality_service import (
@@ -31,29 +32,23 @@ class EvidencePageError(ValueError):
         self.not_found = not_found
 
 
-def _file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as source:
-        while chunk := source.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
 def _render_cached_evidence_page(
     evidence_path: Path,
     page_number: int,
 ) -> tuple[Path, int, str]:
     """Renderiza una página acotada y reutiliza el PNG por huella del archivo."""
-    fingerprint = _file_sha256(evidence_path)
-
+    # Read one immutable snapshot: hashing a path and reopening it could pair
+    # an old region/version with bytes replaced between those operations.
     with evidence_path.open("rb") as source:
-        signature = source.read(8)
+        source_bytes = source.read()
+    fingerprint = hashlib.sha256(source_bytes).hexdigest()
+    signature = source_bytes[:8]
 
     if signature.startswith(b"%PDF"):
         try:
             import fitz
 
-            with fitz.open(evidence_path) as document:
+            with fitz.open(stream=source_bytes, filetype="pdf") as document:
                 total_pages = len(document)
                 if total_pages > MAX_EVIDENCE_PAGES:
                     raise EvidencePageError(
@@ -83,7 +78,7 @@ def _render_cached_evidence_page(
         if cache_path.is_file():
             return cache_path, total_pages, fingerprint
         try:
-            with Image.open(evidence_path) as source:
+            with Image.open(BytesIO(source_bytes)) as source:
                 image = ImageOps.exif_transpose(source)
                 image.load()
                 image.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
@@ -145,7 +140,13 @@ def _delete_replaced_evidence(public_url: str | None) -> None:
     if not public_url:
         return
     try:
-        resolve_upload_path(public_url).unlink(missing_ok=True)
+        path = resolve_upload_path(public_url)
+        scan_root = Path(settings.UPLOADS_DIR).resolve() / ".private" / "evidence-scan"
+        if path == scan_root or scan_root in path.parents:
+            # Sources/derivatives/receipts are retained by manifest/version.
+            # Only reference-aware reconciliation may collect these assets.
+            return
+        path.unlink(missing_ok=True)
     except (OSError, ValueError):
         pass
 

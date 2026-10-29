@@ -1,19 +1,16 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, EyeOff, FileSearch } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, EyeOff, FileSearch, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
 import { GradeFormula } from './GradeFormula';
 import { gradeCalculationPresentation } from './gradeCalculationPresentation';
+import { gradeComponentPresentation } from './gradeComponentPresentation';
 import { buildReviewTriage, classifyReviewComponent, type ReviewTriageSummary } from '../review-triage/buildReviewTriage';
 import { reviewPriorityPresentation } from '../review-triage/reviewPriorityPresentation';
 
-const stateLabel: Record<string, string> = {
-  correcta: 'Correcta', parcial: 'Parcial', incorrecta: 'Incorrecta',
-  sin_respuesta: 'Sin respuesta', ilegible: 'Ilegible', no_evaluable: 'No evaluable',
-  revision_pendiente: 'Revisión pendiente',
-};
+const stateIcons = { check: CheckCircle2, warning: AlertTriangle, x: XCircle };
 
-export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, selectedComponentId, onSelectComponent, reviewSummary }: {
+export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent, reviewSummary }: {
   breakdown: GradeBreakdownData;
   student?: boolean;
   compactTeacher?: boolean;
@@ -21,6 +18,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   onEvidencePage?: (page: number) => void;
   editingComponentId?: string | null;
   renderEditor?: (component: GradeBreakdownData['componentes'][number]) => ReactNode;
+  renderEvidence?: (component: GradeBreakdownData['componentes'][number]) => ReactNode;
   selectedComponentId?: string;
   onSelectComponent?: (componentId: string) => void;
   reviewSummary?: ReviewTriageSummary;
@@ -52,17 +50,19 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             title={[label, ...item.reasons.map((reason) => reason.label)].join('. ')}
             data-review-priority={item.level}
             className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-left font-semibold ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
-          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{component.numero ?? component.orden + 1}</span>{compact && <span className="text-xs font-normal">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {stateLabel[component.estado] ?? component.estado}</span>}</button>;
+          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{component.numero ?? component.orden + 1}</span>{compact && <span className="text-xs font-normal">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
         </nav>
         <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">{calculation?.provisional ? calculation.label : 'Cómo se calcula la nota'} · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} /></details>
       </> : <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} />}
       <div className="space-y-3">
         {breakdown.componentes.filter((component) => student || !selectedComponentId || component.id === selectedComponentId).map((component) => {
+          const presentation = gradeComponentPresentation(component);
+          const StateIcon = stateIcons[presentation.icon];
           const item = priorities.get(component.id);
           const priority = item ? reviewPriorityPresentation[item.level] : null;
           const PriorityIcon = priority?.Icon;
-          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} className={`min-w-0 scroll-mt-24 rounded-xl border p-4 [overflow-wrap:anywhere] ${priority ? `border-l-4 ${priority.classes}` : 'border-border bg-surface'}`}>
+          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 rounded-xl border p-4 [overflow-wrap:anywhere] ${priority ? `border-l-4 ${priority.classes}` : `border-border bg-surface border-l-4 ${presentation.cardClass}`}`}>
             {priority && PriorityIcon && <div className="mb-3 space-y-1"><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{item.reasons.map((reason) => reason.label).join(' · ')}</p> : null}</div>}
             <div className={`flex flex-col gap-2 ${selectedComponentId && !student ? '' : 'sm:flex-row sm:items-start sm:justify-between'}`}>
               <div className="min-w-0">
@@ -71,14 +71,15 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 </p>
                 <h3 className="mt-1 font-bold leading-6 text-fg">{component.titulo}</h3>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Badge tone={component.requiere_revision ? 'warning' : component.estado === 'correcta' ? 'success' : 'neutral'}>
-                  {stateLabel[component.estado] ?? component.estado}
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Badge tone={presentation.tone}>
+                  <StateIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />{presentation.label}
                 </Badge>
                 <strong className="whitespace-nowrap text-base">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)} / {Number(component.puntos_maximos).toFixed(2)}</strong>
               </div>
             </div>
-            {compact ? <div data-testid="grade-answer-comparison" className="mt-3 divide-y divide-border rounded-lg border border-border bg-surface-2 px-3">
+            <div className="mt-3 grid items-start gap-3" style={renderEvidence && !student ? { gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,24rem),1fr))' } : undefined}>
+            {compact ? <div data-testid="grade-answer-comparison" className="divide-y divide-border rounded-lg border border-border bg-surface-2 px-3">
               <div className={`grid gap-2 py-2 ${(component.respuesta_estudiante?.length ?? 0) > 80 ? 'grid-cols-1' : 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'}`}>
                 <p className="text-xs font-semibold text-muted">Respuesta del estudiante</p>
                 <p className="whitespace-pre-wrap text-sm leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</p>
@@ -87,7 +88,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 <p className="text-xs font-semibold text-muted">Respuesta de referencia</p>
                 <p className="whitespace-pre-wrap text-sm leading-6 text-fg">{component.referencia_oculta ? 'Se mostrará cuando el docente libere las respuestas.' : component.respuesta_referencia || 'No aplica o no fue configurada.'}</p>
               </div>
-            </div> : <div className={`mt-4 grid gap-3 ${selectedComponentId && !student ? '' : 'lg:grid-cols-2'}`}>
+            </div> : <div className={`grid gap-3 ${selectedComponentId && !student ? '' : 'lg:grid-cols-2'}`}>
               <div className="rounded-lg bg-surface-2 p-3">
                 <p className="text-xs font-semibold text-muted">Respuesta del estudiante</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</p>
@@ -102,6 +103,8 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 </p>
               </div>
             </div>}
+            {!student && renderEvidence?.(component)}
+            </div>
             <div className="mt-3 flex items-start gap-2 rounded-lg border border-border p-3 text-sm leading-6">
               {PriorityIcon ? <PriorityIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : component.requiere_revision ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />}
               <p><strong>Por qué:</strong> {component.explicacion || 'No hay una explicación verificable; debe revisarla el docente.'}</p>
@@ -133,7 +136,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 )}
               </details>
             )}
-            {component.evidencia_paginas.length > 0 && onEvidencePage && (
+            {component.evidencia_paginas.length > 0 && onEvidencePage && !renderEvidence && (
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                 <span>Evidencia:</span>
                 {component.evidencia_paginas.map((page) => (
@@ -149,7 +152,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 ))}
               </div>
             )}
-            {component.evidencia_paginas.length > 0 && !onEvidencePage && (
+            {component.evidencia_paginas.length > 0 && !onEvidencePage && (!renderEvidence || student) && (
               <p className="mt-2 text-xs text-muted">Evidencia: {component.evidencia_paginas.map((page) => `hoja ${page}`).join(', ')}.</p>
             )}
             {onEdit && editingComponentId !== component.id && (

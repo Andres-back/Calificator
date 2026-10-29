@@ -125,6 +125,7 @@ ALL_SPECS = {
     "128-materias-notas-reutilizacion",
     "129-retroalimentacion-flujo-claro",
     "130-digitalizacion-secciones",
+    "131-escaneo-evidencias",
     "132-listas-glm-flash",
     "133-lectura-recalificacion-configurable",
     "134-revision-visual-nota-directa",
