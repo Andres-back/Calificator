@@ -55,3 +55,7 @@ FR-001, FR-002 y FR-003: T003/004/006/007/008/009; FR-004 y FR-007: T005/006/009
 ## Phase 6: Convergence
 
 - [x] T019 Añadir y ejecutar la lectura del servicio del libro después de guardar en backend/tests/integration/test_grade_direct_adjustment.py y la actualización del valor en la lista docente en frontend/e2e/grade-direct-review.spec.ts, con matrícula y respuestas de consulta sintéticas coherentes, según SC-002 y US1/AC3 (partial).
+
+## Fase 7: Corrección del CI del PR #282
+
+- [x] T020 Finalizar explícitamente la escritura móvil antes de cerrar el editor al guardar o cancelar en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx, según FR-013 y US3/AC1; repetir sin relajar las aserciones de frontend/e2e/grade-direct-review.spec.ts y registrar el estado del reenvío a CI en el PR.

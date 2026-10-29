@@ -764,6 +764,7 @@ function PanelDetalle({
     onSuccess: async (updated) => {
       queryClient.setQueryData<CalificacionDetalle>(['calificacion-detalle', cal.id], (previous) => previous ? { ...previous, ...updated } : previous);
       await queryClient.invalidateQueries({ predicate: (query) => query.queryKey.some((key) => [cal.id, cal.evaluacion_id, cal.materia_id, cal.estudiante_id].includes(String(key))) });
+      mobileForm.finishWriting();
       setEditingFinalGrade(false);
       setFinalGradeSnapshot(null);
       onSaved();
@@ -1043,7 +1044,7 @@ function PanelDetalle({
 
         {canGrade && <PreviousGradeReference gradeId={cal.id} enabled={presentation.score == null} onOpenHistory={() => { if (mobileTab !== 'historial') changeDetailView('historial'); }} />}
 
-        {editingFinalGrade && finalGradeSnapshot && <div ref={finalGradeEditorRef} className="scroll-mt-24"><GradeFinalEditor grade={finalGradeSnapshot} maximum={Number(finalGradeSnapshot.nota_maxima ?? notaMaxima ?? 5)} onCancel={() => { setEditingFinalGrade(false); setFinalGradeSnapshot(null); void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] }); window.requestAnimationFrame(() => editGradeButtonRef.current?.focus()); }} onSave={(change) => finalGradeMutation.mutateAsync(change)} /></div>}
+        {editingFinalGrade && finalGradeSnapshot && <div ref={finalGradeEditorRef} className="scroll-mt-24"><GradeFinalEditor grade={finalGradeSnapshot} maximum={Number(finalGradeSnapshot.nota_maxima ?? notaMaxima ?? 5)} onCancel={() => { mobileForm.finishWriting(); setEditingFinalGrade(false); setFinalGradeSnapshot(null); void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] }); window.requestAnimationFrame(() => editGradeButtonRef.current?.focus()); }} onSave={(change) => finalGradeMutation.mutateAsync(change)} /></div>}
 
         <section aria-label="Cálculo y criterios registrados" className="text-sm">
           {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}
