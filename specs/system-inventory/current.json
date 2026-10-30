@@ -582,7 +582,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "35bf74b34eea7e6fae72b24bd3d3f646cc29e62a1a1288e17b09563c0dc93857",
+  "source_digest": "396085a46cd213475921c076535fa1dce6f1425a4eb2955bfe6d90289b8db6d9",
   "surfaces": [
     {
       "actors": [
@@ -22990,6 +22990,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/gradeComponentPresentation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/reviewSectionFocus.test.ts"
         },
         {
           "level": "unit",

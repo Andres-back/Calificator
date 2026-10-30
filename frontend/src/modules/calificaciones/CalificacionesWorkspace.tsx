@@ -44,6 +44,7 @@ import { addPendingGrading } from './gradingJobs';
 import { GradingJobMonitor } from './GradingJobMonitor';
 import { RevisionGuide } from './RevisionGuide';
 import { GradeBreakdown } from './components/GradeBreakdown';
+import { focusReviewSection } from './components/reviewSectionFocus';
 import { GradeEvidenceViewer } from './components/GradeEvidenceViewer';
 import { GradeQuestionEvidence } from './components/GradeQuestionEvidence';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
@@ -693,10 +694,6 @@ function PanelDetalle({
   );
   const selectedQuestion = activeBreakdown?.componentes.find((component) => component.id === detailParams.get('pregunta') || component.clave === detailParams.get('pregunta')) ?? activeBreakdown?.componentes[0];
   const selectQuestion = (componentId: string) => {
-    if (breakdownMutation.isPending || (editingComponentDirty && componentId !== editingComponentId)) {
-      toast('Guarda o cancela el puntaje que estás editando antes de cambiar de pregunta.');
-      return;
-    }
     const component = activeBreakdown?.componentes.find((item) => item.id === componentId || item.clave === componentId);
     if (!component) return;
     setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', component.clave); if (component.evidencia_paginas[0]) next.set('hoja', String(component.evidencia_paginas[0])); return next; });
@@ -921,11 +918,13 @@ function PanelDetalle({
     if (!canChangeDetailView(nextView)) return;
     mobileForm.finishWriting();
     setMobileTab(nextView);
+    const focusAtRequest = document.activeElement;
     if (nextView !== 'resumen') window.requestAnimationFrame(() => {
       const target = nextView === 'revision' ? reviewSectionRef.current : nextView === 'evidencia' ? evidenceSectionRef.current : nextView === 'retroalimentacion' ? feedbackSectionRef.current : null;
-      target?.focus({ preventScroll: true });
-      if (nextView === 'revision' || nextView === 'evidencia') detailViewRef.current?.scrollIntoView({ block: 'start' });
-      if (nextView === 'retroalimentacion') revealFeedback();
+      focusReviewSection(target, focusAtRequest, () => {
+        if (nextView === 'revision' || nextView === 'evidencia') detailViewRef.current?.scrollIntoView({ block: 'start' });
+        if (nextView === 'retroalimentacion') revealFeedback();
+      });
     });
   }
 
@@ -1011,8 +1010,11 @@ function PanelDetalle({
     onReviewGeneral={(target) => {
       if (target === 'evidencia') showEvidencePage(evidencePage);
       else if (target === 'retroalimentacion') {
-        changeDetailView('retroalimentacion');
-        window.requestAnimationFrame(() => { feedbackSectionRef.current?.focus({ preventScroll: true }); revealFeedback(); });
+        if (mobileTab !== 'retroalimentacion') changeDetailView('retroalimentacion');
+        else {
+          const focusAtRequest = document.activeElement;
+          window.requestAnimationFrame(() => focusReviewSection(feedbackSectionRef.current, focusAtRequest, revealFeedback));
+        }
       } else if (mobileTab !== 'revision') changeDetailView('revision');
       else reviewSectionRef.current?.scrollIntoView({ block: 'start' });
     }}

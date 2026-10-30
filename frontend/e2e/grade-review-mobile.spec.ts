@@ -98,6 +98,8 @@ test('136 cambiar de pregunta no pierde el puntaje en edición ni escribe', asyn
   const input = page.getByRole('spinbutton', { name: /Puntos \(máximo/ });
   await input.fill('0.5');
   await page.getByRole('button', { name: 'Pregunta siguiente', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
   await expect(input).toHaveValue('0.5');
   await expect(page.getByRole('navigation', { name: 'Preguntas y criterios' }).getByRole('button').first()).toHaveAttribute('aria-current', 'step');
   expect(writes).toEqual([]);

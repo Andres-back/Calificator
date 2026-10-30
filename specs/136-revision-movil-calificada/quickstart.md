@@ -1,6 +1,6 @@
 # Validación prevista de la corrección
 
-Estado2026-10-30: implementación local verificada; PR/CI pendientes. No se acredita producción ni teléfono físico.
+Estado2026-10-30: implementación local y correcciones de CI verificadas; PR293 abierto, pendiente de CI actualizado. No se acredita producción ni teléfono físico.
 
 ## Antes de código
 
@@ -43,3 +43,5 @@ El cambio de reparto de puntos aprobado posteriormente pertenece al issue292/spe
 CI inicial: backend, frontend quality/build y contenedores verdes; gobernanza encontró que faltaba registrar136 en el catálogo explícito de especificaciones activas. Se añadió solo la entrada nueva, conservando todas las aserciones y controles. Se repite la suite completa de gobernanza antes de actualizar el PR.
 
 Resultado de la corrección del registro:61/61 pruebas de gobernanza completas verdes. Se publica una actualización del PR293; no se reintenta el mismo fallo documental ni se altera el workflow.
+
+Convergencia de CI: se retiró una guarda de toast redundante que impedía abrir el diálogo global existente «Cambios sin guardar». La selección y anterior/siguiente vuelven a usar ese bloqueo, conservando el borrador. Se protege además el foco frente al frame diferido de entrada de sección cuando el docente ya enfocó otro control. Dos pruebas unitarias nuevas y las once de integración móvil pasaron; lint/tipos/build verdes. Quince recorridos focalizados (tres repeticiones, Chromium/WebKit) de borrador y creación/copia con teclado pasaron. La navegación interna WebKit a evidencia que había fallado en CI también pasó al repetir el caso exacto, sin subir tiempos ni omitir aserciones. Esto no certifica que el problema transitorio del motor no pueda repetirse; el CI se ejecutará de nuevo con los controles intactos.

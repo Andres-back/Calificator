@@ -34,3 +34,8 @@ T001→T002→Analyze→T003; T004 precede T007/T008. T005 sigue a su regresión
 Trabajo independiente posible: pruebas de navegación (T005/T006) y layout de feedback (T007/T008), en archivos diferentes; se ejecutarán secuencialmente por un solo agente. No es autorización para delegar.
 
 MVP: historia1 completa con guardas; entrega prevista incluye ambas historias antes del PR. FR-001, FR-002/SC-001, SC-002→T005–006/T009; FR-003, FR-004, FR-005/SC-003→T004/T007–009; FR-006, FR-007, FR-008/SC-004→T006/T008–012.
+
+## Fase5: convergencia de CI
+
+- [x] T013 Conservar el diálogo global vigente de borradores al cambiar de pregunta en frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx y comprobarlo con frontend/e2e/explainable-grading.spec.ts y grade-review-mobile.spec.ts; FR-002, FR-005 (contradicts detectado por CI y corregido).
+- [x] T014 Proteger el foco del docente frente al frame diferido de entrada a una sección en frontend/src/modules/calificaciones/components/reviewSectionFocus.ts y sus pruebas; conservar la apertura/copia con teclado en frontend/e2e/feedback-share-review.spec.ts; FR-005.
