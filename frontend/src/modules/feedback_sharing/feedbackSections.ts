@@ -26,3 +26,26 @@ export function feedbackPrintText(value: string): string {
   return feedbackSections(value).reduce((text, section, index) =>
     text + (index > 0 && !/\n\s*$/.test(text) ? '\n' : '') + section.original, '');
 }
+
+export interface FeedbackLearningBlock extends FeedbackSection {
+  kind: 'summary' | 'strength' | 'improvement' | 'question' | 'practice';
+  steps: string[];
+}
+
+/** Keep a recommendation next to its explicit question, without reclassifying
+ * a positive answer as an error or inventing sections from the numeric grade. */
+export function feedbackLearningBlocks(value: string): FeedbackLearningBlock[] {
+  const blocks: FeedbackLearningBlock[] = [];
+  for (const section of feedbackSections(value)) {
+    const previous = blocks.at(-1);
+    if (section.title === 'Siguiente paso' && previous && ['question', 'improvement'].includes(previous.kind)) {
+      previous.steps.push(section.text);
+      previous.original += section.original;
+      continue;
+    }
+    const kind = section.title === 'Aciertos' ? 'strength' : section.title === 'Qué mejorar' ? 'improvement'
+      : section.title === 'Siguiente paso' ? 'practice' : /^Pregunta\s+\d+/i.test(section.title) ? 'question' : 'summary';
+    blocks.push({ ...section, kind, steps: [] });
+  }
+  return blocks;
+}

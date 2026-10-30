@@ -20,6 +20,28 @@ beforeEach(() => {
   vi.mocked(teacherApi.listFeedbackAccesses).mockResolvedValue([]);
 });
 describe('devoluciones por evaluación', () => {
+  it('135 separa la preparación pendiente de los cambios reales sin guardar', async () => {
+    let finish!: (result: Awaited<ReturnType<typeof teacherApi.issueFeedbackAccesses>>) => void;
+    vi.mocked(teacherApi.issueFeedbackAccesses).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const dirty = vi.fn(); const busy = vi.fn();
+    render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} onDirtyChange={dirty} onBusyChange={busy} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Compartir' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Crear 1 enlace faltante' }));
+    await waitFor(() => expect(busy).toHaveBeenLastCalledWith(true));
+    expect(dirty.mock.calls.some(([value]) => value === true)).toBe(false);
+    await act(async () => finish([{ calificacion_id: 'g1', id: 'access', credential_available: true, url: 'https://example.test/devolucion#' + 'a'.repeat(43) }]));
+    await screen.findByRole('button', { name: 'Copiar 1 enlace' });
+    expect(busy).toHaveBeenLastCalledWith(false);
+  });
+
+  it('135 usa el espacio integrado sin otra altura fija ni marco anidado', async () => {
+    render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
+    await screen.findByText(result.retroalimentacion);
+    const workspace = screen.getByRole('region', { name: 'Retroalimentación del estudiante' });
+    expect(workspace.className).not.toContain('70dvh');
+    expect(workspace.className).not.toContain('border');
+  });
+
   it.each([false, true])('revisa una publicada pendiente desde Compartir sin salir del panel (integrado=%s)', async (embedded) => {
     const pending = { calificacion_id: 'g1', elegible: false, seleccionable: true, preparacion: 'needs_review' as const,
       motivo: 'Revisa los puntajes por pregunta antes de compartir esta devolución.',

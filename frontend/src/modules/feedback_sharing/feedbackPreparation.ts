@@ -27,7 +27,7 @@ export function storeManifest(storage: Storage, manifest: PreparationManifest) {
 }
 export function clearManifest(storage: Storage, actorId: string, evaluationId: string) { storage.removeItem(key(actorId, evaluationId)); }
 export function clearPreparations(storage: Storage) {
-  for (let index = storage.length - 1; index >= 0; index--) { const name = storage.key(index); if (name?.startsWith(prefix)) storage.removeItem(name); }
+  for (let index = storage.length - 1; index >= 0; index--) { const name = storage.key(index); if (name?.startsWith(prefix) || name?.startsWith('feedback-approval:')) storage.removeItem(name); }
 }
 function hasKeys(value: object, keys: string[]) { return Object.keys(value).sort().join('|') === [...keys].sort().join('|'); }
 export function readManifest(storage: Storage, actor: string, evaluation: string, now = Date.now()): PreparationManifest | null {

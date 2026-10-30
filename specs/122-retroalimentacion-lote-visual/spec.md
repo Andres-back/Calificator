@@ -117,3 +117,7 @@ Como docente quiero seleccionar, aceptar, compartir e imprimir sin que un cuadro
 - Se conserva la infraestructura y controles de Xali. No se autoriza enviar preguntas reales a una IA ni ejecutar una aceptación o publicación masiva en producción durante la preparación.
 - Fuera de alcance: modelos nuevos, reconfiguración de proveedores, recalificación, listas públicas del grupo, cambios retroactivos de notas y despliegue manual. Pruebas sintéticas, PR y CI precederán a cualquier fusión.
 - Spec129 (#272) cambia ubicación/composición, no contratos: publicación explícita en su vista de revisión, pie accesible de selección, preparación/copia juntas y gestión de acceso en contexto. Fichas/motivos siguen intactos; copiar enlaces mantiene vigencia y preguntas disponibles.
+
+## Continuación aprobada: entrega simple135
+
+Spec135 (#287), aprobada mediante «SI ADELANTE» el2026-10-29, concreta la preparación común de mensajes y permite una confirmación explícita compuesta para aceptar/publicar y preparar enlaces, individuales o seleccionados. Sustituye para ese recorrido la obligación anterior de pantallas/gestos separados, no las autorizaciones ni guardas académicas. Copiar sigue siendo otro gesto sin escrituras; notas ajustadas, incertidumbres sustantivas, originales y accesos cerrados se conservan. Presentación/recuperación y pruebas se definen en [spec135](../135-retroalimentacion-entrega-simple/spec.md); no implica despliegue.

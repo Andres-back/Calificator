@@ -2,6 +2,7 @@
 from copy import deepcopy
 from decimal import Decimal
 from types import SimpleNamespace as NS
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -15,7 +16,7 @@ from app.modules.feedback_sharing.chat_service import build_prompt
 
 def case():
     grade = NS(id=uuid4(), estudiante_id=uuid4(), evaluacion_id=uuid4(), materia_id=uuid4(),
-        estado='publicada', revisado_por_docente=True, nota_confirmada=Decimal('3'),
+        estado='publicada', revisado_por_docente=True, nota_confirmada=Decimal('3'), nota_sugerida=Decimal('3'),
         feedback='Retroalimentación provisional: revisa la evidencia.', entrega_id=None,
         updated_at=None)
     evaluation = NS(id=grade.evaluacion_id, materia_id=grade.materia_id, nombre='Lectura',
@@ -91,3 +92,46 @@ def test_detail_cannot_bypass_a_pending_breakdown():
     review.scope='detail'
     with pytest.raises(HTTPException):
         build_review_projection(grade,evaluation,'Ana','Lenguaje',breakdown,review)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('known_envelope', [True, False])
+async def test_individual_and_batch_offer_the_same_delivery_message_without_editing_source(monkeypatch, known_envelope):
+    from app.modules.feedback_sharing import service
+    grade, evaluation, breakdown, review = case()
+    educational = review.feedback_text
+    grade.feedback = ('Retroalimentación provisional: requiere revisión docente porque la evidencia, '
+                      'las valoraciones, la suma o el mensaje no coinciden por completo. '
+                      'Borrador basado en el desglose: ' + educational) if known_envelope else educational
+    original = grade.feedback
+    source = NS(grade=grade, evaluation=evaluation, breakdown=breakdown, source_fingerprint='f' * 64)
+    monkeypatch.setattr(service, 'enabled', lambda: None)
+    monkeypatch.setattr(service, 'load_source', AsyncMock(return_value=source))
+    monkeypatch.setattr(service, 'authorize_teacher', AsyncMock())
+    monkeypatch.setattr(service, 'project_source', AsyncMock(side_effect=HTTPException(409, 'Revisa el desglose pendiente.')))
+    result = await service.prepare_grade_preview(NS(), NS(), evaluation.id, grade.id)
+    assert result['revision_docente']['feedback_text'] == educational
+    assert result['mensaje_editable']['feedback_text'] == educational
+    assert result['batch_candidate']['feedback_text'] == educational
+    assert result['borrador_docente']['retroalimentacion'] == original
+    assert grade.feedback == original and grade.nota_confirmada == Decimal('3')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('with_marker', [False, True])
+async def test_unknown_provisional_warning_remains_visible_and_blocked(monkeypatch, with_marker):
+    from app.modules.feedback_sharing import service
+    grade, evaluation, breakdown, _ = case()
+    original = 'Retroalimentación provisional: no se distingue la respuesta de la pregunta 2.'
+    if with_marker:
+        original += ' Borrador basado en el desglose: Relee el segundo párrafo y explica la decisión del personaje.'
+    grade.feedback = original
+    source = NS(grade=grade, evaluation=evaluation, breakdown=breakdown, source_fingerprint='f' * 64)
+    monkeypatch.setattr(service, 'enabled', lambda: None)
+    monkeypatch.setattr(service, 'load_source', AsyncMock(return_value=source))
+    monkeypatch.setattr(service, 'authorize_teacher', AsyncMock())
+    monkeypatch.setattr(service, 'project_source', AsyncMock(side_effect=HTTPException(409, 'Revisa la evidencia.')))
+    result = await service.prepare_grade_preview(NS(), NS(), evaluation.id, grade.id)
+    assert result['revision_docente']['feedback_text'] == original
+    assert 'batch_candidate' not in result
+    assert not result['elegible'] and grade.feedback == original

@@ -30,8 +30,14 @@ async function install(page: Page, total = 40) {
     return route.fallback();
   });
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
-  await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
-  await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
+  // Hybrid input: keyboard menu entry, native pointer selection/share/copy.
+  // Windows WebKit spends several seconds per pointer action; keep the 60s
+  // limit and every assertion, while explicitly covering keyboard navigation.
+  for (const title of ['Más acciones', 'Retroalimentación del grupo']) {
+    const action = page.getByRole('button', { name: title, exact: true });
+    await expect(action).toBeEnabled();
+    await action.press('Enter');
+  }
   return { calls, dialog: page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true }) };
 }
 
@@ -56,7 +62,9 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   await share.click();
   await expect(dialog.getByRole('button', { name: 'Copiar 1 disponible', exact: true })).toBeEnabled();
   expect(calls).toEqual([]);
-  await dialog.getByRole('button', { name: 'Crear 1 enlace faltante', exact: true }).click();
+  const create = dialog.getByRole('button', { name: 'Crear 1 enlace faltante', exact: true });
+  await expect(create).toBeEnabled();
+  await create.press('Enter');
   const copy = dialog.getByRole('button', { name: 'Copiar 2 enlaces', exact: true });
   await expect(copy).toBeInViewport({ ratio: 0.999 });
   expect(calls).toHaveLength(1); expect(calls[0].ids).toEqual(['c39']);
@@ -70,7 +78,9 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
   await page.screenshot({ path: `../output/playwright/spec129-share-${width}-${theme}-${browserName}.png` });
   await page.setViewportSize({ width, height: 850 });
-  await dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true }).click();
+  const back = dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true });
+  await expect(back).toBeEnabled();
+  await back.press('Enter');
   await expect(share).toBeFocused();
   await expect(dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(39), exact: true })).toBeChecked();
   await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(2);

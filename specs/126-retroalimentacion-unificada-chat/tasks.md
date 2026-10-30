@@ -70,3 +70,7 @@ FR-001/FR-002 → T005–008; FR-003 → T006–007 y prueba de guardado de mens
 - [x] T027 Regenerar specs/system-inventory/current.json con scripts/build_system_inventory.py --write tras T026; comprobar que solo cambia la huella de fuentes, validar inventario, pruebas y contrato de gobernanza, y registrar el cierre documental sin modificar producto ni workflows (T020).
 - [x] T028 Sincronizar frontend/e2e/feedback-delivery.spec.ts con la revalidación posterior a aprobar: respuesta retenida explícitamente, estado de carga y selección conservada; mantener la aserción de búsqueda sin peticiones nuevas, probar aprobación/enlaces en ambos motores y unidad de entrega/lote/impresión, regenerar inventario y validar gobernanza. CI completo continúa como puerta de entrega antes de declarar el PR267 listo sin fusionarlo (T008/T020).
 - [x] T029 Vincular reorganización de navegación docente a specs/129-retroalimentacion-flujo-claro/tasks.md, issue #272; preservar unificación y chat126, adaptar recorridos E2E a lista/detalle sin eliminar aserciones de mensaje/privacidad (FR-001, FR-002, FR-003, FR-004, FR-014, FR-015).
+
+## Continuación aprobada: entrega simple135
+
+La continuación aprobada se ejecuta y valida en [tareas135](../135-retroalimentacion-entrega-simple/tasks.md), issue287. Los marcadores anteriores acreditan únicamente sus entregas históricas; no certifican las tareas nuevas de preparación compuesta, formato y estados de135. Conservación de datos/guardas y CI siguen siendo puertas de entrega.

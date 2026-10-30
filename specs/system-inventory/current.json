@@ -582,7 +582,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "73935cba5a35e39f80492d3901640bbf1a29cf7ff084e31edf928dd403734d2a",
+  "source_digest": "52f7ade0edade98f5a7ca106529cdae17198004271000b28deb82533b40b3728",
   "surfaces": [
     {
       "actors": [
@@ -4771,7 +4771,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "availability",
@@ -4780,7 +4788,7 @@
       },
       "id": "backend:GET:/devoluciones/disponibilidad",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "GET:/devoluciones/disponibilidad",
       "source_line": 47,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -6199,7 +6207,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "list_accesses",
@@ -6208,7 +6224,7 @@
       },
       "id": "backend:GET:/evaluaciones/{evaluation_id}/devoluciones/accesos",
       "kind": "endpoint",
-      "owner_spec": "005-evaluaciones",
+      "owner_spec": "008-calificaciones",
       "signature": "GET:/evaluaciones/{evaluation_id}/devoluciones/accesos",
       "source_line": 136,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -6332,7 +6348,13 @@
         "get_current_user"
       ],
       "consumers": [
-        "122-retroalimentacion-lote-visual"
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
       ],
       "coverage": "covered",
       "details": {
@@ -9141,7 +9163,15 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "read_feedback",
@@ -9150,7 +9180,7 @@
       },
       "id": "backend:GET:/public/devolucion",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "GET:/public/devolucion",
       "source_line": 53,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
@@ -9301,7 +9331,15 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "read_history",
@@ -9310,7 +9348,7 @@
       },
       "id": "backend:GET:/public/devolucion/conversacion",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "GET:/public/devolucion/conversacion",
       "source_line": 48,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
@@ -9431,7 +9469,15 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "read_evidence",
@@ -9440,7 +9486,7 @@
       },
       "id": "backend:GET:/public/devolucion/evidencia/{page}",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "GET:/public/devolucion/evidencia/{page}",
       "source_line": 61,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
@@ -9567,7 +9613,15 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "read_question",
@@ -9576,7 +9630,7 @@
       },
       "id": "backend:GET:/public/devolucion/preguntas/{request_id}",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "GET:/public/devolucion/preguntas/{request_id}",
       "source_line": 43,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
@@ -15320,7 +15374,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "disable_access",
@@ -15329,7 +15391,7 @@
       },
       "id": "backend:POST:/devoluciones/accesos/{access_id}/desactivar",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/devoluciones/accesos/{access_id}/desactivar",
       "source_line": 32,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -15452,7 +15514,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "reactivate_access",
@@ -15461,7 +15531,7 @@
       },
       "id": "backend:POST:/devoluciones/accesos/{access_id}/reactivar",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/devoluciones/accesos/{access_id}/reactivar",
       "source_line": 37,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -15584,7 +15654,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "renew_access",
@@ -15593,7 +15671,7 @@
       },
       "id": "backend:POST:/devoluciones/accesos/{access_id}/renovar",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/devoluciones/accesos/{access_id}/renovar",
       "source_line": 42,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -17089,7 +17167,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "issue",
@@ -17098,7 +17184,7 @@
       },
       "id": "backend:POST:/evaluaciones/{evaluation_id}/devoluciones/accesos",
       "kind": "endpoint",
-      "owner_spec": "005-evaluaciones",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/accesos",
       "source_line": 121,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -17222,7 +17308,13 @@
         "get_current_user"
       ],
       "consumers": [
-        "122-retroalimentacion-lote-visual"
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
       ],
       "coverage": "covered",
       "details": {
@@ -17356,7 +17448,13 @@
         "get_current_user"
       ],
       "consumers": [
-        "122-retroalimentacion-lote-visual"
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
       ],
       "coverage": "covered",
       "details": {
@@ -17489,7 +17587,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "print_sheets",
@@ -17498,7 +17604,7 @@
       },
       "id": "backend:POST:/evaluaciones/{evaluation_id}/devoluciones/fichas",
       "kind": "endpoint",
-      "owner_spec": "005-evaluaciones",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/fichas",
       "source_line": 161,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -17621,7 +17727,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "save_message",
@@ -17630,7 +17744,7 @@
       },
       "id": "backend:POST:/evaluaciones/{evaluation_id}/devoluciones/mensaje",
       "kind": "endpoint",
-      "owner_spec": "005-evaluaciones",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/mensaje",
       "source_line": 92,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -17753,7 +17867,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "preview",
@@ -17762,7 +17884,7 @@
       },
       "id": "backend:POST:/evaluaciones/{evaluation_id}/devoluciones/previsualizar",
       "kind": "endpoint",
-      "owner_spec": "005-evaluaciones",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/previsualizar",
       "source_line": 54,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -17885,7 +18007,15 @@
       "authorization": [
         "get_current_user"
       ],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "review_delivery",
@@ -17894,7 +18024,7 @@
       },
       "id": "backend:POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
       "kind": "endpoint",
-      "owner_spec": "005-evaluaciones",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/evaluaciones/{evaluation_id}/devoluciones/revisar",
       "source_line": 82,
       "source_path": "backend/app/modules/feedback_sharing/router.py",
@@ -20063,7 +20193,15 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "function": "ask_question",
@@ -20072,7 +20210,7 @@
       },
       "id": "backend:POST:/public/devolucion/preguntas",
       "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/public/devolucion/preguntas",
       "source_line": 32,
       "source_path": "backend/app/modules/feedback_sharing/public_router.py",
@@ -23128,6 +23266,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/conversation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackApproval.test.ts"
         },
         {
           "level": "unit",
@@ -33715,7 +33859,15 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "backend_contract": "backend:GET:/devoluciones/disponibilidad",
@@ -33724,7 +33876,7 @@
       },
       "id": "frontend_call:GET:/devoluciones/disponibilidad:frontend/src/modules/feedback_sharing/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "GET:/devoluciones/disponibilidad",
       "source_line": 40,
       "source_path": "frontend/src/modules/feedback_sharing/api.ts",
@@ -43072,7 +43224,15 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "backend_contract": null,
@@ -43081,7 +43241,7 @@
       },
       "id": "frontend_call:POST:/devoluciones/accesos/{id}/{action}:frontend/src/modules/feedback_sharing/api.ts",
       "kind": "frontend_call",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "POST:/devoluciones/accesos/{id}/{action}",
       "source_line": 77,
       "source_path": "frontend/src/modules/feedback_sharing/api.ts",
@@ -52909,7 +53069,15 @@
         "system"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "active": true,
@@ -52943,7 +53111,7 @@
       },
       "id": "table:feedback_accesses",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "feedback_accesses",
       "source_line": 58,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
@@ -53080,7 +53248,15 @@
         "system"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "active": true,
@@ -53106,7 +53282,7 @@
       },
       "id": "table:feedback_chat_quotas",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "feedback_chat_quotas",
       "source_line": 100,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
@@ -53227,7 +53403,15 @@
         "system"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "active": true,
@@ -53267,7 +53451,7 @@
       },
       "id": "table:feedback_chat_requests",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "feedback_chat_requests",
       "source_line": 108,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
@@ -53395,7 +53579,13 @@
       ],
       "authorization": [],
       "consumers": [
-        "122-retroalimentacion-lote-visual"
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
       ],
       "coverage": "covered",
       "details": {
@@ -53556,7 +53746,15 @@
         "system"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "active": true,
@@ -53589,7 +53787,7 @@
       },
       "id": "table:feedback_delivery_reviews",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "feedback_delivery_reviews",
       "source_line": 14,
       "source_path": "backend/app/modules/feedback_sharing/models.py",
@@ -53719,7 +53917,15 @@
         "system"
       ],
       "authorization": [],
-      "consumers": [],
+      "consumers": [
+        "107-retroalimentacion-familiar",
+        "120-retroalimentacion-entrega-clara",
+        "122-retroalimentacion-lote-visual",
+        "123-motivos-por-area",
+        "126-retroalimentacion-unificada-chat",
+        "129-retroalimentacion-flujo-claro",
+        "135-retroalimentacion-entrega-simple"
+      ],
       "coverage": "covered",
       "details": {
         "active": true,
@@ -53754,7 +53960,7 @@
       },
       "id": "table:feedback_publications",
       "kind": "table",
-      "owner_spec": "002-arquitectura-roles-seguridad",
+      "owner_spec": "008-calificaciones",
       "signature": "feedback_publications",
       "source_line": 33,
       "source_path": "backend/app/modules/feedback_sharing/models.py",

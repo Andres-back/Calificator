@@ -10,6 +10,7 @@ from sqlalchemy import func, select, text
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.feedback_sharing.access_policy import authorize_owner, authorize_teacher, credential_digest, db_now, enabled, load_source, project_source
+from app.modules.feedback_sharing.batch_policy import delivery_message
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackDeliveryReview, FeedbackPublication
 from app.modules.feedback_sharing.projection import build_review_projection, confirmed_score, digest
 from app.modules.feedback_sharing.credentials import seal_credential
@@ -58,14 +59,14 @@ async def prepare_grade_preview(db, actor, evaluation_id, grade_id):
         breakdown = source.breakdown
         result['revision_docente'] = {
             'source_fingerprint': source.source_fingerprint,
-            'feedback_text': (result.get('resultado') or {}).get('retroalimentacion', grade.feedback or ''),
+            'feedback_text': delivery_message((result.get('resultado') or {}).get('retroalimentacion', grade.feedback or '')),
             'detail_available': bool(breakdown and breakdown.cobertura_estado == 'completa'
                 and not breakdown.requiere_revision and breakdown.nota_final == note),
         }
     from app.modules.feedback_sharing.batch_policy import prepare_candidate
     if score is not None and grade.estado != 'anulada':
         result['mensaje_editable'] = {'source_fingerprint': source.source_fingerprint,
-            'feedback_text': (result.get('resultado') or {}).get('retroalimentacion', grade.feedback or ''), 'detail_available': False}
+            'feedback_text': delivery_message((result.get('resultado') or {}).get('retroalimentacion', grade.feedback or '')), 'detail_available': False}
     try:
         result['batch_candidate'] = prepare_candidate(source, result.get('resultado'))
     except HTTPException as exc:

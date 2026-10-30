@@ -66,3 +66,7 @@ Diseño detallado: [research.md](./research.md), [data-model.md](./data-model.md
 ## Presentación 129
 
 [Plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272, refactoriza únicamente el centro docente común: identidad estable en vez de referencia de objeto, lista compacta y panel que contiene preparación y copia. Conserva editor, protección de cambios, privacidad, impresión y todos los contratos del chat.
+
+## Continuación aprobada: entrega simple135
+
+El [plan135](../135-retroalimentacion-entrega-simple/plan.md), issue287, reutiliza los endpoints y recibos existentes para componer aprobación→proyección vigente→emisión autorizada con una confirmación, y mantiene copia aparte. Comparte la regla conservadora del envoltorio conocido entre individual/lote, separa busy de edición y usa lectura integrada fluida/motivos actuales. No introduce migración, IA adicional ni cambio de reglas de notas, privacidad, caducidad o chat.

@@ -55,3 +55,7 @@ Resultado previo y posterior al diseño: sin excepción constitucional ni aclara
 ## Presentación 129
 
 [Plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272: reutilizar FeedbackBatchPublish y FeedbackPrintSheet, no duplicar sus reglas. El centro conserva impresión/retorno/selección y entrega en el mismo panel; sustituye la lista separada de enlaces nuevos por resultados contextuales, manteniendo copia individual y privada.
+
+## Continuación aprobada: entrega simple135
+
+El [plan135](../135-retroalimentacion-entrega-simple/plan.md), issue287, reutiliza los endpoints y recibos existentes para componer aprobación→proyección vigente→emisión autorizada con una confirmación, y mantiene copia aparte. Comparte la regla conservadora del envoltorio conocido entre individual/lote, separa busy de edición y usa lectura integrada fluida/motivos actuales. No introduce migración, IA adicional ni cambio de reglas de notas, privacidad, caducidad o chat.

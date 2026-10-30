@@ -4,9 +4,10 @@ import { useAuth } from '@/stores/auth';
 
 const Workspace = lazy(() => import('./ShareFeedbackDialog').then(module => ({ default: module.ShareFeedbackDialog })));
 
-export function FeedbackWorkspace({ evaluationId, gradeId, suggestedArea, onDirtyChange, onReview, fallback, onFinishEditing, onActiveChange }: {
+export function FeedbackWorkspace({ evaluationId, gradeId, suggestedArea, onDirtyChange, onBusyChange, onReview, fallback, onFinishEditing, onActiveChange }: {
   evaluationId: string; gradeId: string; suggestedArea?: string | null;
   onDirtyChange: (dirty: boolean) => void; onReview: () => void; fallback: ReactNode;
+  onBusyChange?: (busy: boolean) => void;
   onFinishEditing?: () => void;
   onActiveChange?: (active: boolean) => void;
 }) {
@@ -31,5 +32,5 @@ export function FeedbackWorkspace({ evaluationId, gradeId, suggestedArea, onDirt
   if (availability?.actor !== actor) return <p role="status">Abriendo retroalimentación…</p>;
   if (availability.enabled === null) return <div role="alert" className="space-y-3"><p>No pudimos abrir la retroalimentación. Tu nota no ha cambiado.</p><button type="button" className="min-h-11 rounded-xl border border-border px-4 py-2 text-sm font-semibold" onClick={() => { setAvailability(null); setRetry(value => value + 1); }}>Volver a intentar</button></div>;
   if (!availability.enabled) return <>{fallback}</>;
-  return <Suspense fallback={<p role="status">Abriendo retroalimentación…</p>}><Workspace embedded evaluationId={evaluationId} initialGradeId={gradeId} suggestedArea={suggestedArea} onDirtyChange={onDirtyChange} onFinishEditing={onFinishEditing} onClose={() => {}} onReview={onReview} /></Suspense>;
+  return <Suspense fallback={<p role="status">Abriendo retroalimentación…</p>}><Workspace embedded evaluationId={evaluationId} initialGradeId={gradeId} suggestedArea={suggestedArea} onDirtyChange={onDirtyChange} onBusyChange={onBusyChange} onFinishEditing={onFinishEditing} onClose={() => {}} onReview={onReview} /></Suspense>;
 }

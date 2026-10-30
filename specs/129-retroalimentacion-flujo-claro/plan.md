@@ -103,3 +103,7 @@ Coordinar explícitamente la finalización del teclado entre el marco y Feedback
 El centro integrado comunica si está habilitado para el actor actual y asume su única barra de acciones; al salir o perder acceso libera ese estado. El editor de compatibilidad desactivado conserva las acciones académicas. Al devolver el foco a Crear se muestra mediante desplazamiento nativo dentro de los contenedores, sin exigir al profesor localizar un botón fuera de pantalla; cancelar conserva el contexto de revisión.
 
 Integración autorizada el 2026-10-29: incorporar main 26b8fdd (PR #282, Spec134) mediante merge local en la misma rama del PR #284, sin reescribir historial. Resolver de forma conjunta el estado del centro integrado y el bloqueo del editor directo, conservando la finalización de escritura de ambos flujos; regenerar el inventario desde fuentes combinadas y probar ambos en Chromium/WebKit. No introduce reglas académicas, dependencias ni cambios backend propios del hotfix. Reenviar CI, sin fusionar #284 ni desplegar.
+
+## Continuación aprobada: entrega simple135
+
+El [plan135](../135-retroalimentacion-entrega-simple/plan.md), issue287, reutiliza los endpoints y recibos existentes para componer aprobación→proyección vigente→emisión autorizada con una confirmación, y mantiene copia aparte. Comparte la regla conservadora del envoltorio conocido entre individual/lote, separa busy de edición y usa lectura integrada fluida/motivos actuales. No introduce migración, IA adicional ni cambio de reglas de notas, privacidad, caducidad o chat.

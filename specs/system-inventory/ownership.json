@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "rules": [
+    {"spec":"008-calificaciones","priority":98,"source_patterns":["backend/app/modules/feedback_sharing/**","frontend/src/modules/feedback_sharing/**"],"consumers":["107-retroalimentacion-familiar","120-retroalimentacion-entrega-clara","122-retroalimentacion-lote-visual","123-motivos-por-area","126-retroalimentacion-unificada-chat","129-retroalimentacion-flujo-claro","135-retroalimentacion-entrega-simple"]},
     {"spec":"008-calificaciones","priority":97,"source_patterns":["frontend/src/components/evidence/cornerAssistance.ts"],"consumers":["116-api-modelos-configurables","131-escaneo-evidencias"]},
     {"spec":"008-calificaciones","priority":96,"source_patterns":["backend/app/modules/calificaciones/evidence_*.py","frontend/src/modules/calificaciones/components/GradeEvidenceViewer.tsx","frontend/src/modules/calificaciones/components/GradeQuestionEvidence.tsx","frontend/src/modules/calificaciones/components/evidenceViewport.ts","frontend/src/modules/calificaciones/components/gradeComponentPresentation.ts"],"consumers":["131-escaneo-evidencias"]},
     {"spec":"007-entregas-estudiante","priority":96,"source_patterns":["frontend/src/components/evidence/*Scan*","frontend/src/components/evidence/scan*.ts","frontend/src/components/evidence/imageHeader.ts","frontend/src/components/evidence/opencvTypes.ts","frontend/src/components/evidence/useEvidenceScanCapability.ts"],"consumers":["008-calificaciones","131-escaneo-evidencias"]},
