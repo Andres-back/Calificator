@@ -20,6 +20,46 @@ beforeEach(() => {
   vi.mocked(teacherApi.listFeedbackAccesses).mockResolvedValue([]);
 });
 describe('devoluciones por evaluación', () => {
+  it.each([true, false])('136 lectura, edición e impresión conservan el mismo modo de scroll (integrado=%s)', async (embedded) => {
+    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ measureText: (text: string) => ({ width: text.length * 7 }) } as unknown as CanvasRenderingContext2D);
+    useAuth.setState({ user: { ...teacher, permissions: [...teacher.permissions!, 'grading.grade'] } });
+    vi.mocked(teacherApi.previewFeedback).mockResolvedValue([{ calificacion_id: 'g1', elegible: true, fingerprint: 'f'.repeat(64), resultado: result,
+      mensaje_editable: { source_fingerprint: 'f'.repeat(64), feedback_text: result.retroalimentacion, detail_available: false } }]);
+    vi.mocked(teacherApi.prepareFeedbackPrint).mockResolvedValue([{ calificacion_id: 'g1', resultado: result }]);
+    render(<ShareFeedbackDialog embedded={embedded} evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar devolución de Ana Pérez' }));
+    const input = await screen.findByRole('textbox', { name: 'Mensaje para el estudiante' });
+    expect(input.closest('[data-feedback-scroll]')).toHaveAttribute('data-feedback-scroll', embedded ? 'outer' : 'self');
+    fireEvent.click(screen.getByRole('button', { name: 'Volver sin aprobar' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Preparar impresión' }));
+    const preview = await screen.findByRole('region', { name: 'Vista previa de impresión' });
+    expect(preview.parentElement).toHaveAttribute('data-feedback-scroll', embedded ? 'outer' : 'self');
+    expect(preview.parentElement!.classList.contains('overscroll-contain')).toBe(!embedded);
+    expect(teacherApi.publishFeedbackBatch).not.toHaveBeenCalled();
+    expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+    context.mockRestore();
+  });
+  it.each([true, false])('136 delega lectura y compartir al dueño de scroll adecuado (integrado=%s)', async (embedded) => {
+    render(<ShareFeedbackDialog embedded={embedded} evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
+    const detail = await screen.findByRole('region', { name: 'Devolución de Ana Pérez' });
+    const scroll = detail.parentElement!;
+    if (embedded) {
+      expect(scroll).not.toHaveClass('overflow-y-auto', 'overscroll-contain');
+      expect(scroll).not.toHaveAttribute('data-mobile-scroll');
+    } else {
+      expect(scroll).toHaveClass('overflow-y-auto', 'overscroll-contain');
+      expect(scroll).toHaveAttribute('data-mobile-scroll');
+      expect(document.body.style.overflow).toBe('hidden');
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir devolución' }));
+    const share = await screen.findByRole('region', { name: 'Compartir retroalimentaciones' });
+    const shareBody = share.querySelector('[data-feedback-scroll]')!;
+    expect(shareBody).toHaveAttribute('data-feedback-scroll', embedded ? 'outer' : 'self');
+    expect(shareBody.classList.contains('overscroll-contain')).toBe(!embedded);
+    expect(shareBody.hasAttribute('data-mobile-scroll')).toBe(!embedded);
+    expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+    expect(teacherApi.publishFeedbackBatch).not.toHaveBeenCalled();
+  });
   it('135 separa la preparación pendiente de los cambios reales sin guardar', async () => {
     let finish!: (result: Awaited<ReturnType<typeof teacherApi.issueFeedbackAccesses>>) => void;
     vi.mocked(teacherApi.issueFeedbackAccesses).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
