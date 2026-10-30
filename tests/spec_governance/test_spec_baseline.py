@@ -130,6 +130,7 @@ ALL_SPECS = {
     "133-lectura-recalificacion-configurable",
     "134-revision-visual-nota-directa",
     "135-retroalimentacion-entrega-simple",
+    "137-puntajes-reparto-seguro",
 }
 OWNED_SPECS = {
     name

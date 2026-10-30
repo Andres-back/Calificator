@@ -62,6 +62,11 @@ Como equipo, necesito actualizar estos artefactos cuando cambie el comportamient
 
 - [Ver superficies, permisos y cobertura de este dominio](./inventory.md).
 
+## Evolución 137: reparto seguro de puntos
+
+[137-puntajes-reparto-seguro](../137-puntajes-reparto-seguro/spec.md), issue292, ofrece un editor común desde Materias y la lista general. Reparte un presupuesto colectivo por tipo, sección o rango, conserva los valores fijados y distribuye solo el resto de ese bloque con precisión de cuatro decimales. Guardar mantiene escala/contenido/evidencia/notas, conserva referencia anterior y crea versión de máximos; no retira bloqueos de procesos activos o concurrencia. La actualización de notas es otra acción, con propuesta y confirmación explícitas, sin IA. Contrato130 anterior se sustituye expresamente solo en el reparto, sin duplicar ponderación ni perder secciones.
+
+
 ## Evolución 095: acciones principales claras
 
 [095-flujo-docente-ligero](../095-flujo-docente-ligero/spec.md) limita a tres las acciones principales válidas por examen: visualizar, ver notas y calificar por foto cuando corresponda. Borradores conservan preparación/publicación; editar datos/preguntas/criterios, gestionar entregas y eliminar permanecen bajo Más opciones según permisos, con handlers y confirmaciones existentes. No modifica preguntas, notas, modalidades ni estados al consultar el menú.

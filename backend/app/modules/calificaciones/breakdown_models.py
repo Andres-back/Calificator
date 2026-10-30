@@ -96,7 +96,7 @@ Index("idx_componente_desglose_orden", CalificacionComponente.desglose_id, Calif
 class CalificacionAjuste(Base):
     __tablename__ = "calificacion_ajustes"
     __table_args__ = (
-        CheckConstraint("tipo IN ('componente','global','explicacion','resolucion')", name="ck_ajuste_tipo"),
+        CheckConstraint("tipo IN ('componente','global','explicacion','resolucion','reparto')", name="ck_ajuste_tipo"),
     )
 
     id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4, server_default=text("uuid_generate_v4()"))

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { componentPoints } from '@/lib/componentPoints';
 import { AlertTriangle, CheckCircle2, EyeOff, FileSearch, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
@@ -50,7 +51,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             title={[label, ...item.reasons.map((reason) => reason.label)].join('. ')}
             data-review-priority={item.level}
             className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-left font-semibold ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
-          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{component.numero ?? component.orden + 1}</span>{compact && <span className="text-xs font-normal">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {gradeComponentPresentation(component).label}</span>}</button>;
+          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{component.numero ?? component.orden + 1}</span>{compact && <span className="text-xs font-normal">{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
         </nav>
         <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">{calculation?.provisional ? calculation.label : 'Cómo se calcula la nota'} · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} /></details>
@@ -75,7 +76,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 <Badge tone={presentation.tone}>
                   <StateIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />{presentation.label}
                 </Badge>
-                <strong className="whitespace-nowrap text-base">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)} / {Number(component.puntos_maximos).toFixed(2)}</strong>
+                <strong className="whitespace-nowrap text-base">{componentPoints(component.puntos_obtenidos)} / {componentPoints(component.puntos_maximos)}</strong>
               </div>
             </div>
             <div className="mt-3 grid items-start gap-3" style={renderEvidence && !student ? { gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,24rem),1fr))' } : undefined}>

@@ -34,7 +34,7 @@ vi.mock('@/modules/xali/api', () => ({
 }));
 vi.mock('../visualApi', () => ({ getVisualCapabilities: vi.fn().mockResolvedValue({ editor: false, generacion: false, importacion: false, max_bytes: 20971520 }) }));
 vi.mock('react-hot-toast', () => ({
-  default: { success: vi.fn(), error: vi.fn() },
+  default: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
 }));
 
 const materia: Materia = {
@@ -113,7 +113,7 @@ const rubricEvaluation: Evaluacion = {
     },
   ],
 };
-function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | null = null, subject = materia, contextual = true) {
+function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | null = null, subject = materia, contextual = true, onRepartition?: (evaluation: Evaluacion) => void) {
   const onClose = vi.fn();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -131,6 +131,7 @@ function renderWizard(onCompleted = vi.fn(), initialEvaluation: Evaluacion | nul
           initialMateriaId={contextual ? subject.id : undefined}
           initialEvaluation={initialEvaluation}
           onCompleted={onCompleted}
+          onRepartition={onRepartition}
         />
       </QueryClientProvider>,
     ),
@@ -152,6 +153,21 @@ it('101 restores scoped visual editing without replacing local changes and persi
   fireEvent.click(await screen.findByRole('button', { name: 'Continuar' }));
   await waitFor(() => expect(mocks.get).toHaveBeenCalledWith(evaluation.id));
   expect(screen.getAllByLabelText(/Enunciado/)[0]).toHaveValue('Cambio visual conservado');
+  expect(mocks.update).not.toHaveBeenCalled();
+});
+it('137 remite al reparto común sin cerrar ni perder cambios de contenido pendientes', async () => {
+  const repartition = vi.fn(), user = userEvent.setup();
+  const { onClose } = renderWizard(vi.fn(), evaluation, materia, true, repartition);
+  await screen.findByRole('button', { name: 'Repartir puntos' });
+  expect(screen.getByLabelText('Puntaje de la pregunta 1')).toHaveAttribute('readonly');
+  fireEvent.change(screen.getByLabelText(/Enunciado/), { target: { value: 'Cambio pendiente' } });
+  await user.click(screen.getByRole('button', { name: 'Repartir puntos' }));
+  expect(repartition).not.toHaveBeenCalled(); expect(onClose).not.toHaveBeenCalled();
+  expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Cambio pendiente');
+  expect(toast).toHaveBeenCalledWith(expect.stringContaining('Conservamos tu borrador'));
+  fireEvent.change(screen.getByLabelText(/Enunciado/), { target: { value: 'Pregunta uno' } });
+  await user.click(screen.getByRole('button', { name: 'Repartir puntos' }));
+  expect(repartition).toHaveBeenCalledWith(evaluation); expect(onClose).toHaveBeenCalledOnce();
   expect(mocks.update).not.toHaveBeenCalled();
 });
 

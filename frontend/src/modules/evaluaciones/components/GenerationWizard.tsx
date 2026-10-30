@@ -38,7 +38,7 @@ import {
 } from './generationWizardModel';
 
 function QuestionCard({
-  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove, visualEditor, displayLabel,
+  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove, visualEditor, displayLabel, onRepartition,
 }: {
   question: EditableQuestion;
   index: number;
@@ -50,6 +50,7 @@ function QuestionCard({
   onMove: (direction: -1 | 1) => void;
   visualEditor?: ReactNode;
   displayLabel?: string;
+  onRepartition?: () => void;
 }) {
   const confirmAnswer = (respuestaEsperada: string): Partial<EditableQuestion> => ({
     respuestaEsperada,
@@ -108,7 +109,8 @@ function QuestionCard({
               </select>
             </Field>
             <Field label="Puntaje" required>
-              <Input type="number" min={0.01} step={0.01} value={question.puntaje} onChange={(event) => onChange({ puntaje: Number(event.target.value) })} className="min-h-12 w-full text-base" aria-label={`Puntaje de la pregunta ${index + 1}`} />
+              <Input type="number" min={0.0001} step={0.0001} value={question.puntaje} readOnly={Boolean(onRepartition)} onChange={(event) => onChange({ puntaje: Number(event.target.value) })} className="min-h-12 w-full text-base" aria-label={`Puntaje de la pregunta ${index + 1}`} />
+              {onRepartition && <Button type="button" variant="outline" onClick={onRepartition}>Repartir puntos</Button>}
             </Field>
           </div>
           {visualEditor}
@@ -274,7 +276,7 @@ function XaliPanel({
 }
 
 export function GenerationWizard({
-  open, onClose, userId, materias, initialMateriaId = '', initialEvaluation = null, onCompleted,
+  open, onClose, userId, materias, initialMateriaId = '', initialEvaluation = null, onCompleted, onRepartition,
 }: {
   open: boolean;
   onClose: () => void;
@@ -283,6 +285,7 @@ export function GenerationWizard({
   initialMateriaId?: string;
   initialEvaluation?: Evaluacion | null;
   onCompleted: (evaluation: Evaluacion) => void;
+  onRepartition?: (evaluation: Evaluacion) => void;
 }) {
   const availableMaterias = useMemo(() => materias ?? [], [materias]);
   const [state, setState] = useState<WizardState>(() => createEmptyWizardState(initialMateriaId));
@@ -807,6 +810,16 @@ export function GenerationWizard({
                               question={question}
                               index={index}
                               total={state.questions.length}
+                              onRepartition={initialEvaluation && onRepartition ? () => {
+                                if (Object.values(state.visualJobs ?? {}).some(Boolean)) {
+                                  toast('Espera a que termine la preparación de figuras antes de repartir puntos.'); return;
+                                }
+                                if (JSON.stringify(evaluationPayload(state)) !== editorBaseline.current) {
+                                  toast('Guarda primero los cambios de contenido o vuelve a abrir la evaluación. Conservamos tu borrador.'); return;
+                                }
+                                discardVisualEditDraft(getWizardStorage(), userId, initialEvaluation.id);
+                                onClose(); onRepartition(initialEvaluation);
+                              } : undefined}
                               displayLabel={state.estructuraDocumento?.nodos.find(node => node.pregunta_id === question.contenidoId)?.etiqueta_original ?? undefined}
                               evaluationModality={state.modalidad}
                               visualEditor={visualCapabilities.data?.editor && state.generatedEvaluationId ? <div className="min-w-0 space-y-3">

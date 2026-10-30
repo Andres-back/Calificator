@@ -2,6 +2,41 @@
   "schema_version": 1,
   "permission_overrides": [
     {
+      "surface_id": "frontend_call:GET:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "El transporte se usa desde el diálogo privado de reparto con identidad/rol y lectura/edición comprobados; no incluye permisos como constantes del cliente HTTP. El servidor vuelve a autorizar propietario y permisos.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "evidence": ["frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx", "backend/tests/integration/test_score_allocation_operations.py"]
+    },
+    {
+      "surface_id": "frontend_call:PUT:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "Guardado privado desde el editor común, aislado por actor y permisos; comprobación de rol/gestión/lectura/edición y versión en el servidor. El módulo HTTP no es un control de acceso.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "evidence": ["frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx", "backend/tests/integration/test_score_allocation_operations.py"]
+    },
+    {
+      "surface_id": "frontend_call:POST:/evaluaciones/{id}/reparto/notas/previsualizar:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "La vista previa exige además grading.read y descarta respuestas al revocarse o cambiar la cuenta; servidor comprueba gestión y ambos permisos de lectura. No se ofrecen notas a estudiantes.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "evidence": ["frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx", "backend/tests/integration/test_score_allocation_operations.py"]
+    },
+    {
+      "surface_id": "frontend_call:POST:/evaluaciones/{id}/reparto/notas/aplicar:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "Confirmación explícita de un docente/administrador gestionable con grading.grade; el backend revalida permisos, fingerprints y solicitud idempotente antes de cada aplicación. No es una ruta estudiantil.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "evidence": ["frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx", "backend/tests/integration/test_score_allocation_operations.py"]
+    },
+    {
+      "surface_id": "frontend_call:GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "actors": ["admin", "profesor"],
+      "reason": "Recuperación privada de la misma confirmación para el actor con gestión y permisos de notas; backend filtra por evaluación y solicitante. El cliente descarta respuestas tardías y no comparte recibos entre cuentas.",
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "evidence": ["frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx", "backend/tests/integration/test_score_allocation_operations.py"]
+    },
+    {
       "surface_id": "backend:GET:/evaluaciones/{evaluacion_id}/ultima-copia",
       "actors": ["admin", "profesor"],
       "reason": "Exige simultáneamente evaluations.read y evaluations.create, además de gestión de fuente y destino. La extracción estática une actores de cada permiso y no representa su intersección.",
