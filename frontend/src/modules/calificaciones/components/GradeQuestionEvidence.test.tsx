@@ -23,6 +23,47 @@ describe('GradeQuestionEvidence', () => {
   });
   const region: GradeEvidenceRegion = { pagina: 2, bbox: [0.1, 0.2, 0.4, 0.1], marco: 'pagina_canonica_orientada', evidencia_version: 'a'.repeat(32) };
 
+  it('explica que conocer la hoja no significa tener localizada la respuesta antigua', () => {
+    render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} />);
+    expect(screen.getByText(/No hay una zona localizada/)).toBeInTheDocument();
+    expect(screen.getByText(/Puedes ampliar la hoja manualmente/)).toBeInTheDocument();
+    expect(screen.getByRole('img')).toHaveAttribute('src', '/api/evidencia/paginas/2');
+  });
+
+  it('reencuadra cada respuesta de la misma foto y de otra hoja, sin inferencias o escrituras', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300, toJSON() {} });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const page = String(input).includes('/paginas/2') ? '2' : '1';
+      return new Response(new Blob(['synthetic']), { headers: { 'Content-Type': 'image/png', 'X-Evidence-Version': region.evidencia_version, 'X-Evidence-Page': page } });
+    });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValueOnce('blob:page-one').mockReturnValueOnce('blob:page-two');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const upper: GradeEvidenceRegion = { ...region, pagina: 1, bbox: [0.3, 0.2, 0.2, 0.08] };
+    const lower: GradeEvidenceRegion = { ...upper, bbox: [0.3, 0.7, 0.2, 0.08] };
+    const props = { evidenceUrl: '/api/evidencia', pages: 2, associatedPages: [1], activePage: 1, onPageChange: vi.fn() };
+    const view = render(<GradeQuestionEvidence {...props} regions={[upper]} />);
+    const expectFocused = async (box: GradeEvidenceRegion['bbox'], src: string) => {
+      const image = await screen.findByRole('img');
+      expect(image).toHaveAttribute('src', src);
+      Object.defineProperties(image, { naturalWidth: { value: 800 }, naturalHeight: { value: 1200 } });
+      fireEvent.load(image);
+      const centerX = parseFloat(image.style.left) + (box[0] + box[2] / 2) * parseFloat(image.style.width);
+      const centerY = parseFloat(image.style.top) + (box[1] + box[3] / 2) * parseFloat(image.style.height);
+      expect(centerX).toBeCloseTo(200, 0);
+      expect(centerY).toBeCloseTo(150, 0);
+      expect(parseFloat(image.style.height)).toBeGreaterThan(300);
+    };
+    await expectFocused(upper.bbox, 'blob:page-one');
+    expect(screen.getByText(/Vista cercana de esta respuesta/)).toBeInTheDocument();
+    view.rerender(<GradeQuestionEvidence {...props} regions={[lower]} />);
+    await expectFocused(lower.bbox, 'blob:page-one');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    view.rerender(<GradeQuestionEvidence {...props} associatedPages={[2]} activePage={2} regions={[{ ...upper, pagina: 2 }]} />);
+    await expectFocused(upper.bbox, 'blob:page-two');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.every(([, options]) => !options?.method || options.method === 'GET')).toBe(true);
+  });
+
   it('solo amplía automáticamente después de verificar versión, hoja y tipo', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(new Blob(['png'], { type: 'image/png' }), { headers: { 'Content-Type': 'image/png', 'X-Evidence-Version': region.evidencia_version, 'X-Evidence-Page': '2' } }));
     const objectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:verified-synthetic');

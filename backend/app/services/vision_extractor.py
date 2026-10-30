@@ -421,6 +421,21 @@ class VisionExtractor:
             "están realmente vacías. Conserva por separado en answer todo el texto manuscrito."
             if purpose == "student_response" else ""
         )
+        location_rule = (
+            "Incluye regions en cada respuesta visible para que el docente pueda revisar su foto. "
+            "Usa regions=[[x,y,ancho,alto]] sobre ESTA imagen: coordenadas normalizadas de 0 a 1, "
+            "con origen en la esquina superior izquierda, ancho y alto positivos. "
+            "La caja debe abarcar la respuesta observada, sus marcas, dibujos y pasos, "
+            "no solamente el número o enunciado impreso. En una hoja de opciones incluye la fila "
+            "con las marcas de esa pregunta. Usa regions=[] si no puedes ubicarla con seguridad; "
+            "no inventes una caja ni copies la zona de otra respuesta. Prioriza siempre la "
+            "transcripción completa: omitir una ubicación no significa que falte la respuesta. "
+            "En question_id copia el id exacto de la pregunta del contexto solo cuando la "
+            "correspondencia sea inequívoca, incluso si se repite el número entre secciones; "
+            "si no está disponible o hay duda, usa null sin fabricar identificadores."
+            if purpose == "student_response" else ""
+        )
+        region_example = ',"regions":[]' if purpose == "student_response" else ""
         return f"""Eres VisionExtractor. {action} Página {page} de {total}.
 Contexto: {json.dumps(context, ensure_ascii=False)}
 PRIORIDAD CRÍTICA: busca las respuestas del estudiante, no te detengas al reconocer
@@ -442,10 +457,10 @@ el estudiante, los productos parciales y el resultado final. Si los operandos vi
 del enunciado, conserva exactamente lo visible y marca needs_review=true. Si un dígito no se
 distingue, usa answer=null, legible=false y needs_review=true; nunca lo completes calculando.
 {drawing_rule}
-{('Opcional: por respuesta, regions=[[x,y,ancho,alto]] puede contener UNA caja normalizada de 0 a 1 que abarque sus trazos y pasos sobre ESTA imagen. Nunca inventes otra hoja o ubicación. Si no estás seguro o falta espacio, omite regions. Prioriza siempre las respuestas completas.' if purpose == 'student_response' else '')}
+{location_rule}
 Distingue vacío de ilegible. Ilegible: answer=null, legible=false, needs_review=true.
 Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
-{{"student_detected":true,"page_role":"unknown","document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"present":true,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
+{{"student_detected":true,"page_role":"unknown","document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"present":true,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false{region_example}}}],"warnings":[]}}"""
 
     async def _event(self, event: str, request_id: str, model: str, attempt: int, started: float, page: int, size: int, status: str, error: str | None = None, usage: dict | None = None, http_status: int | None = None, selection: dict | None = None, fallback_used: bool = False) -> None:
         duration = int((time.monotonic() - started) * 1000)

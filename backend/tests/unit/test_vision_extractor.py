@@ -330,6 +330,29 @@ def test_student_extraction_prompt_requires_literal_arithmetic_transcription() -
     assert "del enunciado" in prompt
 
 
+def test_student_prompt_includes_locations_in_the_output_contract_without_inventing_them() -> None:
+    extractor = VisionExtractor(primary_model="synthetic-vision")
+    prompt = extractor._prompt(
+        {"preguntas": [{"id": "section-b-answer-1", "numero": 1, "enunciado": "Explica"}]},
+        page=2, total=3, purpose="student_response",
+    )
+    example = json.loads(prompt.split("Devuelve SOLO JSON:\n", 1)[1])
+    assert example["answers"][0]["regions"] == []
+    assert "en cada respuesta visible" in prompt
+    assert "x,y,ancho,alto" in prompt
+    assert "esquina superior izquierda" in prompt
+    assert "question_id" in prompt and "id exacto" in prompt
+    assert "si no puedes ubicarla" in prompt
+    assert "no inventes" in prompt
+    assert "synthetic-vision" not in prompt
+
+
+def test_source_document_prompt_does_not_request_student_answer_locations() -> None:
+    prompt = VisionExtractor()._prompt({}, page=1, total=1, purpose="source_document")
+    example = json.loads(prompt.split("Devuelve SOLO JSON:\n", 1)[1])
+    assert "regions" not in example["answers"][0]
+
+
 def test_grading_prompt_preserves_content_after_character_five_thousand() -> None:
     marker = "RESPUESTA_FINAL_NO_TRUNCADA"
     response = "P1: " + ("argumento " * 700) + marker
