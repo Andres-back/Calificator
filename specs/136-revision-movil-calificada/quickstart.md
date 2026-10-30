@@ -39,3 +39,7 @@ Ejecutar unidades, tipos/lint/build/auditorías, regresiones de navegador aplica
 - Converge: requisitos12, decisiones4 y principios8 comprobados, sin trabajo funcional pendiente. La tarea final se expresa como preparación de PR; su publicación ocurre después del commit con gobernanza, no antes. Fusión y despliegue no autorizados en esta entrega.
 
 El cambio de reparto de puntos aprobado posteriormente pertenece al issue292/spec137; no forma parte de este incremento frontend ni autoriza modificar notas al probarlo.
+
+CI inicial: backend, frontend quality/build y contenedores verdes; gobernanza encontró que faltaba registrar136 en el catálogo explícito de especificaciones activas. Se añadió solo la entrada nueva, conservando todas las aserciones y controles. Se repite la suite completa de gobernanza antes de actualizar el PR.
+
+Resultado de la corrección del registro:61/61 pruebas de gobernanza completas verdes. Se publica una actualización del PR293; no se reintenta el mismo fallo documental ni se altera el workflow.
