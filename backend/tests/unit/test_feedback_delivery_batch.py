@@ -42,12 +42,18 @@ def test_malformed_tokens_are_never_persisted(token):
 
 
 def test_only_known_technical_preamble_is_separated_from_educational_message():
-    source = 'Retroalimentación provisional: requiere revisión docente porque falta información. Borrador basado en el desglose: ' + MESSAGE
+    source = ('Retroalimentación provisional: requiere revisión docente porque la evidencia, '
+              'las valoraciones, la suma o el mensaje no coinciden por completo. Borrador basado en el desglose: ' + MESSAGE)
     assert delivery_message(source) == MESSAGE
     assert delivery_message(MESSAGE) == MESSAGE
     unknown = 'Retroalimentación provisional: esta respuesta no puede leerse.'
     assert delivery_message(unknown) == unknown
     assert 'requiere revisión' in source  # immutable source string, not rewritten
+
+
+def test_unknown_uncertainty_is_not_removed_just_because_it_contains_the_system_marker():
+    source = 'Retroalimentación provisional: no se distingue la respuesta. Borrador basado en el desglose: ' + MESSAGE
+    assert delivery_message(source) == source
 
 
 @pytest.mark.parametrize('state', ['confirmada', 'ajustada', 'publicada'])

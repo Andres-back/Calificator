@@ -112,3 +112,7 @@ Abrir o cancelar esta revisión no emite enlaces. Aprobar vuelve al mismo panel,
 - Aprobar/publicar sigue siendo decisión explícita docente. No se añade un nuevo bloqueo académico ni se retiran protecciones para hacer parecer más corto el recorrido.
 - Los valores y límites vigentes de enlaces, evidencia y chat se conservan; las pruebas de navegador no acreditan por sí solas un iPhone/Android físico.
 - La protección de duplicados se refiere a doble clic y recuperación/reintento de la misma operación. No se amplía la regla actual para impedir de forma global dos solicitudes nuevas independientes concurrentes.
+
+## Continuación aprobada: entrega simple135
+
+Spec135 (#287), aprobada mediante «SI ADELANTE» el2026-10-29, concreta la preparación común de mensajes y permite una confirmación explícita compuesta para aceptar/publicar y preparar enlaces, individuales o seleccionados. Sustituye para ese recorrido la obligación anterior de pantallas/gestos separados, no las autorizaciones ni guardas académicas. Copiar sigue siendo otro gesto sin escrituras; notas ajustadas, incertidumbres sustantivas, originales y accesos cerrados se conservan. Presentación/recuperación y pruebas se definen en [spec135](../135-retroalimentacion-entrega-simple/spec.md); no implica despliegue.

@@ -601,6 +601,7 @@ function PanelDetalle({
   onPublish,
   onRechazar,
   onDirtyChange,
+  onBusyChange,
   onSaved,
   captureNextGrade,
   onNextGrade,
@@ -621,6 +622,7 @@ function PanelDetalle({
   onPublish: (id: string) => void;
   onRechazar: (id: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onBusyChange?: (busy: boolean) => void;
   onSaved: () => void;
   captureNextGrade?: () => () => void;
   onNextGrade: () => void;
@@ -635,6 +637,7 @@ function PanelDetalle({
   const [adjNota, setAdjNota] = useState<number | ''>(effectiveGradeScore(cal) ?? '');
   const [adjFeedback, setAdjFeedback] = useState(cal.feedback ?? '');
   const [feedbackDirty, setFeedbackDirty] = useState(false);
+  const [feedbackBusy, setFeedbackBusy] = useState(false);
   const [feedbackWorkspaceActive, setFeedbackWorkspaceActive] = useState(false);
   const [adjError, setAdjError] = useState('');
   const [replacementOpen, setReplacementOpen] = useState(false);
@@ -782,6 +785,7 @@ function PanelDetalle({
   const originalFeedback = cal.feedback ?? '';
   const analysisFeedback = cal.timeline?.find(event => event.tipo === 'retroalimentacion_original')?.feedback ?? originalFeedback;
   const isDirty = adjNota !== originalNota || adjFeedback !== originalFeedback || feedbackDirty;
+  useEffect(() => { onBusyChange?.(feedbackBusy); return () => onBusyChange?.(false); }, [feedbackBusy, onBusyChange]);
 
   // Reset dirty state when cal changes
   useEffect(() => {
@@ -872,6 +876,10 @@ function PanelDetalle({
   }
 
   function canChangeDetailView(nextView: ReviewSection) {
+    if (feedbackBusy) {
+      toast('Espera a que termine la preparación antes de cambiar de sección.');
+      return false;
+    }
     if (claimDirty && nextView !== 'reclamos') {
       toast('Termina o cancela el reclamo antes de cambiar de sección.');
       return false;
@@ -1018,6 +1026,7 @@ function PanelDetalle({
           <div className="flex items-center gap-2">
             <p className="break-words font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
             {isDirty && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Sin guardar</span>}
+            {feedbackBusy && <span role="status" className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold">Preparando entrega…</span>}
           </div>
           <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
           <div className="flex flex-wrap items-center gap-x-2">
@@ -1029,11 +1038,11 @@ function PanelDetalle({
         </div>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-3 p-3 pb-32 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 sm:pb-32 xl:pb-5">
+      <div className={cn('min-w-0 flex-1 space-y-3 p-3 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 xl:pb-5', mobileTab === 'retroalimentacion' ? 'pb-3' : 'pb-32 sm:pb-32')}>
         {/* Nota principal */}
         <h2 className="sr-only">1. Nota y explicación</h2>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className={mobileTab === 'retroalimentacion' ? 'flex flex-wrap items-baseline gap-x-2' : undefined}>
             <p className="text-sm text-muted">{presentation.score == null ? presentation.label : cal.estado === 'ajustada' ? 'Nota ajustada por el docente' : done ? 'Nota confirmada' : 'Nota sugerida por la IA'}</p>
             {presentation.score == null ? (
               <div className="mt-2 flex items-center gap-2 font-semibold text-brand-600 dark:text-brand-300">
@@ -1041,18 +1050,18 @@ function PanelDetalle({
                 <span>{presentation.processing ? 'Analizando evidencia…' : 'Sin nota automática'}</span>
               </div>
             ) : (
-              <p className="font-display text-4xl font-extrabold text-fg">
+              <p className={cn('font-display font-extrabold text-fg', mobileTab === 'retroalimentacion' ? 'text-2xl' : 'text-4xl')}>
                 {formatGradeScore(presentation.score)}
                 {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {notaMaxima.toFixed(1)}</span>}
               </p>
             )}
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className={cn('flex items-center gap-2', mobileTab === 'retroalimentacion' ? 'flex-row' : 'flex-col items-end gap-1')}>
             <Badge tone={presentation.processing ? 'brand' : done ? (published ? 'brand' : 'success') : 'warning'}>
               {published ? 'Publicada' : done ? 'Confirmada' : presentation.processing ? 'Calificando' : 'Por revisar'}
             </Badge>
             {!done && !presentation.processing && <VerificationPendingNotice status={cal.resultado_json?.verification_status} />}
-            {canGrade && !isGradeProcessing(cal) && cal.estado !== 'anulada' && <Button ref={editGradeButtonRef} type="button" variant="outline" className="mt-2 min-h-11" onClick={openAdjustment} disabled={editingFinalGrade || isDirty || Boolean(editingComponentId) || claimDirty || reprocessingDirty || confirmPending || publishPending}><Pencil className="h-4 w-4" aria-hidden="true" />Editar nota</Button>}
+            {canGrade && !isGradeProcessing(cal) && cal.estado !== 'anulada' && <Button ref={editGradeButtonRef} type="button" variant="outline" className={cn('min-h-11', mobileTab !== 'retroalimentacion' && 'mt-2')} onClick={openAdjustment} disabled={editingFinalGrade || feedbackBusy || isDirty || Boolean(editingComponentId) || claimDirty || reprocessingDirty || confirmPending || publishPending}><Pencil className="h-4 w-4" aria-hidden="true" />Editar nota</Button>}
           </div>
         </div>
 
@@ -1060,7 +1069,7 @@ function PanelDetalle({
 
         {editingFinalGrade && finalGradeSnapshot && <div ref={finalGradeEditorRef} className="scroll-mt-24"><GradeFinalEditor grade={finalGradeSnapshot} maximum={Number(finalGradeSnapshot.nota_maxima ?? notaMaxima ?? 5)} onCancel={() => { mobileForm.finishWriting(); setEditingFinalGrade(false); setFinalGradeSnapshot(null); void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] }); window.requestAnimationFrame(() => editGradeButtonRef.current?.focus()); }} onSave={(change) => finalGradeMutation.mutateAsync(change)} /></div>}
 
-        <section aria-label="Cálculo y criterios registrados" className="text-sm">
+        <section aria-label="Cálculo y criterios registrados" className="text-sm" hidden={mobileTab === 'retroalimentacion'}>
           {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}
           {criterionRows.length ? <details className="mt-2">
             <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold">Ver valoración por criterios ({criterionRows.length})</summary>
@@ -1087,17 +1096,17 @@ function PanelDetalle({
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
         {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
         <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
-        {canGrade && <GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || editingComponentDirty || editingFinalGrade || claimDirty}
+        {canGrade && <div hidden={mobileTab === 'retroalimentacion'}><GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || feedbackBusy || editingComponentDirty || editingFinalGrade || claimDirty}
           onAccepted={(grade) => {
             const jobId = grade.resultado_json?.job_id;
             if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
             onSaved();
-          }} />}
-        {canReviewClaims && <IncidenciasSection calificacionId={cal.id} active={mobileTab === 'reclamos'} onToggle={() => changeDetailView('reclamos')} onDirtyChange={setClaimDirty} onOpenComponent={(id) => {
+          }} /></div>}
+        {canReviewClaims && <div hidden={mobileTab === 'retroalimentacion'}><IncidenciasSection calificacionId={cal.id} active={mobileTab === 'reclamos'} onToggle={() => changeDetailView('reclamos')} onDirtyChange={setClaimDirty} onOpenComponent={(id) => {
           const component = activeBreakdown?.componentes.find((item) => item.id === id || item.clave === id);
           if (component) openReviewComponent(component.id);
           else { setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', id); return next; }); toast('La pregunta pertenece a una versión anterior y no tiene equivalencia vigente.'); }
-        }} />}
+        }} /></div>}
 
         {/* Evidencia */}
         {evidenciaConsolidada?.modalidad === 'mixta' && (
@@ -1189,7 +1198,7 @@ function PanelDetalle({
         </div>
 
         <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-4 sm:p-5 xl:scroll-mt-32">
-          {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onFinishEditing={mobileForm.finishWriting} onActiveChange={setFeedbackWorkspaceActive} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || editingFinalGrade || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
+          {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onBusyChange={setFeedbackBusy} onFinishEditing={mobileForm.finishWriting} onActiveChange={setFeedbackWorkspaceActive} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || editingFinalGrade || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
         </div>
 
         <div id="grade-history-panel" hidden={mobileTab !== 'historial'} className="space-y-3">
@@ -1830,6 +1839,9 @@ function GradingCenter() {
   const [mobileDirty, setMobileDirty] = useState(false);
   const dirtyRef = useRef(false);
   const updateDirty = useCallback((dirty: boolean) => { dirtyRef.current = dirty; setMobileDirty(dirty); }, []);
+  const [deliveryBusy, setDeliveryBusy] = useState(false);
+  const deliveryBusyRef = useRef(false);
+  const updateDeliveryBusy = useCallback((busy: boolean) => { deliveryBusyRef.current = busy; setDeliveryBusy(busy); }, []);
   const [manualGradeOpen, setManualGradeOpen] = useState(false);
   const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
   const [contextExpanded, setContextExpanded] = useState(false);
@@ -1846,14 +1858,17 @@ function GradingCenter() {
     const current = new URLSearchParams(currentLocation.search);
     const next = new URLSearchParams(nextLocation.search);
     current.delete('hoja'); next.delete('hoja');
-    return dirtyRef.current && (currentLocation.pathname !== nextLocation.pathname || current.toString() !== next.toString());
+    return (dirtyRef.current || deliveryBusyRef.current) && (currentLocation.pathname !== nextLocation.pathname || current.toString() !== next.toString());
   });
   useEffect(() => {
-    if (!mobileDirty) return;
+    if (blocker.state === 'blocked' && !deliveryBusy && !mobileDirty) blocker.reset();
+  }, [blocker, deliveryBusy, mobileDirty]);
+  useEffect(() => {
+    if (!mobileDirty && !deliveryBusy) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [mobileDirty]);
+  }, [mobileDirty, deliveryBusy]);
 
   const { data: materias } = useMaterias();
   const directEvaluation = useQuery({
@@ -2144,8 +2159,8 @@ function GradingCenter() {
             {mobileMoreActionsOpen && <div id="grading-more-actions" className="absolute right-0 top-full z-20 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg">
               {materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
               {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
-              {evalId && <FeedbackToolsButton evaluationId={evalId} initialSelectedIds={[...selectedBatch]} suggestedArea={selectedMateria?.area} disabled={mobileDirty} />}
-              {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
+              {evalId && <FeedbackToolsButton evaluationId={evalId} initialSelectedIds={[...selectedBatch]} suggestedArea={selectedMateria?.area} disabled={mobileDirty || deliveryBusy} />}
+              {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty || deliveryBusy} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
               {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
             </div>}
           </>}
@@ -2359,6 +2374,7 @@ function GradingCenter() {
                     onPublish={(id) => publishMut.mutate(id)}
                     onRechazar={(id) => setRejectId(id)}
                     onDirtyChange={updateDirty}
+                    onBusyChange={updateDeliveryBusy}
                     onSaved={() => {
                       updateDirty(false);
                       const studentId = detalleQuery.data?.estudiante_id;
@@ -2398,7 +2414,7 @@ function GradingCenter() {
         {batchResult.fallidos > 0 && <p className="text-sm text-muted">Solo quedaron seleccionados los casos fallidos. Corrígelos antes de volver a ejecutar la acción.</p>}
       </Card>}
       {/* Batch actions */}
-      {canGrade && !mobileDirty && mode !== 'carga' && <BatchActions
+      {canGrade && !mobileDirty && !deliveryBusy && mode !== 'carga' && <BatchActions
         selected={selectedArray}
         notaMaxima={notaMaxima}
         onConfirmBatch={(items) => confirmBatchMut.mutate(items)}
@@ -2452,7 +2468,7 @@ function GradingCenter() {
 
       {/* Mobile dirty state confirm */}
       <ConfirmDialog
-        open={blocker.state === 'blocked'}
+        open={blocker.state === 'blocked' && !deliveryBusy && mobileDirty}
         onClose={() => blocker.state === 'blocked' && blocker.reset()}
         onConfirm={() => { if (blocker.state !== 'blocked') return; updateDirty(false); setDiscardVersion((version) => version + 1); blocker.proceed(); }}
         title="Cambios sin guardar"
@@ -2461,6 +2477,10 @@ function GradingCenter() {
         tone="danger"
         description="Guarda el ajuste desde su editor o descártalo explícitamente antes de cambiar de estudiante, pregunta o pantalla."
       />
+      <Modal open={blocker.state === 'blocked' && deliveryBusy} onClose={() => blocker.state === 'blocked' && blocker.reset()} title="Preparando la entrega">
+        <p className="mb-4 text-sm leading-6">Estamos comprobando la aprobación o los enlaces. Espera a que termine antes de cambiar de pantalla; no tienes que descartar ningún mensaje.</p>
+        <Button onClick={() => blocker.state === 'blocked' && blocker.reset()}>Esperar aquí</Button>
+      </Modal>
     </div>
   );
 }

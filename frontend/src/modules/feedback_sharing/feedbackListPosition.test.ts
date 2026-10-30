@@ -66,4 +66,13 @@ describe('feedback list reading position', () => {
     restoreFeedbackListPosition(list, { scrollTop: 0 });
     expect(list.scrollTop).toBe(200);
   });
+
+  it('135 keeps the anchored student header above the action bar after a shorter viewport', () => {
+    const { list } = fixture();
+    list.scrollTop = 0;
+    restoreFeedbackListPosition(list, { scrollTop: 200, anchor: { studentId: 'last', offset: 190 } });
+    const row = list.querySelector<HTMLElement>('[data-feedback-student-id="last"]')!;
+    expect(row.getBoundingClientRect().top - list.getBoundingClientRect().top).toBeLessThanOrEqual(list.clientHeight - 64);
+    expect(list.scrollTop).toBe(194);
+  });
 });

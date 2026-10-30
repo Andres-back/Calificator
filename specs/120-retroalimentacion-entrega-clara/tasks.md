@@ -63,3 +63,7 @@ Primero autorizar y proyectar el resumen con pruebas (base segura); después sel
 ## Formato y gobernanza
 
 17/17 tareas completas: preparación/fundamentos 5, US2 3, US1 3, US3 3, validación 3. Todas tienen identificador, ruta, mapeo y criterio verificable. Sin hooks de extensión. Revisión 8/8 autorizada, Analyze y Converge completados; evidencia de Implement en quickstart. Converge revisó 10 FR, 4 SC, 11 escenarios, seis decisiones de diseño y ocho principios constitucionales: cero brechas de implementación; no añadió fases vacías ni modificó tareas durante su análisis. Preparación de PR y controles locales no equivalen a fusión o despliegue.
+
+## Continuación aprobada: entrega simple135
+
+La continuación aprobada se ejecuta y valida en [tareas135](../135-retroalimentacion-entrega-simple/tasks.md), issue287. Los marcadores anteriores acreditan únicamente sus entregas históricas; no certifican las tareas nuevas de preparación compuesta, formato y estados de135. Conservación de datos/guardas y CI siguen siendo puertas de entrega.

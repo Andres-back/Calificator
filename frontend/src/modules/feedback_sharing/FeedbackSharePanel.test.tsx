@@ -25,6 +25,71 @@ beforeEach(() => {
   Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockResolvedValue(undefined) }, configurable: true });
 });
 describe('129 mismo panel de compartir y copia', () => {
+  it('135 no vuelve a aprobar un activo ni mantiene su copia si se cierra durante la preparación', async () => {
+    useAuth.setState({ user: { ...teacher, permissions: [...teacher.permissions!, 'grading.grade'] } });
+    const candidate = { source_fingerprint: 'b'.repeat(64), nota: '3.5', feedback_text: message, scope: 'summary' as const, avisos: [] };
+    const second = { ...preview, calificacion_id: 'g2', batch_candidate: candidate };
+    vi.mocked(api.previewFeedback).mockResolvedValueOnce([{ ...pending, batch_candidate: candidate }, second]).mockResolvedValue([preview, second]);
+    const secondAccess = { ...access, id: 'a2', calificacion_id: 'g2', estudiante: 'Luis' };
+    vi.mocked(api.listFeedbackAccesses).mockResolvedValueOnce([secondAccess]).mockResolvedValue([{ ...secondAccess, estado: 'suspended', copy_available: false }]);
+    vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a2', calificacion_id: 'g2', estudiante: 'Luis', url }]);
+    vi.mocked(api.publishFeedbackBatch).mockImplementation(async (_evaluation, payload) => ({ id: 'batch', request_id: payload.request_id, total: 1, exitosos: 1, fallidos: 0,
+      resultados: [{ calificacion_id: 'g1', estado: 'published', fingerprint: preview.fingerprint }] }));
+    vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
+    render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
+    await screen.findByRole('button', { name: 'Copiar enlace de Luis' });
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar y crear 1 enlace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y preparar 1 enlace' }));
+    await screen.findByRole('button', { name: 'Copiar enlace de Ana' });
+    await screen.findByRole('button', { name: 'Copiar 1 disponible' });
+    expect(vi.mocked(api.publishFeedbackBatch).mock.calls[0][1].selecciones.map(item => item.calificacion_id)).toEqual(['g1']);
+    expect(screen.queryByRole('button', { name: 'Copiar enlace de Luis' })).toBeNull();
+    expect(api.changeFeedbackAccess).not.toHaveBeenCalled();
+  });
+  it('135 aprueba y crea el enlace con una confirmación, conservando opciones y copia separada', async () => {
+    useAuth.setState({ user: { ...teacher, permissions: [...teacher.permissions!, 'grading.grade'] } });
+    const batchCandidate = { source_fingerprint: 'b'.repeat(64), nota: '3.5', feedback_text: message, scope: 'summary' as const, avisos: [] };
+    vi.mocked(api.previewFeedback).mockResolvedValueOnce([{ ...pending, batch_candidate: batchCandidate }]).mockResolvedValue([preview]);
+    vi.mocked(api.publishFeedbackBatch).mockImplementation(async (_evaluation, payload) => ({ id: 'batch', request_id: payload.request_id, total: 1, exitosos: 1, fallidos: 0,
+      resultados: [{ calificacion_id: 'g1', estado: 'already_published', fingerprint: preview.fingerprint }] }));
+    vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
+    show();
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
+    expect(screen.getByText('Lista para tu aprobación')).toBeInTheDocument();
+    expect(screen.queryByText(pending.motivo)).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar y crear 1 enlace' }));
+    expect(api.publishFeedbackBatch).not.toHaveBeenCalled();
+    expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+    expect(screen.getByRole('region', { name: 'Confirmar entrega' })).toHaveTextContent(message);
+    expect(screen.queryByRole('list', { name: 'Destinatarios y enlaces' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y preparar 1 enlace' }));
+    await screen.findByRole('button', { name: 'Copiar 1 enlace' });
+    expect(api.publishFeedbackBatch).toHaveBeenCalledTimes(1);
+    expect(api.approveFeedbackReview).not.toHaveBeenCalled();
+    expect(api.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 7, evidencia: true,
+      selecciones: [{ calificacion_id: 'g1', fingerprint: preview.fingerprint }] }), expect.any(AbortSignal));
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar 1 enlace' }));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(`Ana\n${url}`));
+  });
+
+  it('135 no emite un enlace de quien falló al aprobar y conserva los éxitos', async () => {
+    useAuth.setState({ user: { ...teacher, permissions: [...teacher.permissions!, 'grading.grade'] } });
+    const candidate = { source_fingerprint: 'b'.repeat(64), nota: '3.5', feedback_text: message, scope: 'summary' as const, avisos: [] };
+    const second = { ...pending, calificacion_id: 'g2', batch_candidate: candidate };
+    vi.mocked(api.previewFeedback).mockResolvedValueOnce([{ ...pending, batch_candidate: candidate }, second]).mockResolvedValue([preview, second]);
+    vi.mocked(api.publishFeedbackBatch).mockImplementation(async (_evaluation, payload) => ({ id: 'batch', request_id: payload.request_id, total: 2, exitosos: 1, fallidos: 1,
+      resultados: [{ calificacion_id: 'g1', estado: 'published', fingerprint: preview.fingerprint }, { calificacion_id: 'g2', estado: 'failed', code: 'source_changed' }] }));
+    vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
+    render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Aprobar y crear 2 enlaces' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y preparar 2 enlaces' }));
+    await screen.findByRole('button', { name: 'Copiar 1 disponible' });
+    expect(vi.mocked(api.issueFeedbackAccesses).mock.calls[0][1].selecciones.map(item => item.calificacion_id)).toEqual(['g1']);
+    expect(screen.queryByRole('button', { name: 'Copiar enlace de Luis' })).toBeNull();
+  });
+
   it('conserva opciones y otro enlace preparado al aprobar una devolución pendiente', async () => {
     const approved = { ...preview, revision_docente: pending.revision_docente, borrador_docente: pending.borrador_docente };
     vi.mocked(api.previewFeedback).mockResolvedValue([pending, { ...preview, calificacion_id: 'g2' }, { ...preview, calificacion_id: 'g3' }]);

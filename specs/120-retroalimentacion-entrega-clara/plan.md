@@ -50,3 +50,7 @@ Resultado previo y posterior al diseño: no hay excepción constitucional ni acl
 ## Presentación 129
 
 El [plan129](../129-retroalimentacion-flujo-claro/plan.md), issue #272, adapta lista/detalle y las entradas individual/grupal. Reutiliza FeedbackDeliveryReview y la impresión íntegra, conserva permisos y estado actual y no reescribe mensajes para ocultar avisos. Aprobación/publicación y compartir permanecen decisiones distintas.
+
+## Continuación aprobada: entrega simple135
+
+El [plan135](../135-retroalimentacion-entrega-simple/plan.md), issue287, reutiliza los endpoints y recibos existentes para componer aprobación→proyección vigente→emisión autorizada con una confirmación, y mantiene copia aparte. Comparte la regla conservadora del envoltorio conocido entre individual/lote, separa busy de edición y usa lectura integrada fluida/motivos actuales. No introduce migración, IA adicional ni cambio de reglas de notas, privacidad, caducidad o chat.

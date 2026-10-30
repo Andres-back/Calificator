@@ -82,3 +82,7 @@ MVP interno: US1 con recibos y conservación verificados, sin producción. Despu
 ## Coordinación 129
 
 - [x] T024 Vincular reorganización y regresiones de lote/copia/fichas a specs/129-retroalimentacion-flujo-claro/tasks.md, issue #272; mantener contenido, motivos y publicación expresa (FR-001, FR-002, FR-003, FR-007, FR-008, FR-009, FR-012).
+
+## Continuación aprobada: entrega simple135
+
+La continuación aprobada se ejecuta y valida en [tareas135](../135-retroalimentacion-entrega-simple/tasks.md), issue287. Los marcadores anteriores acreditan únicamente sus entregas históricas; no certifican las tareas nuevas de preparación compuesta, formato y estados de135. Conservación de datos/guardas y CI siguen siendo puertas de entrega.

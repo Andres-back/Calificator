@@ -112,3 +112,7 @@ El lector distingue la explicación, un paso concreto y un ejemplo cuando la res
 - El plan incluye el soporte mínimo de persistencia segura además del frontend. Spec107/120/122 seguirán siendo propietarias de calificación y entrega; la implementación deberá añadir referencias explícitas a esta ampliación de continuidad, sin contradecir sus restricciones de privacidad.
 - El usuario aprobó alcance, plan y revisión de requisitos el 2026-10-24: «Si y decoremos la conversacion para que no sea plana apruebo». No se asume autorización de fusión o despliegue.
 - Spec129 (#272), aprobada el 2026-10-26, mantiene esta unificación y perfecciona la composición docente: lista/detalle compartidos, preparación/copia sin recorridos repetidos, selección estable y contexto por identidad. No cambia persistencia, formato ni contratos del chat público126.
+
+## Continuación aprobada: entrega simple135
+
+Spec135 (#287), aprobada mediante «SI ADELANTE» el2026-10-29, concreta la preparación común de mensajes y permite una confirmación explícita compuesta para aceptar/publicar y preparar enlaces, individuales o seleccionados. Sustituye para ese recorrido la obligación anterior de pantallas/gestos separados, no las autorizaciones ni guardas académicas. Copiar sigue siendo otro gesto sin escrituras; notas ajustadas, incertidumbres sustantivas, originales y accesos cerrados se conservan. Presentación/recuperación y pruebas se definen en [spec135](../135-retroalimentacion-entrega-simple/spec.md); no implica despliegue.

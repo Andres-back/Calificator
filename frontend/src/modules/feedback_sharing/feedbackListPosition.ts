@@ -22,8 +22,12 @@ export function readFeedbackListPosition(element: HTMLElement): FeedbackListPosi
 export function restoreFeedbackListPosition(element: HTMLElement, position: FeedbackListPosition): void {
   if (!element.clientHeight) return;
   const anchor = position.anchor && rowsIn(element).find(row => row.dataset.feedbackStudentId === position.anchor!.studentId);
+  // A shorter viewport or a taller action bar must still leave the student's
+  // leading selection control visible (44px touch target plus row padding).
+  // Preserve negative/normal reading offsets; only pull a clipped header up.
+  const offset = Math.min(position.anchor?.offset ?? 0, Math.max(0, element.clientHeight - 64));
   const desired = anchor && position.anchor
-    ? element.scrollTop + anchor.getBoundingClientRect().top - element.getBoundingClientRect().top - position.anchor.offset
+    ? element.scrollTop + anchor.getBoundingClientRect().top - element.getBoundingClientRect().top - offset
     : position.scrollTop;
   element.scrollTop = Math.max(0, Math.min(desired, element.scrollHeight - element.clientHeight));
 }

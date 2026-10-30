@@ -1,5 +1,7 @@
 # Índice de especificaciones de XCalificator
 
+Incremento vigente: [135-retroalimentacion-entrega-simple](135-retroalimentacion-entrega-simple/spec.md), [issue287](https://github.com/Andres-back/Calificator/issues/287): mensaje entregable coherente, confirmación expresa compuesta de aprobación/enlaces, copia aparte y lectura responsiva con motivos existentes. [Plan](135-retroalimentacion-entrega-simple/plan.md) aprobado el2026-10-29; implementación/pruebas en curso, sin entrega productiva implícita. Complementa los propietarios008/120/122/126/129 sin alterar reglas académicas ni contratos del chat.
+
 Este índice asigna una única especificación viva a cada superficie del sistema. Un cambio debe
 actualizar la especificación propietaria, su plan y sus tareas; no debe crear documentación paralela.
 

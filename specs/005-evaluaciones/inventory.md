@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 91
+**Superficies propietarias:** 85
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -24,7 +24,6 @@
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/recursos/{recurso_id}` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/visual_router.py:201` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:824` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/ultima-copia` | admin, profesor | covered | `backend/app/modules/evaluaciones/copy_router.py:22` |
-| endpoint | `GET:/evaluaciones/{evaluation_id}/devoluciones/accesos` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:136` |
 | endpoint | `PATCH:/evaluaciones/{evaluacion_id}` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:421` |
 | endpoint | `PATCH:/evaluaciones/{evaluacion_id}/respuestas-liberadas` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1840` |
 | endpoint | `PATCH:/evaluaciones/{evaluacion_id}/validar-estructura` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:499` |
@@ -48,11 +47,6 @@
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/pausar-recepcion` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:477` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/publicar` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:444` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/solicitud-revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1701` |
-| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/accesos` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:121` |
-| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/fichas` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:161` |
-| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/mensaje` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:92` |
-| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/previsualizar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:54` |
-| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/revisar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:82` |
 | frontend_route | `/app/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:43` |
 | frontend_route | `/app/materias/{id}/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:35` |
 | frontend_call | `DELETE:/evaluaciones/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:147` |

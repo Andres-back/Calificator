@@ -24,6 +24,32 @@ def payload(preview):
         scope='summary', feedback_text=MESSAGE, request_id=uuid4())
 
 
+@pytest.mark.asyncio
+async def test_135_known_system_envelope_can_be_approved_as_offered_without_editing_academic_source(fb_db, fb_case, monkeypatch):
+    monkeypatch.setattr('app.core.config.settings.FEEDBACK_SHARING_ENABLED', True)
+    teacher, _, _, evaluation, grade = fb_case
+    grade.estado = 'publicada'
+    grade.feedback = ('Retroalimentación provisional: requiere revisión docente porque la evidencia, '
+                      'las valoraciones, la suma o el mensaje no coinciden por completo. Borrador basado en el desglose: ' + MESSAGE)
+    breakdown = CalificacionDesglose(calificacion_id=grade.id, version=1, cobertura_estado='incompleta',
+        puntos_obtenidos=3, puntos_posibles=5, nota_maxima=5, nota_base=3, nota_antes_redondeo=3,
+        nota_final=3, requiere_revision=True, bloqueos_json=['verificador_ia:timeout'])
+    fb_db.add(breakdown)
+    await fb_db.commit()
+    academic = text('SELECT to_jsonb(c) FROM calificaciones c WHERE id=:id')
+    before = await fb_db.scalar(academic, {'id': grade.id})
+    preview = await prepare_grade_preview(fb_db, teacher, evaluation.id, grade.id)
+    assert preview['revision_docente']['feedback_text'] == preview['batch_candidate']['feedback_text'] == MESSAGE
+    request = payload(preview).model_copy(update={'feedback_text': preview['revision_docente']['feedback_text']})
+    approved = await approve_delivery_review(fb_db, teacher, evaluation.id, request)
+    access, token = await create_access(fb_db, teacher, evaluation.id, grade.id, approved.fingerprint, uuid4(), 3, False)
+    await fb_db.commit()
+    shared = (await guard_token(fb_db, token)).publication.payload_json
+    assert shared['retroalimentacion'] == MESSAGE and shared['respuestas'] == []
+    assert await fb_db.scalar(academic, {'id': grade.id}) == before
+    assert access.id and breakdown.requiere_revision
+
+
 def test_migration_only_adds_its_new_table():
     source=(Path(__file__).resolve().parents[2]/'alembic/versions/202610230002_feedback_delivery_reviews.py').read_text(encoding='utf-8')
     assert "down_revision = '202610230001'" in source

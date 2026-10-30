@@ -32,12 +32,15 @@ def batch_score(grade, evaluation) -> Decimal:
 
 def delivery_message(original: str) -> str:
     text = (original or '').strip()
-    normalized = ''.join(c for c in unicodedata.normalize('NFKD', text.casefold()) if not unicodedata.combining(c))
     marker = 'Borrador basado en el desglose:'
+    preamble, _, message = text.partition(marker)
+    normalized = ' '.join(''.join(c for c in unicodedata.normalize('NFKD', preamble.casefold()) if not unicodedata.combining(c)).split())
+    known = ('retroalimentacion provisional: requiere revision docente porque la evidencia, '
+             'las valoraciones, la suma o el mensaje no coinciden por completo.')
     # Only the existing, known system envelope. Unknown uncertainty is kept and
     # still subject to normal quality review; never regex away substantive text.
-    if normalized.startswith('retroalimentacion provisional:') and text.count(marker) == 1:
-        return text.partition(marker)[2].strip()
+    if normalized == known and text.count(marker) == 1:
+        return message.strip()
     return text
 
 

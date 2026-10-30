@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 82
+**Superficies propietarias:** 104
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -19,9 +19,15 @@
 | endpoint | `GET:/calificaciones/{calificacion_id}/revisiones` | admin, profesor | covered | `backend/app/modules/calificaciones/revision_router.py:131` |
 | endpoint | `GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia` | authenticated | covered | `backend/app/modules/calificaciones/revision_router.py:210` |
 | endpoint | `GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}` | authenticated | covered | `backend/app/modules/calificaciones/revision_router.py:243` |
+| endpoint | `GET:/devoluciones/disponibilidad` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:47` |
 | endpoint | `GET:/estudiantes/{estudiante_id}/boletin` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:888` |
 | endpoint | `GET:/estudiantes/{estudiante_id}/resumen-academico` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:867` |
+| endpoint | `GET:/evaluaciones/{evaluation_id}/devoluciones/accesos` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:136` |
 | endpoint | `GET:/evaluaciones/{evaluation_id}/devoluciones/lotes/{request_id}` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:107` |
+| endpoint | `GET:/public/devolucion` | ambiguous | covered | `backend/app/modules/feedback_sharing/public_router.py:53` |
+| endpoint | `GET:/public/devolucion/conversacion` | ambiguous | covered | `backend/app/modules/feedback_sharing/public_router.py:48` |
+| endpoint | `GET:/public/devolucion/evidencia/{page}` | ambiguous | covered | `backend/app/modules/feedback_sharing/public_router.py:61` |
+| endpoint | `GET:/public/devolucion/preguntas/{request_id}` | ambiguous | covered | `backend/app/modules/feedback_sharing/public_router.py:43` |
 | endpoint | `PATCH:/calificaciones/modo-salon/{sesion_id}/estudiantes/{estudiante_id}` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1032` |
 | endpoint | `PATCH:/calificaciones/{calificacion_id}/ajustar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:773` |
 | endpoint | `PATCH:/calificaciones/{calificacion_id}/confirmar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:756` |
@@ -41,8 +47,17 @@
 | endpoint | `POST:/calificaciones/{calificacion_id}/recalificar` | admin, profesor | covered | `backend/app/modules/calificaciones/revision_router.py:70` |
 | endpoint | `POST:/calificaciones/{calificacion_id}/reintentar-foto` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:324` |
 | endpoint | `POST:/calificaciones/{calificacion_id}/solicitar-reemplazo` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:395` |
+| endpoint | `POST:/devoluciones/accesos/{access_id}/desactivar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:32` |
+| endpoint | `POST:/devoluciones/accesos/{access_id}/reactivar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:37` |
+| endpoint | `POST:/devoluciones/accesos/{access_id}/renovar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:42` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/accesos` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:121` |
 | endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/accesos/copiar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:113` |
 | endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/aceptar-publicar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:99` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/fichas` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:161` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/mensaje` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:92` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/previsualizar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:54` |
+| endpoint | `POST:/evaluaciones/{evaluation_id}/devoluciones/revisar` | authenticated | covered | `backend/app/modules/feedback_sharing/router.py:82` |
+| endpoint | `POST:/public/devolucion/preguntas` | ambiguous | covered | `backend/app/modules/feedback_sharing/public_router.py:32` |
 | endpoint | `PUT:/calificaciones/{calificacion_id}/desglose` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1807` |
 | frontend_route | `/app/calificaciones` | authenticated | covered | `frontend/src/config/routes.ts:48` |
 | frontend_route | `/app/calificaciones/boletin` | estudiante | covered | `frontend/src/config/routes.ts:47` |
@@ -58,6 +73,7 @@
 | frontend_call | `GET:/calificaciones/{calificacionId}/detalle` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:175` |
 | frontend_call | `GET:/calificaciones/{calificacionId}/incidencias` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:209` |
 | frontend_call | `GET:/calificaciones/{id}/revisiones` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:99` |
+| frontend_call | `GET:/devoluciones/disponibilidad` | ambiguous | covered | `frontend/src/modules/feedback_sharing/api.ts:40` |
 | frontend_call | `GET:/estudiantes/{estudianteId}/boletin` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:161` |
 | frontend_call | `GET:/estudiantes/{estudianteId}/resumen-academico` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:167` |
 | frontend_call | `PATCH:/calificaciones/{calificacionId}/publicar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:196` |
@@ -77,6 +93,7 @@
 | frontend_call | `POST:/calificaciones/{calificacionId}/reintentar-foto` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:87` |
 | frontend_call | `POST:/calificaciones/{calificacionId}/solicitar-reemplazo` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:82` |
 | frontend_call | `POST:/calificaciones/{id}/recalificar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:116` |
+| frontend_call | `POST:/devoluciones/accesos/{id}/{action}` | ambiguous | covered | `frontend/src/modules/feedback_sharing/api.ts:77` |
 | frontend_call | `PUT:/calificaciones/{calificacionId}/desglose` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:228` |
 | table | `calificacion_ajustes` | system | covered | `backend/app/modules/calificaciones/breakdown_models.py:96` |
 | table | `calificacion_componentes` | system | covered | `backend/app/modules/calificaciones/breakdown_models.py:59` |
@@ -85,7 +102,12 @@
 | table | `calificacion_revisiones` | system | covered | `backend/app/modules/calificaciones/models.py:155` |
 | table | `calificaciones` | system | covered | `backend/app/modules/calificaciones/models.py:104` |
 | table | `entregas` | system | covered | `backend/app/modules/calificaciones/models.py:19` |
+| table | `feedback_accesses` | system | covered | `backend/app/modules/feedback_sharing/models.py:58` |
+| table | `feedback_chat_quotas` | system | covered | `backend/app/modules/feedback_sharing/models.py:100` |
+| table | `feedback_chat_requests` | system | covered | `backend/app/modules/feedback_sharing/models.py:108` |
 | table | `feedback_delivery_batches` | system | covered | `backend/app/modules/feedback_sharing/models.py:83` |
+| table | `feedback_delivery_reviews` | system | covered | `backend/app/modules/feedback_sharing/models.py:14` |
+| table | `feedback_publications` | system | covered | `backend/app/modules/feedback_sharing/models.py:33` |
 | table | `salon_sesion_estudiantes` | system | covered | `backend/app/modules/calificaciones/models.py:190` |
 | table | `salon_sesiones` | system | covered | `backend/app/modules/calificaciones/models.py:174` |
 
@@ -96,3 +118,4 @@
 ## Hallazgos
 
 - **low · orphan_candidate**: 28 superficies no alcanzables o históricas se conservan como candidatas a retiro.
+- **medium · contract_mismatch**: 6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

@@ -92,3 +92,7 @@ Estrategia incremental: fundamentos y recorrido US1 primero, luego lista/detalle
 ## Fase 10: Integración con PR #282
 
 - [x] T026 Integrar main 26b8fdd en la rama del PR #284 sin reescribir historial: conservar edición directa de nota y estados de confianza de 134 junto con revisión, teclado y barra única de 129 en CalificacionesWorkspace.tsx; regenerar inventario y verificar tipos, pruebas unitarias y E2E de ambos flujos en Chromium/WebKit, registrando resultados en quickstart.md según FR-004/009/013/016 y constitución VII/VIII. Autorizado mediante «sí» el 2026-10-29; no incluye fusionar #284 ni desplegar.
+
+## Continuación aprobada: entrega simple135
+
+La continuación aprobada se ejecuta y valida en [tareas135](../135-retroalimentacion-entrega-simple/tasks.md), issue287. Los marcadores anteriores acreditan únicamente sus entregas históricas; no certifican las tareas nuevas de preparación compuesta, formato y estados de135. Conservación de datos/guardas y CI siguen siendo puertas de entrega.
