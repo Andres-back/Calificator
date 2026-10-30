@@ -75,12 +75,15 @@ for (const width of [390, 1440]) test(`136 scroll desde texto y márgenes ${widt
   expect(box).not.toBeNull();
   for (const x of [box!.x + box!.width / 2, box!.x + 20, box!.x + box!.width - 20]) {
     await scroll.evaluate(element => { element.scrollTop = 480; });
+    await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBe(480);
+    const downTarget = await scroll.evaluate(element => Math.min(720, element.scrollHeight - element.clientHeight));
+    expect(downTarget).toBeGreaterThan(600);
     await page.mouse.move(x, 620);
     await page.mouse.wheel(0, 240);
-    await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBeGreaterThan(600);
-    const after = await scroll.evaluate(element => element.scrollTop);
+    // A wheel call returns before native scrolling ends; do not reverse from an intermediate frame.
+    await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBe(downTarget);
     await page.mouse.wheel(0, -160);
-    await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBeLessThan(after - 80);
+    await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBe(downTarget - 160);
   }
   await feedback.getByRole('button', { name: 'Revisar devolución de Estudiante Prueba', exact: true }).click();
   const input = feedback.getByRole('textbox', { name: 'Mensaje para el estudiante' });

@@ -81,6 +81,10 @@ def _component_dict(component: CalificacionComponente, *, student: bool = False,
         data["referencia_oculta"] = bool(component.respuesta_referencia and not reveal_key)
     else:
         data["valoraciones"] = list(component.valoraciones_json or [])
+        reallocation = (component.evidencia_json or {}).get('reparto_puntajes')
+        if isinstance(reallocation, dict) and reallocation.get('valoraciones_maximo_original') is not None:
+            from app.modules.evaluaciones.score_allocation import valuation_display
+            data['valoraciones'] = valuation_display(data['valoraciones'], reallocation['valoraciones_maximo_original'], component.puntos_maximos)
     return data
 
 

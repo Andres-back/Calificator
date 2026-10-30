@@ -665,6 +665,21 @@ async def update_evaluation(
         raise HTTPException(409, "La edición de imágenes todavía no está habilitada. Tu evaluación sigue disponible.")
     if visual_requested and payload.contenido_visual is None:
         raise HTTPException(422, "Indica el contenido que quieres guardar; para quitar un recurso, edita su asociación.")
+    # A maximum-only edit uses the dedicated transition that freezes legacy
+    # context. Never use this route for text, keys or visual/document changes.
+    if not visual_requested and not reviewed_visual_keys and not reviewed_document_keys and not confirm_scoring:
+        from app.modules.evaluaciones.score_schemas import ScorePlanUpdate
+        from app.modules.evaluaciones.score_service import score_only_plan, save_scoring_definition
+        try:
+            score_plan = score_only_plan(evaluacion, data)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        if score_plan is not None:
+            if expected_updated_at is None:
+                raise HTTPException(409, 'Abre la versión actual antes de guardar el reparto. Conservamos tus puntos.')
+            return await save_scoring_definition(db, evaluacion.id, ScorePlanUpdate(plan=score_plan,
+                expected_updated_at=expected_updated_at, expected_content_version_id=expected_content_version_id),
+                actor_id=actor_id or evaluacion.profesor_id)
     content_edit = None
     if visual_requested or document_requested or (getattr(evaluacion, "contenido_version_id", None) is not None and (data or reviewed_visual_keys or reviewed_document_keys)):
         content_edit = await prepare_content_edit(db, evaluacion.id,

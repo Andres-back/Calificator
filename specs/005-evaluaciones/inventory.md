@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 85
+**Superficies propietarias:** 96
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -22,6 +22,8 @@
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/pdf` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:367` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/recuperacion-documental` | authenticated | covered | `backend/app/modules/evaluaciones/copy_router.py:15` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/recursos/{recurso_id}` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/visual_router.py:201` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/reparto` | admin, profesor | covered | `backend/app/modules/evaluaciones/score_router.py:16` |
+| endpoint | `GET:/evaluaciones/{evaluacion_id}/reparto/notas/operaciones/{request_id}` | admin, profesor | covered | `backend/app/modules/evaluaciones/score_router.py:38` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:824` |
 | endpoint | `GET:/evaluaciones/{evaluacion_id}/ultima-copia` | admin, profesor | covered | `backend/app/modules/evaluaciones/copy_router.py:22` |
 | endpoint | `PATCH:/evaluaciones/{evaluacion_id}` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:421` |
@@ -46,7 +48,10 @@
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/iniciar-entrega` | admin, estudiante | covered | `backend/app/modules/calificaciones/router.py:1217` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/pausar-recepcion` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:477` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/publicar` | admin, profesor | covered | `backend/app/modules/evaluaciones/router.py:444` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/reparto/notas/aplicar` | admin, profesor | covered | `backend/app/modules/evaluaciones/score_router.py:33` |
+| endpoint | `POST:/evaluaciones/{evaluacion_id}/reparto/notas/previsualizar` | admin, profesor | covered | `backend/app/modules/evaluaciones/score_router.py:27` |
 | endpoint | `POST:/evaluaciones/{evaluacion_id}/solicitud-revision` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1701` |
+| endpoint | `PUT:/evaluaciones/{evaluacion_id}/reparto` | admin, profesor | covered | `backend/app/modules/evaluaciones/score_router.py:21` |
 | frontend_route | `/app/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:43` |
 | frontend_route | `/app/materias/{id}/evaluaciones` | authenticated | covered | `frontend/src/config/routes.ts:35` |
 | frontend_call | `DELETE:/evaluaciones/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:147` |
@@ -63,6 +68,8 @@
 | frontend_call | `GET:/evaluaciones/{evaluationId}/recursos/{resourceId}` | estudiante | covered | `frontend/src/modules/evaluaciones/api.ts:92` |
 | frontend_call | `GET:/evaluaciones/{evaluationId}/revision` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:15` |
 | frontend_call | `GET:/evaluaciones/{id}/recuperacion-documental` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:10` |
+| frontend_call | `GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:26` |
+| frontend_call | `GET:/evaluaciones/{id}/reparto` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:14` |
 | frontend_call | `GET:/evaluaciones/{id}/ultima-copia` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:15` |
 | frontend_call | `GET:/evaluaciones/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:88` |
 | frontend_call | `GET:/jobs/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/visualApi.ts:33` |
@@ -83,13 +90,17 @@
 | frontend_call | `POST:/evaluaciones/{id}/copiar` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:19` |
 | frontend_call | `POST:/evaluaciones/{id}/pausar-recepcion` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:143` |
 | frontend_call | `POST:/evaluaciones/{id}/publicar` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:131` |
+| frontend_call | `POST:/evaluaciones/{id}/reparto/notas/aplicar` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:23` |
+| frontend_call | `POST:/evaluaciones/{id}/reparto/notas/previsualizar` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:20` |
 | frontend_call | `POST:/evaluaciones` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:105` |
 | frontend_call | `POST:/jobs/{id}/cancelar` | ambiguous | covered | `frontend/src/modules/evaluaciones/visualApi.ts:34` |
+| frontend_call | `PUT:/evaluaciones/{id}/reparto` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:17` |
 | job | `tasks.copy_evaluation` | system | covered | `backend/app/modules/evaluaciones/copy_worker.py:50` |
 | job | `tasks.recover_evaluation_copies` | system | covered | `backend/app/modules/evaluaciones/copy_worker.py:68` |
 | table | `evaluacion_blueprints` | system | covered | `backend/app/modules/evaluaciones/models.py:144` |
 | table | `evaluacion_contenido_versiones` | system | covered | `backend/app/modules/evaluaciones/models.py:236` |
 | table | `evaluacion_recursos` | system | covered | `backend/app/modules/evaluaciones/models.py:192` |
+| table | `evaluacion_reparto_operaciones` | system | covered | `backend/app/modules/evaluaciones/score_models.py:12` |
 | table | `evaluaciones` | system | covered | `backend/app/modules/evaluaciones/models.py:19` |
 
 ## Decisiones explícitas de permiso
@@ -103,9 +114,14 @@
 - `backend:POST:/evaluaciones/recursos/recortar` — _proposal_scope comprueba gestión y el recorte exige recurso del mismo ámbito; no es contenido público. ([issue](https://github.com/Andres-back/Calificator/issues/211)). Evidencia: `backend/tests/integration/test_evaluation_visual_permissions.py`.
 - `backend:POST:/evaluaciones/{evaluacion_id}/copiar` — Lectura y creación son acumulativas; ambos extremos deben ser gestionables y del mismo propietario. El contrato de alumno está denegado y no se copian datos académicos. ([issue](https://github.com/Andres-back/Calificator/issues/270)). Evidencia: `backend/tests/integration/test_evaluation_copy.py`.
 - `frontend_call:GET:/evaluaciones/recursos/{id}/propuesta:frontend/src/modules/evaluaciones/visualApi.ts` — Vista previa privada del editor; el estudiante recibe únicamente recursos publicables por otra ruta. ([issue](https://github.com/Andres-back/Calificator/issues/211)). Evidencia: `backend/tests/integration/test_evaluation_visual_permissions.py`, `frontend/e2e/mock/evaluation-visuals.mock.spec.ts`.
+- `frontend_call:GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}:frontend/src/modules/evaluaciones/scoreApi.ts` — Recuperación privada de la misma confirmación para el actor con gestión y permisos de notas; backend filtra por evaluación y solicitante. El cliente descarta respuestas tardías y no comparte recibos entre cuentas. ([issue](https://github.com/Andres-back/Calificator/issues/292)). Evidencia: `frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx`, `backend/tests/integration/test_score_allocation_operations.py`.
+- `frontend_call:GET:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts` — El transporte se usa desde el diálogo privado de reparto con identidad/rol y lectura/edición comprobados; no incluye permisos como constantes del cliente HTTP. El servidor vuelve a autorizar propietario y permisos. ([issue](https://github.com/Andres-back/Calificator/issues/292)). Evidencia: `frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx`, `backend/tests/integration/test_score_allocation_operations.py`.
 - `frontend_call:POST:/evaluaciones/recursos/estructurado:frontend/src/modules/evaluaciones/visualApi.ts` — Cliente del editor docente habilitado por permisos/capacidades; /recursos/ no designa aquí el reproductor estudiante. ([issue](https://github.com/Andres-back/Calificator/issues/211)). Evidencia: `frontend/src/modules/evaluaciones/components/QuestionVisualEditor.test.tsx`, `backend/tests/integration/test_evaluation_visual_permissions.py`.
 - `frontend_call:POST:/evaluaciones/recursos/generar:frontend/src/modules/evaluaciones/visualApi.ts` — Propuestas opcionales del editor docente, no generación desde el flujo estudiante. ([issue](https://github.com/Andres-back/Calificator/issues/211)). Evidencia: `frontend/src/modules/evaluaciones/components/QuestionVisualEditor.test.tsx`, `frontend/e2e/mock/evaluation-visuals.mock.spec.ts`.
 - `frontend_call:POST:/evaluaciones/recursos/recortar:frontend/src/modules/evaluaciones/visualApi.ts` — Solo el editor docente de material privado usa este cliente; el servidor vuelve a comprobar propiedad. ([issue](https://github.com/Andres-back/Calificator/issues/211)). Evidencia: `backend/tests/integration/test_evaluation_visual_permissions.py`.
+- `frontend_call:POST:/evaluaciones/{id}/reparto/notas/aplicar:frontend/src/modules/evaluaciones/scoreApi.ts` — Confirmación explícita de un docente/administrador gestionable con grading.grade; el backend revalida permisos, fingerprints y solicitud idempotente antes de cada aplicación. No es una ruta estudiantil. ([issue](https://github.com/Andres-back/Calificator/issues/292)). Evidencia: `frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx`, `backend/tests/integration/test_score_allocation_operations.py`.
+- `frontend_call:POST:/evaluaciones/{id}/reparto/notas/previsualizar:frontend/src/modules/evaluaciones/scoreApi.ts` — La vista previa exige además grading.read y descarta respuestas al revocarse o cambiar la cuenta; servidor comprueba gestión y ambos permisos de lectura. No se ofrecen notas a estudiantes. ([issue](https://github.com/Andres-back/Calificator/issues/292)). Evidencia: `frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx`, `backend/tests/integration/test_score_allocation_operations.py`.
+- `frontend_call:PUT:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts` — Guardado privado desde el editor común, aislado por actor y permisos; comprobación de rol/gestión/lectura/edición y versión en el servidor. El módulo HTTP no es un control de acceso. ([issue](https://github.com/Andres-back/Calificator/issues/292)). Evidencia: `frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx`, `backend/tests/integration/test_score_allocation_operations.py`.
 
 ## Hallazgos
 

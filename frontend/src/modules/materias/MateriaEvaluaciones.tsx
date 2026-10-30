@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { EvaluationCopyDialog } from '@/modules/evaluaciones/EvaluationCopyDialog';
+import { EvaluationScoreDialog } from '@/modules/evaluaciones/components/EvaluationScoreDialog';
 import { EvaluationDocumentRecovery } from '@/modules/evaluaciones/EvaluationDocumentRecovery';
 import { getVisualCapabilities } from '@/modules/evaluaciones/visualApi';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -108,6 +109,7 @@ export function MateriaEvaluaciones() {
   const [contentEditingEval, setContentEditingEval] = useState<Evaluacion | null>(null);
   const [previewEval, setPreviewEval] = useState<Evaluacion | null>(null);
   const [copyingEval, setCopyingEval] = useState<Evaluacion | null>(null);
+  const [scoringEval, setScoringEval] = useState<Evaluacion | null>(null);
   const [recoveringEval, setRecoveringEval] = useState<Evaluacion | null>(null);
   const documentCapabilities = useQuery({ queryKey: ['evaluation-visual-capabilities'], queryFn: getVisualCapabilities,
     enabled: canCopyEvaluation && canUpdateEvaluation, retry: false, staleTime: 30000 });
@@ -374,6 +376,7 @@ export function MateriaEvaluaciones() {
                 {canManageEvaluations && (canCopyEvaluation || canUpdateEvaluation || canDeleteEvaluation || (canPublishEvaluation && !isDraft)) && <details className="group mt-2 rounded-lg border border-border px-3">
                   <summary className="focus-ring flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-lg text-sm font-semibold"><span>Más opciones</span><ChevronDown className="h-4 w-4 shrink-0 group-open:rotate-180" aria-hidden="true" /></summary>
                   <div className="flex flex-wrap gap-2 border-t border-border py-3 [&_button]:min-h-11">
+                    {canUpdateEvaluation && canViewEvaluation && <Button size="sm" variant="outline" onClick={() => setScoringEval(evaluation)}>Repartir puntos</Button>}
                     {canCopyEvaluation && <Button size="sm" variant="outline" onClick={() => setCopyingEval(evaluation)}>Usar en otra materia</Button>}
                     {canUpdateEvaluation && <>
                       <Button size="sm" variant="outline" onClick={() => { if (evaluation.estructura_documento) { setContentEditingEval(evaluation); setWizardOpen(true); } else openEdit(evaluation); }}><Pencil className="h-4 w-4" /> Editar datos</Button>
@@ -413,6 +416,10 @@ export function MateriaEvaluaciones() {
       )}
       {canUpdateEvaluation && criteriaEval && <EvaluationCriteriaEditor evaluation={criteriaEval} onClose={() => setCriteriaEval(null)} onCompleted={() => { setCriteriaEval(null); refresh(); toast.success('Criterios actualizados; las notas anteriores se conservan'); }} />}
       {copyingEval && canCopyEvaluation && <EvaluationCopyDialog key={copyingEval.id + user?.id} evaluation={copyingEval} onClose={() => setCopyingEval(null)} />}
+      {scoringEval && canUpdateEvaluation && user && <EvaluationScoreDialog key={scoringEval.id + user.id} evaluation={scoringEval} onClose={() => setScoringEval(null)} onSaved={() => {
+        void refresh();
+        for (const key of [['evaluacion', scoringEval.id], ['calificaciones'], ['evaluation-review', scoringEval.id], ['calificacion-detalle'], ['grade-breakdown-history']]) void queryClient.invalidateQueries({ queryKey: key });
+      }} />}
       {recoveringEval && canCopyEvaluation && canUpdateEvaluation && <EvaluationDocumentRecovery key={recoveringEval.id + user?.id} evaluation={recoveringEval} onClose={() => setRecoveringEval(null)} />}
       {canCreateEvaluation && (
         <DigitalizarEvaluacionModal
@@ -436,6 +443,7 @@ export function MateriaEvaluaciones() {
           materias={[materia as Materia]}
           initialMateriaId={materia.id}
           initialEvaluation={contentEditingEval}
+          onRepartition={canUpdateEvaluation && canViewEvaluation ? setScoringEval : undefined}
           onCompleted={() => {
             refresh();
             toast.success(contentEditingEval ? 'Preguntas actualizadas' : 'Evaluación creada como borrador');

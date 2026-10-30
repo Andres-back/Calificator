@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 574,
+      "covered": 585,
       "missing": 96
     },
     "by_kind": {
-      "endpoint": 316,
-      "frontend_call": 212,
+      "endpoint": 321,
+      "frontend_call": 217,
       "frontend_route": 38,
       "integration": 7,
       "job": 28,
-      "table": 69
+      "table": 70
     },
-    "total": 670
+    "total": 681
   },
   "exceptions": [],
   "findings": [
@@ -238,6 +238,71 @@
     }
   ],
   "permission_overrides": [
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+        "backend/tests/integration/test_score_allocation_operations.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "reason": "El transporte se usa desde el diálogo privado de reparto con identidad/rol y lectura/edición comprobados; no incluye permisos como constantes del cliente HTTP. El servidor vuelve a autorizar propietario y permisos.",
+      "surface_id": "frontend_call:GET:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+        "backend/tests/integration/test_score_allocation_operations.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "reason": "Guardado privado desde el editor común, aislado por actor y permisos; comprobación de rol/gestión/lectura/edición y versión en el servidor. El módulo HTTP no es un control de acceso.",
+      "surface_id": "frontend_call:PUT:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+        "backend/tests/integration/test_score_allocation_operations.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "reason": "La vista previa exige además grading.read y descarta respuestas al revocarse o cambiar la cuenta; servidor comprueba gestión y ambos permisos de lectura. No se ofrecen notas a estudiantes.",
+      "surface_id": "frontend_call:POST:/evaluaciones/{id}/reparto/notas/previsualizar:frontend/src/modules/evaluaciones/scoreApi.ts"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+        "backend/tests/integration/test_score_allocation_operations.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "reason": "Confirmación explícita de un docente/administrador gestionable con grading.grade; el backend revalida permisos, fingerprints y solicitud idempotente antes de cada aplicación. No es una ruta estudiantil.",
+      "surface_id": "frontend_call:POST:/evaluaciones/{id}/reparto/notas/aplicar:frontend/src/modules/evaluaciones/scoreApi.ts"
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "evidence": [
+        "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+        "backend/tests/integration/test_score_allocation_operations.py"
+      ],
+      "issue_url": "https://github.com/Andres-back/Calificator/issues/292",
+      "reason": "Recuperación privada de la misma confirmación para el actor con gestión y permisos de notas; backend filtra por evaluación y solicitante. El cliente descarta respuestas tardías y no comparte recibos entre cuentas.",
+      "surface_id": "frontend_call:GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}:frontend/src/modules/evaluaciones/scoreApi.ts"
+    },
     {
       "actors": [
         "admin",
@@ -582,7 +647,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "396085a46cd213475921c076535fa1dce6f1425a4eb2955bfe6d90289b8db6d9",
+  "source_digest": "5402075c30f16be8a444c0c90510acf56040aeb18dd4d55dfc4d4250924414be",
   "surfaces": [
     {
       "actors": [
@@ -916,6 +981,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -965,6 +1036,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -5382,6 +5459,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -5431,6 +5514,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -6111,6 +6200,74 @@
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/recursos/{recurso_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "require_roles"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "read_score_definition",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/evaluaciones/{evaluacion_id}/reparto",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{evaluacion_id}/reparto",
+      "source_line": 16,
+      "source_path": "backend/app/modules/evaluaciones/score_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/reparto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "require_roles"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "read_score_receipt",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:GET:/evaluaciones/{evaluacion_id}/reparto/notas/operaciones/{request_id}",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{evaluacion_id}/reparto/notas/operaciones/{request_id}",
+      "source_line": 38,
+      "source_path": "backend/app/modules/evaluaciones/score_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/reparto/notas/operaciones/{request_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
@@ -7627,6 +7784,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -7949,6 +8112,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -11318,6 +11487,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -11367,6 +11542,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -12082,6 +12263,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -15917,6 +16104,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -15966,6 +16159,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -17122,6 +17321,74 @@
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacion_id}/publicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "require_roles"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "apply_previous_scores",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/evaluaciones/{evaluacion_id}/reparto/notas/aplicar",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/aplicar",
+      "source_line": 33,
+      "source_path": "backend/app/modules/evaluaciones/score_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/aplicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "require_roles"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "preview_previous_scores",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/evaluaciones/{evaluacion_id}/reparto/notas/previsualizar",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/previsualizar",
+      "source_line": 27,
+      "source_path": "backend/app/modules/evaluaciones/score_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/previsualizar",
           "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
@@ -19494,6 +19761,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -21105,6 +21378,40 @@
         "profesor"
       ],
       "authorization": [
+        "require_roles"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "function": "save_score_definition",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:PUT:/evaluaciones/{evaluacion_id}/reparto",
+      "kind": "endpoint",
+      "owner_spec": "005-evaluaciones",
+      "signature": "PUT:/evaluaciones/{evaluacion_id}/reparto",
+      "source_line": 21,
+      "source_path": "backend/app/modules/evaluaciones/score_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/evaluaciones/{evaluacion_id}/reparto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
         "explicit_permission_override",
         "get_current_user",
         "require_permission_now:attendance.manage"
@@ -21634,6 +21941,18 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/integration/test_roster_import_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
         },
         {
           "level": "unit",
@@ -22329,6 +22648,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/evidence-scan.spec.ts"
         },
         {
@@ -22755,6 +23080,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/lib/componentPoints.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/lib/csvExport.test.ts"
         },
         {
@@ -23175,6 +23506,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
         },
         {
@@ -23182,6 +23519,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/QuestionVisualEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/ScorePlanEditor.test.tsx"
         },
         {
           "level": "unit",
@@ -23212,6 +23555,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/pdfViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreAllocation.test.ts"
         },
         {
           "level": "unit",
@@ -23841,6 +24190,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -26527,6 +26882,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -26809,6 +27170,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -29880,6 +30247,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -29929,6 +30302,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -34602,6 +34981,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -34651,6 +35036,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -35016,6 +35407,86 @@
     },
     {
       "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/evaluaciones/{evaluacion_id}/reparto/notas/operaciones/{request_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+          "backend/tests/integration/test_score_allocation_operations.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/292",
+        "permission_override_reason": "Recuperación privada de la misma confirmación para el actor con gestión y permisos de notas; backend filtra por evaluación y solicitante. El cliente descarta respuestas tardías y no comparte recibos entre cuentas."
+      },
+      "id": "frontend_call:GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}",
+      "source_line": 26,
+      "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/evaluaciones/{evaluacion_id}/reparto",
+        "backend_contract_candidates": [],
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+          "backend/tests/integration/test_score_allocation_operations.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/292",
+        "permission_override_reason": "El transporte se usa desde el diálogo privado de reparto con identidad/rol y lectura/edición comprobados; no incluye permisos como constantes del cliente HTTP. El servidor vuelve a autorizar propietario y permisos."
+      },
+      "id": "frontend_call:GET:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "GET:/evaluaciones/{id}/reparto",
+      "source_line": 14,
+      "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}/reparto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "ambiguous"
       ],
       "authorization": [],
@@ -35144,6 +35615,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -35193,6 +35670,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -36476,6 +36959,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -37065,6 +37554,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -39180,6 +39675,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -39229,6 +39730,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -39806,6 +40313,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -44124,6 +44637,86 @@
     },
     {
       "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/evaluaciones/{evaluacion_id}/reparto/notas/aplicar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+          "backend/tests/integration/test_score_allocation_operations.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/292",
+        "permission_override_reason": "Confirmación explícita de un docente/administrador gestionable con grading.grade; el backend revalida permisos, fingerprints y solicitud idempotente antes de cada aplicación. No es una ruta estudiantil."
+      },
+      "id": "frontend_call:POST:/evaluaciones/{id}/reparto/notas/aplicar:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/{id}/reparto/notas/aplicar",
+      "source_line": 23,
+      "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/reparto/notas/aplicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/evaluaciones/{evaluacion_id}/reparto/notas/previsualizar",
+        "backend_contract_candidates": [],
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+          "backend/tests/integration/test_score_allocation_operations.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/292",
+        "permission_override_reason": "La vista previa exige además grading.read y descarta respuestas al revocarse o cambiar la cuenta; servidor comprueba gestión y ambos permisos de lectura. No se ofrecen notas a estudiantes."
+      },
+      "id": "frontend_call:POST:/evaluaciones/{id}/reparto/notas/previsualizar:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "POST:/evaluaciones/{id}/reparto/notas/previsualizar",
+      "source_line": 20,
+      "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/reparto/notas/previsualizar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "ambiguous"
       ],
       "authorization": [],
@@ -44224,6 +44817,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
         },
         {
@@ -44273,6 +44872,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -45320,6 +45925,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -46823,6 +47434,46 @@
         "profesor"
       ],
       "authorization": [
+        "explicit_permission_override"
+      ],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:PUT:/evaluaciones/{evaluacion_id}/reparto",
+        "backend_contract_candidates": [],
+        "contract_status": "matched",
+        "permission_override_evidence": [
+          "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx",
+          "backend/tests/integration/test_score_allocation_operations.py"
+        ],
+        "permission_override_issue": "https://github.com/Andres-back/Calificator/issues/292",
+        "permission_override_reason": "Guardado privado desde el editor común, aislado por actor y permisos; comprobación de rol/gestión/lectura/edición y versión en el servidor. El módulo HTTP no es un control de acceso."
+      },
+      "id": "frontend_call:PUT:/evaluaciones/{id}/reparto:frontend/src/modules/evaluaciones/scoreApi.ts",
+      "kind": "frontend_call",
+      "owner_spec": "005-evaluaciones",
+      "signature": "PUT:/evaluaciones/{id}/reparto",
+      "source_line": 17,
+      "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/evaluaciones/{id}/reparto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "admin",
+        "profesor"
+      ],
+      "authorization": [
         "RequireRole"
       ],
       "consumers": [],
@@ -47033,6 +47684,18 @@
         {
           "level": "unit",
           "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
           "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_sharing_headers.py"
         },
@@ -47049,10 +47712,22 @@
           "test_path": "backend/tests/unit/test_nginx_security_config.py"
         },
         {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_score_allocation.py"
+        },
+        {
           "level": "e2e",
           "reference": "cloudflare",
           "status": "direct",
           "test_path": "frontend/e2e/admin-ai-control-center.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -47065,6 +47740,24 @@
           "reference": "cloudflare",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/ScorePlanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreAllocation.test.ts"
         }
       ]
     },
@@ -47377,6 +48070,18 @@
         {
           "level": "unit",
           "reference": "open_code",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_admin_ai_model_performance.py"
         },
@@ -47473,6 +48178,12 @@
         {
           "level": "unit",
           "reference": "open_code",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_score_allocation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_teacher_ai_credentials.py"
         },
@@ -47499,6 +48210,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/e2e/admin-compatible-api.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -47535,6 +48252,24 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/ScorePlanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreAllocation.test.ts"
         },
         {
           "level": "unit",
@@ -47693,6 +48428,18 @@
         {
           "level": "unit",
           "reference": "redis",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
           "status": "direct",
           "test_path": "backend/tests/unit/conftest.py"
         },
@@ -47724,7 +48471,37 @@
           "level": "unit",
           "reference": "redis",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_score_allocation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_worker_queue_routing.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/ScorePlanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreAllocation.test.ts"
         }
       ]
     },
@@ -49366,6 +50143,12 @@
           "level": "unit",
           "reference": "ai_jobs",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_vision_runtime_limits.py"
         },
         {
@@ -50200,7 +50983,7 @@
         "active": true,
         "class": "CalificacionAjuste",
         "constraints": [
-          "tipo IN ('componente','global','explicacion','resolucion')"
+          "tipo IN ('componente','global','explicacion','resolucion','reparto')"
         ],
         "enum_refs": [],
         "historical_only": false,
@@ -50228,6 +51011,7 @@
         "componente",
         "explicacion",
         "global",
+        "reparto",
         "resolucion"
       ],
       "tests": [
@@ -50236,6 +51020,12 @@
           "reference": "calificacion_ajustes",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificacion_ajustes",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
         },
         {
           "level": "unit",
@@ -50922,6 +51712,18 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_multipage_recovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
         },
         {
           "level": "unit",
@@ -52239,6 +53041,62 @@
         "system"
       ],
       "authorization": [],
+      "consumers": [
+        "008-calificaciones",
+        "137-puntajes-reparto-seguro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "active": true,
+        "class": "EvaluationScoreOperation",
+        "constraints": [
+          "length(request_hash) = 64"
+        ],
+        "enum_refs": [],
+        "historical_only": false,
+        "identity": [
+          "id"
+        ],
+        "indexes": [],
+        "migrations": [
+          "backend/alembic/versions/202610300001_evaluation_score_operations.py"
+        ],
+        "relationships": [
+          "evaluaciones.id",
+          "users.id"
+        ],
+        "unique": [
+          "actor_id",
+          "request_id"
+        ]
+      },
+      "id": "table:evaluacion_reparto_operaciones",
+      "kind": "table",
+      "owner_spec": "005-evaluaciones",
+      "signature": "evaluacion_reparto_operaciones",
+      "source_line": 12,
+      "source_path": "backend/app/modules/evaluaciones/score_models.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "evaluacion_reparto_operaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluacion_reparto_operaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "system"
+      ],
+      "authorization": [],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -52503,6 +53361,18 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_motif_preservation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
         },
         {
           "level": "unit",
@@ -52814,6 +53684,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_score_allocation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_section_scoring.py"
         },
         {
@@ -52875,6 +53751,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
         },
         {
           "level": "e2e",
@@ -54916,6 +55798,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -56420,6 +57308,18 @@
           "reference": "users",
           "status": "direct",
           "test_path": "backend/tests/integration/test_roster_import_flow.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
         },
         {
           "level": "unit",

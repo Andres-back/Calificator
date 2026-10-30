@@ -131,6 +131,7 @@ ALL_SPECS = {
     "134-revision-visual-nota-directa",
     "135-retroalimentacion-entrega-simple",
     "136-revision-movil-calificada",
+    "137-puntajes-reparto-seguro",
 }
 OWNED_SPECS = {
     name

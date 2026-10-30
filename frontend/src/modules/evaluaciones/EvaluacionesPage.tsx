@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { GenerationWizard } from './components/GenerationWizard';
+import { EvaluationScoreDialog } from './components/EvaluationScoreDialog';
 import { EvaluationPreviewModal } from './components/EvaluationPreviewModal';
 import { EvaluationCreateMenu } from './components/EvaluationCreateMenu';
 import { DigitalizarEvaluacionModal } from './components/DigitalizarEvaluacionModal';
@@ -519,6 +520,7 @@ export function EvaluacionesPage() {
   const [copyingEval, setCopyingEval] = useState<Evaluacion | null>(null);
   const [recoveringEval, setRecoveringEval] = useState<Evaluacion | null>(null);
   const [documentEditing, setDocumentEditing] = useState<Evaluacion | null>(null);
+  const [scoringEval, setScoringEval] = useState<Evaluacion | null>(null);
   const documentCapabilities = useQuery({ queryKey: ['evaluation-visual-capabilities'], queryFn: getVisualCapabilities,
     enabled: canCreate && canUpdate, retry: false, staleTime: 30000 });
   const [form, setForm] = useState<EvaluationForm>(() => emptyForm(materiaId));
@@ -789,6 +791,7 @@ export function EvaluacionesPage() {
                       </div>
                     </div>
                     <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
+                      {user?.rol !== 'estudiante' && canUpdate && permissions.has('evaluations.read') && <Button size="sm" className="min-h-11" variant="outline" onClick={() => setScoringEval(ev)}>Repartir puntos</Button>}
                       {canCreate && permissions.has('evaluations.read') && <Button size="sm" className="min-h-11" variant="outline" onClick={() => setCopyingEval(ev)}>Usar en otra materia</Button>}
                       {canCreate && canUpdate && permissions.has('evaluations.read') && documentCapabilities.data?.documento && !ev.estructura_documento && ev.tipo_origen === 'externa_digitalizada'
                         && <Button size="sm" className="min-h-11" variant="outline" onClick={() => setRecoveringEval(ev)}>Recuperar secciones</Button>}
@@ -832,8 +835,17 @@ export function EvaluacionesPage() {
       )}
 
       {copyingEval && canCreate && <EvaluationCopyDialog key={copyingEval.id + user?.id} evaluation={copyingEval} onClose={() => setCopyingEval(null)} />}
+      {scoringEval && canUpdate && user && <EvaluationScoreDialog key={scoringEval.id + user.id} evaluation={scoringEval} onClose={() => setScoringEval(null)} onSaved={() => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(scoringEval.materia_id) });
+        void queryClient.invalidateQueries({ queryKey: ['calificaciones'] });
+        void queryClient.invalidateQueries({ queryKey: ['evaluacion', scoringEval.id] });
+        void queryClient.invalidateQueries({ queryKey: ['evaluation-review', scoringEval.id] });
+        void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle'] });
+        void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history'] });
+      }} />}
       {recoveringEval && canCreate && canUpdate && <EvaluationDocumentRecovery key={recoveringEval.id + user?.id} evaluation={recoveringEval} onClose={() => setRecoveringEval(null)} />}
       {documentEditing && user && canUpdate && <GenerationWizard open userId={user.id} initialEvaluation={documentEditing}
+        onRepartition={setScoringEval}
         materias={materias} initialMateriaId={documentEditing.materia_id} onClose={() => setDocumentEditing(null)}
         onCompleted={updated => { void queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(updated.materia_id) }); setDocumentEditing(null); toast.success('Documento y preguntas guardados.'); }} />}
       {previewEval && (

@@ -145,3 +145,7 @@ Incorpora preparación opcional de evidencia docente, originales privados, misma
 ## Evolución 134: decisión docente directa y prioridad visual
 
 [134-revision-visual-nota-directa](../134-revision-visual-nota-directa/spec.md), issue #281, amplía el ajuste existente de forma compatible: nota final deseada, comentario opcional, actor, versión e idempotencia; una transacción conserva evidencias, puntos y propuesta original, registra el ajuste y suspende enlaces afectados. Editar una publicada deja ajustada y exige publicación separada, con advertencia previa. Los colores de revisión no representan acierto ni modifican notas. Sin nuevas inferencias, proveedores o migraciones; validación local y CI antes de fusión/despliegue autorizado.
+
+## Coordinación 137: notas anteriores y reparto confirmado
+
+[137-puntajes-reparto-seguro](../137-puntajes-reparto-seguro/spec.md), issue292, conserva todas las notas al guardar máximos. Propone cambios proporcionales al logro anterior, excluye decisiones manuales, pendientes y casos ambiguos con varios intentos, y revalida la selección confirmada. Cada cambio crea desglose/ajuste/historial y contexto de pesos nuevo sin tocar imágenes ni valoraciones originales; la pantalla explica sus equivalencias. Se conservan estados, sin publicación automática. Los enlaces afectados se pausan por la política vigente; la advertencia está en la vista previa. Recibo por actor/UUID evita duplicados y permite recuperar una respuesta perdida.

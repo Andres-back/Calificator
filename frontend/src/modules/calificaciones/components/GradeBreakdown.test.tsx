@@ -19,6 +19,14 @@ const breakdown: GradeBreakdownData = {
 };
 
 describe('GradeBreakdown', () => {
+  it('137 integra navegación móvil conservando la precisión del reparto', () => {
+    const scored = { ...breakdown, componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: 0.3572, puntos_maximos: 0.3572 }] };
+    render(<GradeBreakdown breakdown={scored} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} />);
+    const nav = screen.getByRole('navigation', { name: 'Preguntas y criterios' });
+    expect(nav).toHaveClass('grid');
+    expect(within(nav).getByRole('button')).toHaveAccessibleDescription('0.3572/0.3572 · Correcta');
+    expect(screen.getByText('0.3572 / 0.3572')).toBeInTheDocument();
+  });
   it.each([8, 17, 30])('136 navega %s componentes por identidad con extremos y resumen móvil compacto', (count) => {
     const components = Array.from({ length: count }, (_, index) => ({ ...breakdown.componentes[0], id: `p${index + 1}`, clave: `seccion-${index}:pregunta-1`, numero: '1', orden: index }));
     const select = vi.fn();
