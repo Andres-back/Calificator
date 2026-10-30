@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { GradeBreakdown } from './GradeBreakdown';
 import type { GradeBreakdownData } from '@/types/api';
@@ -19,6 +19,30 @@ const breakdown: GradeBreakdownData = {
 };
 
 describe('GradeBreakdown', () => {
+  it.each([8, 17, 30])('136 navega %s componentes por identidad con extremos y resumen móvil compacto', (count) => {
+    const components = Array.from({ length: count }, (_, index) => ({ ...breakdown.componentes[0], id: `p${index + 1}`, clave: `seccion-${index}:pregunta-1`, numero: '1', orden: index }));
+    const select = vi.fn();
+    const view = render(<GradeBreakdown breakdown={{ ...breakdown, componentes: components }} compactTeacher selectedComponentId="p1" onSelectComponent={select} />);
+    const nav = screen.getByRole('navigation', { name: 'Preguntas y criterios' });
+    expect(nav).toHaveClass('grid');
+    expect(within(nav).getAllByRole('button')).toHaveLength(count);
+    expect(screen.getByRole('button', { name: 'Pregunta anterior' })).toBeDisabled();
+    expect(screen.getByText(`1 de ${count}`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Pregunta siguiente' }));
+    expect(select).toHaveBeenLastCalledWith('p2');
+    const current = within(nav).getAllByRole('button')[0];
+    expect(current).toHaveAccessibleDescription('1.00/1.00 · Correcta');
+    expect(current.querySelector('[data-question-score]')).toHaveClass('hidden', 'sm:inline');
+    view.rerender(<GradeBreakdown breakdown={{ ...breakdown, componentes: components }} compactTeacher selectedComponentId={`p${count}`} onSelectComponent={select} />);
+    expect(screen.getByRole('button', { name: 'Pregunta siguiente' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Pregunta anterior' }));
+    expect(select).toHaveBeenLastCalledWith(`p${count - 1}`);
+    expect(within(nav).getAllByRole('button').at(-1)).toHaveAttribute('aria-current', 'step');
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    view.rerender(<GradeBreakdown breakdown={{ ...breakdown, componentes: components }} compactTeacher student selectedComponentId="p1" />);
+    expect(screen.queryByRole('button', { name: 'Pregunta siguiente' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('article')).toHaveLength(count);
+  });
   it('identifica el cálculo incompleto como provisional solo en la revisión docente', () => {
     const incomplete = { ...breakdown, cobertura_estado: 'incompleta', componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: null }], formula: { ...breakdown.formula, nota_final: 1.85 } };
     const view = render(<GradeBreakdown breakdown={incomplete} onSelectComponent={vi.fn()} compactTeacher />);

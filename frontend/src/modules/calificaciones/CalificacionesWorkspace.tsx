@@ -693,6 +693,10 @@ function PanelDetalle({
   );
   const selectedQuestion = activeBreakdown?.componentes.find((component) => component.id === detailParams.get('pregunta') || component.clave === detailParams.get('pregunta')) ?? activeBreakdown?.componentes[0];
   const selectQuestion = (componentId: string) => {
+    if (breakdownMutation.isPending || (editingComponentDirty && componentId !== editingComponentId)) {
+      toast('Guarda o cancela el puntaje que estás editando antes de cambiar de pregunta.');
+      return;
+    }
     const component = activeBreakdown?.componentes.find((item) => item.id === componentId || item.clave === componentId);
     if (!component) return;
     setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', component.clave); if (component.evidencia_paginas[0]) next.set('hoja', String(component.evidencia_paginas[0])); return next; });
@@ -2353,7 +2357,7 @@ function GradingCenter() {
                 </button>
                 {mobileDirty && <span className="text-[10px] font-semibold text-amber-600">Sin guardar</span>}
               </div>
-              <div ref={reviewScrollRef} data-testid="grade-review-scroll" role="region" tabIndex={0} aria-label="Detalle de la calificación" className={cn('mb-[var(--grade-review-actions-height,5rem)] min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-500 xl:mb-0', splitLayout ? 'xl:overscroll-contain' : 'xl:overflow-visible')}>
+              <div ref={reviewScrollRef} data-mobile-scroll data-testid="grade-review-scroll" role="region" tabIndex={0} aria-label="Detalle de la calificación" className={cn('mb-[var(--grade-review-actions-height,5rem)] min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-500 xl:mb-0', splitLayout ? 'xl:overscroll-contain' : 'xl:overflow-visible')}>
                 {detalleQuery.isLoading ? (
                   <div className="h-full space-y-4 overflow-y-auto p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
                 ) : detalleQuery.error ? (

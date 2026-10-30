@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, EyeOff, FileSearch, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, EyeOff, FileSearch, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
 import { GradeFormula } from './GradeFormula';
@@ -26,6 +26,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   const compact = compactTeacher && !student;
   const calculation = student ? undefined : gradeCalculationPresentation(breakdown);
   const priorities = new Map((student ? [] : (reviewSummary ?? buildReviewTriage(breakdown)).items).map((item) => [item.component.id, item]));
+  const selectedIndex = breakdown.componentes.findIndex(component => component.id === selectedComponentId);
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -39,20 +40,26 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
       </div>
       {!student && <div aria-label="Colores de prioridad de revisión" className="space-y-2 text-xs"><p className="text-muted">El color indica qué conviene comprobar, no si el estudiante acertó ni una garantía de exactitud.</p><div className="flex flex-wrap gap-2">{Object.entries(reviewPriorityPresentation).map(([level, { label, Icon, classes }]) => <span key={level} className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 ${classes}`}><Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{label}</span>)}</div></div>}
       {onSelectComponent && !student ? <>
-        <nav aria-label="Preguntas y criterios" className="flex flex-wrap gap-2">
-          {breakdown.componentes.map((component) => {
+        <nav aria-label="Preguntas y criterios" className="grid grid-cols-[repeat(auto-fit,minmax(max(2.75rem,calc((100%_-_1.5rem)/4)),1fr))] gap-2 sm:flex sm:flex-wrap">
+          {breakdown.componentes.map((component, index) => {
             const item = priorities.get(component.id) ?? classifyReviewComponent(component);
             const { label, Icon, classes } = reviewPriorityPresentation[item.level];
             return <button
             key={component.id} type="button" onClick={() => onSelectComponent(component.id)}
             aria-current={component.id === selectedComponentId ? 'step' : undefined}
-            aria-label={`${component.tipo === 'pregunta' ? 'Pregunta' : 'Criterio'} ${component.numero ?? component.orden + 1}, ${label}`}
+            aria-label={`${component.tipo === 'pregunta' ? 'Pregunta' : 'Criterio'} ${component.numero ?? component.orden + 1}, ${label}${breakdown.componentes.some(other => other.id !== component.id && other.numero === component.numero) ? `, posición ${index + 1} de ${breakdown.componentes.length}` : ''}`}
+            aria-describedby={compact ? `grade-nav-summary-${component.id}` : undefined}
             title={[label, ...item.reasons.map((reason) => reason.label)].join('. ')}
             data-review-priority={item.level}
-            className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-left font-semibold ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
-          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{component.numero ?? component.orden + 1}</span>{compact && <span className="text-xs font-normal">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {gradeComponentPresentation(component).label}</span>}</button>;
+            className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold sm:justify-start sm:gap-2 sm:px-3 ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
+          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-all">{component.numero ?? component.orden + 1}</span>{compact && <span data-question-score className="hidden text-left text-xs font-normal sm:inline">{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {gradeComponentPresentation(component).label}</span>}{compact && <span className="sr-only" id={`grade-nav-summary-${component.id}`}>{component.puntos_obtenidos == null ? '—' : Number(component.puntos_obtenidos).toFixed(2)}/{Number(component.puntos_maximos).toFixed(2)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
         </nav>
+        {selectedIndex >= 0 && <div className="flex min-w-0 items-center justify-between gap-2" aria-label="Recorrer preguntas">
+          <button type="button" aria-label="Pregunta anterior" disabled={selectedIndex === 0} onClick={() => onSelectComponent(breakdown.componentes[selectedIndex - 1].id)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-sm font-semibold disabled:opacity-40"><ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="hidden sm:inline">Anterior</span></button>
+          <p className="text-sm font-semibold tabular-nums" aria-live="polite">{selectedIndex + 1} de {breakdown.componentes.length}</p>
+          <button type="button" aria-label="Pregunta siguiente" disabled={selectedIndex === breakdown.componentes.length - 1} onClick={() => onSelectComponent(breakdown.componentes[selectedIndex + 1].id)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-sm font-semibold disabled:opacity-40"><span className="hidden sm:inline">Siguiente</span><ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" /></button>
+        </div>}
         <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">{calculation?.provisional ? calculation.label : 'Cómo se calcula la nota'} · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} /></details>
       </> : <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} />}
       <div className="space-y-3">
