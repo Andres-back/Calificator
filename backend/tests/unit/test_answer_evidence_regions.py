@@ -9,7 +9,7 @@ from app.services.answer_evidence_regions import (
     attach_answer_regions, evidence_version, model_answer_regions, rotate_answer_regions,
     sanitize_answer_regions,
 )
-from app.services.vision_extractor import ExtractedAnswer, _merge, _normalize, VisionPageResult
+from app.services.vision_extractor import ExtractedAnswer, _merge, _normalize, VisionExtraction, VisionPageResult
 
 REGION = {"page": 2, "bbox": [0.1, 0.2, 0.3, 0.1], "frame": "pagina_canonica_orientada"}
 IDENTITY = UUID("11111111-1111-4111-8111-111111111111")
@@ -80,3 +80,35 @@ def test_optional_region_is_robust_to_huge_integers_or_non_array_fields():
     assert model_answer_regions([[0, 0, 10 ** 1000, 1]], page=1) == []
     for value in [None, "unavailable", {"bbox": [0, 0, 1, 1]}]:
         assert ExtractedAnswer(question_number=1, page=1, answer="24", regions=value).regions == []
+
+
+def test_model_locations_reach_only_the_matching_teacher_question_without_changing_answers_or_points():
+    from app.modules.calificaciones.breakdown_service import _component_dict
+
+    page = _normalize({"answers": [
+        {"question_id": "section-b", "question_number": 1, "answer": "14", "regions": [[0.3, 0.6, 0.4, 0.15]]},
+        {"question_id": "section-a", "question_number": 1, "answer": "24", "regions": [[0.3, 0.2, 0.4, 0.15]]},
+    ]}, 2, 100)
+    extraction = VisionExtraction(source_fingerprint="a" * 64, pages_processed=2, answers=page.answers, pages=[page], primary_model="synthetic-vision")
+    payload = extraction.legacy_payload()["vision_extraction"]
+    components = [
+        {"clave": "pregunta:section-a", "numero": "1", "puntos_obtenidos": Decimal("0.5"), "evidencia_json": {"paginas": [2]}},
+        {"clave": "pregunta:section-b", "numero": "1", "puntos_obtenidos": Decimal("0.25"), "evidencia_json": {"paginas": [2]}},
+    ]
+    attach_answer_regions(components, payload, IDENTITY)
+    assert [answer.answer for answer in extraction.answers] == ["14", "24"]
+    assert [component["puntos_obtenidos"] for component in components] == [Decimal("0.5"), Decimal("0.25")]
+    for index, component in enumerate(components):
+        row = SimpleNamespace(**{
+            "id": UUID(int=index + 1), "orden": index, "tipo": "pregunta", "titulo": "Pregunta",
+            "respuesta_estudiante": "24" if index == 0 else "14", "respuesta_referencia": "24",
+            "puntos_maximos": Decimal("0.5"), "estado": "parcial", "explicacion_estudiante": "Revisa",
+            "explicacion_verificable": "Revisa", "origen": "objetivo", "requiere_revision": False,
+            "valoraciones_json": [], **component,
+        })
+        teacher = _component_dict(row)
+        assert teacher["evidencia_regiones"] == [{
+            "pagina": 2, "bbox": [0.3, 0.2 if index == 0 else 0.6, 0.4, 0.15],
+            "marco": "pagina_canonica_orientada", "evidencia_version": evidence_version(IDENTITY, "a" * 64),
+        }]
+        assert _component_dict(row, student=True)["evidencia_regiones"] == []

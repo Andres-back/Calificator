@@ -33,7 +33,10 @@ function VersionedEvidence({ evidenceUrl, page, region }: { evidenceUrl: string;
     <button type="button" onClick={() => setManual(true)} className="focus-ring min-h-11 rounded-lg border border-border px-3 font-semibold">Abrir hoja sin señalamiento</button>
   </div>;
   if (!loadedUrl) return <p role="status" className="rounded-xl border border-border p-4 text-sm text-muted">Comprobando la hoja de esta respuesta…</p>;
-  return <GradeEvidenceViewer src={loadedUrl} label={`Hoja ${page} de la evidencia`} region={region.bbox} />;
+  return <>
+    <p className="text-xs leading-5 text-muted">Vista cercana de esta respuesta. Puedes ampliar o ver la hoja completa para comprobarla.</p>
+    <GradeEvidenceViewer src={loadedUrl} label={`Hoja ${page} de la evidencia`} region={region.bbox} />
+  </>;
 }
 
 export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, regions = [], activePage, onPageChange }: {
@@ -53,7 +56,7 @@ export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, reg
   const [regionIndex, setRegionIndex] = useState(0);
   const activeRegion = pageRegions[Math.min(regionIndex, pageRegions.length - 1)];
   return <section className="min-w-0 space-y-2" aria-label="Evidencia de la respuesta seleccionada">
-    <p className="text-xs leading-5 text-muted">{references.length ? 'Consulta la hoja asociada y amplía la respuesta para comprobarla.' : 'No hay una zona localizada para esta respuesta. Elige la hoja y amplía para revisarla.'}</p>
+    {!activeRegion && <p className="text-xs leading-5 text-muted">No hay una zona localizada para esta respuesta. Puedes ampliar la hoja manualmente para revisarla.</p>}
     {available.length > 1 && <nav className="flex flex-wrap gap-2" aria-label="Hojas de esta respuesta">
       {available.map((item) => <button type="button" key={item} aria-current={item === page ? 'page' : undefined} onClick={() => onPageChange(item)}
         className={`focus-ring min-h-11 min-w-11 rounded-lg border px-3 text-sm font-semibold ${item === page ? 'border-brand-400 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200' : 'border-border bg-surface text-fg'}`}>Hoja {item}</button>)}
