@@ -647,7 +647,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "8619aeb0d64812b6ff1d9f1414e13343ab85f75c6e7226c9960d9d1cc666b997",
+  "source_digest": "1a68abed6db18ebbea6b1ddacc0aa42322f715b7b6f40dc17374a38c66ad4c6b",
   "surfaces": [
     {
       "actors": [
@@ -1072,6 +1072,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -5007,6 +5013,12 @@
           "level": "e2e",
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
           "test_path": "frontend/e2e/motif-library.spec.ts"
         },
         {
@@ -5538,6 +5550,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -11565,6 +11583,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -16171,6 +16195,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -22678,6 +22708,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -23285,6 +23321,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/gradeComponentPresentation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/reviewSectionFocus.test.ts"
         },
         {
           "level": "unit",
@@ -24196,6 +24238,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -25551,6 +25599,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -28960,6 +29014,12 @@
           "level": "e2e",
           "reference": "/devolucion",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/devolucion",
+          "status": "direct",
           "test_path": "frontend/e2e/motif-library.spec.ts"
         },
         {
@@ -30278,6 +30338,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -34397,6 +34463,12 @@
           "level": "e2e",
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
           "test_path": "frontend/e2e/motif-library.spec.ts"
         },
         {
@@ -35000,6 +35072,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -35628,6 +35706,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -39682,6 +39766,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -44818,6 +44908,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/grade-direct-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",
@@ -52089,6 +52185,12 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -53697,6 +53799,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
         },
         {
           "level": "e2e",

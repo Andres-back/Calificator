@@ -40,3 +40,7 @@ T001–T002→Analyze→T003→T004. T005 y T008 preceden T009/T010/T011; T006/T
 Trabajo independiente posible: matemática frontend/backend y sus unidades; se ejecuta con un solo agente, sin delegación. MVP técnico: reparto y guardado versionado sin cambios de notas; no declarar el alcance completo hasta implementar y verificar también la actualización confirmada.
 
 Cobertura: FR-001–FR-003→T003/T004/T006/T007; FR-004→T008/T009; FR-005–FR-008→T010/T011/T012; FR-009→T005/T008–T012; FR-010→T006/T012/T013; SC-001–SC-004→T003/T009/T011/T013/T014.
+
+## Phase 6: Convergence
+
+- [x] T016 Integrar la base136 ya aprobada, conservando navegación compacta/foco/scroll y componentPoints del reparto; comprobar la apertura/copia de enlaces en WebKit, unidades, tipos/build e inventario/gobernanza y preparar la actualización de PR294. La entrega posterior al commit mantiene la fusión bloqueada hasta CI vigente verde. FR-003, FR-010/SC-004, Constitución VII–VIII (hallazgo F1 de CI, severidad HIGH; integración comprobada localmente, CI remoto separado).

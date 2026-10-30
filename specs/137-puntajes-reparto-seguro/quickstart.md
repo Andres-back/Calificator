@@ -31,6 +31,15 @@ Estado2026-10-30: implementación y validación local; publicación/CI del PR se
 
 ## Límites y entrega
 
+### Integración con la revisión móvil136
+
+- El PR293 se fusionó en `523010f9932187619b754e0fadf0a5ff51d14245`. Se integra esa base mediante un merge normal para conservar ambas entregas, sin reescribir la rama publicada.
+- El primer CI del PR294 falló en la apertura de enlaces ya aprobados en WebKit de escritorio. La rama todavía no incluía la protección de foco diferido de136. Se conserva esa corrección y se resuelven los conflictos manteniendo ambas listas de pruebas y ambas especificaciones; no se modifican workflows ni se aumentan tiempos o reintentos.
+- La navegación móvil conserva `componentPoints`: una regresión comprueba que `0.3572/0.3572` permanece preciso tanto en la descripción accesible como en el detalle. La suite integrada pasó193 archivos/1249 pruebas; el subconjunto de integración pasó36. Tipos, build y lint estricto verdes; auditorías de664 botones/122 enlaces y paquete público correctas.
+- El recorrido de enlaces y conservación de borrador pasó15 casos, con tres repeticiones de los recorridos seleccionados en Chromium/WebKit. Esto no acredita todavía CI remoto ni una prueba física de teléfono. La fusión del PR294 continúa condicionada a todos sus controles vigentes verdes y al HEAD comprobado.
+- La combinación integrada pasó otros70 E2E:32 de reparto/actualización y38 de revisión móvil, en Chromium/WebKit, temas claro/oscuro y tamaños360–1440px. Se conservaron las comprobaciones de borradores, ausencia de escrituras al navegar, exclusión de ajustes manuales y desplazamiento desde el contenido. Inventario vigente:681 superficies.
+- Gobernanza local de la integración:61/61 pruebas verdes. T016 cierra la preparación comprobada; publicar el commit y esperar CI son pasos de entrega posteriores, no éxitos remotos anticipados. No quedan conflictos ni se han actualizado notas/evidencias o servicios productivos.
+
 - Un lote admite hasta100 notas; la vista previa pagina y descarta la selección al cambiar página explícitamente. No combina decisiones manuales ni convierte pendientes en cero. Los varios intentos se conservan para no cambiar silenciosamente cuál cuenta.
 - Los enlaces anteriores de una nota modificada se pausan por la política existente, con advertencia antes de confirmar. No se reactivan ni aprueban automáticamente.
 - Aplicar conserva el estado de la nota, sin publicar pendientes. El contexto anterior sigue en versiones/auditoría; una recalificación posterior de esa entrega usa el reparto aceptado. Guardar solo el reparto no actualiza contexto académico de notas ya calificadas más allá de fijar una referencia observada en los casos antiguos sin versión.

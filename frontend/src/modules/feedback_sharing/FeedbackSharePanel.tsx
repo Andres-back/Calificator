@@ -9,6 +9,7 @@ import { FeedbackMessage } from './FeedbackMessage';
 import { clearApproval, createApproval, readApproval, runApproval, storeApproval, type ApprovalManifest } from './feedbackApproval';
 import { queryClient } from '@/lib/queryClient';
 import { formatGradeScore } from '@/modules/calificaciones/gradePresentation';
+import { feedbackScrollLayout } from './feedbackScrollLayout';
 
 interface Target { calificacion_id?: string | null; nombre: string }
 interface Prepared { gradeId: string; accessId: string; name: string; url: string }
@@ -28,12 +29,13 @@ function watchRecovery(actorId: string) {
   });
 }
 
-export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, signal, valid, onBusy, onDirtyChange, onBack, onManage, onPreviewChanged, onFinishEditing }: {
+export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, signal, valid, onBusy, onDirtyChange, onBack, onManage, onPreviewChanged, onFinishEditing, embedded }: {
   actorId: string; evaluationId: string; rows: Target[]; knownRows?: Target[]; signal: AbortSignal; valid: () => boolean;
   onBusy: (busy: boolean) => void; onBack: () => void; onManage: (gradeId: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
   onPreviewChanged?: (preview: FeedbackPreview) => void;
   onFinishEditing?: () => void;
+  embedded?: boolean;
 }) {
   const user = useAuth(state => state.user);
   const [targets] = useState(rows);
@@ -298,7 +300,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       <h3 className="text-lg font-bold">{confirming ? 'Confirmar entrega' : 'Compartir enlaces individuales'}</h3>
       {!confirming && <p className="text-sm text-muted">{items.length || targets.length} destinatarios · Solo cada estudiante y su familia deben recibir su enlace.</p>}
     </header>
-    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4" data-mobile-scroll>
+    <div {...feedbackScrollLayout(embedded)} className={`${feedbackScrollLayout(embedded).className} space-y-4 p-4`}>
       {loading ? <p role="status">Comprobando devoluciones y enlaces…</p> : reviewing?.preview ? <FeedbackDeliveryReview key={reviewing.id} evaluationId={evaluationId} name={reviewing.name} preview={reviewing.preview} signal={abort.current.signal} valid={current} onApproved={reviewChanged} onCancel={cancelReview} onBusy={setBusy} onDirtyChange={setReviewDirty} /> : <>
         {recovery && <p className="rounded-xl border border-amber-400 p-3 text-sm">Hay una solicitud pendiente. Recuperarla conserva sus destinatarios y opciones originales, aunque hayas cambiado la selección.</p>}
         {newLinkCount > 0 && !manifest.current && !confirming && <fieldset className="space-y-3 rounded-xl border border-border p-3" disabled={busy || approvalRecovery}>
