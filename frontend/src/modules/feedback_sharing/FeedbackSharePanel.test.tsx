@@ -18,10 +18,43 @@ const pending = { calificacion_id: 'g1', elegible: false, seleccionable: true, p
   borrador_docente: { estado: 'publicada', nota: '3.5', nota_maxima: '5', retroalimentacion: message },
   revision_docente: { source_fingerprint: 'b'.repeat(64), feedback_text: message, detail_available: false } };
 function show() { return render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row]} signal={new AbortController().signal} valid={() => useAuth.getState().user?.id === 't'} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />); }
+
+async function issuedAccesses(): Promise<api.FeedbackAccess[]> {
+  const results = await Promise.all(vi.mocked(api.issueFeedbackAccesses).mock.results.map(async result =>
+    result.type === 'return' ? await result.value.catch(() => []) : []));
+  return [...new Map(results.flat().filter(result => result.id && !result.error).map(result => [result.id!, {
+    ...access, id: result.id!, calificacion_id: result.calificacion_id,
+    estudiante: result.calificacion_id === 'g1' ? 'Ana' : 'Luis',
+    estado: result.estado ?? 'active', version: result.version ?? access.version,
+    expires_at: result.expires_at ?? access.expires_at,
+  }])).values()];
+}
+
+async function confirmGeneration(count = 1) {
+  fireEvent.click(await screen.findByRole('button', { name: `Generar ${count} ${count === 1 ? 'enlace' : 'enlaces'}` }));
+  expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
+  expect(api.publishFeedbackBatch).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: `Confirmar y generar ${count} ${count === 1 ? 'enlace' : 'enlaces'}` }));
+}
+
+async function openAdvancedOptions() {
+  const summary = await screen.findByText('Opciones avanzadas', { selector: 'summary' });
+  fireEvent.click(summary);
+  expect(summary.closest('details')).toHaveAttribute('open');
+}
+
 beforeEach(() => {
   vi.resetAllMocks(); sessionStorage.clear(); useAuth.setState({ user: teacher });
   vi.mocked(api.previewFeedback).mockResolvedValue([preview]);
-  vi.mocked(api.listFeedbackAccesses).mockResolvedValue([]);
+  vi.mocked(api.listFeedbackAccesses).mockImplementation(issuedAccesses);
+  vi.mocked(api.copyFeedbackAccesses).mockImplementation(async (_evaluation, ids) => {
+    const issued = await issuedAccesses();
+    return ids.map(id => {
+      const saved = issued.find(item => item.id === id) ?? { ...access, id };
+      return { id, calificacion_id: saved.calificacion_id, estudiante: saved.estudiante,
+        expires_at: saved.expires_at, url };
+    });
+  });
   Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockResolvedValue(undefined) }, configurable: true });
 });
 describe('129 mismo panel de compartir y copia', () => {
@@ -31,7 +64,9 @@ describe('129 mismo panel de compartir y copia', () => {
     const second = { ...preview, calificacion_id: 'g2', batch_candidate: candidate };
     vi.mocked(api.previewFeedback).mockResolvedValueOnce([{ ...pending, batch_candidate: candidate }, second]).mockResolvedValue([preview, second]);
     const secondAccess = { ...access, id: 'a2', calificacion_id: 'g2', estudiante: 'Luis' };
-    vi.mocked(api.listFeedbackAccesses).mockResolvedValueOnce([secondAccess]).mockResolvedValue([{ ...secondAccess, estado: 'suspended', copy_available: false }]);
+    vi.mocked(api.listFeedbackAccesses).mockResolvedValueOnce([secondAccess]).mockImplementation(async () => [
+      { ...secondAccess, estado: 'suspended', copy_available: false }, ...await issuedAccesses(),
+    ]);
     vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a2', calificacion_id: 'g2', estudiante: 'Luis', url }]);
     vi.mocked(api.publishFeedbackBatch).mockImplementation(async (_evaluation, payload) => ({ id: 'batch', request_id: payload.request_id, total: 1, exitosos: 1, fallidos: 0,
       resultados: [{ calificacion_id: 'g1', estado: 'published', fingerprint: preview.fingerprint }] }));
@@ -39,9 +74,9 @@ describe('129 mismo panel de compartir y copia', () => {
     render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
     await screen.findByRole('button', { name: 'Copiar enlace de Luis' });
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar y crear 1 enlace' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y preparar 1 enlace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y generar 1 enlace' }));
     await screen.findByRole('button', { name: 'Copiar enlace de Ana' });
-    await screen.findByRole('button', { name: 'Copiar 1 disponible' });
+    await screen.findByRole('button', { name: 'Copiar lista de 1' });
     expect(vi.mocked(api.publishFeedbackBatch).mock.calls[0][1].selecciones.map(item => item.calificacion_id)).toEqual(['g1']);
     expect(screen.queryByRole('button', { name: 'Copiar enlace de Luis' })).toBeNull();
     expect(api.changeFeedbackAccess).not.toHaveBeenCalled();
@@ -54,8 +89,9 @@ describe('129 mismo panel de compartir y copia', () => {
       resultados: [{ calificacion_id: 'g1', estado: 'already_published', fingerprint: preview.fingerprint }] }));
     vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
     show();
-    fireEvent.change(await screen.findByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
-    expect(screen.getByText('Lista para tu aprobación')).toBeInTheDocument();
+    await openAdvancedOptions();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
+    expect(screen.getByText('Listo para generar')).toBeInTheDocument();
     expect(screen.queryByText(pending.motivo)).toBeNull();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' }));
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar y crear 1 enlace' }));
@@ -63,15 +99,15 @@ describe('129 mismo panel de compartir y copia', () => {
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
     expect(screen.getByRole('region', { name: 'Confirmar entrega' })).toHaveTextContent(message);
     expect(screen.queryByRole('list', { name: 'Destinatarios y enlaces' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y preparar 1 enlace' }));
-    await screen.findByRole('button', { name: 'Copiar 1 enlace' });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y generar 1 enlace' }));
+    await screen.findByRole('button', { name: 'Copiar lista de 1' });
     expect(api.publishFeedbackBatch).toHaveBeenCalledTimes(1);
     expect(api.approveFeedbackReview).not.toHaveBeenCalled();
     expect(api.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 7, evidencia: true,
       selecciones: [{ calificacion_id: 'g1', fingerprint: preview.fingerprint }] }), expect.any(AbortSignal));
     expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Copiar 1 enlace' }));
-    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(`Ana\n${url}`));
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar lista de 1' }));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(`Ana: ${url}`));
   });
 
   it('135 no emite un enlace de quien falló al aprobar y conserva los éxitos', async () => {
@@ -84,8 +120,8 @@ describe('129 mismo panel de compartir y copia', () => {
     vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
     render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Aprobar y crear 2 enlaces' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y preparar 2 enlaces' }));
-    await screen.findByRole('button', { name: 'Copiar 1 disponible' });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y generar 2 enlaces' }));
+    await screen.findByRole('button', { name: 'Copiar lista de 1' });
     expect(vi.mocked(api.issueFeedbackAccesses).mock.calls[0][1].selecciones.map(item => item.calificacion_id)).toEqual(['g1']);
     expect(screen.queryByRole('button', { name: 'Copiar enlace de Luis' })).toBeNull();
   });
@@ -98,11 +134,13 @@ describe('129 mismo panel de compartir y copia', () => {
     vi.mocked(api.approveFeedbackReview).mockResolvedValue(approved);
     render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }, { ...row, calificacion_id: 'g3', nombre: 'Eva' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
     await screen.findByRole('button', { name: 'Copiar enlace de Luis' });
+    await openAdvancedOptions();
     fireEvent.change(screen.getByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
     fireEvent.click(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' }));
     fireEvent.click(screen.getByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar retroalimentación' }));
-    await screen.findByRole('button', { name: 'Crear 2 enlaces faltantes' });
+    await screen.findByRole('button', { name: 'Generar 2 enlaces' });
+    await openAdvancedOptions();
     expect(screen.getByRole('combobox', { name: 'Duración del enlace' })).toHaveValue('7');
     expect(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' })).toBeChecked();
     expect(screen.getByRole('button', { name: 'Copiar enlace de Luis' })).toBeEnabled();
@@ -122,7 +160,7 @@ describe('129 mismo panel de compartir y copia', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Volver sin aprobar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Descartar cambios y volver' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' })).toHaveFocus());
-    expect(screen.queryByRole('button', { name: 'Crear 1 enlace faltante' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Generar 1 enlace' })).toBeNull();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
   });
 
@@ -148,7 +186,7 @@ describe('129 mismo panel de compartir y copia', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar retroalimentación' }));
     expect(await screen.findByText(/no se reactivó ni creó otro/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Crear 1 enlace faltante' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Generar 1 enlace' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Revisar enlace de Ana' })).toBeEnabled();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Revisar enlace de Ana' })).toHaveFocus());
     expect(api.changeFeedbackAccess).not.toHaveBeenCalled();
@@ -186,18 +224,18 @@ describe('129 mismo panel de compartir y copia', () => {
   it('abre sin emitir, confirma solo faltantes y copia con un gesto posterior', async () => {
     vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
     show();
-    fireEvent.click(await screen.findByRole('button', { name: 'Crear 1 enlace faltante' }));
+    await confirmGeneration();
     expect(api.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 3, evidencia: false, selecciones: [expect.objectContaining({ calificacion_id: 'g1' })] }), expect.any(AbortSignal));
-    const copy = await screen.findByRole('button', { name: 'Copiar 1 enlace' });
+    const copy = await screen.findByRole('button', { name: 'Copiar lista de 1' });
     expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
     fireEvent.click(copy);
-    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(`Ana\n${url}`));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(`Ana: ${url}`));
   });
   it('solo recupera activos sin emisión, cambios de vigencia ni publicación', async () => {
     vi.mocked(api.listFeedbackAccesses).mockResolvedValue([access]);
     vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a1', calificacion_id: 'g1', estudiante: 'Ana', url }]);
     show();
-    expect(await screen.findByRole('button', { name: 'Copiar 1 enlace' })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: 'Copiar lista de 1' })).toBeEnabled();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
     expect(api.changeFeedbackAccess).not.toHaveBeenCalled();
     expect(api.publishFeedbackBatch).not.toHaveBeenCalled();
@@ -206,45 +244,48 @@ describe('129 mismo panel de compartir y copia', () => {
     vi.mocked(api.listFeedbackAccesses).mockResolvedValue([{ ...access, estado: 'expired' }]);
     show();
     expect(await screen.findByRole('button', { name: 'Revisar enlace de Ana' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: /Crear.*faltante/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Generar \d+ enlaces?$/ })).toBeNull();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
   });
   it('no considera una respuesta incompleta éxito y reintenta con idéntica solicitud', async () => {
     vi.mocked(api.issueFeedbackAccesses).mockResolvedValueOnce([]).mockResolvedValueOnce([{ calificacion_id: 'g1', id: 'a1' }]);
     vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a1', estudiante: 'Ana', url }]);
     show();
-    fireEvent.click(await screen.findByRole('button', { name: 'Crear 1 enlace faltante' }));
+    await confirmGeneration();
     fireEvent.click(await screen.findByRole('button', { name: 'Recuperar la misma solicitud' }));
-    await screen.findByRole('button', { name: 'Copiar 1 enlace' });
+    await screen.findByRole('button', { name: 'Copiar lista de 1' });
     expect(vi.mocked(api.issueFeedbackAccesses).mock.calls[1][1]).toEqual(vi.mocked(api.issueFeedbackAccesses).mock.calls[0][1]);
   });
   it('mantiene copia manual si el navegador deniega el portapapeles', async () => {
     vi.mocked(api.listFeedbackAccesses).mockResolvedValue([access]);
     vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a1', estudiante: 'Ana', url }]);
     vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('denied'));
-    show(); fireEvent.click(await screen.findByRole('button', { name: 'Copiar 1 enlace' }));
-    expect(await screen.findByRole('textbox', { name: 'Enlaces para copiar manualmente' })).toHaveValue(`Ana\n${url}`);
+    show(); fireEvent.click(await screen.findByRole('button', { name: 'Copiar lista de 1' }));
+    expect(await screen.findByRole('textbox', { name: 'Enlaces para copiar manualmente' })).toHaveValue(`Ana: ${url}`);
     expect(screen.queryByText(/enlaces copiados/)).toBeNull();
   });
   it('copia solo el alumno elegido aunque compartan apellido', async () => {
     const second = { ...row, calificacion_id: 'g2', nombre: 'Luis Pérez' };
     vi.mocked(api.previewFeedback).mockResolvedValue([preview, { ...preview, calificacion_id: 'g2' }]);
     vi.mocked(api.listFeedbackAccesses).mockResolvedValue([access, { ...access, id: 'a2', calificacion_id: 'g2', estudiante: 'Luis Pérez' }]);
-    vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a1', estudiante: 'Ana', url }, { id: 'a2', estudiante: 'Luis Pérez', url: url.replace(/a+$/, 'b'.repeat(43)) }]);
+    vi.mocked(api.copyFeedbackAccesses).mockImplementation(async (_evaluation, ids) => [
+      { id: 'a1', calificacion_id: 'g1', estudiante: 'Ana Pérez', url, expires_at: access.expires_at },
+      { id: 'a2', calificacion_id: 'g2', estudiante: 'Luis Pérez', url: url.replace(/a+$/, 'b'.repeat(43)), expires_at: access.expires_at },
+    ].filter(item => ids.includes(item.id)));
     render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[{ ...row, nombre: 'Ana Pérez' }, second]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Copiar enlace de Luis Pérez' }));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledExactlyOnceWith('Luis Pérez\nhttps://example.test/devolucion#' + 'b'.repeat(43));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledExactlyOnceWith('Hola. Esta es la retroalimentación de Luis Pérez en esta evaluación: https://example.test/devolucion#' + 'b'.repeat(43)));
   });
   it('recupera tras reapertura con el mismo UUID y elimina metadata al cerrar sesión', async () => {
     vi.mocked(api.issueFeedbackAccesses).mockRejectedValueOnce(new Error('response lost')).mockResolvedValueOnce([{ calificacion_id: 'g1', id: 'a1' }]);
     vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a1', estudiante: 'Ana', url }]);
     const first = show();
-    fireEvent.click(await screen.findByRole('button', { name: 'Crear 1 enlace faltante' }));
+    await confirmGeneration();
     await screen.findByRole('button', { name: 'Recuperar la misma solicitud' });
     const original = vi.mocked(api.issueFeedbackAccesses).mock.calls[0][1];
     first.unmount(); show();
     fireEvent.click(await screen.findByRole('button', { name: 'Recuperar la misma solicitud' }));
-    await screen.findByRole('button', { name: 'Copiar 1 enlace' });
+    await screen.findByRole('button', { name: 'Copiar lista de 1' });
     expect(vi.mocked(api.issueFeedbackAccesses).mock.calls[1][1]).toEqual(original);
     // A new uncertain preparation never leaves credentials in storage.
     vi.mocked(api.issueFeedbackAccesses).mockRejectedValue(new Error('lost'));
@@ -256,26 +297,26 @@ describe('129 mismo panel de compartir y copia', () => {
   it('rechaza respuestas tardías después de cambiar de cuenta', async () => {
     let resolve!: (value: Awaited<ReturnType<typeof api.issueFeedbackAccesses>>) => void;
     vi.mocked(api.issueFeedbackAccesses).mockImplementation(() => new Promise(done => { resolve = done; }));
-    show(); fireEvent.click(await screen.findByRole('button', { name: 'Crear 1 enlace faltante' }));
+    show(); await confirmGeneration();
     act(() => useAuth.setState({ user: { ...teacher, id: 'otro' } }));
     await act(async () => resolve([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]));
-    expect(screen.queryByRole('button', { name: 'Copiar 1 enlace' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copiar lista de 1' })).toBeNull();
     expect(sessionStorage.getItem('feedback-preparation:t:e1')).toBeNull();
   });
   it('identifica el fallo por estudiante y copia explícitamente solo los confirmados', async () => {
     vi.mocked(api.previewFeedback).mockResolvedValue([preview, { ...preview, calificacion_id: 'g2' }]);
     vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }, { calificacion_id: 'g2', error: 'Cambió la retroalimentación' }]);
     render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Crear 2 enlaces faltantes' }));
-    const ready = await screen.findByRole('button', { name: 'Copiar 1 disponible' });
-    expect(within(screen.getByText('Luis').closest('li')!).getByText(/No se pudo crear su enlace/)).toBeInTheDocument();
+    await confirmGeneration(2);
+    const ready = await screen.findByRole('button', { name: 'Copiar lista de 1' });
+    expect(within(screen.getByText('Luis').closest('li')!).getByText(/No pudimos generar su enlace/)).toBeInTheDocument();
     fireEvent.click(ready);
-    expect(navigator.clipboard.writeText).toHaveBeenCalledExactlyOnceWith(`Ana\n${url}`);
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledExactlyOnceWith(`Ana: ${url}`));
   });
   it('explica el almacenamiento bloqueado sin mandar una creación imposible de recuperar', async () => {
     const storage = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
     try {
-      show(); fireEvent.click(await screen.findByRole('button', { name: 'Crear 1 enlace faltante' }));
+      show(); await confirmGeneration();
       expect(await screen.findByRole('alert')).toHaveTextContent('No enviamos enlaces nuevos');
       expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
     } finally { storage.mockRestore(); }

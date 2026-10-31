@@ -5,12 +5,13 @@ import { changeFeedbackAccess } from './api';
 import { FeedbackLinkActions } from './FeedbackLinkActions';
 
 const labels = { active: 'Activo', expired: 'Vencido', disabled: 'Desactivado', suspended: 'Necesita nueva autorización' };
-export function FeedbackAccessList({ evaluationId, accesses, previews, signal, valid, onChanged, onIssued, onBusy }: {
+export function FeedbackAccessList({ evaluationId, accesses, previews, signal, valid, onChanged, onIssued, onBusy, showCopy = true }: {
   evaluationId?: string;
   accesses: FeedbackAccess[]; previews: FeedbackPreview[]; signal: AbortSignal;
   valid: () => boolean; onChanged: () => Promise<void>;
   onIssued: (result: IssuedFeedbackAccess, name: string) => void;
   onBusy?: (busy: boolean) => void;
+  showCopy?: boolean;
 }) {
   const [pending, setPending] = useState<{ access: FeedbackAccess; action: 'desactivar' | 'reactivar' | 'renovar'; requestId: string } | null>(null);
   const [days, setDays] = useState(3);
@@ -26,7 +27,8 @@ export function FeedbackAccessList({ evaluationId, accesses, previews, signal, v
     try {
       const result = await changeFeedbackAccess(access, action, { expected_version: access.version, request_id: requestId,
         ...(action === 'renovar' ? { confirmar_reemplazo: true } : {}),
-        ...(action === 'reactivar' ? { duracion_dias: days, fingerprint: preview!.fingerprint, evidencia: false } : {}),
+        ...(action === 'reactivar' ? { duracion_dias: days, fingerprint: preview!.fingerprint, evidencia: false,
+          ...(access.estado === 'suspended' && Date.parse(access.expires_at) > Date.now() ? { mantener_vencimiento: true } : {}) } : {}),
       }, signal);
       if (!valid()) return;
       onIssued(result, access.estudiante);
@@ -42,7 +44,7 @@ export function FeedbackAccessList({ evaluationId, accesses, previews, signal, v
     <ul className="space-y-3">{accesses.map(access => <li key={access.id} className="min-w-0 rounded-xl border border-border p-3">
       <p className="break-words font-bold">{access.estudiante}</p>
       <p className="mt-1 text-sm">{labels[access.estado]} · Vence: {new Date(access.expires_at).toLocaleString()}</p>
-      {evaluationId && <FeedbackLinkActions evaluationId={evaluationId} accesses={[access]} selectedIds={[access.calificacion_id]} signal={signal} valid={valid} disabled={busy} onBusy={setBusy} compact />}
+      {showCopy && evaluationId && <FeedbackLinkActions evaluationId={evaluationId} accesses={[access]} selectedIds={[access.calificacion_id]} signal={signal} valid={valid} disabled={busy} onBusy={setBusy} compact />}
       <div className="mt-2 flex flex-wrap gap-2">
         {access.estado === 'active' ? <Button variant="outline" disabled={busy} onClick={() => { setPending({ access, action: 'desactivar', requestId: crypto.randomUUID() }); setError(''); }}>Desactivar</Button>
           : <Button variant="outline" disabled={busy || !previews.some(item => item.calificacion_id === access.calificacion_id && item.elegible)} onClick={() => { setPending({ access, action: 'reactivar', requestId: crypto.randomUUID() }); setDays(3); setError(''); }}>Reactivar</Button>}
@@ -51,8 +53,8 @@ export function FeedbackAccessList({ evaluationId, accesses, previews, signal, v
     </li>)}</ul>
     {pending && <div className="space-y-3 rounded-xl border border-amber-400 p-4">
       <p className="font-bold">{pending.access.estudiante}</p>
-      <p className="text-sm">{pending.action === 'desactivar' ? 'Se cerrará el acceso a esta retroalimentación. La nota y las evidencias no cambian.' : pending.action === 'renovar' ? 'El enlace anterior dejará de funcionar. Recibirás uno nuevo. Esto no amplía su duración ni reactiva un acceso cerrado.' : 'Autorizas de nuevo la nota y la retroalimentación que acabas de revisar. Se abrirá una nueva vigencia, sin reiniciar las preguntas usadas en los últimos diez minutos. La evidencia seguirá oculta.'}</p>
-      {pending.action === 'reactivar' && <label className="block text-sm">Duración<select aria-label="Duración de reactivación" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3" value={days} onChange={event => setDays(Number(event.target.value))}>{Array.from({ length: 30 }, (_, index) => index + 1).map(value => <option key={value} value={value}>{value} días</option>)}</select></label>}
+      <p className="text-sm">{pending.action === 'desactivar' ? 'Se cerrará el acceso a esta retroalimentación. La nota y las evidencias no cambian.' : pending.action === 'renovar' ? 'El enlace anterior dejará de funcionar. Recibirás uno nuevo. Esto no amplía su duración ni reactiva un acceso cerrado.' : pending.access.estado === 'suspended' && Date.parse(pending.access.expires_at) > Date.now() ? 'Volverás a compartir la nota y el mensaje revisados con el mismo enlace y vencimiento. Las fotos permanecerán ocultas y las preguntas disponibles no se reinician.' : 'Autorizas de nuevo la nota y la retroalimentación que acabas de revisar. Se abrirá una nueva vigencia, sin reiniciar las preguntas usadas en los últimos diez minutos. La evidencia seguirá oculta.'}</p>
+      {pending.action === 'reactivar' && !(pending.access.estado === 'suspended' && Date.parse(pending.access.expires_at) > Date.now()) && <label className="block text-sm">Duración<select aria-label="Duración de reactivación" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3" value={days} onChange={event => setDays(Number(event.target.value))}>{Array.from({ length: 30 }, (_, index) => index + 1).map(value => <option key={value} value={value}>{value} días</option>)}</select></label>}
       <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => setPending(null)}>Cancelar cambio</Button><Button loading={busy} onClick={() => void execute()}>Confirmar cambio</Button></div>
     </div>}
     {error && <p role="alert" className="text-sm">{error}</p>}

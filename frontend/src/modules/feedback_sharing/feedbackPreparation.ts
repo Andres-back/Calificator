@@ -9,6 +9,7 @@ export interface PreparationPart {
 export interface PreparationManifest {
   schema: 1; actorId: string; evaluationId: string; createdAt: number; expiresAt: number;
   days: number; evidence: boolean; parts: PreparationPart[];
+  onlyIfMissing?: boolean;
 }
 const prefix = 'feedback-preparation:';
 const key = (actor: string, evaluation: string) => `${prefix}${actor}:${evaluation}`;
@@ -20,7 +21,7 @@ export function classifyAccesses(gradeId: string, accesses: FeedbackAccess[]) {
 export function createManifest(actorId: string, evaluationId: string, selections: FeedbackSelection[], days: number, evidence: boolean, now = Date.now()): PreparationManifest {
   const parts: PreparationPart[] = [];
   for (let offset = 0; offset < selections.length; offset += 100) parts.push({ requestId: crypto.randomUUID(), selections: selections.slice(offset, offset + 100).map(item => ({ ...item })), confirmed: false, accesses: [] });
-  return { schema: 1, actorId, evaluationId, createdAt: now, expiresAt: now + 3600000, days, evidence, parts };
+  return { schema: 1, actorId, evaluationId, createdAt: now, expiresAt: now + 3600000, days, evidence, parts, onlyIfMissing: true };
 }
 export function storeManifest(storage: Storage, manifest: PreparationManifest) {
   storage.setItem(key(manifest.actorId, manifest.evaluationId), JSON.stringify(manifest));
@@ -35,7 +36,8 @@ export function readManifest(storage: Storage, actor: string, evaluation: string
     const raw = storage.getItem(key(actor, evaluation));
     if (!raw) return null;
     const value: PreparationManifest = JSON.parse(raw);
-    if (!value || !hasKeys(value, ['schema', 'actorId', 'evaluationId', 'createdAt', 'expiresAt', 'days', 'evidence', 'parts']) || value.schema !== 1 || value.actorId !== actor || value.evaluationId !== evaluation
+    const fields = ['schema', 'actorId', 'evaluationId', 'createdAt', 'expiresAt', 'days', 'evidence', 'parts'];
+    if (!value || !(hasKeys(value, fields) || hasKeys(value, [...fields, 'onlyIfMissing'])) || (value.onlyIfMissing !== undefined && typeof value.onlyIfMissing !== 'boolean') || value.schema !== 1 || value.actorId !== actor || value.evaluationId !== evaluation
       || !Number.isFinite(value.createdAt) || value.createdAt > now || value.expiresAt !== value.createdAt + 3600000 || value.expiresAt <= now
       || !Number.isInteger(value.days) || value.days < 1 || value.days > 30 || typeof value.evidence !== 'boolean' || !Array.isArray(value.parts) || !value.parts.length || value.parts.length > 100) throw new Error('Invalid preparation');
     const ids = new Set<string>(); const requests = new Set<string>();

@@ -125,7 +125,7 @@ async def issue(evaluation_id: UUID, payload: AccessCreate, actor: User = Depend
     for selection in payload.selecciones:
         try:
             async with db.begin_nested():
-                access, token = await create_access(db, actor, evaluation_id, selection.calificacion_id, selection.fingerprint, payload.request_id, payload.duracion_dias, payload.evidencia)
+                access, token = await create_access(db, actor, evaluation_id, selection.calificacion_id, selection.fingerprint, payload.request_id, payload.duracion_dias, payload.evidencia, solo_si_falta=payload.solo_si_falta)
                 results.append({"calificacion_id": selection.calificacion_id, "id": access.id, "estado": access.state, "version": access.version, "expires_at": access.expires_at, "credential_available": token is not None, "url": f"{settings.PUBLIC_APP_URL.rstrip('/')}/devolucion#{token}" if token else None})
         except HTTPException as exc:
             results.append({"calificacion_id": selection.calificacion_id, "error": exc.detail})
