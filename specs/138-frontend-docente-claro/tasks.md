@@ -37,3 +37,8 @@
 T001→T002→T003. T004/T005/T007 pueden desarrollarse en paralelo tras la revisión y las pruebas RED de su área, sin editar archivos compartidos. T006 requiere T004/T005; T008 reutiliza T009 cuando usa destinos contextuales. T009→T010→T011; T006/T007/T008/T010/T011 preceden T013. T012 independiente de código, T014 cierra todo. Los contratos/artefactos se revisan por el agente principal; la delegación no decide excepciones de gobernanza.
 
 Incremento1 comprobable: T004–T007, limpieza sin cambiar rutas. Incremento2: T008–T011, contexto con mismo workspace. No declarar entrega completa con solo el primer incremento. Publicar PR/ejecutar CI sucede después del commit de tareas terminadas; fusionar requiere autorización y todos los controles verdes, no parte de una casilla que prometa éxito remoto previo.
+
+## Fase 7: Correcciones de regresión del CI
+
+- [x] T015 Alinear las expectativas antiguas de frontend/e2e/{explainable-grading,grade-evidence-review}.spec.ts y frontend/e2e/mock/grading-review.mock.spec.ts con FR-001/FR-003/FR-005/FR-006/FR-008: ayuda cerrada y accesible, nota principal inequívoca, tabs visibles, retorno seguro al libro y parámetros independientes de orden. Conservar todas las comprobaciones de permisos, evidencia, foco, borradores y cero escrituras; no cambiar comportamiento funcional ni controles de CI.
+- [x] T016 Ejecutar completas las suites de evidencia (Chromium/WebKit), explainable-grading y las dos suites del job contextual; regenerar inventario y pasar gobernanza. Registrar causas/resultados reales en quickstart.md y publicar la corrección en el mismo PR #296 para nuevo CI, sin fusionar ni desplegar. FR-009/FR-010/FR-012; SC-003–SC-005.

@@ -10,7 +10,7 @@ Registro local previo al PR. Implementación verificada con datos sintéticos; C
 - Entrega: lectura principal sin instrucciones repetidas, detalle técnico en Historial, vocabulario único, compartir individual sin CTA duplicado, pestañas móviles visibles, revisión contextual y Pendientes con muestra honesta.
 - Integración incremental sobre el mismo workspace; sin backend, migraciones, contratos de datos nuevos, dependencias añadidas o llamadas a IA. El único cambio de versión es el parche de seguridad expresamente autorizado más abajo.
 
-## Resultados definitivos
+## Verificaciones locales previas al primer CI
 
 | Comprobación | Resultado |
 | --- | --- |
@@ -66,3 +66,22 @@ Desde frontend: npm ci; npm run test:run; npm run lint:strict; npm run build; np
 Converge contrastó 12 requisitos, 5 criterios de éxito, 12 escenarios de aceptación, 7 decisiones y 8 principios constitucionales: cero hallazgos missing/partial/contradicts/unrequested funcionales. No añadió una fase vacía ni modificó tasks.md durante la revisión limpia.
 
 Gobernanza completa e inventario quedaron aprobados antes del commit. CI remoto debe quedar verde antes de cualquier fusión; este registro local no lo sustituye ni autoriza un despliegue manual. La reversión es por código: no requiere restaurar notas, borrar evidencias ni revertir datos.
+
+## Seguimiento del primer CI remoto del PR #296
+
+HEAD bffe4ddd4358f08ba41d84572380a37fe7292a73, ejecución 41162865868: backend, calidad/build frontend, contenedores y gobernanza aprobados. Fallaron 17 escenarios generales y 21 contextuales por siete desalineaciones de regresión tras los cambios aprobados: ruta contextual de un enlace antiguo; texto preparado/original reubicado en ayuda (16 variantes entre navegadores); etiqueta Nota sugerida; selector Nota final ambiguo con la fórmula; selector móvil sustituido por pestañas; retorno Libro de notas; y orden de parámetros del enlace de captura. No se atribuyen a la IA ni al backend y no se presentan como CI verde.
+
+Se retoman T015/T016 para comprobar los contratos actuales, no borrar aserciones: conservar src original/preparada y hojas, abrir/cerrar ayuda nativa, seleccionar la etiqueta principal por su párrafo, navegar por tabs, validar el retorno/filtros del libro y leer pathname/URLSearchParams sin depender de su orden. Se mantienen permisos, foco, bloqueos, borradores, ausencia de escrituras, timeouts y configuración del CI. No se fusiona ni se cambia producción durante esta corrección.
+
+### Regresión local de la corrección
+
+- Suite contextual completa, grading-review.mock.spec.ts y evaluation-visuals.mock.spec.ts: 113/113, cero omitidas, fallidas o inestables; 8 min 31 s.
+- Suites completas grade-evidence-review.spec.ts y explainable-grading.spec.ts, proyectos Chromium y WebKit de evidencia: 145/145, cero omitidas, fallidas o inestables; 15 min 35 s. Incluyen 16 escenarios nuevos de ayuda voluntaria: cerrada → abierta → cerrada, sin cambiar URL, pregunta ni datos académicos.
+- Total de esta regresión: 258 escenarios distintos. No se suman los intentos diagnósticos ni las 118 comprobaciones previas al primer CI.
+- TypeScript y lint estricto aprobados de nuevo; no se modifican aplicación, dependencias, workflows, umbrales, reintentos ni timeouts en esta corrección.
+
+El primer intento general local se interrumpió tras dos timeouts: uno al iniciar sesión y otro al finalizar un recorrido de variantes que incorporaba la comprobación adicional de ayuda. No cuenta como aprobado. La ayuda se separó en un escenario independiente con el mismo límite vigente y se repitieron completas las suites generales, sin otra suite de navegador simultánea; los resultados finales anteriores corresponden a esa ejecución completa.
+
+Informes ignorados en E:/tesis/output/spec138-pruebas/ci-fix-contextual.json y ci-fix-evidence-final.json. Reproducción desde frontend con el servidor local descrito arriba: `node ./node_modules/@playwright/test/cli.js test --config=e2e/mock grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts --workers=2`; después, `node ./node_modules/@playwright/test/cli.js test e2e/grade-evidence-review.spec.ts e2e/explainable-grading.spec.ts --project=chromium --project=webkit-evidence-review --workers=2`. No se sustituyen las particiones ni los proyectos remotos por esta selección local.
+
+Cierre local de T015/T016: inventario regenerado y vigente con 682 superficies; gobernanza completa 61/61 sin exclusiones; validador del PR aprobado para 10 especificaciones; particiones E2E con 944 escenarios, cero faltantes y cero duplicados. Converge volvió a contrastar los 12 requisitos, 5 criterios, 12 escenarios de aceptación, 7 decisiones y 8 principios: cero hallazgos; tasks.md permaneció idéntico durante esa comprobación. La revisión independiente de los tres archivos E2E no encontró debilitamiento de controles ni bloqueos. La publicación de esta corrección inicia una ejecución nueva de CI: estos resultados locales no declaran aprobado ese CI ni autorizan fusión o despliegue.

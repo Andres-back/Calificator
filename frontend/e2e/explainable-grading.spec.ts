@@ -705,7 +705,13 @@ test('dos paquetes quedan en cola, un fallo conserva hojas para reintentar', asy
 test('lectura docente y enlaces antiguos conservan contexto sin habilitar escritura', async ({ page }) => {
   await login(page, 'profesor', ['subjects.read', 'evaluations.read', 'grading.read']);
   await page.goto('/app/materias/m1/calificar?evaluacion=e1&estudiante=s1&pregunta=pregunta%3A1&hoja=1');
-  await expect(page).toHaveURL(/\/app\/calificaciones\?/);
+  await expect(page).toHaveURL(url => url.pathname === '/app/materias/m1/evaluaciones/e1/revision'
+    && url.searchParams.get('evaluacion') === 'e1'
+    && url.searchParams.get('materia') === 'm1'
+    && url.searchParams.get('estudiante') === 's1'
+    && url.searchParams.get('pregunta') === 'pregunta:1'
+    && url.searchParams.get('hoja') === '1'
+    && url.searchParams.get('calificacion') === 'c1');
   await expect(page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión', exact: true })).toHaveAttribute('aria-current', 'step');
   await expect(page.locator('#grade-component-q1')).toBeFocused();
