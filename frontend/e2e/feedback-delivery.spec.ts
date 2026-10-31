@@ -12,6 +12,8 @@ const result = (index: number) => ({ estudiante: index === 1 ? 'Estudiante Prueb
 
 async function installFeedback(page: Page, initiallyApproved = false, { deferApprovalRefresh = false } = {}) {
   let approved = initiallyApproved;
+  let issued = false;
+  const access = { calificacion_id: 'c1', id: 'access1', estudiante: 'Estudiante Prueba', estado: 'active', version: 1, copy_available: true, expires_at: '2099-01-01T00:00:00Z' };
   let previewCalls = 0;
   let releaseApprovalRefresh = () => {};
   const approvalRefresh = new Promise<void>(resolve => { releaseApprovalRefresh = resolve; });
@@ -46,11 +48,12 @@ async function installFeedback(page: Page, initiallyApproved = false, { deferApp
       return json({ resultados: route.request().postDataJSON().selecciones.map((entry: { calificacion_id: string }) => ({ calificacion_id: entry.calificacion_id, resultado: result(Number(entry.calificacion_id.slice(1))) })) });
     }
     if (path === '/api/evaluaciones/e1/devoluciones/accesos') {
-      if (route.request().method() === 'GET') return json({ resultados: [], next_cursor: null });
+      if (route.request().method() === 'GET') return json({ resultados: issued ? [access] : [], next_cursor: null });
       operations.push('issue');
-      return json({ resultados: [{ calificacion_id: 'c1', id: 'access1', estado: 'active', version: 1,
-        credential_available: true, url: `http://127.0.0.1:4175/devolucion#${token}`, expires_at: '2026-10-26T12:00:00Z' }] });
+      issued = true;
+      return json({ resultados: [{ ...access, credential_available: true, url: `http://127.0.0.1:4175/devolucion#${token}` }] });
     }
+    if (path === '/api/evaluaciones/e1/devoluciones/accesos/copiar') return json({ resultados: issued ? [{ ...access, url: `http://127.0.0.1:4175/devolucion#${token}` }] : [] });
     return route.fallback();
   });
   return { operations, previewCalls: () => previewCalls, releaseApprovalRefresh };
@@ -138,8 +141,9 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await expect(dialog.getByRole('checkbox')).toHaveCount(1);
     expect(state.previewCalls()).toBe(calls);
     await dialog.getByRole('searchbox', { name: 'Buscar estudiante' }).fill('');
-    await dialog.getByRole('button', { name: 'Compartir', exact: true }).click();
-    await dialog.getByRole('button', { name: 'Crear 1 enlace faltante', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Generar enlaces', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Generar 1 enlace', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }).click();
     await expect(dialog.getByRole('button', { name: 'Copiar enlace de Estudiante Prueba' })).toBeVisible();
     expect(state.operations).toEqual(['review', 'issue']);
     await dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true }).click();

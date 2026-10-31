@@ -647,7 +647,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b46e6040349fab45b9b09ac8b00c3e7289922d2b8a5183709585ce076d95b8b1",
+  "source_digest": "61f37f11c6b9a282edb3156e77e0d91c3643f408022daa9523f07097f9213c3b",
   "surfaces": [
     {
       "actors": [
@@ -957,6 +957,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -1060,6 +1066,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -1240,6 +1252,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -3521,6 +3539,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
@@ -5043,6 +5067,12 @@
           "level": "e2e",
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
@@ -5477,6 +5507,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -5580,6 +5616,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -5760,6 +5802,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -7874,6 +7922,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -8232,6 +8286,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -10299,6 +10359,12 @@
           "level": "e2e",
           "reference": "GET:/users/me",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
@@ -10480,6 +10546,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -11601,6 +11673,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -11704,6 +11782,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -11884,6 +11968,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -12454,6 +12544,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -12923,6 +13019,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -16284,6 +16386,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -16387,6 +16495,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -16567,6 +16681,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -20013,6 +20133,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -22102,6 +22228,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_chat.py"
         },
         {
@@ -22949,6 +23081,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -23968,6 +24106,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/deliveryAvailability.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/feedbackApproval.test.ts"
         },
         {
@@ -23993,6 +24137,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/feedbackSections.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -24520,6 +24670,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -25910,6 +26066,12 @@
           "level": "e2e",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
@@ -27260,6 +27422,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -27717,6 +27885,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -29513,6 +29687,12 @@
           "level": "unit",
           "reference": "/devolucion",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/devolucion",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_chat.py"
         },
         {
@@ -29573,6 +29753,12 @@
           "level": "e2e",
           "reference": "/devolucion",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/devolucion",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
@@ -29628,6 +29814,18 @@
           "reference": "/devolucion",
           "status": "direct",
           "test_path": "frontend/src/modules/feedback_sharing/ShareFeedbackDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/devolucion",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/deliveryAvailability.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/devolucion",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -29799,6 +29997,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -30794,6 +30998,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -30897,6 +31107,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -31077,6 +31293,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -33853,6 +34075,12 @@
           "level": "e2e",
           "reference": "GET:/auth/me",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/auth/me",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
@@ -35064,6 +35292,12 @@
           "level": "e2e",
           "reference": "GET:/devoluciones/disponibilidad",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/devoluciones/disponibilidad",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
@@ -35570,6 +35804,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -35673,6 +35913,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -35853,6 +36099,12 @@
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -36240,6 +36492,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -36343,6 +36601,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -36523,6 +36787,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -37656,6 +37926,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -38281,6 +38557,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -39007,6 +39289,12 @@
           "reference": "GET:/users/me/authorization",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/users/me/authorization",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -40396,6 +40684,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -40499,6 +40793,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -40679,6 +40979,12 @@
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -41111,6 +41417,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -41489,6 +41801,12 @@
           "reference": "PATCH:/users/me",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/users/me",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -44791,6 +45109,12 @@
           "level": "e2e",
           "reference": "POST:/devoluciones/accesos/{id}/{action}",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/devoluciones/accesos/{id}/{action}",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
@@ -45604,6 +45928,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -45707,6 +46037,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -45887,6 +46223,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -46784,6 +47126,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -52504,6 +52852,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
         },
         {
@@ -53033,6 +53387,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",
@@ -54195,6 +54555,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_history.py"
         },
         {
@@ -54681,6 +55047,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/feedback-share-review.spec.ts"
         },
         {
@@ -54880,6 +55252,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationPrintPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/feedbackShareMessage.test.ts"
         },
         {
           "level": "unit",
@@ -56741,6 +57119,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -58202,6 +58586,12 @@
           "level": "unit",
           "reference": "users",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_feedback_link_guards.py"
+        },
+        {
+          "level": "unit",
+          "reference": "users",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_feedback_sharing_authorization.py"
         },
         {
@@ -58401,6 +58791,12 @@
           "reference": "users",
           "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "users",
+          "status": "direct",
+          "test_path": "frontend/e2e/feedback-link-reentry.spec.ts"
         },
         {
           "level": "e2e",

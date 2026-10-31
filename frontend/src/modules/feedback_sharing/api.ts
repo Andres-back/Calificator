@@ -52,7 +52,7 @@ export async function saveFeedbackMessage(id: string, payload: Omit<FeedbackRevi
   const { data } = await api.post<FeedbackPreview>(path(id) + '/mensaje', payload, { signal });
   return data;
 }
-export async function issueFeedbackAccesses(id: string, payload: { request_id: string; selecciones: FeedbackSelection[]; duracion_dias: number; evidencia: boolean }, signal?: AbortSignal) {
+export async function issueFeedbackAccesses(id: string, payload: { request_id: string; selecciones: FeedbackSelection[]; duracion_dias: number; evidencia: boolean; solo_si_falta?: boolean }, signal?: AbortSignal) {
   const { data } = await api.post<{ resultados: IssuedFeedbackAccess[] }>(path(id) + '/accesos', payload, { signal });
   return data.resultados;
 }
@@ -73,7 +73,7 @@ export async function prepareFeedbackPrint(id: string, selecciones: FeedbackSele
   const { data } = await api.post<{ resultados: { calificacion_id: string; resultado?: FeedbackResult; error?: string }[] }>(path(id) + '/fichas', { selecciones }, { signal });
   return data.resultados;
 }
-export async function changeFeedbackAccess(access: FeedbackAccess, action: 'desactivar' | 'reactivar' | 'renovar', payload: Action & { duracion_dias?: number; fingerprint?: string; evidencia?: boolean; confirmar_reemplazo?: boolean }, signal?: AbortSignal) {
+export async function changeFeedbackAccess(access: FeedbackAccess, action: 'desactivar' | 'reactivar' | 'renovar', payload: Action & { duracion_dias?: number; fingerprint?: string; evidencia?: boolean; confirmar_reemplazo?: boolean; mantener_vencimiento?: boolean }, signal?: AbortSignal) {
   const { data } = await api.post<Omit<IssuedFeedbackAccess, 'calificacion_id'>>(`/devoluciones/accesos/${encodeURIComponent(access.id)}/${action}`, payload, { signal });
   return { ...data, calificacion_id: access.calificacion_id };
 }

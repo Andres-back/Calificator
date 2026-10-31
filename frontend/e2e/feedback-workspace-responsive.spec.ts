@@ -4,22 +4,24 @@ import { login } from './fixtures/explainableGrading';
 test.use({ reducedMotion: 'reduce' });
 const name = (index: number) => index === 1 ? 'Estudiante Prueba' : `Alumno ${String(index).padStart(3, '0')} María Fernanda López`;
 const url = (id: string) => `https://example.test/devolucion#${id.padEnd(43, 'a')}`;
-async function install(page: Page, total = 40) {
+async function install(page: Page, total = 40, mixed = false) {
   await login(page, 'profesor', { rosterSize: total });
   const calls: { ids: string[]; request: string }[] = [];
   const accesses = new Map([[`c${total}`, { id: `a${total}`, calificacion_id: `c${total}`, estudiante: name(total), estado: 'active', copy_available: true, version: 1, expires_at: '2099-01-01T00:00:00Z' }]]);
+  if (mixed) for (const [index, estado] of [[28, 'expired'], [29, 'disabled']] as const) accesses.set(`c${index}`, { id: `a${index}`, calificacion_id: `c${index}`, estudiante: name(index), estado, copy_available: false, version: 1, expires_at: index === 28 ? '2000-01-01T00:00:00Z' : '2099-01-01T00:00:00Z' });
   await page.route('https://**/*', route => route.abort());
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/devoluciones/disponibilidad') return route.fulfill({ json: { enabled: true } });
-    if (path.endsWith('/devoluciones/previsualizar')) return route.fulfill({ json: { resultados: route.request().postDataJSON().calificacion_ids.map((id: string) => ({ calificacion_id: id, elegible: true, seleccionable: true, fingerprint: 'f'.repeat(64), resultado: { estudiante: name(Number(id.slice(1))), evaluacion: 'Lectura sintética', materia: 'Lenguaje', nota: id === `c${total}` ? '0' : '3.5', nota_maxima: '5', retroalimentacion: 'Aciertos: identificaste la idea central.\nQué mejorar: justifica con una frase del texto.\nSiguiente paso: escribe una razón nueva.', respuestas: [], claves_liberadas: false, alcance: 'summary' } })) } });
-    if (path.endsWith('/devoluciones/accesos/copiar')) return route.fulfill({ json: { resultados: route.request().postDataJSON().access_ids.map((id: string) => ({ id, calificacion_id: `c${id.slice(1)}`, estudiante: name(Number(id.slice(1))), url: url(id) })) } });
+    if (path.endsWith('/devoluciones/previsualizar')) return route.fulfill({ json: { resultados: route.request().postDataJSON().calificacion_ids.map((id: string) => mixed && id === 'c27' ? { calificacion_id: id, elegible: false, seleccionable: false, preparacion: 'no_grade', motivo: 'Todavía no tiene una nota para compartir.' } : ({ calificacion_id: id, elegible: true, seleccionable: true, fingerprint: 'f'.repeat(64), resultado: { estudiante: name(Number(id.slice(1))), evaluacion: 'Lectura sintética', materia: 'Lenguaje', nota: id === `c${total}` ? '0' : '3.5', nota_maxima: '5', retroalimentacion: 'Aciertos: identificaste la idea central.\nQué mejorar: justifica con una frase del texto.\nSiguiente paso: escribe una razón nueva.', respuestas: [], claves_liberadas: false, alcance: 'summary' } })) } });
+    if (path.endsWith('/devoluciones/accesos/copiar')) return route.fulfill({ json: { resultados: route.request().postDataJSON().access_ids.map((id: string) => ({ id, calificacion_id: `c${id.slice(1)}`, estudiante: name(Number(id.slice(1))), expires_at: '2099-01-01T00:00:00Z', url: url(id) })) } });
     if (path.endsWith('/devoluciones/accesos')) {
       if (route.request().method() === 'GET') return route.fulfill({ json: { resultados: [...accesses.values()], next_cursor: null } });
       const body = route.request().postDataJSON();
       calls.push({ ids: body.selecciones.map((item: { calificacion_id: string }) => item.calificacion_id), request: body.request_id });
       expect(body.duracion_dias).toBe(3); expect(body.evidencia).toBe(false); expect(body.selecciones.length).toBeLessThanOrEqual(100);
       const resultados = body.selecciones.map((item: { calificacion_id: string }) => {
+        if (mixed && calls.length === 1 && item.calificacion_id === 'c2') return { calificacion_id: item.calificacion_id, error: 'No pudimos generar este enlace. Reintenta.' };
         const index = Number(item.calificacion_id.slice(1));
         const access = { id: `a${index}`, calificacion_id: item.calificacion_id, estudiante: name(index), estado: 'active', copy_available: true, version: 1, expires_at: '2099-01-01T00:00:00Z' };
         accesses.set(item.calificacion_id, access);
@@ -38,8 +40,43 @@ async function install(page: Page, total = 40) {
     await expect(action).toBeEnabled();
     await action.press('Enter');
   }
-  return { calls, dialog: page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true }) };
+  const workspace = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
+  await expect(workspace).toHaveCSS('transform', 'none');
+  await workspace.getByRole('button', { name: 'Limpiar selección', exact: true }).press('Enter');
+  return { calls, dialog: workspace, accesses };
 }
+
+for (const width of [384, 1440]) test(`139 treinta destinatarios mixtos, fallo parcial y reintento sin duplicados ${width}px`, async ({ page, browserName }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width, height: 950 });
+  const { calls, dialog, accesses } = await install(page, 30, true);
+  const original = JSON.stringify([...accesses.values()]);
+  await dialog.getByRole('button', { name: 'Listos del filtro', exact: true }).press('Enter');
+  await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(29);
+  await dialog.getByRole('button', { name: 'Generar enlaces', exact: true }).press('Enter');
+  await expect(dialog.getByRole('list', { name: 'Destinatarios y enlaces' }).getByRole('listitem')).toHaveCount(29);
+  await dialog.getByRole('button', { name: 'Generar 26 enlaces', exact: true }).press('Enter');
+  expect(calls).toEqual([]);
+  expect(JSON.stringify([...accesses.values()])).toBe(original);
+  await dialog.getByRole('button', { name: 'Confirmar y generar 26 enlaces', exact: true }).press('Enter');
+  await expect(dialog.getByRole('button', { name: 'Copiar lista de 26', exact: true })).toBeEnabled();
+  await expect(dialog.getByRole('alert')).toContainText('1 enlace');
+  expect(calls).toHaveLength(1);
+  expect(calls[0].ids).toHaveLength(26);
+  for (const id of ['c27', 'c28', 'c29', 'c30']) expect(calls[0].ids).not.toContain(id);
+  expect(accesses.size).toBe(28);
+  await dialog.getByRole('alert').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `output/playwright/spec139-parcial-${width}-${browserName}.png` });
+  await dialog.getByRole('button', { name: 'Generar 1 enlace', exact: true }).press('Enter');
+  await dialog.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }).press('Enter');
+  await expect(dialog.getByRole('button', { name: 'Copiar lista de 27', exact: true })).toBeEnabled();
+  expect(calls).toHaveLength(2); expect(calls[1].ids).toEqual(['c2']);
+  expect(accesses.size).toBe(29);
+  expect(accesses.get('c28')?.estado).toBe('expired'); expect(accesses.get('c29')?.estado).toBe('disabled');
+  expect(accesses.get('c30')?.expires_at).toBe('2099-01-01T00:00:00Z');
+  await dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true }).press('Enter');
+  await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(29);
+});
 
 for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']) test(`129 seleccionar y copiar sin volver al inicio ${width}px ${theme}`, async ({ page, browserName }) => {
   test.setTimeout(60_000);
@@ -50,7 +87,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   const list = dialog.locator('[data-feedback-list-scroll]');
   await list.evaluate(element => { element.scrollTop = element.scrollHeight; });
   for (const index of [39, 40]) await dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(index), exact: true }).check();
-  const share = dialog.getByRole('button', { name: 'Compartir', exact: true });
+  const share = dialog.getByRole('button', { name: 'Generar enlaces', exact: true });
   // IntersectionObserver can report 0.9999995 for a fully visible fractional pixel.
   await expect(share).toBeInViewport({ ratio: 0.999 });
   const last = dialog.getByRole('checkbox', { name: 'Seleccionar Estudiante Prueba', exact: true });
@@ -60,18 +97,19 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   await page.screenshot({ path: `../output/playwright/spec129-list-${width}-${theme}-${browserName}.png` });
   const position = await list.evaluate(element => element.scrollTop);
   await share.click();
-  await expect(dialog.getByRole('button', { name: 'Copiar 1 disponible', exact: true })).toBeEnabled();
+  await expect(dialog.getByRole('button', { name: 'Copiar lista de 1', exact: true })).toBeEnabled();
   expect(calls).toEqual([]);
-  const create = dialog.getByRole('button', { name: 'Crear 1 enlace faltante', exact: true });
+  const create = dialog.getByRole('button', { name: 'Generar 1 enlace', exact: true });
   await expect(create).toBeEnabled();
   await create.press('Enter');
-  const copy = dialog.getByRole('button', { name: 'Copiar 2 enlaces', exact: true });
+  await dialog.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }).press('Enter');
+  const copy = dialog.getByRole('button', { name: 'Copiar lista de 2', exact: true });
   await expect(copy).toBeInViewport({ ratio: 0.999 });
   expect(calls).toHaveLength(1); expect(calls[0].ids).toEqual(['c39']);
   await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('Synthetic denial'); } } }));
   await copy.click();
   const manual = dialog.getByRole('textbox', { name: 'Enlaces para copiar manualmente' });
-  await expect(manual).toHaveValue(`${name(39)}\n${url('a39')}\n\n${name(40)}\n${url('a40')}`);
+  await expect(manual).toHaveValue(`${name(39)}: ${url('a39')}\n${name(40)}: ${url('a40')}`);
   await manual.focus();
   await page.setViewportSize({ width, height: 450 });
   await expect(copy).toBeInViewport({ ratio: 0.999 });
@@ -81,14 +119,16 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   const back = dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true });
   await expect(back).toBeEnabled();
   await back.press('Enter');
-  await expect(share).toBeFocused();
+  await expect(dialog.locator('[data-feedback-actions]').getByRole('button', { name: 'Copiar lista de 2', exact: true })).toBeFocused();
   await expect(dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(39), exact: true })).toBeChecked();
   await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(2);
   // Keyboard/viewport changes and new link actions can reflow the list. Preserve
   // the same visible student, not a stale document offset from before sharing.
   await expect(last).toBeInViewport({ ratio: 0.999 });
   expect(await list.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
-  // WebKit rounds scroll metrics at the limit; tolerate one CSS pixel, not a row.
+  // Keep the existing lower-bound/clamping contract and one CSS pixel of
+  // rounding. Exact row offsets may change with the viewport; the same
+  // student's selection/header must remain visible (asserted above).
   await expect.poll(() => list.evaluate((element, saved) => element.scrollTop - Math.min(saved, Math.max(0, element.scrollHeight - element.clientHeight)), position)).toBeGreaterThanOrEqual(-1);
   await page.screenshot({ path: `../output/playwright/spec129-return-${width}-${theme}-${browserName}.png` });
   expect(calls).toHaveLength(1);
@@ -104,9 +144,10 @@ test('129 paginación completa de 105 sin incluir activos en nuevas emisiones', 
   const { calls, dialog } = await install(page, 105);
   await expect(dialog.getByRole('checkbox')).toHaveCount(105);
   await dialog.getByRole('button', { name: 'Listos del filtro', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Compartir', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Crear 104 enlaces faltantes', exact: true }).click();
-  await expect(dialog.getByRole('button', { name: 'Copiar 105 enlaces', exact: true })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Generar enlaces', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Generar 104 enlaces', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Confirmar y generar 104 enlaces', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Copiar lista de 105', exact: true })).toBeEnabled();
   expect(calls.map(call => call.ids.length)).toEqual([100, 4]);
   expect(calls.flatMap(call => call.ids)).not.toContain('c105');
   expect(new Set(calls.flatMap(call => call.ids)).size).toBe(104);
@@ -116,11 +157,11 @@ for (const width of [390, 1440]) test(`129 texto ampliado y foco ${width}px`, as
   test.setTimeout(60_000);
   await page.setViewportSize({ width, height: 950 });
   const { dialog } = await install(page);
-  await page.addStyleTag({ content: `html { font-size: ${width === 390 ? '150%' : '200%'} !important; }` });
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
   const last = dialog.getByRole('checkbox', { name: 'Seleccionar Estudiante Prueba', exact: true });
   await last.scrollIntoViewIfNeeded(); await last.press('Space');
   await expect(last).toBeChecked();
-  await expect(dialog.getByRole('button', { name: 'Compartir', exact: true })).toBeInViewport({ ratio: 0.999 });
+  await expect(dialog.getByRole('button', { name: 'Generar enlaces', exact: true })).toBeInViewport({ ratio: 0.999 });
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
   await dialog.getByRole('button', { name: 'Ver retroalimentación de Estudiante Prueba', exact: true }).click();
   await expect(dialog.getByRole('region', { name: 'Retroalimentación de Estudiante Prueba', exact: true })).toContainText('justifica con una frase');
@@ -135,7 +176,7 @@ test('129 seleccion inicio mitad y final sin buscar acciones', async ({ page }) 
   const { dialog, calls } = await install(page);
   await expect(dialog.getByRole('checkbox')).toHaveCount(40);
   const indices = [2, 22, 1]; // Alphabetical beginning, middle and final row.
-  const share = dialog.getByRole('button', { name: 'Compartir', exact: true });
+  const share = dialog.getByRole('button', { name: 'Generar enlaces', exact: true });
   for (let offset = 0; offset < indices.length; offset++) {
     await dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(indices[offset]), exact: true }).check();
     await expect(share).toBeInViewport({ ratio: 0.999 });
@@ -145,7 +186,7 @@ test('129 seleccion inicio mitad y final sin buscar acciones', async ({ page }) 
   const recipients = dialog.getByRole('list', { name: 'Destinatarios y enlaces' });
   await expect(recipients.getByRole('listitem')).toHaveCount(3);
   for (const index of indices) await expect(recipients.getByText(name(index), { exact: true })).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Crear 3 enlaces faltantes', exact: true })).toBeInViewport({ ratio: 0.999 });
+  await expect(dialog.getByRole('button', { name: 'Generar 3 enlaces', exact: true })).toBeInViewport({ ratio: 0.999 });
   expect(calls).toEqual([]);
   await dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true }).click();
   await expect(share).toBeFocused();
