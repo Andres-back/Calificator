@@ -212,7 +212,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       if (!current()) return;
       const failures = new Set(results.filter(result => result.estado === 'failed').map(result => result.calificacion_id));
       setOutcomes(previous => ({ ...previous, ...Object.fromEntries([...failures].map(id => [id, 'failed' as const])) }));
-      setProgress('Comprobando las devoluciones aprobadas antes de crear los enlaces…');
+      setProgress('Comprobando las retroalimentaciones aprobadas antes de crear los enlaces…');
       const previews: FeedbackPreview[] = [];
       for (let offset = 0; offset < op.targetIds.length; offset += 100) previews.push(...await previewFeedback(evaluationId, op.targetIds.slice(offset, offset + 100), abort.current.signal));
       const accesses = await listFeedbackAccesses(evaluationId, abort.current.signal);
@@ -264,7 +264,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
   function reviewChanged(result: FeedbackPreview, action?: 'saved') {
     if (!current() || result.calificacion_id !== reviewingId) return;
     if (action !== 'saved' && (!result.elegible || !result.fingerprint)) {
-      setError('No pudimos comprobar que la devolución esté lista. Conservamos el mensaje; vuelve a consultar antes de crear su enlace.');
+      setError('No pudimos comprobar que la retroalimentación esté lista. Conservamos el mensaje; vuelve a consultar antes de crear su enlace.');
       return;
     }
     setItems(previous => previous.map(item => {
@@ -275,13 +275,13 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
     onPreviewChanged?.(result);
     setReviewDirty(false);
     if (action === 'saved') {
-      setNotice('Mensaje guardado. Falta aprobar la devolución antes de preparar su enlace.');
+      setNotice('Mensaje guardado. Falta aprobar la retroalimentación antes de preparar su enlace.');
       return;
     }
     const hasClosedAccess = items.find(item => item.id === result.calificacion_id)?.accesses.length;
     pendingFocus.current = { kind: hasClosedAccess ? 'manage' : 'create', id: result.calificacion_id };
     finishReviewInput(); setReviewingId(null);
-    setNotice(hasClosedAccess ? 'Devolución aprobada. Revisa las opciones de su enlace anterior; no se reactivó ni creó otro.' : 'Devolución aprobada. Puedes crear su enlace aquí; todavía no se ha creado ninguno por esta aprobación.');
+    setNotice(hasClosedAccess ? 'Retroalimentación aprobada. Revisa las opciones de su enlace anterior; no se reactivó ni creó otro.' : 'Retroalimentación aprobada. Puedes crear su enlace aquí; todavía no se ha creado ninguno por esta aprobación.');
   }
   function cancelReview() {
     const id = reviewingId;
@@ -301,7 +301,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       {!confirming && <p className="text-sm text-muted">{items.length || targets.length} destinatarios · Solo cada estudiante y su familia deben recibir su enlace.</p>}
     </header>
     <div {...feedbackScrollLayout(embedded)} className={`${feedbackScrollLayout(embedded).className} space-y-4 p-4`}>
-      {loading ? <p role="status">Comprobando devoluciones y enlaces…</p> : reviewing?.preview ? <FeedbackDeliveryReview key={reviewing.id} evaluationId={evaluationId} name={reviewing.name} preview={reviewing.preview} signal={abort.current.signal} valid={current} onApproved={reviewChanged} onCancel={cancelReview} onBusy={setBusy} onDirtyChange={setReviewDirty} /> : <>
+      {loading ? <p role="status">Comprobando retroalimentaciones y enlaces…</p> : reviewing?.preview ? <FeedbackDeliveryReview key={reviewing.id} evaluationId={evaluationId} name={reviewing.name} preview={reviewing.preview} signal={abort.current.signal} valid={current} onApproved={reviewChanged} onCancel={cancelReview} onBusy={setBusy} onDirtyChange={setReviewDirty} /> : <>
         {recovery && <p className="rounded-xl border border-amber-400 p-3 text-sm">Hay una solicitud pendiente. Recuperarla conserva sus destinatarios y opciones originales, aunque hayas cambiado la selección.</p>}
         {newLinkCount > 0 && !manifest.current && !confirming && <fieldset className="space-y-3 rounded-xl border border-border p-3" disabled={busy || approvalRecovery}>
           <legend className="px-1 font-semibold">{newLinkCount === 1 ? 'Opciones del enlace nuevo' : `Opciones de los ${newLinkCount} enlaces nuevos`}</legend>
@@ -319,12 +319,12 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
           const readyForApproval = canApprove && item.kind === 'pending' && !item.accesses.length && item.preview?.batch_candidate;
           return <li key={item.id} className="min-w-0 rounded-xl border border-border p-3">
             <p className="break-words font-semibold">{item.name}</p>
-            <p className="mt-1 text-sm text-muted">{ready ? 'Enlace listo para copiar' : outcomes[item.id] === 'failed' ? 'No se pudo crear su enlace. Revisa este caso.' : outcomes[item.id] === 'uncertain' ? 'Pendiente de confirmar. Recupera la misma solicitud.' : outcomes[item.id] === 'unavailable' ? 'No pudimos recuperar su enlace. Revisa sus opciones.' : item.kind === 'closed' ? 'Su enlace necesita revisar vigencia o autorización.' : outcomes[item.id] === 'confirmed' ? 'Acceso guardado; falta recuperar su enlace.' : readyForApproval ? 'Lista para tu aprobación' : item.kind === 'missing' ? 'Falta crear su enlace' : item.kind === 'pending' ? item.preview?.motivo ?? 'Primero revisa la devolución' : 'Revisa su enlace antes de compartir'}</p>
+            <p className="mt-1 text-sm text-muted">{ready ? 'Enlace listo para copiar' : outcomes[item.id] === 'failed' ? 'No se pudo crear su enlace. Revisa este caso.' : outcomes[item.id] === 'uncertain' ? 'Pendiente de confirmar. Recupera la misma solicitud.' : outcomes[item.id] === 'unavailable' ? 'No pudimos recuperar su enlace. Revisa sus opciones.' : item.kind === 'closed' ? 'Su enlace necesita revisar vigencia o autorización.' : outcomes[item.id] === 'confirmed' ? 'Acceso guardado; falta recuperar su enlace.' : readyForApproval ? 'Lista para tu aprobación' : item.kind === 'missing' ? 'Falta crear su enlace' : item.kind === 'pending' ? item.preview?.motivo ?? 'Primero revisa la retroalimentación' : 'Revisa su enlace antes de compartir'}</p>
             {item.kind === 'pending' && item.preview?.revision_docente && !manifest.current && <p className="mt-2 text-sm leading-6">{canApprove && !item.accesses.length && item.preview.batch_candidate ? 'Puedes aprobar esta nota y su mensaje con el botón inferior. Los puntajes pendientes no se compartirán.' : 'La nota ya está confirmada. Puedes revisar el mensaje y aprobar solo nota y retroalimentación, sin entregar los puntajes pendientes.'}</p>}
             {item.accesses.filter(access => access.estado === 'active').length > 1 && <p className="text-sm text-muted">Tiene varios enlaces guardados. Puedes elegir otro en sus opciones; no se reemplazó ninguno.</p>}
             <div className="mt-2 flex flex-wrap gap-2">{ready && <Button variant="outline" aria-label={'Copiar enlace de ' + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => void copy([ready])}>Copiar enlace</Button>}
               {item.kind === 'pending' && (item.preview?.revision_docente || (canApprove && item.preview?.mensaje_editable)) && !manifest.current && !approvalRecovery
-                ? <Button variant="outline" data-review-feedback={item.id} aria-label={(canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje de ' : 'Revisar y compartir devolución de ') + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => { if (current()) { setError(''); setNotice(''); setReviewingId(item.id); } }}>{canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje' : 'Revisar y compartir'}</Button>
+                ? <Button variant="outline" data-review-feedback={item.id} aria-label={(canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje de ' : 'Revisar y compartir retroalimentación de ') + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => { if (current()) { setError(''); setNotice(''); setReviewingId(item.id); } }}>{canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje' : 'Revisar y compartir'}</Button>
                 : (item.kind === 'closed' || item.kind === 'pending' || (item.kind === 'existing' && !ready) || (manifest.current && !ready) || item.accesses.length > 1) && <Button variant="link" data-manage-feedback={item.id} aria-label={'Revisar enlace de ' + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => onManage(item.id)}>Revisar caso</Button>}</div>
           </li>;
         })}</ul>}

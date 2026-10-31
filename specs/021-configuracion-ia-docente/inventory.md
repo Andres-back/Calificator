@@ -47,8 +47,8 @@
 | endpoint | `PUT:/connector/models` | ambiguous | missing | `backend/app/modules/ollama_connector/router.py:70` |
 | endpoint | `PUT:/profesor/ai-config` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1182` |
 | endpoint | `PUT:/profesor/ai-credentials/{provider}` | admin, profesor | covered | `backend/app/modules/admin_ai_config/router.py:1247` |
-| frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:64` |
-| frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:68` |
+| frontend_route | `/app/admin/configuracion-ia` | admin | covered | `frontend/src/config/routes.ts:65` |
+| frontend_route | `/app/configuracion-ia` | authenticated | covered | `frontend/src/config/routes.ts:69` |
 | frontend_call | `DELETE:/profesor/ai-credentials/{provider}` | ambiguous | covered | `frontend/src/modules/profesor_ai/api.ts:84` |
 | frontend_call | `DELETE:/profesor/ollama-connectors/{connectorId}` | ambiguous | missing | `frontend/src/modules/profesor_ai/api.ts:116` |
 | frontend_call | `GET:/admin/ai-audit` | admin | covered | `frontend/src/modules/admin/api.ts:463` |

@@ -31,3 +31,9 @@
 ## Decisiones y complejidad
 
 [Decisiones, alternativas rechazadas y excepciones justificadas; eliminar si no aplica]
+
+## Reducción y validación visual
+
+- [Mapear cada control/texto añadido con el que reutiliza, sustituye, retira o reubica; justificar si no hay sustracción.]
+- [Planificar maqueta384px antes de implementar y capturas de la implementación384px/escritorio claro/oscuro antes de fusionar, sin datos reales.]
+- [Indicar alertas concretas que no pueden ocultarse y regresiones de borradores, permisos y navegación que deben conservarse.]

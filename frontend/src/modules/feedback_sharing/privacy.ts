@@ -5,7 +5,7 @@ export function isFeedbackSurface(pathname = window.location.pathname) {
 
 export function installFeedbackPrivacy() {
   if (!isFeedbackSurface()) return;
-  document.title = 'Tu devolución · XCalificator';
+  document.title = 'Tu retroalimentación · XCalificator';
   for (const [name, content] of [['referrer', 'no-referrer'], ['robots', 'noindex, nofollow']]) {
     const tag = document.querySelector(`meta[name="${name}"]`) || document.head.appendChild(document.createElement('meta'));
     tag.setAttribute('name', name); tag.setAttribute('content', content);

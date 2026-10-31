@@ -72,17 +72,17 @@ describe('GradeBreakdown', () => {
   });
   it('explica fórmula, respuesta, puntaje, motivo y evidencia', () => {
     render(<GradeBreakdown breakdown={breakdown} />);
-    expect(screen.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Respuestas y puntajes' })).toBeInTheDocument();
     expect(screen.getByText('3.00 / 4.00')).toBeInTheDocument();
     expect(screen.getAllByText('24')).toHaveLength(2);
     expect(screen.getByText(/Coincide con la clave oficial/)).toBeInTheDocument();
     expect(screen.getByText('Evidencia: hoja 2.')).toBeInTheDocument();
     expect(screen.getByText(/Practica explicar el procedimiento/)).toBeInTheDocument();
-    expect(screen.getByText(/evidencia extraída → valoración objetiva/)).toBeInTheDocument();
-    expect(screen.getByText('Material de apoyo consultado (1)')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Material de apoyo consultado (1)'));
-    expect(screen.getByText('Guía de multiplicación')).toBeInTheDocument();
-    expect(screen.getByText('Versión: 3')).toBeInTheDocument();
+    expect(screen.queryByText(/evidencia extraída → valoración objetiva/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Material de apoyo consultado (1)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Guía de multiplicación')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Cada puntaje muestra|El color indica/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Colores de prioridad de revisión')).not.toBeInTheDocument();
   });
 
   it('renderiza el editor dentro de la tarjeta activa', () => {
@@ -166,10 +166,21 @@ describe('GradeBreakdown', () => {
     expect(screen.getAllByRole('article').map((item) => item.getAttribute('data-grade-tone'))).toEqual(['success', 'error', 'warning', 'warning']);
   });
 
-  it('declara cuando no existe una fuente RAG pertinente', () => {
+  it('138 no añade un aviso genérico por ausencia de fuentes a la lectura principal', () => {
     const withoutSources = { ...breakdown, componentes: [{ ...breakdown.componentes[0], fuentes: [] }] };
     render(<GradeBreakdown breakdown={withoutSources} />);
-    expect(screen.getByText('Sin material adicional pertinente')).toBeInTheDocument();
+    expect(screen.queryByText('Sin material adicional pertinente')).not.toBeInTheDocument();
+    expect(screen.queryByText(/No se registró material de apoyo/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Coincide con la clave oficial/)).toBeInTheDocument();
+  });
+  it('138 conserva la lectura del estudiante y no le muestra datos técnicos privados', () => {
+    render(<GradeBreakdown breakdown={breakdown} student />);
+    expect(screen.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeInTheDocument();
+    expect(screen.getByText('Cada puntaje muestra la evidencia y la razón que lo respalda.')).toBeInTheDocument();
+    expect(screen.getAllByText('24')).toHaveLength(2);
+    expect(screen.getByText(/Practica explicar el procedimiento/)).toBeInTheDocument();
+    expect(screen.queryByText(/evidencia extraída|Guía de multiplicación|Valoraciones registradas/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ajustar/ })).not.toBeInTheDocument();
   });
   it('muestra el ajuste docente como línea separada y explicado', () => {
     render(<GradeBreakdown breakdown={{

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useBlocker, useParams, useSearchParams, useLocation, Link, Navigate } from 'react-router-dom';
+import { useBlocker, useParams, useSearchParams, useLocation, useNavigate, Link, Navigate } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -44,7 +44,12 @@ import { addPendingGrading } from './gradingJobs';
 import { GradingJobMonitor } from './GradingJobMonitor';
 import { RevisionGuide } from './RevisionGuide';
 import { GradeBreakdown } from './components/GradeBreakdown';
-import { focusReviewSection } from './components/reviewSectionFocus';
+import { GradeAnalysisDetails } from './components/GradeAnalysisDetails';
+import { ReviewHelp } from './components/ReviewHelp';
+import { ReviewContextNavigation } from './ReviewContextNavigation';
+import { buildReviewHref, isPendingReviewRoute, resolveReviewContext, safeReviewBookReturn } from './reviewRoutes';
+import { TeacherInbox } from '@/modules/dashboard/TeacherInbox';
+import { focusReviewSection, revealWithinReview } from './components/reviewSectionFocus';
 import { GradeEvidenceViewer } from './components/GradeEvidenceViewer';
 import { GradeQuestionEvidence } from './components/GradeQuestionEvidence';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
@@ -71,11 +76,12 @@ export function GradingLegacyRedirect() {
   const location = useLocation();
   const { id, evaluacionId } = useParams();
   const [params] = useSearchParams();
+  const permissions = useAuth(state => state.user?.permissions);
   const next = new URLSearchParams(params);
   if (id) next.set('materia', id);
   if (evaluacionId) next.set('evaluacion', evaluacionId);
   if (location.pathname.endsWith('/calificaciones/foto')) next.set('modo', 'carga');
-  return <Navigate to={`${routes.calificacionesWorkspace}?${next}`} replace />;
+  return <Navigate to={buildReviewHref({ params: next, permissions })} replace />;
 }
 
 const CONFIRMADA = 'confirmada';
@@ -106,14 +112,18 @@ export function MobileReviewContext({
   evaluationName,
   forceOpen,
   actions,
+  navigation,
   onOpenChange,
+  compactContext = false,
   children,
 }: {
   materiaName?: string;
   evaluationName?: string;
   forceOpen: boolean;
   actions?: ReactNode;
+  navigation?: ReactNode;
   onOpenChange?: (open: boolean) => void;
+  compactContext?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(forceOpen);
@@ -129,20 +139,24 @@ export function MobileReviewContext({
     <Card data-testid="grade-review-header" className="relative mb-3 shrink-0 p-0">
       <div className="flex flex-wrap items-center gap-x-2 px-2">
       <h1 className="sr-only">Calificaciones</h1>
+      {navigation}
       <button
         type="button"
         aria-expanded={open}
         aria-controls="mobile-grading-context"
         onClick={() => { userToggled.current = true; setOpen((value) => !value); }}
-        className="focus-ring flex min-h-14 min-w-0 flex-1 basis-full items-center justify-between gap-3 rounded-lg px-2 py-2 text-left sm:basis-0"
+        className={cn('focus-ring flex min-h-14 min-w-0 items-center justify-between gap-3 rounded-lg px-2 py-2 text-left',
+          navigation && compactContext ? 'shrink-0' : 'flex-1 basis-full sm:basis-0')}
       >
         <span className="min-w-0">
+          {compactContext ? <span className="block text-sm font-semibold">Cambiar evaluación</span> : <>
           <span className="block text-xs font-bold text-brand-700 dark:text-brand-300">Estás revisando</span>
           <span className="block break-words text-sm font-bold text-fg">{evaluationName || 'Selecciona una evaluación'}</span>
           <span className="block break-words text-xs text-muted">{materiaName || 'Selecciona una materia'}</span>
+          </>}
         </span>
         <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-700 dark:text-brand-200">
-          {open ? 'Ocultar' : 'Cambiar'}
+          {open ? 'Ocultar' : compactContext ? '' : 'Cambiar'}
           <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} aria-hidden="true" />
           <span className="sr-only"> materia o evaluación</span>
         </span>
@@ -195,20 +209,32 @@ export function MobileReviewActionBar({
 }) {
   const navigationBlocked = dirty || componentDirty || advancedEditOpen || claimsDirty || confirmPending || publishPending || savePending;
   const barRef = useRef<HTMLDivElement>(null);
+  const [docked, setDocked] = useState(true);
   useLayoutEffect(() => {
     const bar = barRef.current;
     const scroller = bar?.closest<HTMLElement>('[data-testid="grade-review-scroll"]');
     if (!bar || !scroller) return;
     // Reserve the actual fixed footer, including wrapped messages and safe area.
     // A hidden writing/desktop footer measures zero and releases the space.
-    const update = () => scroller.style.setProperty('--grade-review-actions-height', `${bar.getBoundingClientRect().height}px`);
+    const update = () => {
+      const height = bar.getBoundingClientRect().height;
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      // Large text, wrapped notices or a small keyboard viewport must never let
+      // a fixed footer consume the reading area. Keep every action in normal
+      // scroll flow instead, without shrinking the user's chosen font size.
+      const shouldDock = height <= viewportHeight / 3;
+      setDocked(shouldDock);
+      scroller.style.setProperty('--grade-review-actions-height', shouldDock ? `${height}px` : '0px');
+    };
     update();
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
     observer?.observe(bar);
     window.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('resize', update);
     return () => {
       observer?.disconnect();
       window.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('resize', update);
       scroller.style.removeProperty('--grade-review-actions-height');
     };
   }, []);
@@ -221,7 +247,10 @@ export function MobileReviewActionBar({
         : null;
 
   return (
-    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-12px_32px_rgba(15,23,42,0.16)] backdrop-blur xl:hidden" aria-label="Acciones de la calificación">
+    <div ref={barRef} data-action-position={docked ? 'fixed' : 'flow'} className={cn(
+      'z-40 border-t border-border bg-surface/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 xl:hidden',
+      docked ? 'fixed inset-x-0 bottom-0 shadow-[0_-12px_32px_rgba(15,23,42,0.16)] backdrop-blur' : 'relative mt-3',
+    )} aria-label="Acciones de la calificación">
       {blockMessage && <p role="status" className="mb-2 text-center text-xs font-semibold text-amber-700 dark:text-amber-300">{blockMessage}</p>}
       {processing && <p role="status" className="mb-2 text-center text-xs text-muted">La IA sigue analizando esta entrega. Puedes revisar otro estudiante.</p>}
       <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
@@ -244,8 +273,8 @@ export function MobileReviewActionBar({
             {published ? 'Nota publicada' : processing ? 'Calificando' : 'Revisión guardada'}
           </div>
         )}
-        <Button fullWidth className="h-auto min-h-12 py-2" variant="outline" onClick={onNext} disabled={navigationBlocked}>
-          Siguiente estudiante <ChevronRight className="h-4 w-4" />
+        <Button fullWidth className="h-auto min-h-12 min-w-0 gap-1 px-2 py-2" variant="outline" onClick={onNext} disabled={navigationBlocked}>
+          <span className="min-w-0">Siguiente estudiante</span><ChevronRight className="h-4 w-4 shrink-0" />
         </Button>
       </div>
     </div>
@@ -594,6 +623,7 @@ export function IncidenciasSection({ calificacionId, active, onToggle, onDirtyCh
 /* ─── Sub-componente: PanelDetalle ─── */
 function PanelDetalle({
   cal,
+  identityInNavigation = false,
   suggestedArea,
   notaMaxima,
   studentMap,
@@ -606,7 +636,6 @@ function PanelDetalle({
   onSaved,
   captureNextGrade,
   onNextGrade,
-  onBackToList,
   canGrade,
   canReviewClaims,
   canPublish,
@@ -615,6 +644,7 @@ function PanelDetalle({
   publishPending,
 }: {
   cal: CalificacionDetalle;
+  identityInNavigation?: boolean;
   suggestedArea?: string | null;
   notaMaxima: number | undefined;
   studentMap: Map<string, { nombre: string; email?: string }>;
@@ -627,7 +657,6 @@ function PanelDetalle({
   onSaved: () => void;
   captureNextGrade?: () => () => void;
   onNextGrade: () => void;
-  onBackToList: () => void;
   canGrade: boolean;
   canReviewClaims: boolean;
   canPublish: boolean;
@@ -661,7 +690,6 @@ function PanelDetalle({
   const setEvidencePage = (page: number) => setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('hoja', String(page)); return next; }, { replace: true });
   const [mobileTab, setMobileTab] = useState<ReviewSection>(() => detailParams.has('pregunta') ? 'revision' : detailParams.has('hoja') ? 'evidencia' : 'resumen');
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const detailPermissions = useAuth((state) => state.user?.permissions ?? []);
   const detailActorId = useAuth((state) => state.user?.id ?? '');
   const reviewSectionRef = useRef<HTMLDivElement | null>(null);
   const detailViewRef = useRef<HTMLDivElement | null>(null);
@@ -671,7 +699,7 @@ function PanelDetalle({
     const frame = window.requestAnimationFrame(() => {
       const question = reviewSectionRef.current?.querySelector<HTMLElement>('article');
       (question ?? reviewSectionRef.current)?.focus({ preventScroll: true });
-      detailViewRef.current?.scrollIntoView({ block: 'start' });
+      revealWithinReview(detailViewRef.current);
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
@@ -705,7 +733,7 @@ function PanelDetalle({
     setMobileTab('revision');
     window.requestAnimationFrame(() => {
       reviewSectionRef.current?.focus({ preventScroll: true });
-      detailViewRef.current?.scrollIntoView({ block: 'start' });
+      revealWithinReview(detailViewRef.current);
     });
   };
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
@@ -873,7 +901,7 @@ function PanelDetalle({
     const normalized = Math.min(evidencePages, Math.max(1, page));
     setEvidencePage(normalized);
     setMobileTab('evidencia');
-    if (enteringEvidence) window.requestAnimationFrame(() => evidenceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    if (enteringEvidence) window.requestAnimationFrame(() => revealWithinReview(evidenceSectionRef.current));
   }
 
   function canChangeDetailView(nextView: ReviewSection) {
@@ -905,12 +933,7 @@ function PanelDetalle({
   }
 
   function revealFeedback() {
-    const target = feedbackSectionRef.current;
-    const scroller = target?.closest<HTMLElement>('[data-testid="grade-review-scroll"]');
-    const identity = panelScopeRef.current?.querySelector<HTMLElement>('[data-testid="grade-review-identity"]');
-    if (target && scroller) {
-      scroller.scrollTop += target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - (identity?.getBoundingClientRect().height ?? 0) - 12;
-    } else target?.scrollIntoView({ block: 'start' });
+    revealWithinReview(feedbackSectionRef.current);
   }
 
   function changeDetailView(view: ReviewSection) {
@@ -922,7 +945,7 @@ function PanelDetalle({
     if (nextView !== 'resumen') window.requestAnimationFrame(() => {
       const target = nextView === 'revision' ? reviewSectionRef.current : nextView === 'evidencia' ? evidenceSectionRef.current : nextView === 'retroalimentacion' ? feedbackSectionRef.current : null;
       focusReviewSection(target, focusAtRequest, () => {
-        if (nextView === 'revision' || nextView === 'evidencia') detailViewRef.current?.scrollIntoView({ block: 'start' });
+        if (nextView === 'revision' || nextView === 'evidencia') revealWithinReview(detailViewRef.current);
         if (nextView === 'retroalimentacion') revealFeedback();
       });
     });
@@ -944,7 +967,7 @@ function PanelDetalle({
     }
     setFinalGradeSnapshot(cal);
     setEditingFinalGrade(true);
-    window.requestAnimationFrame(() => finalGradeEditorRef.current?.scrollIntoView({ block: 'nearest' }));
+    window.requestAnimationFrame(() => revealWithinReview(finalGradeEditorRef.current, 'nearest'));
   }
 
   const questionReview = activeBreakdown ? (
@@ -992,9 +1015,6 @@ function PanelDetalle({
       )}
     />
   ) : <RevisionGuide items={cal.guia_revision ?? []} />;
-  const bookRoute = cal.materia_id ? routes.materiaBoletin(cal.materia_id) : '';
-  const requestedReturn = detailParams.get('volver');
-  const returnToBook = bookRoute && requestedReturn && (requestedReturn === bookRoute || requestedReturn.startsWith(`${bookRoute}?`)) ? requestedReturn : null;
   const formulaScore = cal.desglose?.formula.nota_final != null ? Number(cal.desglose.formula.nota_final) : null;
   const calculation = cal.desglose ? gradeCalculationPresentation(cal.desglose) : null;
   const scoreDifference = !done && !presentation.processing && presentation.score != null && formulaScore != null && Number.isFinite(formulaScore) && Math.abs(presentation.score - formulaScore) > 0.005
@@ -1016,7 +1036,7 @@ function PanelDetalle({
           window.requestAnimationFrame(() => focusReviewSection(feedbackSectionRef.current, focusAtRequest, revealFeedback));
         }
       } else if (mobileTab !== 'revision') changeDetailView('revision');
-      else reviewSectionRef.current?.scrollIntoView({ block: 'start' });
+      else revealWithinReview(reviewSectionRef.current);
     }}
     selectedComponentId={selectedQuestion?.id}
     onSelectComponent={(componentId) => openReviewComponent(componentId)}
@@ -1027,19 +1047,17 @@ function PanelDetalle({
     <>
     <div ref={panelScopeRef} className="flex min-h-0 min-w-0 flex-col">
       {/* Header */}
-      <div data-testid="grade-review-identity" className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/95 px-3 py-2 backdrop-blur sm:px-4">
+      <div data-testid={identityInNavigation ? undefined : 'grade-review-identity'} className={cn(
+        identityInNavigation ? (isDirty || feedbackBusy || mobileForm.isWriting ? 'px-3 py-2 sm:px-4' : 'sr-only')
+          : 'sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/95 px-3 py-2 backdrop-blur sm:px-4',
+      )}>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="break-words font-display text-lg font-bold">{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</p>
+            <h2 className={identityInNavigation ? 'sr-only' : 'break-words font-display text-lg font-bold'}>{cal.estudiante_nombre || estudiante?.nombre || 'Estudiante'}</h2>
             {isDirty && <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">Sin guardar</span>}
             {feedbackBusy && <span role="status" className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold">Preparando entrega…</span>}
           </div>
-          <p className="text-xs text-muted">{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
-          <div className="flex flex-wrap items-center gap-x-2">
-            <Button type="button" variant="ghost" className="hidden min-h-11 px-2 xl:inline-flex" onClick={onBackToList}><ArrowLeft className="h-4 w-4" /> Volver a notas del grupo</Button>
-            {returnToBook && <Link to={returnToBook} className="focus-ring inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200">Volver al libro de notas</Link>}
-            {cal.materia_id && detailPermissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(cal.materia_id)} className="focus-ring inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-brand-700 dark:text-brand-200"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
-          </div>
+          <p className={identityInNavigation ? 'sr-only' : 'text-xs text-muted'}>{cal.evaluacion_nombre} · {cal.materia_nombre}</p>
           {mobileForm.isWriting && <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={mobileForm.finishWriting}>Terminar de escribir</Button>}
         </div>
       </div>
@@ -1049,7 +1067,7 @@ function PanelDetalle({
         <h2 className="sr-only">1. Nota y explicación</h2>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className={mobileTab === 'retroalimentacion' ? 'flex flex-wrap items-baseline gap-x-2' : undefined}>
-            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : cal.estado === 'ajustada' ? 'Nota ajustada por el docente' : done ? 'Nota confirmada' : 'Nota sugerida por la IA'}</p>
+            <p className="text-sm text-muted">{presentation.score == null ? presentation.label : done ? 'Nota final' : 'Nota sugerida'}</p>
             {presentation.score == null ? (
               <div className="mt-2 flex items-center gap-2 font-semibold text-brand-600 dark:text-brand-300">
                 {presentation.processing && <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />}
@@ -1154,7 +1172,6 @@ function PanelDetalle({
                     aria-pressed={evidenceVariant === 'preparada'} onClick={() => setVariantSelection({ scope: evidenceScope, value: 'preparada' })}>Foto preparada</Button>
                   <Button type="button" size="sm" className="min-h-11" variant={evidenceVariant === 'original' ? 'primary' : 'outline'}
                     aria-pressed={evidenceVariant === 'original'} onClick={() => setVariantSelection({ scope: evidenceScope, value: 'original' })}>Foto original</Button>
-                  <p className="basis-full text-xs leading-5 text-muted">La ubicación sugerida por pregunta corresponde a la foto preparada. El original se consulta como hoja completa.</p>
                 </div>}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
                   <Button type="button" size="sm" className="min-h-11" variant="ghost" disabled={evidencePage <= 1} onClick={() => showEvidencePage(evidencePage - 1)}>Anterior</Button>
@@ -1209,6 +1226,7 @@ function PanelDetalle({
 
         <div id="grade-history-panel" hidden={mobileTab !== 'historial'} className="space-y-3">
         <h2 className="text-base font-bold">Historial de la calificación</h2>
+        {activeBreakdown && <GradeAnalysisDetails breakdown={activeBreakdown} />}
         {analysisFeedback && <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Retroalimentación del análisis original</summary><p className="whitespace-pre-wrap text-sm leading-7">{analysisFeedback}</p></details>}
         {hasInitialReviewNotices && (done || presentation.processing) && <details className="rounded-xl border border-border px-3">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold">{presentation.processing ? 'Avisos del análisis en curso' : 'Historial de revisión de IA'}</summary>
@@ -1255,6 +1273,7 @@ function PanelDetalle({
         <Timeline events={cal.timeline} />
         </details>
         </div>
+        <ReviewHelp />
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
           <div className="hidden flex-wrap gap-2 xl:flex">
@@ -1801,13 +1820,27 @@ function TeacherWorkTimer({ evaluacionId }: { evaluacionId: string }) {
 /* ─── Componente principal ─── */
 export function CalificacionesWorkspace() {
   const user = useAuth((state) => state.user);
+  const location = useLocation();
+  const [params] = useSearchParams();
   if (isStandardStudentProfile(user)) return <Navigate to={routes.forbidden} replace />;
+  if (isPendingReviewRoute(location.pathname, params)) {
+    return <section className="space-y-5" aria-labelledby="pending-review-title">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 id="pending-review-title" className="font-display text-2xl font-extrabold">Pendientes</h1>
+        <Link to={`${routes.calificacionesWorkspace}?seleccionar=1`} className="focus-ring inline-flex min-h-11 items-center rounded-lg border border-border bg-surface px-4 text-sm font-semibold">Elegir evaluación</Link>
+      </div>
+      {user?.permissions?.includes('submissions.review') ? <TeacherInbox /> : <Card className="p-4 text-sm text-muted">Elige una evaluación para continuar la revisión con tus permisos actuales.</Card>}
+    </section>;
+  }
   return <GradingCenter />;
 }
 
 function GradingCenter() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const evalId = searchParams.get('evaluacion') ?? '';
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const context = resolveReviewContext(location.pathname, searchParams);
+  const evalId = context.evaluationId;
   const evalIdParam = evalId;
   const selectedId = searchParams.get('calificacion');
   const selectedStudentId = searchParams.get('estudiante');
@@ -1824,14 +1857,16 @@ function GradingCenter() {
   const canReviewClaims = permissions.includes('submissions.review');
   const canPublish = permissions.includes('grading.publish');
   const changeContext = useCallback((patch: Record<string, string | null>, replace = false) => {
-    setSearchParams((previous) => {
-      const next = new URLSearchParams(previous);
-      Object.entries(patch).forEach(([key, value]) => value ? next.set(key, value) : next.delete(key));
-      return next;
-    }, { replace });
-  }, [setSearchParams]);
+    const next = new URLSearchParams(searchParams);
+    if (context.materiaId) next.set('materia', context.materiaId);
+    if (context.evaluationId) next.set('evaluacion', context.evaluationId);
+    Object.entries(patch).forEach(([key, value]) => value ? next.set(key, value) : next.delete(key));
+    // Keep an already-open compatible route mounted: silently canonicalizing it
+    // on a filter/selection change would discard local search and draft state.
+    navigate(buildReviewHref({ params: next, permissions: context.contextual ? permissions : undefined }), { replace });
+  }, [searchParams, context.materiaId, context.evaluationId, context.contextual, navigate, permissions]);
   const returnToReview = () => {
-    if (previousReview.current !== null) setSearchParams(previousReview.current);
+    if (previousReview.current !== null) navigate(buildReviewHref({ params: new URLSearchParams(previousReview.current), permissions: context.contextual ? permissions : undefined }));
     else changeContext({ modo: null });
   };
   const setSelectedId = (id: string | null) => changeContext({ calificacion: id, estudiante: null, pregunta: null, hoja: null });
@@ -1880,11 +1915,15 @@ function GradingCenter() {
   const directEvaluation = useQuery({
     queryKey: ['evaluacion', evalIdParam],
     queryFn: () => getEvaluacion(evalIdParam!),
-    enabled: Boolean(evalIdParam),
+    enabled: Boolean(evalIdParam) && !context.conflictingQuery,
     retry: false,
   });
 
-  const materiaId = directEvaluation.data?.materia_id ?? searchParams.get('materia') ?? '';
+  const materiaId = context.materiaId || directEvaluation.data?.materia_id || '';
+  const contextMismatch = context.conflictingQuery || Boolean(directEvaluation.data && (
+    directEvaluation.data.id !== evalId || (context.materiaId && directEvaluation.data.materia_id !== context.materiaId)
+  ));
+  const validEvaluation = !contextMismatch && directEvaluation.data?.id === evalId;
 
   useBodyScrollLock(Boolean(selectedId) && mode !== 'carga', '(max-width: 1279px)');
 
@@ -1908,7 +1947,7 @@ function GradingCenter() {
   const { data: evals } = useQuery({
     queryKey: ['evaluaciones', materiaId],
     queryFn: () => listEvaluaciones(materiaId),
-    enabled: !!materiaId,
+    enabled: !!materiaId && !contextMismatch && (!evalId || validEvaluation),
   });
   useEffect(() => {
     if (!evalId && evals?.[0]) changeContext({ evaluacion: evals[0].id }, true);
@@ -1924,7 +1963,7 @@ function GradingCenter() {
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam, signal }) => getEvaluationReview(evalId, { filtro: gradeFilter, q: debouncedSearchTerm, cursor: pageParam }, signal),
     getNextPageParam: (lastPage) => lastPage.siguiente_cursor ?? undefined,
-    enabled: !!directEvaluation.data,
+    enabled: validEvaluation,
     placeholderData: (previousData) => previousData,
     refetchInterval: (query) => {
       return query.state.data?.pages[0]?.contadores.procesando ? 5_000 : false;
@@ -1939,12 +1978,12 @@ function GradingCenter() {
     nota_sugerida: row.nota == null ? null : Number(row.nota), nota_confirmada: DONE_STATES.has(row.estado) && row.nota != null ? Number(row.nota) : null,
     resultado_json: {},
   }] : []), [reviewRows]);
-  const selectedEval = directEvaluation.data;
+  const selectedEval = validEvaluation ? directEvaluation.data : undefined;
   const selectedMateria = materias?.find((materia) => materia.id === materiaId);
   const notaMaxima = selectedEval?.nota_maxima != null ? Number(selectedEval.nota_maxima) : undefined;
 
   // Student map
-  const { estudiantes } = useEstudiantes(materiaId);
+  const { estudiantes } = useEstudiantes(validEvaluation ? materiaId : '');
   const studentMap = useMemo(
     () => new Map(estudiantes.map((s) => [s.id, s])),
     [estudiantes],
@@ -1952,7 +1991,7 @@ function GradingCenter() {
   const uploadGradesQuery = useQuery({
     queryKey: ['calificaciones', evalId],
     queryFn: () => listCalificaciones(evalId),
-    enabled: mode === 'carga' && !!evalId,
+    enabled: mode === 'carga' && !!evalId && validEvaluation,
     staleTime: 0,
     refetchOnMount: 'always',
     retry: false,
@@ -1967,21 +2006,21 @@ function GradingCenter() {
   const selectedStudentReference = useQuery({
     queryKey: ['review-student', evalId, selectedStudentId],
     queryFn: ({ signal }) => getEvaluationReview(evalId, { estudiante_id: selectedStudentId! }, signal),
-    enabled: !!directEvaluation.data && !!selectedStudentId && !selectedId && mode !== 'carga',
+    enabled: validEvaluation && !!selectedStudentId && !selectedId && mode !== 'carga',
   });
   const selectedRow = reviewRows.find((row) => row.estudiante_id === selectedStudentId) ?? selectedStudentReference.data?.alumnos[0];
 
   useEffect(() => {
-    if (!selectedStudentId || selectedId || mode === 'carga') return;
+    if (!validEvaluation || !selectedStudentId || selectedId || mode === 'carga') return;
     const row = selectedRow;
     if (row?.calificacion_id) changeContext({ calificacion: row.calificacion_id }, true);
-  }, [changeContext, mode, selectedRow, selectedId, selectedStudentId]);
+  }, [changeContext, mode, selectedRow, selectedId, selectedStudentId, validEvaluation]);
 
   // Detail query
   const detalleQuery = useQuery({
     queryKey: ['calificacion-detalle', selectedId],
     queryFn: () => getCalificacionDetalle(selectedId!),
-    enabled: !!selectedId && !!directEvaluation.data,
+    enabled: !!selectedId && validEvaluation,
     refetchInterval: (query) => {
       const grade = query.state.data as CalificacionDetalle | undefined;
       return grade && isGradeProcessing(grade) ? 5_000 : false;
@@ -2143,11 +2182,33 @@ function GradingCenter() {
   const splitLayout = isTeacher && Boolean(evalId && materiaId) && mode === 'revision' && !contextExpanded
     && !mobileMoreActionsOpen && !batchResult && selectedBatch.size === 0
     && !gradingFeatureFlags.teacherWorkTiming && !directEvaluation.error;
+  const canOpenSubject = permissions.includes('subjects.read');
+  const canOpenEvaluations = canOpenSubject && permissions.includes('evaluations.read');
+  const currentBook = materiaId && canOpenSubject && permissions.includes('gradebook.read')
+    ? safeReviewBookReturn(searchParams.get('volver'), materiaId) ?? routes.materiaBoletin(materiaId) : undefined;
+  const backToEvaluationList = canOpenEvaluations && materiaId ? routes.materiaEvaluaciones(materiaId) : routes.calificacionesWorkspace;
+  const breadcrumb = (detail = false) => <ReviewContextNavigation
+    materiaId={materiaId} materiaName={selectedMateria?.nombre ?? detalleQuery.data?.materia_nombre}
+    evaluationName={selectedEval?.nombre} studentName={detail ? detalleQuery.data?.estudiante_nombre ?? selectedRow?.nombre : undefined}
+    backLabel={detail ? 'Volver a lista' : canOpenEvaluations ? 'Volver a evaluaciones' : 'Volver a pendientes'}
+    onBack={detail ? () => setSelectedId(null) : undefined}
+    backHref={detail ? undefined : backToEvaluationList} bookHref={currentBook}
+  />;
+  if (contextMismatch) return <Card className="space-y-3 p-4">
+    <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">La evaluación no corresponde a la materia o al contexto del enlace. No se cargaron alumnos ni se habilitaron cambios.</p>
+    <Link to={backToEvaluationList} className="focus-ring inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-semibold">Volver a evaluaciones</Link>
+  </Card>;
+  if (evalId && !validEvaluation) return <Card className="space-y-3 p-4">
+    <p role={directEvaluation.isError ? 'alert' : 'status'} className="text-sm text-muted">{directEvaluation.isError ? 'No se pudo abrir esta evaluación. Comprueba el acceso o selecciona otra.' : 'Abriendo evaluación…'}</p>
+    <Link to={backToEvaluationList} className="focus-ring inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-semibold">Volver a evaluaciones</Link>
+  </Card>;
   return (
     <div data-grading-layout={splitLayout ? 'split' : 'flow'} className={cn(
       'flex min-w-0 flex-col [&_button]:min-h-11 [&_button]:min-w-11', splitLayout ? 'xl:h-full xl:min-h-0' : 'min-h-full',
     )}>
       <MobileReviewContext materiaName={selectedMateria?.nombre} evaluationName={selectedEval?.nombre}
+        navigation={!selectedId ? <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">{breadcrumb()}</div> : undefined}
+        compactContext={Boolean(evalId && materiaId)}
         forceOpen={!materiaId || !evalId} onOpenChange={setContextExpanded}
         actions={<div className="relative flex w-full shrink-0 items-center justify-between gap-2 py-1 sm:w-auto">
           {mode === 'carga' ? (
@@ -2163,8 +2224,8 @@ function GradingCenter() {
               Más acciones <ChevronDown className={cn('h-4 w-4 transition-transform', mobileMoreActionsOpen && 'rotate-180')} />
             </Button>
             {mobileMoreActionsOpen && <div id="grading-more-actions" className="absolute right-0 top-full z-20 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg">
-              {materiaId && permissions.includes('evaluations.read') && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><ArrowLeft className="h-4 w-4" /> Volver a evaluaciones</Link>}
-              {materiaId && <Link to={routes.materiaBoletin(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
+              {materiaId && canOpenEvaluations && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2">Evaluaciones de la materia</Link>}
+              {currentBook && <Link to={currentBook} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
               {evalId && <FeedbackToolsButton evaluationId={evalId} initialSelectedIds={[...selectedBatch]} suggestedArea={selectedMateria?.area} disabled={mobileDirty || deliveryBusy} />}
               {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty || deliveryBusy} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
               {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
@@ -2352,12 +2413,9 @@ function GradingCenter() {
         >
           {selectedId && mode !== 'carga' ? (
             <>
-              {/* Mobile overlay close */}
-              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] xl:hidden">
-                <button type="button" onClick={() => setSelectedId(null)} className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-muted">
-                  <ArrowLeft className="h-4 w-4" /> Volver a lista
-                </button>
-                {mobileDirty && <span className="text-[10px] font-semibold text-amber-600">Sin guardar</span>}
+              {/* One identity/navigation row outside the scroller at every width. */}
+              <div data-testid="grade-review-identity" className="z-10 shrink-0 border-b border-border bg-surface px-2 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+                {breadcrumb(true)}
               </div>
               <div ref={reviewScrollRef} data-mobile-scroll data-testid="grade-review-scroll" role="region" tabIndex={0} aria-label="Detalle de la calificación" className={cn('mb-[var(--grade-review-actions-height,5rem)] min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-500 xl:mb-0', splitLayout ? 'xl:overscroll-contain' : 'xl:overflow-visible')}>
                 {detalleQuery.isLoading ? (
@@ -2368,8 +2426,8 @@ function GradingCenter() {
                   <PanelDetalle
                     key={`${selectedId}-${discardVersion}`}
                     cal={detalleQuery.data}
+                    identityInNavigation
                     suggestedArea={selectedMateria?.area}
-                    onBackToList={() => setSelectedId(null)}
                     notaMaxima={notaMaxima}
                     studentMap={studentMap}
                     onConfirm={(id, _nota) => {

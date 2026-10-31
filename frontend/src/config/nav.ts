@@ -22,20 +22,19 @@ export interface NavItem {
   brandIcon?: EducationalIconName;
   soon?: boolean;
   permission?: string;
+  anyPermission?: readonly string[];
 }
 
 export function visibleNavigationItems(items: NavItem[], allowed: ReadonlySet<string>): NavItem[] {
-  const canGradeFromSubject = allowed.has('subjects.read') && allowed.has('evaluations.read');
-  return items.filter((item) => (
-    (!item.permission || allowed.has(item.permission))
-    && !(item.to === '/app/calificaciones' && canGradeFromSubject)
-  ));
+  return items.filter(item => item.anyPermission
+    ? item.anyPermission.some(permission => allowed.has(permission))
+    : !item.permission || allowed.has(item.permission));
 }
 
 export const profesorNav: NavItem[] = [
   { label: 'Inicio', to: '/app', icon: LayoutDashboard, brandIcon: 'dashboard' },
   { label: 'Materias', to: '/app/materias', icon: BookOpen, brandIcon: 'subjects', permission: 'subjects.read' },
-  { label: 'Calificar y revisar', to: '/app/calificaciones', icon: ClipboardCheck, brandIcon: 'grade-evidence', permission: 'grading.read' },
+  { label: 'Pendientes', to: '/app/calificaciones', icon: ClipboardCheck, brandIcon: 'grade-evidence', permission: 'grading.read', anyPermission: ['grading.read', 'grading.grade'] },
   { label: 'Recursos', to: '/app/herramientas', icon: Wrench, brandIcon: 'resources', permission: 'resources.read' },
   { label: 'Presentaciones', to: '/app/presentaciones', icon: Presentation, brandIcon: 'presentations', permission: 'presentations.read' },
   { label: 'Reportes', to: '/app/reportes', icon: BarChart3, brandIcon: 'reports', permission: 'reports.read' },

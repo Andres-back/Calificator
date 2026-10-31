@@ -133,13 +133,13 @@ for (const width of [360, 390, 1440]) for (const theme of ['light', 'dark']) for
     const operations = await install(page);
     const workspace = await openWorkspace(page, entry, theme);
     const panel = workspace.getByRole('region', { name: 'Compartir retroalimentaciones', exact: true });
-    await panel.getByRole('button', { name: 'Revisar y compartir devolución de Estudiante Prueba', exact: true }).click();
-    await expect(panel.getByRole('region', { name: 'Revisar devolución de Estudiante Prueba', exact: true })).toBeFocused();
-    await expect(panel.getByRole('combobox', { name: 'Contenido de la devolución' })).toHaveValue('summary');
+    await panel.getByRole('button', { name: 'Revisar y compartir retroalimentación de Estudiante Prueba', exact: true }).click();
+    await expect(panel.getByRole('region', { name: 'Revisar retroalimentación de Estudiante Prueba', exact: true })).toBeFocused();
+    await expect(panel.getByRole('combobox', { name: 'Contenido de la retroalimentación' })).toHaveValue('summary');
     await expect(panel.getByRole('option', { name: 'Incluir detalle por pregunta revisado' })).toHaveCount(0);
     await panel.getByRole('textbox', { name: 'Mensaje para el estudiante' }).fill(message + ' Practica con un ejemplo del texto.');
     expect(operations).toEqual([]);
-    await panel.getByRole('button', { name: 'Aprobar devolución', exact: true }).click();
+    await panel.getByRole('button', { name: 'Aprobar retroalimentación', exact: true }).click();
     const create = panel.getByRole('button', { name: 'Crear 1 enlace faltante', exact: true });
     await expect(create).toBeVisible();
     await expect(create).toBeFocused();

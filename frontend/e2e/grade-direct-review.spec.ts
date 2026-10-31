@@ -59,7 +59,7 @@ for (const width of [360, 390, 1440]) for (const theme of ['light', 'dark']) {
     await page.screenshot({ path: `output/playwright/spec134-note-${width}-${theme}-${test.info().project.name}.png` });
     await save.click();
     await expect(page.getByTestId('grade-final-editor')).toHaveCount(0);
-    await expect(page.getByTestId('grade-review-scroll')).toContainText('Nota ajustada por el docente');
+    await expect(page.getByTestId('grade-review-scroll')).toContainText('Nota final');
     await expect(page.getByTestId('grade-review-students').locator('[data-review-student]').first()).toContainText('4.5');
     await expect(page.getByRole('button', { name: 'Terminar de escribir', exact: true })).toHaveCount(0);
     if (width < 1280) await expect(page.locator('[aria-label="Acciones de la calificación"]')).toBeVisible();

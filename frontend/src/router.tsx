@@ -128,6 +128,9 @@ export const router = createBrowserRouter([
 
           /* ── Superficies elevadas: personal o rol personalizado ── */
           { element: <RequireStaffSurface />, children: [
+            { element: <RequirePermission anyOf={['subjects.read']} />, children: [
+              { element: <RequirePermission anyOf={['grading.read', 'grading.grade']} />, children: [{ path: routes.calificacionesContextual, element: lazyPage(<CalificacionesWorkspace />) }] },
+            ] },
             { element: <RequirePermission anyOf={['ai_settings.personal']} />, children: [{ path: 'configuracion-ia', element: lazyPage(<TeacherAIConfigPage />) }] },
             { element: <RequirePermission anyOf={['resources.read']} />, children: [{ path: 'herramientas', element: lazyPage(<ListPage />) }, { path: 'herramientas/:id', element: lazyPage(<DetailPage />) }] },
             { element: <RequirePermission anyOf={['resources.create']} />, children: [{ path: 'herramientas/nuevo', element: lazyPage(<GeneratePage />) }] },

@@ -75,7 +75,7 @@ export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, 
   if(!permitted) return null;
   const selected=rows.filter(row=>selectedIds.includes(row.calificacion_id??''));
   return <section className="min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-3 sm:p-4" aria-label="Publicación de notas en lote">
-    <h3 className="font-bold">{individual ? 'Aceptar la nota y dejar la devolución lista' : 'Aceptar notas y dejar las devoluciones listas'}</h3>
+    <h3 className="font-bold">{individual ? 'Aceptar la nota y dejar la retroalimentación lista' : 'Aceptar notas y dejar las retroalimentaciones listas'}</h3>
     <p className="text-sm text-muted">Aceptas las notas mostradas sin volver a usar la IA. Los ajustes que ya hiciste se conservan. Crear enlaces e imprimir siguen siendo acciones aparte.</p>
     {!summary && !operation.current && <div className="grid gap-2 sm:flex sm:flex-wrap">
       <Button disabled={disabled||busy||!available(rows).length} onClick={()=>prepare(rows)}>{individual ? 'Revisar antes de publicar' : 'Aceptar todas y publicar'}</Button>
@@ -86,7 +86,7 @@ export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, 
       <p className="text-sm">Al confirmar autorizas las notas y los mensajes que se muestran. No se cambiarán fotos ni se borrarán los avisos del análisis original.</p>
       <ul className="max-h-[45dvh] space-y-2 overflow-y-auto overscroll-contain pr-1">{summary.map(row=><li key={row.calificacion_id??row.nombre} className="rounded-lg border border-border bg-surface p-3">
         <p className="break-words font-semibold">{row.nombre}{row.preview?.batch_candidate && <span className="ml-2 tabular-nums">{formatGradeScore(Number(row.preview.batch_candidate.nota))}</span>}</p>
-        {row.preview?.batch_candidate ? <details><summary className="min-h-11 cursor-pointer py-3 text-sm">Ver mensaje y alcance</summary><FeedbackMessage text={row.preview.batch_candidate.feedback_text}/>{row.preview.batch_candidate.avisos.map(warning=><p key={warning} className="mt-2 text-sm text-muted">{warning}</p>)}</details>:<p className="mt-1 text-sm text-amber-700 dark:text-amber-300">{row.preview?.batch_unavailable_reason??row.preview?.motivo??'Todavía no tiene una nota y devolución disponibles.'}</p>}
+        {row.preview?.batch_candidate ? <details><summary className="min-h-11 cursor-pointer py-3 text-sm">Ver mensaje y alcance</summary><FeedbackMessage text={row.preview.batch_candidate.feedback_text}/>{row.preview.batch_candidate.avisos.map(warning=><p key={warning} className="mt-2 text-sm text-muted">{warning}</p>)}</details>:<p className="mt-1 text-sm text-amber-700 dark:text-amber-300">{row.preview?.batch_unavailable_reason??row.preview?.motivo??'Todavía no tiene una nota y retroalimentación disponibles.'}</p>}
       </li>)}</ul>
       <div className="grid gap-2 sm:flex sm:flex-wrap">
         {operation.current ? <Button disabled={busy} onClick={()=>void run()}>Reintentar la misma solicitud</Button>:<Button disabled={busy||disabled||!available(summary).length} loading={busy} onClick={confirm}>Confirmar y publicar {available(summary).length}</Button>}

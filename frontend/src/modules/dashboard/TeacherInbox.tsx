@@ -9,7 +9,8 @@ import {
 import { Link } from 'react-router-dom';
 import { Badge, Card, EducationalIcon, Skeleton } from '@/components/ui';
 import { getBandejaDocente } from '@/modules/calificaciones/api';
-import { routes } from '@/config/routes';
+import { buildReviewHref } from '@/modules/calificaciones/reviewRoutes';
+import { useAuth } from '@/stores/auth';
 import type { BandejaDocenteItem } from '@/types/api';
 
 const reasonLabels: Record<string, string> = {
@@ -28,6 +29,7 @@ function CaseList({
   total,
   kind,
   onRetry,
+  permissions,
 }: {
   title: string;
   description: string;
@@ -36,6 +38,7 @@ function CaseList({
   total: number;
   kind: 'claim' | 'pending';
   onRetry: () => void;
+  permissions: readonly string[];
 }) {
   const brandIcon = kind === 'claim' ? 'student-claim' : 'pending-reviews';
   const tone = kind === 'claim' ? 'amber' : 'brand';
@@ -65,10 +68,11 @@ function CaseList({
         </div>
       ) : (
         <div className="divide-y divide-border">
+          <p className="px-4 py-2 text-xs text-muted sm:px-5">Mostrando {items.length} de {total} casos</p>
           {items.map((item) => (
             <Link
               key={item.tipo + '-' + item.id}
-              to={routes.calificacionesRevision(item.evaluacion_id, item.calificacion_id)}
+              to={buildReviewHref({ evaluationId: item.evaluacion_id, materiaId: item.materia_id, gradeId: item.calificacion_id, studentId: item.estudiante_id, permissions })}
               className="focus-ring group flex min-h-20 items-center gap-3 px-4 py-3 transition hover:bg-surface-2 sm:px-5"
               aria-label={'Revisar ' + item.estudiante_nombre + ' en ' + item.evaluacion_nombre}
             >
@@ -105,11 +109,18 @@ function CaseList({
 
 export function TeacherInbox({ compact = false }: { compact?: boolean }) {
   const [expanded, setExpanded] = useState(false);
+  const user = useAuth(state => state.user);
+  const permissions = user?.permissions ?? [];
+  const canReadInbox = permissions.includes('submissions.review');
   const inboxQuery = useQuery({
     queryKey: ['bandeja-docente'],
     queryFn: getBandejaDocente,
     refetchInterval: 45_000,
+    enabled: canReadInbox,
   });
+
+  // Keep hook order stable, but never render cached/late results after revocation.
+  if (!canReadInbox) return null;
 
   if (inboxQuery.isLoading) {
     if (compact) return <Card className="p-3" role="status">Actualizando pendientes…</Card>;
@@ -155,8 +166,8 @@ export function TeacherInbox({ compact = false }: { compact?: boolean }) {
         {total > 0 && <button type="button" aria-expanded={expanded} aria-controls="teacher-pending-cases" onClick={() => setExpanded(!expanded)} className="focus-ring min-h-11 min-w-11 rounded-lg px-3 text-sm font-bold text-brand-600 dark:text-brand-300">{expanded ? 'Ocultar pendientes' : 'Ver pendientes'}</button>}
       </div>
       {expanded && total > 0 && <div id="teacher-pending-cases" className={`grid gap-3 border-t border-border p-3 ${openClaims > 0 && pendingReviews > 0 ? 'lg:grid-cols-2' : ''}`}>
-        {openClaims > 0 && <CaseList title="Reclamos y solicitudes" description="Solicitudes de revisión de estudiantes." items={claims} total={openClaims} emptyText="No tienes reclamos abiertos" kind="claim" onRetry={() => void inboxQuery.refetch()} />}
-        {pendingReviews > 0 && <CaseList title="Entregas por revisar" description="Notas pendientes de tu decisión." items={pending} total={pendingReviews} emptyText="No tienes entregas pendientes" kind="pending" onRetry={() => void inboxQuery.refetch()} />}
+        {openClaims > 0 && <CaseList title="Reclamos y solicitudes" description="Solicitudes de revisión de estudiantes." items={claims} total={openClaims} emptyText="No tienes reclamos abiertos" kind="claim" permissions={permissions} onRetry={() => void inboxQuery.refetch()} />}
+        {pendingReviews > 0 && <CaseList title="Entregas por revisar" description="Notas pendientes de tu decisión." items={pending} total={pendingReviews} emptyText="No tienes entregas pendientes" kind="pending" permissions={permissions} onRetry={() => void inboxQuery.refetch()} />}
       </div>}
     </section>
   );
@@ -203,6 +214,7 @@ export function TeacherInbox({ compact = false }: { compact?: boolean }) {
           total={openClaims}
           emptyText="No tienes reclamos abiertos"
           kind="claim"
+          permissions={permissions}
           onRetry={() => void inboxQuery.refetch()}
         />}
         {pendingReviews > 0 && <CaseList
@@ -212,6 +224,7 @@ export function TeacherInbox({ compact = false }: { compact?: boolean }) {
           total={pendingReviews}
           emptyText="No tienes entregas pendientes"
           kind="pending"
+          permissions={permissions}
           onRetry={() => void inboxQuery.refetch()}
         />}
       </div>

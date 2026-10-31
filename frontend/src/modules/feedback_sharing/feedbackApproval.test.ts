@@ -12,7 +12,7 @@ beforeEach(() => vi.stubGlobal('crypto', webcrypto));
 afterEach(() => vi.unstubAllGlobals());
 
 describe('135 aprobación recuperable sin contenido privado en almacenamiento', () => {
-  it('reutiliza las devoluciones ya elegibles sin incluirlas en otra aprobación', async () => {
+  it('reutiliza las retroalimentaciones ya elegibles sin incluirlas en otra aprobación', async () => {
     const op = await createApproval('t', 'e', ['g1', 'active'], [...previews,
       { ...previews[0], calificacion_id: 'active', elegible: true, fingerprint: 'a'.repeat(64) }], 3, false);
     expect(op.parts.flatMap(part => part.selections.map(item => item.calificacion_id))).toEqual(['g1']);

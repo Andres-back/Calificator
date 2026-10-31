@@ -14,7 +14,7 @@ const access = { id: 'a1', calificacion_id: 'g1', estudiante: 'Ana', estado: 'ac
 const url = 'https://example.test/devolucion#' + 'a'.repeat(43);
 const message = 'Identificaste al personaje. Explica qué frase del relato justifica su decisión.';
 const pending = { calificacion_id: 'g1', elegible: false, seleccionable: true, preparacion: 'needs_review' as const,
-  motivo: 'Revisa los puntajes por pregunta antes de compartir esta devolución.',
+  motivo: 'Revisa los puntajes por pregunta antes de compartir esta retroalimentación.',
   borrador_docente: { estado: 'publicada', nota: '3.5', nota_maxima: '5', retroalimentacion: message },
   revision_docente: { source_fingerprint: 'b'.repeat(64), feedback_text: message, detail_available: false } };
 function show() { return render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row]} signal={new AbortController().signal} valid={() => useAuth.getState().user?.id === 't'} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />); }
@@ -90,7 +90,7 @@ describe('129 mismo panel de compartir y copia', () => {
     expect(screen.queryByRole('button', { name: 'Copiar enlace de Luis' })).toBeNull();
   });
 
-  it('conserva opciones y otro enlace preparado al aprobar una devolución pendiente', async () => {
+  it('conserva opciones y otro enlace preparado al aprobar una retroalimentación pendiente', async () => {
     const approved = { ...preview, revision_docente: pending.revision_docente, borrador_docente: pending.borrador_docente };
     vi.mocked(api.previewFeedback).mockResolvedValue([pending, { ...preview, calificacion_id: 'g2' }, { ...preview, calificacion_id: 'g3' }]);
     vi.mocked(api.listFeedbackAccesses).mockResolvedValue([{ ...access, id: 'a2', calificacion_id: 'g2', estudiante: 'Luis' }]);
@@ -100,8 +100,8 @@ describe('129 mismo panel de compartir y copia', () => {
     await screen.findByRole('button', { name: 'Copiar enlace de Luis' });
     fireEvent.change(screen.getByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
     fireEvent.click(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar retroalimentación' }));
     await screen.findByRole('button', { name: 'Crear 2 enlaces faltantes' });
     expect(screen.getByRole('combobox', { name: 'Duración del enlace' })).toHaveValue('7');
     expect(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' })).toBeChecked();
@@ -112,16 +112,16 @@ describe('129 mismo panel de compartir y copia', () => {
 
   it('conserva borrador en conflicto y vuelve sin aprobar ni emitir', async () => {
     vi.mocked(api.previewFeedback).mockResolvedValue([pending]);
-    vi.mocked(api.approveFeedbackReview).mockRejectedValue({ response: { data: { detail: 'La devolución cambió. Actualiza la lista.' } } });
+    vi.mocked(api.approveFeedbackReview).mockRejectedValue({ response: { data: { detail: 'La retroalimentación cambió. Actualiza la lista.' } } });
     show();
-    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' }), { target: { value: message + ' Añade una razón.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('La devolución cambió');
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar retroalimentación' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('La retroalimentación cambió');
     expect(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue(message + ' Añade una razón.');
     fireEvent.click(screen.getByRole('button', { name: 'Volver sin aprobar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Descartar cambios y volver' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Revisar y compartir devolución de Ana' })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' })).toHaveFocus());
     expect(screen.queryByRole('button', { name: 'Crear 1 enlace faltante' })).toBeNull();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
   });
@@ -131,11 +131,11 @@ describe('129 mismo panel de compartir y copia', () => {
     vi.mocked(api.previewFeedback).mockResolvedValue([{ ...pending, mensaje_editable: pending.revision_docente }]);
     vi.mocked(api.saveFeedbackMessage).mockResolvedValue({ ...pending, mensaje_editable: { ...pending.revision_docente, feedback_text: message + ' Relee el final.' }, revision_docente: { ...pending.revision_docente, feedback_text: message + ' Relee el final.' } });
     show();
-    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Mensaje para el estudiante' }), { target: { value: message + ' Relee el final.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar mensaje sin publicar' }));
-    expect(await screen.findByText(/Falta aprobar la devolución/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Aprobar devolución' })).toBeEnabled();
+    expect(await screen.findByText(/Falta aprobar la retroalimentación/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aprobar retroalimentación' })).toBeEnabled();
     expect(api.approveFeedbackReview).not.toHaveBeenCalled();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
   });
@@ -145,8 +145,8 @@ describe('129 mismo panel de compartir y copia', () => {
     vi.mocked(api.listFeedbackAccesses).mockResolvedValue([{ ...access, estado: 'suspended', copy_available: false }]);
     vi.mocked(api.approveFeedbackReview).mockResolvedValue({ ...preview, revision_docente: pending.revision_docente, borrador_docente: pending.borrador_docente });
     show();
-    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar retroalimentación' }));
     expect(await screen.findByText(/no se reactivó ni creó otro/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Crear 1 enlace faltante' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Revisar enlace de Ana' })).toBeEnabled();
@@ -159,13 +159,13 @@ describe('129 mismo panel de compartir y copia', () => {
     vi.mocked(api.previewFeedback).mockResolvedValue([{ ...pending, revision_docente: undefined, preparacion: 'no_grade' }]);
     const first = show();
     await screen.findByRole('button', { name: 'Revisar enlace de Ana' });
-    expect(screen.queryByRole('button', { name: 'Revisar y compartir devolución de Ana' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' })).toBeNull();
     first.unmount();
     storeManifest(sessionStorage, createManifest('t', 'e1', [{ calificacion_id: 'g1', fingerprint: 'f'.repeat(64) }], 3, false));
     vi.mocked(api.previewFeedback).mockResolvedValue([pending]);
     show();
     await screen.findByRole('button', { name: 'Recuperar la misma solicitud' });
-    expect(screen.queryByRole('button', { name: 'Revisar y compartir devolución de Ana' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' })).toBeNull();
     expect(api.approveFeedbackReview).not.toHaveBeenCalled();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
   });
@@ -175,8 +175,8 @@ describe('129 mismo panel de compartir y copia', () => {
     let resolve!: (result: Awaited<ReturnType<typeof api.approveFeedbackReview>>) => void;
     vi.mocked(api.approveFeedbackReview).mockImplementation(() => new Promise(done => { resolve = done; }));
     show();
-    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir devolución de Ana' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Aprobar devolución' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aprobar retroalimentación' }));
     act(() => useAuth.setState({ user: { ...teacher, id: 'otro' } }));
     await act(async () => resolve(preview));
     expect(screen.queryByRole('region', { name: 'Compartir retroalimentaciones' })).toBeNull();
@@ -264,7 +264,7 @@ describe('129 mismo panel de compartir y copia', () => {
   });
   it('identifica el fallo por estudiante y copia explícitamente solo los confirmados', async () => {
     vi.mocked(api.previewFeedback).mockResolvedValue([preview, { ...preview, calificacion_id: 'g2' }]);
-    vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }, { calificacion_id: 'g2', error: 'Cambió la devolución' }]);
+    vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }, { calificacion_id: 'g2', error: 'Cambió la retroalimentación' }]);
     render(<FeedbackSharePanel actorId="t" evaluationId="e1" rows={[row, { ...row, calificacion_id: 'g2', nombre: 'Luis' }]} signal={new AbortController().signal} valid={() => true} onBusy={vi.fn()} onBack={vi.fn()} onManage={vi.fn()} />);
     fireEvent.click(await screen.findByRole('button', { name: 'Crear 2 enlaces faltantes' }));
     const ready = await screen.findByRole('button', { name: 'Copiar 1 disponible' });

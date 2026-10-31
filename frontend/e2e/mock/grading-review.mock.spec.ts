@@ -72,15 +72,15 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 664 }
 }
 
 test('088 contexto y menú permanecen alcanzables en vista estrecha y escritorio', async ({ page }) => {
-  await login(page, 'profesor', { rosterSize: 30 });
+  await login(page, 'profesor', { rosterSize: 30, permissions: teacherPermissions });
   await page.goto('/app/calificaciones?evaluacion=e1');
   for (const width of [360, 1279, 1366]) {
     await page.setViewportSize({ width, height: 800 });
-    await page.getByRole('button', { name: /Estás revisando/ }).click();
+    await page.getByRole('button', { name: /Cambiar evaluación/ }).click();
     await expect(page.getByRole('combobox', { name: 'Evaluación', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: /Estás revisando/ }).click();
+    await page.getByRole('button', { name: /Cambiar evaluación/ }).click();
     await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
-    await expect(page.getByRole('link', { name: 'Libro de notas', exact: true })).toBeInViewport();
+    await expect(page.getByRole('navigation', { name: 'Ubicación de la revisión' }).getByRole('link', { name: 'Libro de notas', exact: true })).toBeInViewport();
     await expect(page.getByRole('button', { name: 'Establecer nota', exact: true })).toBeInViewport();
     await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
@@ -121,7 +121,7 @@ test('088 lote largo y temporizador opcional conservan controles alcanzables', a
     await expect(start).toBeInViewport();
   }
   await workspace.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await expect(workspace.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
+  await expect(workspace.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeVisible();
   expect(writes).toEqual([]);
 });
 
@@ -243,7 +243,7 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(page.getByTestId('grade-review-identity')).toContainText(longName);
       const history = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Historial de revisión de IA' }) });
       await expect(history).not.toHaveAttribute('open');
-      await expect(page.getByText('Nota confirmada', { exact: true })).toBeVisible();
+      await expect(page.getByText('Nota final', { exact: true })).toBeVisible();
       await page.getByText('Ver cálculo de la nota', { exact: true }).click();
       await expect(page.getByText(/Equivale a 2.50/)).toBeVisible();
       await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
@@ -585,12 +585,12 @@ test('abre enlaces a pregunta y hoja y protege el ajuste sin guardar', async ({ 
   await page.getByLabel(/Motivo interno del cambio/).fill('Revisión parcial');
   await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
   await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
-  await page.getByRole('button', { name: 'Volver a notas del grupo', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a lista', exact: true }).filter({ visible: true }).click();
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
   await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
-  await page.getByRole('button', { name: 'Volver a notas del grupo', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a lista', exact: true }).filter({ visible: true }).click();
   await page.getByRole('button', { name: 'Descartar y continuar', exact: true }).click();
   await page.goto('/app/calificaciones/workspace/e1?calificacion=c1&hoja=1');
   await expect(page.getByRole('button', { name: 'Evidencia', exact: true })).toHaveAttribute('aria-expanded', 'true');

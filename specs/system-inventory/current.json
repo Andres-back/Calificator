@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 585,
+      "covered": 586,
       "missing": 96
     },
     "by_kind": {
       "endpoint": 321,
       "frontend_call": 217,
-      "frontend_route": 38,
+      "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 681
+    "total": 682
   },
   "exceptions": [],
   "findings": [
@@ -647,7 +647,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "5402075c30f16be8a444c0c90510acf56040aeb18dd4d55dfc4d4250924414be",
+  "source_digest": "00937c09b27b53d169771970d8f4028760b7ab92fdcec3281493f8a68ea39e17",
   "surfaces": [
     {
       "actors": [
@@ -1143,7 +1143,19 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -1161,13 +1173,37 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -3888,6 +3924,12 @@
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "domain",
@@ -5621,7 +5663,19 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -5639,13 +5693,37 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -7874,6 +7952,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -7922,6 +8006,24 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -7929,6 +8031,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -8207,6 +8315,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -8255,6 +8369,24 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -8262,6 +8394,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -11649,7 +11787,19 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -11667,13 +11817,37 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -12358,6 +12532,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -12406,6 +12586,24 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -12413,6 +12611,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -16266,7 +16470,19 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -16284,13 +16500,37 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -19851,6 +20091,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -19899,6 +20145,24 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -19906,6 +20170,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -22834,6 +23104,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/example.visual.spec.ts"
         },
         {
@@ -23206,6 +23482,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewNavigation.test.tsx"
         },
         {
@@ -23237,6 +23519,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/api.scan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeAnalysisDetails.test.tsx"
         },
         {
           "level": "unit",
@@ -23302,6 +23590,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/ReviewHelp.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/VerificationPendingNotice.test.tsx"
         },
         {
@@ -23362,6 +23656,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
         },
         {
@@ -23393,6 +23693,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -24351,6 +24657,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/grading-review.visual.spec.ts"
         },
         {
@@ -24429,7 +24741,19 @@
           "level": "unit",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
         },
         {
           "level": "unit",
@@ -24442,6 +24766,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -24796,7 +25126,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/admin/configuracion-ia",
-      "source_line": 64,
+      "source_line": 65,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -24951,7 +25281,7 @@
       "kind": "frontend_route",
       "owner_spec": "002-arquitectura-roles-seguridad",
       "signature": "/app/admin/correo",
-      "source_line": 67,
+      "source_line": 68,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -25076,7 +25406,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/roles",
-      "source_line": 66,
+      "source_line": 67,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -25207,7 +25537,7 @@
       "kind": "frontend_route",
       "owner_spec": "029-roles-permisos-modulares",
       "signature": "/app/admin/usuarios",
-      "source_line": 65,
+      "source_line": 66,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -25345,7 +25675,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/analytics",
-      "source_line": 69,
+      "source_line": 70,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -25652,6 +25982,12 @@
           "level": "e2e",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/grading-review.visual.spec.ts"
         },
         {
@@ -25694,6 +26030,18 @@
           "level": "unit",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
         },
         {
@@ -25706,13 +26054,13 @@
           "level": "unit",
           "reference": "/app/calificaciones",
           "status": "direct",
-          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
           "reference": "/app/calificaciones",
           "status": "direct",
-          "test_path": "frontend/src/modules/materias/MateriaVistaGeneral.test.tsx"
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
           "level": "unit",
@@ -25834,6 +26182,18 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/app/calificaciones/boletin",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
           "level": "unit",
           "reference": "/app/calificaciones/boletin",
           "status": "direct",
@@ -25844,6 +26204,12 @@
           "reference": "/app/calificaciones/boletin",
           "status": "domain",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/calificaciones/boletin",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
         },
         {
           "level": "unit",
@@ -25989,7 +26355,7 @@
       "kind": "frontend_route",
       "owner_spec": "021-configuracion-ia-docente",
       "signature": "/app/configuracion-ia",
-      "source_line": 68,
+      "source_line": 69,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -26443,7 +26809,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas",
-      "source_line": 54,
+      "source_line": 55,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -26611,7 +26977,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/herramientas/{id}",
-      "source_line": 57,
+      "source_line": 58,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -26963,6 +27329,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
@@ -27008,7 +27380,31 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -27032,6 +27428,12 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaVistaGeneral.test.tsx"
         },
         {
@@ -27049,6 +27451,139 @@
         {
           "level": "unit",
           "reference": "/app/materias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "RequireAuth"
+      ],
+      "consumers": [
+        "138-frontend-docente-claro"
+      ],
+      "coverage": "covered",
+      "details": {
+        "registered": true,
+        "view": "@/modules/calificaciones/CalificacionesWorkspace"
+      },
+      "id": "frontend:/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+      "kind": "frontend_route",
+      "owner_spec": "008-calificaciones",
+      "signature": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+      "source_line": 49,
+      "source_path": "frontend/src/config/routes.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_admin_mail_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_api_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_api.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_concurrency.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_migration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_configuration_secret_safety.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_ai_job_configuration_snapshot.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_ai_configuration_resolver.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_mail_configuration.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_nginx_security_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_production_config.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_worker_ai_config.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "domain",
+          "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/:materiaId/evaluaciones/:evaluacionId/revision",
           "status": "domain",
           "test_path": "frontend/src/modules/profesor_ai/TeacherAIConfigPage.test.tsx"
         }
@@ -27256,6 +27791,12 @@
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
         },
         {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
           "level": "unit",
           "reference": "/app/materias/{id}",
           "status": "direct",
@@ -27301,7 +27842,31 @@
           "level": "unit",
           "reference": "/app/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -27320,6 +27885,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaDetailPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         },
         {
           "level": "unit",
@@ -28123,7 +28694,7 @@
       "kind": "frontend_route",
       "owner_spec": "010-presentaciones-imagenes",
       "signature": "/app/presentaciones",
-      "source_line": 62,
+      "source_line": 63,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -28266,7 +28837,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/recursos/{id}",
-      "source_line": 58,
+      "source_line": 59,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -28410,7 +28981,7 @@
       "kind": "frontend_route",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "/app/reportes",
-      "source_line": 63,
+      "source_line": 64,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -28541,7 +29112,7 @@
       "kind": "frontend_route",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "/app/xali",
-      "source_line": 61,
+      "source_line": 62,
       "source_path": "frontend/src/config/routes.ts",
       "states": [],
       "tests": [
@@ -30409,7 +30980,19 @@
           "level": "e2e",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -30427,13 +31010,37 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -33107,7 +33714,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sesiones-trabajo",
-      "source_line": 147,
+      "source_line": 148,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -33537,6 +34144,12 @@
           "reference": "GET:/calificaciones/bandeja-docente",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/bandeja-docente",
+          "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
         },
         {
           "level": "unit",
@@ -35143,7 +35756,19 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -35161,13 +35786,37 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -35777,7 +36426,19 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -35795,13 +36456,37 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -37049,6 +37734,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -37097,6 +37788,24 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -37104,6 +37813,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -37649,6 +38364,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -37697,6 +38418,24 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -37704,6 +38443,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -39837,7 +40582,19 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -39855,13 +40612,37 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -40408,6 +41189,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -40456,6 +41243,24 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -40463,6 +41268,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -42276,7 +43087,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/evento",
-      "source_line": 157,
+      "source_line": 158,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -42385,7 +43196,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/sesiones-trabajo/{sessionId}/eventos",
-      "source_line": 131,
+      "source_line": 132,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": []
@@ -42409,7 +43220,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/analytics/sesiones-trabajo",
-      "source_line": 113,
+      "source_line": 114,
       "source_path": "frontend/src/lib/analytics.ts",
       "states": [],
       "tests": [
@@ -44979,7 +45790,19 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -44997,13 +45820,37 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -46020,6 +46867,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -46068,6 +46921,24 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -46075,6 +46946,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -52239,6 +53116,12 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/grading-review.visual.spec.ts"
         },
         {
@@ -52317,6 +53200,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/api.revision.test.ts"
         },
         {
@@ -52324,6 +53213,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/api.scan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
         },
         {
           "level": "unit",
@@ -52342,6 +53237,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -52384,12 +53285,6 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
-          "test_path": "frontend/src/modules/materias/MateriaVistaGeneral.test.tsx"
         },
         {
           "level": "unit",
@@ -53876,7 +54771,19 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/visual/student-feedback-story.visual.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/components/layout/AppShell.test.tsx"
         },
         {
           "level": "unit",
@@ -53900,13 +54807,37 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
         },
         {
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",
@@ -55888,6 +56819,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/teacher-review-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/xali-teacher-visual.spec.ts"
         },
         {
@@ -55936,6 +56873,24 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/reviewRoutes.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/teacherReviewResume.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardEstudiante.test.tsx"
         },
         {
@@ -55943,6 +56898,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
         },
         {
           "level": "unit",

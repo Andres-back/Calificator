@@ -12,7 +12,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   useAuth.setState({ user: { id: 't', rol: 'profesor', permissions: ['grading.read'] } as User });
 });
-describe('entrada gradual de devoluciones', () => {
+describe('entrada gradual de retroalimentaciones', () => {
   it('solo abre cuando está habilitada y monta el diálogo fuera del menú', async () => {
     vi.mocked(feedbackAvailable).mockResolvedValue(true);
     const { container } = render(<MemoryRouter><FeedbackToolsButton evaluationId="e" /></MemoryRouter>);

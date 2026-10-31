@@ -8,13 +8,15 @@ import { DigitalizationJobMonitor } from '@/modules/evaluaciones/components/Digi
 import { GradingJobMonitor } from '@/modules/calificaciones/GradingJobMonitor';
 import { surfaceForPath, trackEvent } from '@/lib/analytics';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { isPendingReviewRoute, isReviewPath } from '@/modules/calificaciones/reviewRoutes';
 
 export function AppShell() {
   const location = useLocation();
   const role = useAuth((state) => state.user?.rol);
   const isStudent = role === 'estudiante';
   const isTeacher = role === 'profesor';
-  const isGradingReview = isTeacher && location.pathname === '/app/calificaciones';
+  const isGradingReview = isTeacher && isReviewPath(location.pathname);
+  const pendingInbox = isPendingReviewRoute(location.pathname, new URLSearchParams(location.search));
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const appContentRef = useRef<HTMLDivElement>(null);
@@ -103,7 +105,7 @@ export function AppShell() {
           menuButtonRef={menuButtonRef}
           menuExpanded={mobileOpen}
         />
-        {isTeacher && location.pathname !== '/app/calificaciones' && <GradingJobMonitor />}
+        {isTeacher && (!isGradingReview || pendingInbox) && <GradingJobMonitor />}
         <main
           id="main-content"
           tabIndex={-1}

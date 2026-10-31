@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { AlertTriangle, CheckCircle2, ChevronDown, LoaderCircle, RefreshCw, ScanLine, X } from 'lucide-react';
 
 import { queryClient } from '@/lib/queryClient';
-import { routes } from '@/config/routes';
+import { buildReviewHref } from './reviewRoutes';
 import { useAuth } from '@/stores/auth';
 import {
   getGradingJob,
@@ -142,7 +142,8 @@ function AccountGradingJobMonitor({ embedded }: { embedded: boolean }) {
                   onClick={() => {
                     toast.dismiss(item.id);
                     if (!mounted.current) return;
-                    navigate(`${routes.calificacionesEvaluacion(state.job.evaluacionId)}${state.job.estudianteId ? `&estudiante=${encodeURIComponent(state.job.estudianteId)}` : ''}`);
+                    navigate(buildReviewHref({ evaluationId: state.job.evaluacionId, materiaId: state.job.materiaId,
+                      studentId: state.job.estudianteId, permissions: useAuth.getState().user?.permissions }));
                   }}
                 >
                   Revisar

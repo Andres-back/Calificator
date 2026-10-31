@@ -6,6 +6,12 @@ const now = 1_800_000_000_000;
 beforeEach(() => { vi.restoreAllMocks(); localStorage.clear(); });
 
 describe('marcador docente mínimo', () => {
+  it('138 usa revisión contextual solo con permiso efectivo, manteniendo el destino heredado por defecto', () => {
+    saveTeacherReviewResume('p1', context, now);
+    const record = readTeacherReviewResume('p1', now)!;
+    expect(teacherReviewResumeHref(record, ['subjects.read'])).toBe('/app/materias/m1/evaluaciones/e1/revision?materia=m1&evaluacion=e1&estudiante=s1&calificacion=c1');
+    expect(teacherReviewResumeHref(record, ['grading.read'])).toBe('/app/calificaciones?materia=m1&evaluacion=e1&estudiante=s1&calificacion=c1');
+  });
   it('conserva solo IDs y construye destino interno sin modo de carga', () => {
     saveTeacherReviewResume('p1', { ...context, nombre: 'No guardar', nota: 5, url: 'https://other.test' } as typeof context, now);
     const saved = readTeacherReviewResume('p1', now)!;

@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "rules": [
+    {"spec":"008-calificaciones","priority":96,"kinds":["frontend_route"],"signature_patterns":["/app/materias/*/evaluaciones/*/revision"],"consumers":["138-frontend-docente-claro"]},
     {"spec":"005-evaluaciones","priority":88,"source_patterns":["backend/app/modules/evaluaciones/score_*.py","frontend/src/modules/evaluaciones/scoreApi.ts","frontend/src/modules/evaluaciones/components/ScorePlanEditor.tsx","frontend/src/modules/evaluaciones/components/EvaluationScoreDialog.tsx"],"consumers":["008-calificaciones","137-puntajes-reparto-seguro"]},
     {"spec":"008-calificaciones","priority":98,"source_patterns":["backend/app/modules/feedback_sharing/**","frontend/src/modules/feedback_sharing/**"],"consumers":["107-retroalimentacion-familiar","120-retroalimentacion-entrega-clara","122-retroalimentacion-lote-visual","123-motivos-por-area","126-retroalimentacion-unificada-chat","129-retroalimentacion-flujo-claro","135-retroalimentacion-entrega-simple"]},
     {"spec":"008-calificaciones","priority":97,"source_patterns":["frontend/src/components/evidence/cornerAssistance.ts"],"consumers":["116-api-modelos-configurables","131-escaneo-evidencias"]},

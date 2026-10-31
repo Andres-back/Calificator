@@ -85,7 +85,7 @@ for (const width of [390, 1440]) test(`136 scroll desde texto y márgenes ${widt
     await page.mouse.wheel(0, -160);
     await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBe(downTarget - 160);
   }
-  await feedback.getByRole('button', { name: 'Revisar devolución de Estudiante Prueba', exact: true }).click();
+  await feedback.getByRole('button', { name: 'Revisar retroalimentación de Estudiante Prueba', exact: true }).click();
   const input = feedback.getByRole('textbox', { name: 'Mensaje para el estudiante' });
   await input.fill('Un borrador que se debe conservar.');
   await tabs.getByRole('button', { name: 'Historial', exact: true }).click();
@@ -115,8 +115,8 @@ for (const width of [390, 1440]) test(`136 ventana del grupo desplaza su mensaje
   await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
   await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
-  await dialog.getByRole('button', { name: 'Ver devolución de Estudiante Prueba', exact: true }).click();
-  const detail = dialog.getByRole('region', { name: 'Devolución de Estudiante Prueba', exact: true });
+  await dialog.getByRole('button', { name: 'Ver retroalimentación de Estudiante Prueba', exact: true }).click();
+  const detail = dialog.getByRole('region', { name: 'Retroalimentación de Estudiante Prueba', exact: true });
   const scroll = detail.locator('..');
   await expect(scroll).toHaveAttribute('data-mobile-scroll');
   const background = await page.evaluate(() => ({ window: window.scrollY, grade: document.querySelector('[data-testid="grade-review-scroll"]')?.scrollTop ?? null }));

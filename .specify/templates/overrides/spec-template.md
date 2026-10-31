@@ -40,3 +40,15 @@
 
 - [Decisión razonable ya adoptada]
 - [Dependencia o límite explícito]
+
+## Añade, reutiliza y retira
+
+| Área | Qué añade | Qué reutiliza | Qué texto o control retira/reubica |
+| --- | --- | --- | --- |
+| [Flujo afectado] | [Capacidad nueva] | [Componente/acción existente] | [Sustracción o justificación explícita de ninguno] |
+
+## Evidencia visual requerida
+
+- Antes de implementar una superficie visual: maqueta sintética a384px que refleje la jerarquía propuesta, claramente identificada como diseño.
+- Antes de fusionar: capturas reales de la implementación a384px y escritorio, claro/oscuro, más errores/estados relevantes. No usar la maqueta como prueba ni incluir datos personales.
+- Funciones sin interfaz visual: justificar expresamente por qué no aplican capturas; no modificar especificaciones históricas para llenar este apartado.

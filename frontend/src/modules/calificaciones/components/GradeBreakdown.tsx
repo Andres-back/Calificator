@@ -32,14 +32,13 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 id="grade-breakdown-title" className="text-lg font-extrabold text-fg">Nota explicada respuesta por respuesta</h2>
-          <p className="text-sm text-muted">Cada puntaje muestra la evidencia y la razón que lo respalda.</p>
+          <h2 id="grade-breakdown-title" className="text-lg font-extrabold text-fg">{student ? 'Nota explicada respuesta por respuesta' : 'Respuestas y puntajes'}</h2>
+          {student && <p className="text-sm text-muted">Cada puntaje muestra la evidencia y la razón que lo respalda.</p>}
         </div>
         <Badge tone={breakdown.requiere_revision ? 'warning' : 'success'}>
           {breakdown.requiere_revision ? 'Requiere revisión' : 'Puntajes registrados'}
         </Badge>
       </div>
-      {!student && <div aria-label="Colores de prioridad de revisión" className="space-y-2 text-xs"><p className="text-muted">El color indica qué conviene comprobar, no si el estudiante acertó ni una garantía de exactitud.</p><div className="flex flex-wrap gap-2">{Object.entries(reviewPriorityPresentation).map(([level, { label, Icon, classes }]) => <span key={level} className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 ${classes}`}><Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{label}</span>)}</div></div>}
       {onSelectComponent && !student ? <>
         <nav aria-label="Preguntas y criterios" className="grid grid-cols-[repeat(auto-fit,minmax(max(2.75rem,calc((100%_-_1.5rem)/4)),1fr))] gap-2 sm:flex sm:flex-wrap">
           {breakdown.componentes.map((component, index) => {
@@ -122,28 +121,6 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 <strong>Para mejorar:</strong> {component.orientacion_mejora}
               </div>
             )}
-            {!student && (
-              <details className="mt-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-muted">
-                <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-fg">
-                  {component.fuentes?.length
-                    ? `Material de apoyo consultado (${component.fuentes.length})`
-                    : 'Sin material adicional pertinente'}
-                </summary>
-                {component.fuentes?.length ? (
-                  <div className="mt-2 space-y-2">
-                    {component.fuentes.map((source, index) => (
-                      <div key={`${source.source_id ?? 'fuente'}-${source.chunk_id ?? index}`} className="rounded-lg border border-border bg-surface p-2">
-                        <p className="font-semibold text-fg">{source.titulo || 'Fuente autorizada'}</p>
-                        <p>Versión: {source.version || 'sin versión registrada'}</p>
-                        {source.fragmento ? <p className="mt-1 whitespace-pre-wrap">{source.fragmento}</p> : null}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-2">No se registró material de apoyo para esta respuesta. Puedes comprobarla con la pregunta y la evidencia.</p>
-                )}
-              </details>
-            )}
             {component.evidencia_paginas.length > 0 && onEvidencePage && !renderEvidence && (
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                 <span>Evidencia:</span>
@@ -173,21 +150,6 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 {renderEditor(component)}
               </div>
             ) : null}
-            {!student && component.valoraciones && component.valoraciones.length > 1 && (
-              <details className="mt-3 text-xs text-muted">
-                <summary className="flex min-h-11 cursor-pointer items-center font-semibold">Ver verificaciones registradas ({component.valoraciones.length})</summary>
-                <div className="mt-2 space-y-2">
-                  {component.valoraciones.map((valuation, index) => (
-                    <p key={index} className="rounded-lg bg-surface-2 p-2">Valoración {String(valuation.evaluador ?? index + 1)}: {String(valuation.puntaje ?? '—')} puntos. {String(valuation.explicacion ?? '')}</p>
-                  ))}
-                </div>
-              </details>
-            )}
-            {!student && (
-              <p className="mt-3 text-xs text-muted">
-                Proceso: evidencia extraída → valoración {component.origen === 'objetivo' ? 'objetiva' : component.origen === 'docente' ? 'docente' : 'asistida por IA'} → {component.valoraciones && component.valoraciones.length > 1 ? 'comparación registrada' : 'comprobación disponible'}.
-              </p>
-            )}
           </article>;
         })}
       </div>

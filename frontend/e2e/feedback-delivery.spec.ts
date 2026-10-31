@@ -82,15 +82,15 @@ for (const width of [390, 1440]) test(`126 misma gestión individual y grupo ${w
   const individual = page.getByRole('region', { name: 'Retroalimentación del estudiante', exact: true });
   await expect(individual.getByText('identificaste el personaje principal.', { exact: true })).toBeVisible();
   await expect(individual.getByRole('searchbox')).toHaveCount(0);
-  await individual.getByRole('button', { name: 'Revisar devolución de Estudiante Prueba', exact: true }).click();
+  await individual.getByRole('button', { name: 'Revisar retroalimentación de Estudiante Prueba', exact: true }).click();
   await expect(individual.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue(message);
   await individual.getByRole('button', { name: 'Volver sin aprobar', exact: true }).click();
   if (width < 1280) await page.getByRole('button', { name: 'Volver a lista', exact: true }).click();
   await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
   await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
   const group = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
-  await group.getByRole('button', { name: 'Ver devolución de Estudiante Prueba', exact: true }).click();
-  await group.getByRole('button', { name: 'Revisar devolución de Estudiante Prueba', exact: true }).click();
+  await group.getByRole('button', { name: 'Ver retroalimentación de Estudiante Prueba', exact: true }).click();
+  await group.getByRole('button', { name: 'Revisar retroalimentación de Estudiante Prueba', exact: true }).click();
   await expect(group.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue(message);
   expect(await group.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
 });
@@ -113,8 +113,8 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     const selected = dialog.getByRole('checkbox', { name: 'Seleccionar Estudiante Prueba', exact: true });
     await selected.press('Space');
     await expect(selected).toBeChecked();
-    await dialog.getByRole('button', { name: 'Ver devolución de Estudiante Prueba', exact: true }).click();
-    await dialog.getByRole('button', { name: 'Revisar devolución de Estudiante Prueba', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Ver retroalimentación de Estudiante Prueba', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Revisar retroalimentación de Estudiante Prueba', exact: true }).click();
     await expect(dialog.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveValue(message);
     await expect(dialog.getByRole('textbox', { name: 'Mensaje para el estudiante' })).toHaveCSS('font-size', '16px');
     expect((await dialog.getByRole('textbox', { name: 'Mensaje para el estudiante' }).boundingBox())!.height).toBeGreaterThanOrEqual(224);
@@ -122,7 +122,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.screenshot({ path: `../output/playwright/spec120-review-${width}-${theme}-${browserName}.png` });
     const callsBeforeApproval = state.previewCalls();
     const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/evaluaciones/e1/devoluciones/previsualizar' && response.ok());
-    await dialog.getByRole('button', { name: 'Aprobar devolución', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Aprobar retroalimentación', exact: true }).click();
     // Approval intentionally revalidates the list. Hold that response so the
     // test observes loading instead of racing the optimistic ready state.
     await expect(dialog.getByText('Cargando estudiantes y retroalimentaciones…', { exact: true })).toBeVisible();

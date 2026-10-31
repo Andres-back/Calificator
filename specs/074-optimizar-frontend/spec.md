@@ -1,5 +1,9 @@
 # Especificación: Optimizar fluidez y organización del frontend
 
+## Evolución 138: coherencia y navegación contextual
+
+[138-frontend-docente-claro](../138-frontend-docente-claro/spec.md), issue295, reutiliza la fila de enlaces de materia también en móvil, con sección activa y revelado solo horizontal; sustituye el selector móvil exclusivo sin perder permisos. Revisión docente comparte un contexto único, ayudas generales a petición y CTA individual de compartir sin duplicados. Las plantillas futuras declaran añade/reutiliza/retira y exigen maqueta384px antes de implementar y capturas de la implementación384px/escritorio antes de fusionar; no se reescriben specs históricas ni se modifica la constitución. Se conservan resultados estudiantiles, estados, datos y contratos.
+
 **Rama**: `codex/074-optimizar-frontend`
 
 **Creada**: 2026-09-26

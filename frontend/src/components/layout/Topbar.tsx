@@ -8,6 +8,7 @@ import { routes } from '@/config/routes';
 import { isInstalledApp } from '@/lib/installedApp';
 import { HomeScreenGuide } from '@/components/install/HomeScreenShortcut';
 import { adminNav } from '@/config/nav';
+import { isReviewPath } from '@/modules/calificaciones/reviewRoutes';
 
 const TEACHER_CONTEXTS: Array<{ match: string; label: string; brandIcon: EducationalIconName }> = [
   { match: '/app/perfil', label: 'Mi perfil', brandIcon: 'ai-settings' },
@@ -51,8 +52,12 @@ export function Topbar({
     .slice(0, 2)
     .join('')
     .toUpperCase();
-  const teacherContext = TEACHER_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
-    ?? { label: 'Inicio docente', brandIcon: 'dashboard' as const };
+  const teacherContext = isReviewPath(location.pathname)
+    ? { label: location.pathname === '/app/calificaciones' && !new URLSearchParams(location.search).get('evaluacion') ? 'Pendientes' : 'Revisión de calificaciones', brandIcon: 'grade-evidence' as const }
+    : location.pathname === '/app/calificaciones/boletin'
+      ? { label: 'Libro de notas', brandIcon: 'gradebook' as const }
+      : TEACHER_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
+        ?? { label: 'Inicio docente', brandIcon: 'dashboard' as const };
   const studentContext = STUDENT_CONTEXTS.find((item) => location.pathname.startsWith(item.match))
     ?? { label: 'Mi inicio', brandIcon: 'dashboard' as const };
   const adminContext = adminNav.find((item) => item.to !== '/app' && location.pathname.startsWith(item.to))
