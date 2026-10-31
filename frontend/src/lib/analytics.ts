@@ -5,6 +5,7 @@
  * metadata. La identidad y el rol se derivan exclusivamente de la sesión.
  */
 import { api } from './api';
+import { isReviewPath } from '@/modules/calificaciones/reviewRoutes';
 
 export type AnalyticsSurface =
   | 'inicio'
@@ -162,7 +163,7 @@ export function trackEvent<T extends AnalyticsEventType>(
 export function surfaceForPath(pathname: string): AnalyticsSurface {
   const path = pathname.toLowerCase();
   if (path.includes('/calificaciones/boletin') || path.includes('/resultados')) return 'resultados';
-  if (path.startsWith('/app/calificaciones')) return 'calificaciones';
+  if (isReviewPath(path) || path.startsWith('/app/calificaciones')) return 'calificaciones';
   if (path.startsWith('/app/presentaciones')) return 'presentaciones';
   if (path.startsWith('/app/evaluaciones') || path.startsWith('/app/actividades')) return 'actividades';
   if (path.startsWith('/app/materias')) return 'materias';

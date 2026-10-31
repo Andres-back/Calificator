@@ -29,6 +29,7 @@ function searchText(value: string) {
 }
 
 function TeacherReviewResumeCard({ userId, materias }: { userId: string; materias: Materia[] }) {
+  const permissions = useAuth(state => state.user?.permissions);
   const [resume, setResume] = useState(() => readTeacherReviewResume(userId));
   const [notice, setNotice] = useState('');
   const subject = materias.find(item => item.id === resume?.materiaId);
@@ -60,7 +61,7 @@ function TeacherReviewResumeCard({ userId, materias }: { userId: string; materia
   return <Card className="flex flex-wrap items-center justify-between gap-2 p-3">
     <div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{subject!.nombre} · {evaluation.data!.nombre}</p>
       {notice && <p role="status" className="mt-1 text-xs text-muted">{notice}</p>}</div>
-    <Link to={teacherReviewResumeHref(resume)} className={actionClass}>Continuar revisión <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+    <Link to={teacherReviewResumeHref(resume, permissions)} className={actionClass}>Continuar revisión <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
   </Card>;
 }
 

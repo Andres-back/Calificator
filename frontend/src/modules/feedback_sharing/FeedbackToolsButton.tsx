@@ -1,23 +1,24 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageSquareText } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
-import { routes } from '@/config/routes';
+import { buildReviewHref, resolveReviewContext } from '@/modules/calificaciones/reviewRoutes';
 import { copyFeedbackAccesses, feedbackAvailable, listFeedbackAccesses } from './api';
 
 const ShareFeedbackDialog = lazy(() => import('./ShareFeedbackDialog').then(module => ({ default: module.ShareFeedbackDialog })));
 
-export function FeedbackToolsButton(props: { evaluationId: string; gradeId?: string; initialSelectedIds?: string[]; disabled?: boolean; suggestedArea?: string | null }) {
+export function FeedbackToolsButton(props: { evaluationId: string; materiaId?: string; gradeId?: string; initialSelectedIds?: string[]; disabled?: boolean; suggestedArea?: string | null }) {
   const user = useAuth(state => state.user);
   return <FeedbackToolsContent key={[props.evaluationId, props.gradeId ?? 'group', user?.id, user?.rol, [...(user?.permissions ?? [])].sort().join(',')].join(':')} {...props} />;
 }
 
-function FeedbackToolsContent({ evaluationId, gradeId, initialSelectedIds, disabled = false, suggestedArea }: { evaluationId: string; gradeId?: string; initialSelectedIds?: string[]; disabled?: boolean; suggestedArea?: string | null }) {
+function FeedbackToolsContent({ evaluationId, materiaId, gradeId, initialSelectedIds, disabled = false, suggestedArea }: { evaluationId: string; materiaId?: string; gradeId?: string; initialSelectedIds?: string[]; disabled?: boolean; suggestedArea?: string | null }) {
   const user = useAuth(state => state.user);
   const [owner] = useState(user?.id);
   const navigate = useNavigate();
+  const location = useLocation();
   const controller = useRef(new AbortController());
   const locked = useRef(false);
   const [busy, setBusy] = useState(false);
@@ -67,8 +68,13 @@ function FeedbackToolsContent({ evaluationId, gradeId, initialSelectedIds, disab
     {manual && <label className="w-full text-sm">Enlace para copiar<textarea aria-label="Enlace para copiar" className="mt-1 min-h-24 w-full rounded-lg border border-border bg-surface p-3 text-base" readOnly value={manual} onFocus={event => event.currentTarget.select()} /></label>}
     {opened?.owner === owner && opened?.evaluationId === evaluationId && createPortal(<Suspense fallback={<p role="status">Abriendo retroalimentaciones…</p>}><ShareFeedbackDialog evaluationId={evaluationId} initialGradeId={gradeId} initialSelectedIds={initialSelectedIds} suggestedArea={suggestedArea} onClose={() => setOpened(null)} onReview={gradeId => {
       setOpened(null);
-      const params = new URLSearchParams({ evaluacion: evaluationId, calificacion: gradeId });
-      navigate(`${routes.calificacionesWorkspace}?${params}`);
+      const params = new URLSearchParams(location.search);
+      const context = resolveReviewContext(location.pathname, params);
+      const sameEvaluation = context.evaluationId === evaluationId && !context.conflictingQuery;
+      const reviewParams = sameEvaluation ? params : new URLSearchParams();
+      reviewParams.delete('estudiante'); reviewParams.delete('pregunta'); reviewParams.delete('hoja');
+      navigate(buildReviewHref({ evaluationId, materiaId: materiaId ?? (sameEvaluation ? context.materiaId : undefined),
+        gradeId, params: reviewParams, permissions: useAuth.getState().user?.permissions }));
     }} /></Suspense>, document.body)}
   </>;
 }

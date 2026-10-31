@@ -10,7 +10,7 @@ function payload(name = 'Estudiante de prueba') {
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); history.replaceState(null, '', '/'); });
 
 describe('consulta individual sin panel docente', () => {
-  it('muestra nota y devolución completa sin login ni controles del profesor', async () => {
+  it('muestra nota y retroalimentación completa sin login ni controles del profesor', async () => {
     history.replaceState(null, '', `/devolucion#${token}`);
     vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response(JSON.stringify(payload()))));
     render(<PublicFeedbackPage />);
@@ -19,7 +19,7 @@ describe('consulta individual sin panel docente', () => {
     expect(screen.getByText(/En la pregunta 2 describiste las nubes/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /publicar|confirmar nota/i })).toBeNull();
     expect(screen.queryByRole('textbox', { name: /correo|contraseña|buscar estudiante/i })).toBeNull();
-    expect(document.title).toBe('Tu devolución · XCalificator');
+    expect(document.title).toBe('Tu retroalimentación · XCalificator');
     expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
   });
 

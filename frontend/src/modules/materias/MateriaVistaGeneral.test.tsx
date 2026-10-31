@@ -158,6 +158,7 @@ describe('MateriaVistaGeneral teacher journey', () => {
   });
 
   it('enables grading and follow-up when prerequisites are ready', async () => {
+    useAuth.setState({ user: { ...useAuth.getState().user!, permissions: ['subjects.update', 'subjects.read', 'evaluations.read'] } });
     mocks.context.materia = {
       ...baseMateria,
       estudiantes: [
@@ -181,7 +182,7 @@ describe('MateriaVistaGeneral teacher journey', () => {
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole('link', { name: /Calificar y revisar/i })[0],
-    ).toHaveAttribute('href', '/app/calificaciones?materia=materia-1');
+    ).toHaveAttribute('href', '/app/materias/materia-1/evaluaciones');
     expect(
       screen.getByRole('link', { name: /Revisar seguimiento/i }),
     ).toHaveAttribute('href', '/app/materias/materia-1/boletin');

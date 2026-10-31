@@ -43,7 +43,7 @@ describe('DashboardPage docente', () => {
     mocks.getEvaluationReview.mockResolvedValue({ alumnos: [{ estudiante_id: 's1', calificacion_id: 'c1' }] });
     renderDashboard();
     const link = await screen.findByRole('link', { name: 'Continuar revisión' });
-    expect(link).toHaveAttribute('href', '/app/calificaciones?materia=materia-1&evaluacion=e1&estudiante=s1&calificacion=c1');
+    expect(link).toHaveAttribute('href', '/app/materias/materia-1/evaluaciones/e1/revision?materia=materia-1&evaluacion=e1&estudiante=s1&calificacion=c1');
     expect(screen.getByText('Matemáticas · Fracciones')).toBeVisible();
     expect(mocks.getEvaluacion).toHaveBeenCalledOnce();
     expect(mocks.getEvaluationReview).toHaveBeenCalledOnce();
@@ -68,7 +68,7 @@ describe('DashboardPage docente', () => {
     mocks.getEvaluacion.mockResolvedValue({ id: 'e1', materia_id: 'materia-1', nombre: 'Fracciones' });
     mocks.getEvaluationReview.mockResolvedValue({ alumnos: [] });
     renderDashboard();
-    expect(await screen.findByRole('link', { name: 'Continuar revisión' })).toHaveAttribute('href', '/app/calificaciones?materia=materia-1&evaluacion=e1');
+    expect(await screen.findByRole('link', { name: 'Continuar revisión' })).toHaveAttribute('href', '/app/materias/materia-1/evaluaciones/e1/revision?materia=materia-1&evaluacion=e1');
     expect(screen.getByText('El estudiante anterior ya no está disponible en esta revisión. Volverás al grupo.')).toBeVisible();
   });
   it.each([true, false])('updates claims without hiding pending grades (compact=%s)', async (compact) => {

@@ -117,6 +117,9 @@ describe('analytics event contract', () => {
     ['/app/evaluaciones', 'actividades'],
     ['/app/calificaciones/boletin', 'resultados'],
     ['/app/calificaciones/workspace/grade-1', 'calificaciones'],
+    ['/app/materias/m1/evaluaciones/e1/revision', 'calificaciones'],
+    ['/app/materias/m1/boletin', 'materias'],
+    ['/app/materias/m1/evaluaciones/e1/revision/extra', 'materias'],
     ['/app/xali', 'xali'],
     ['/app/presentaciones', 'presentaciones'],
   ] as const)('maps %s to the closed surface %s', (path, surface) => {

@@ -1,5 +1,9 @@
 # Especificación: Calificaciones, visión, PQRS y boletín
 
+## Evolución 138: revisión docente clara y contextual
+
+[138-frontend-docente-claro](../138-frontend-docente-claro/spec.md), issue295, reduce la lectura principal a respuesta, evidencia, puntaje y explicación, conservando avisos concretos y moviendo fuentes/valoraciones/proceso a Historial por pregunta. Ayuda voluntaria cerrada explica prioridades sin prometer exactitud. Nota sugerida/Nota final y Retroalimentación son términos de interfaz, sin reescribir datos. La ruta contextual comparte el workspace, mantiene enlaces antiguos, retorno seguro y borradores; una sola flecha sube de estudiante a lista y de lista a evaluaciones. No elimina el boletín del estudiante ni concede permisos. La bandeja Pendientes usa la muestra autorizada existente, con totales globales separados; sin nuevos endpoints, cambios de notas o modelos.
+
 **Rama**: codex/008-calificaciones | **Creada**: 2026-08-14 | **Estado**: Aprobada | **Issue**: #9
 
 ## Escenarios de usuario y pruebas

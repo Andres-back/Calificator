@@ -84,7 +84,7 @@ for (const width of [360, 390, 768, 1440]) for (const mode of ['light', 'dark'])
     await expect(evidence.getByRole('button', { name: 'Foto preparada', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await evidence.getByRole('button', { name: 'Foto original', exact: true }).click();
     await expect(evidence.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante', exact: true })).toHaveAttribute('src', '/api/evidencia-131/paginas/1?version=original');
-    await expect(evidence.getByText(/El original se consulta como hoja completa/)).toBeVisible();
+    await expect(evidence.getByRole('button', { name: 'Foto original', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await evidence.locator('[aria-label="Páginas de evidencia"]').getByRole('button', { name: '2', exact: true }).click();
     await expect(evidence.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante', exact: true })).toHaveAttribute('src', '/api/evidencia-131/paginas/2?version=original');
     await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
@@ -99,6 +99,30 @@ for (const width of [360, 390, 768, 1440]) for (const mode of ['light', 'dark'])
     if ((width === 390 && mode === 'dark') || (width === 1440 && mode === 'light')) {
       await page.screenshot({ path: `../output/playwright/spec131-variants-${width}-${mode}.png`, fullPage: true });
     }
+  });
+
+  test('138 ayuda de evidencia es voluntaria y conserva pregunta y contexto sin escrituras', async ({ page }) => {
+    const writes: string[] = [];
+    page.on('request', request => { if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones|jobs)\//.test(request.url())) writes.push(request.url()); });
+    const initialUrl = page.url();
+    // General guidance was moved, not removed. Its interaction is independent
+    // of the original/prepared page-switching test and keeps the same time cap.
+    const help = page.getByTestId('grade-review-scroll').locator('details').filter({
+      has: page.locator('summary', { hasText: '¿Cómo funciona esta revisión?' }),
+    });
+    const guidance = help.getByText('La vista cercana por pregunta corresponde a la foto preparada. Puedes abrir la hoja completa y consultar la foto original cuando esté disponible.', { exact: true });
+    await expect(help).not.toHaveAttribute('open');
+    await expect(guidance).toHaveCount(1);
+    await expect(guidance).toBeHidden();
+    await help.locator('summary').click();
+    await expect(guidance).toBeVisible();
+    await help.locator('summary').click();
+    await expect(help).not.toHaveAttribute('open');
+    await expect(guidance).toBeHidden();
+    await expect(page).toHaveURL(initialUrl);
+    await expect(page.getByRole('navigation', { name: 'Preguntas y criterios' }).getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión', exact: true })).toHaveAttribute('aria-current', 'step');
+    expect(writes).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 
   test('zoom amplio conserva puntaje y vuelve a la respuesta', async ({ page }) => {

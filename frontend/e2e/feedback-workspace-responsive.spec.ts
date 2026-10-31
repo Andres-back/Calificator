@@ -122,8 +122,8 @@ for (const width of [390, 1440]) test(`129 texto ampliado y foco ${width}px`, as
   await expect(last).toBeChecked();
   await expect(dialog.getByRole('button', { name: 'Compartir', exact: true })).toBeInViewport({ ratio: 0.999 });
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
-  await dialog.getByRole('button', { name: 'Ver devolución de Estudiante Prueba', exact: true }).click();
-  await expect(dialog.getByRole('region', { name: 'Devolución de Estudiante Prueba', exact: true })).toContainText('justifica con una frase');
+  await dialog.getByRole('button', { name: 'Ver retroalimentación de Estudiante Prueba', exact: true }).click();
+  await expect(dialog.getByRole('region', { name: 'Retroalimentación de Estudiante Prueba', exact: true })).toContainText('justifica con una frase');
   await dialog.getByRole('button', { name: 'Volver a la lista', exact: true }).click();
   await expect(last).toBeChecked();
   await page.screenshot({ path: `../output/playwright/spec129-text-${width}-${browserName}.png` });

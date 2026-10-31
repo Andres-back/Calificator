@@ -75,6 +75,20 @@ describe('centro de calificaciones en celular', () => {
     expect(screen.getByLabelText('Materia')).toBeInTheDocument();
   });
 
+  it('138 reutiliza la cabecera para la ubicación sin repetir los nombres ni otra fila de contexto', async () => {
+    const user = userEvent.setup();
+    render(<MobileReviewContext compactContext forceOpen={false}
+      materiaName="Matemáticas" evaluationName="Fracciones"
+      navigation={<nav aria-label="Ubicación de la revisión">Matemáticas › Fracciones</nav>}>
+      <label htmlFor="evaluacion-138">Evaluación</label><select id="evaluacion-138"><option>Fracciones</option></select>
+    </MobileReviewContext>);
+    expect(screen.getByRole('navigation', { name: 'Ubicación de la revisión' })).toBeInTheDocument();
+    expect(screen.queryByText('Estás revisando')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Evaluación')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Cambiar evaluación/ }));
+    expect(screen.getByLabelText('Evaluación')).toBeVisible();
+  });
+
   it('prioriza confirmar y permite continuar con el siguiente estudiante', async () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
@@ -105,6 +119,23 @@ describe('centro de calificaciones en celular', () => {
 
     expect(onConfirm).toHaveBeenCalledOnce();
     expect(onNext).toHaveBeenCalledOnce();
+  });
+
+  it('138 pasa acciones a flujo normal si la barra ocuparía el área de lectura', async () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 360, 1000));
+    try {
+      const onNext = vi.fn();
+      render(<div data-testid="grade-review-scroll"><MobileReviewActionBar
+        processing={false} done published score={4} canGrade canPublish
+        dirty={false} componentDirty={false} advancedEditOpen={false}
+        confirmPending={false} publishPending={false}
+        onConfirm={vi.fn()} onPublish={vi.fn()} onAdjust={vi.fn()} onSaveChanges={vi.fn()} onNext={onNext}
+      /></div>);
+      expect(screen.getByLabelText('Acciones de la calificación')).toHaveAttribute('data-action-position', 'flow');
+      expect(screen.getByTestId('grade-review-scroll').style.getPropertyValue('--grade-review-actions-height')).toBe('0px');
+      await userEvent.click(screen.getByRole('button', { name: 'Siguiente estudiante' }));
+      expect(onNext).toHaveBeenCalledOnce();
+    } finally { rect.mockRestore(); }
   });
 
   it('muestra publicar solo después de confirmar y respeta permisos', () => {

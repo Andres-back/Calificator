@@ -18,7 +18,7 @@
 | frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:21` |
 | frontend_route | `/app/403` | authenticated | covered | `frontend/src/config/routes.ts:23` |
 | frontend_route | `/app/404` | authenticated | covered | `frontend/src/config/routes.ts:24` |
-| frontend_route | `/app/admin/correo` | admin | covered | `frontend/src/config/routes.ts:67` |
+| frontend_route | `/app/admin/correo` | admin | covered | `frontend/src/config/routes.ts:68` |
 | frontend_route | `/app/cambiar-clave-inicial` | authenticated | covered | `frontend/src/config/routes.ts:18` |
 | frontend_route | `/devolucion` | ambiguous | covered | `frontend/src/router.tsx:59` |
 | frontend_route | `/registro` | public | covered | `frontend/src/config/routes.ts:10` |

@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { AppShell } from './AppShell';
 import { useAuth } from '@/stores/auth';
 import { api } from '@/lib/api';
+import { addPendingGrading } from '@/modules/calificaciones/gradingJobs';
 
 function ExternalNavigation() {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ function renderShell(initialPath = '/app') {
           <Route index element={<div>Inicio docente</div>} />
           <Route path="materias" element={<div>Materias docente</div>} />
           <Route path="calificaciones" element={<div>Revisión docente</div>} />
+          <Route path="calificaciones/boletin" element={<div>Resultados</div>} />
+          <Route path="materias/:materiaId/evaluaciones/:evaluacionId/revision" element={<div>Revisión contextual</div>} />
           <Route path="configuracion-ia" element={<div>Configuración IA docente</div>} />
         </Route>
       </Routes>
@@ -52,10 +55,35 @@ beforeEach(() => {
 
 afterEach(() => {
   document.body.style.overflow = '';
+  localStorage.removeItem('xcalificator.pending-gradings.v1:profesor-mobile');
   vi.restoreAllMocks();
 });
 
 describe('AppShell mobile navigation', () => {
+  it('138 conserva el monitor global en Pendientes y lo delega al workspace contextual', () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { estado: 'queued', progreso: 0, error: null } });
+    addPendingGrading({ jobId: 'job138', evaluacionId: 'e1', materiaId: 'm1', estudianteId: 's1', estudianteNombre: 'Estudiante sintético' });
+    const pending = renderShell('/app/calificaciones');
+    expect(screen.getAllByLabelText('Calificaciones en cola')).toHaveLength(1);
+    pending.unmount();
+    const contextual = renderShell('/app/materias/m1/evaluaciones/e1/revision');
+    expect(screen.queryByLabelText('Calificaciones en cola')).not.toBeInTheDocument();
+    contextual.unmount();
+    localStorage.removeItem('xcalificator.pending-gradings.v1:profesor-mobile');
+  });
+  it('138 mantiene el ancho de revisión contextual sin cambiar boletines y muestra su etiqueta, no la de Materias', () => {
+    const review = renderShell('/app/materias/m1/evaluaciones/e1/revision?calificacion=c1');
+    expect(review.container.querySelector('main > .relative')).toHaveClass('max-w-none');
+    expect(review.container.querySelector('header')).toHaveTextContent('Revisión de calificaciones');
+    expect(review.container.querySelector('header')).not.toHaveTextContent('Materias y grupos');
+    review.unmount();
+    const book = renderShell('/app/calificaciones/boletin');
+    expect(book.container.querySelector('main > .relative')).toHaveClass('max-w-7xl');
+  });
+  it('138 identifica el acceso global sin evaluación como Pendientes', () => {
+    const { container } = renderShell('/app/calificaciones');
+    expect(container.querySelector('header')).toHaveTextContent('Pendientes');
+  });
   it('amplía solo la revisión docente y conserva el ancho de otros módulos y del estudiante', () => {
     const review = renderShell('/app/calificaciones');
     expect(review.container.querySelector('main > .relative')).toHaveClass('max-w-none');

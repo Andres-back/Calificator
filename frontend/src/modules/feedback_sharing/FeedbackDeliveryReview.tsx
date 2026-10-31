@@ -43,11 +43,11 @@ export function FeedbackDeliveryReview({ evaluationId, name, preview, signal, va
     }
   }
   const score = preview.resultado ?? preview.borrador_docente;
-  return <section className="space-y-4" tabIndex={-1} data-feedback-review-form aria-label={'Revisar devolución de ' + name}>
+  return <section className="space-y-4" tabIndex={-1} data-feedback-review-form aria-label={'Revisar retroalimentación de ' + name}>
     <h3 className="text-lg font-bold">{name}</h3>
     <p className="font-semibold">{canApprove ? 'Nota confirmada' : 'Nota sugerida'}: {score?.nota} / {score?.nota_maxima}</p>
-    <p className="text-sm leading-6">Revisa el mensaje que recibirá el estudiante. Aprobar esta devolución no cambia la nota ni elimina los avisos del análisis original.</p>
-    {canApprove && <label className="block space-y-2 text-sm font-semibold">Contenido de la devolución
+    <p className="text-sm leading-6">Revisa el mensaje que recibirá el estudiante. Aprobar esta retroalimentación no cambia la nota ni elimina los avisos del análisis original.</p>
+    {canApprove && <label className="block space-y-2 text-sm font-semibold">Contenido de la retroalimentación
       <select className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-base" disabled={busy} value={scope} onChange={event => setScope(event.target.value as 'summary' | 'detail')}>
         <option value="summary">Solo nota y retroalimentación</option>
         {candidate.detail_available && <option value="detail">Incluir detalle por pregunta revisado</option>}
@@ -63,7 +63,7 @@ export function FeedbackDeliveryReview({ evaluationId, name, preview, signal, va
     {error && <p role="alert" className="rounded-lg border border-amber-400 p-3 text-sm">{error}</p>}
     <div className="flex flex-wrap gap-2">
       {preview.mensaje_editable && permissions.includes('grading.grade') && <Button variant="outline" disabled={busy || !message.trim() || !messageDirty} onClick={() => void approve(true)}>Guardar mensaje sin publicar</Button>}
-      {canApprove && <Button disabled={busy || !message.trim() || message.length > 6000} loading={busy} onClick={() => void approve()}>Aprobar devolución</Button>}
+      {canApprove && <Button disabled={busy || !message.trim() || message.length > 6000} loading={busy} onClick={() => void approve()}>Aprobar retroalimentación</Button>}
       <Button variant="outline" disabled={busy} onClick={() => { if (dirty) setDiscard(true); else onCancel(); }}>Volver sin aprobar</Button>
     </div>
     {discard && <div role="alert" className="space-y-2 rounded-xl border border-amber-400 p-3"><p>Tienes cambios sin guardar. Puedes seguir editando o descartarlos.</p><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => setDiscard(false)}>Seguir editando</Button><Button variant="outline" onClick={onCancel}>Descartar cambios y volver</Button></div></div>}

@@ -16,7 +16,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
   await page.evaluate((activeTheme) => document.documentElement.classList.toggle('dark', activeTheme === 'dark'), theme);
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Nota explicada respuesta por respuesta' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeVisible();
   const panel = page.getByTestId('grade-review-panel');
   if (viewport.width >= 1280) {
     const roster = page.getByTestId('grade-review-roster');
@@ -59,7 +59,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
     return box!.y >= 0 && box!.y + box!.height <= (bar?.y ?? viewport.height);
   }).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
-  await page.getByRole('button', { name: viewport.width >= 1280 ? 'Volver a notas del grupo' : 'Volver a lista', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a lista', exact: true }).filter({ visible: true }).click();
   await expect(page.getByTestId('grade-review-roster').getByRole('button', { name: /Estudiante Prueba/ })).toBeFocused();
   expect(await page.evaluate(() => document.body.style.position)).not.toBe('fixed');
 });

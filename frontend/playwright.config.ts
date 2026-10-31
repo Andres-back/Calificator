@@ -17,7 +17,7 @@ export default defineConfig({
     { name: 'webkit-evidence-review', testMatch: '**/grade-evidence-review.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-reading-controls', testMatch: '**/reading-controls.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-document', testMatch: '**/evaluation-document-structure.spec.ts', use: { ...devices['Desktop Safari'] } },
-    { name: 'webkit-feedback-workspace', testMatch: ['**/feedback-workspace-responsive.spec.ts', '**/feedback-share-review.spec.ts', '**/grade-review-mobile.spec.ts'], use: { ...devices['Desktop Safari'] } },
+    { name: 'webkit-feedback-workspace', testMatch: ['**/feedback-workspace-responsive.spec.ts', '**/feedback-share-review.spec.ts', '**/grade-review-mobile.spec.ts', '**/teacher-review-context.spec.ts'], use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-subject-tools', testMatch: ['**/gradebook-export.spec.ts', '**/materia-lifecycle.spec.ts', '**/evaluation-copy.spec.ts', '**/evaluation-score-allocation.spec.ts'], use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-native-camera', testMatch: '**/native-camera-capture.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-feedback', testMatch: ['**/feedback-chat-history.spec.ts', '**/feedback-delivery.spec.ts'], grep: /126/, use: { ...devices['Desktop Safari'] } },

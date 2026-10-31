@@ -27,7 +27,7 @@ const unavailable = 'Este enlace no está disponible. Pide a tu profesor que lo 
 export class FeedbackAccessError extends Error {
   constructor(public readonly status: number, public readonly retryAfter = 0) {
     super(status === 404 ? unavailable : status === 429
-      ? 'Ya usaste tus 5 preguntas. Puedes seguir leyendo tu devolución.'
+      ? 'Ya usaste tus 5 preguntas. Puedes seguir leyendo tu retroalimentación.'
       : 'No pudimos conectar. Comprueba tu conexión e inténtalo de nuevo.');
     this.name = 'FeedbackAccessError';
   }

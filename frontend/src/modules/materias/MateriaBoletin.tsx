@@ -24,6 +24,7 @@ import {
 } from '@/modules/calificaciones/api';
 import { routes } from '@/config/routes';
 import { useAuth } from '@/stores/auth';
+import { buildReviewHref } from '@/modules/calificaciones/reviewRoutes';
 import type { Calificacion } from '@/types/api';
 import { isGradeProcessing } from '@/modules/calificaciones/gradePresentation';
 import { useMateriaContext } from './MateriaContext';
@@ -54,6 +55,7 @@ function gradingHref(
   studentId: string,
   returnTo?: string,
   gradeId?: string,
+  permissions?: readonly string[],
 ): string {
   const params = new URLSearchParams({
     materia: materiaId,
@@ -62,7 +64,7 @@ function gradingHref(
   });
   if (returnTo) params.set('volver', returnTo);
   if (gradeId) params.set('calificacion', gradeId);
-  return `${routes.calificacionesWorkspace}?${params.toString()}`;
+  return buildReviewHref({ params, permissions });
 }
 
 function TeacherGradebook() {
@@ -155,7 +157,7 @@ function TeacherGradebook() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-xl font-extrabold">Boletines</h2>
         {canReadGrades && trackedEvaluations.length > 0 && <Button variant="outline" className="min-h-11" onClick={() => { setSelection(null); setExportOpen(true); }}>Exportar notas</Button>}
-        {canReadGrades && selectedEvaluation && <FeedbackToolsButton evaluationId={selectedEvaluation.id} suggestedArea={materia.area} />}
+        {canReadGrades && selectedEvaluation && <FeedbackToolsButton evaluationId={selectedEvaluation.id} materiaId={materia.id} suggestedArea={materia.area} />}
       </div>
       <div className="mt-2">
         <label className="block min-w-0"><span className="text-sm font-semibold">Buscar estudiante</span>
@@ -222,7 +224,7 @@ function TeacherGradebook() {
       loading={previewLoading} error={previewError}
       onClose={() => setSelection(null)}
       onRetry={() => gradeQueries.filter(query => query.isError).forEach(query => void query.refetch())}
-      explanationHref={cell => gradingHref(materia.id, cell.evaluationId, selectedStudent.id, returnTo, cell.grade?.id)}
+      explanationHref={cell => gradingHref(materia.id, cell.evaluationId, selectedStudent.id, returnTo, cell.grade?.id, user?.permissions)}
     />}
     {exportOpen && canReadGrades && <GradebookExport materiaId={materia.id} materiaName={materia.nombre} evaluations={trackedEvaluations} initialEvaluationId={selectedEvaluationId} studentCount={students.length} onClose={() => setExportOpen(false)} />}
   </div>;

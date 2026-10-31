@@ -42,6 +42,7 @@ import { RosterManualDialog } from './RosterManualDialog';
 import { RosterCredentials } from './RosterCredentials';
 import { RosterAccessDelivery } from './RosterAccessDelivery';
 import { useAuth } from '@/stores/auth';
+import { buildReviewHref } from '@/modules/calificaciones/reviewRoutes';
 
 export function MateriaVistaGeneral() {
   const { materia, canManageMateria } = useMateriaContext();
@@ -222,6 +223,9 @@ function TeacherJourney({
   onRetry: () => void;
 }) {
   const state = getTeacherJourneyState({ studentCount, evaluationCount });
+  const permissions = useAuth(state => state.user?.permissions ?? []);
+  const reviewEntry = permissions.includes('subjects.read') && permissions.includes('evaluations.read')
+    ? routes.materiaEvaluaciones(materiaId) : buildReviewHref({ materiaId, permissions });
 
   const recommended = {
     invite: {
@@ -248,7 +252,7 @@ function TeacherJourney({
       description:
         'Selecciona estudiante y evaluación, carga la foto y confirma o ajusta la sugerencia de la IA.',
       label: 'Calificar y revisar',
-      to: `${routes.calificacionesWorkspace}?materia=${encodeURIComponent(materiaId)}`,
+      to: reviewEntry,
       brandIcon: 'grade-evidence' as const,
     },
   }[state.recommendedStep];
@@ -369,7 +373,7 @@ function TeacherJourney({
                   ? 'La IA sugiere y tú confirmas o ajustas.'
                   : 'Necesitas estudiantes y una evaluación.'
               }
-              to={`${routes.calificacionesWorkspace}?materia=${encodeURIComponent(materiaId)}`}
+              to={reviewEntry}
               disabled={!state.canGrade}
             />
             <JourneyAction

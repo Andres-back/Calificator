@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -106,7 +106,8 @@ describe('MateriaDetailPage for students', () => {
     renderDetail();
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Ciencias' })).toBeVisible());
     expect(screen.getByText('Información de la materia').closest('details')).not.toHaveAttribute('open');
-    expect(screen.getByRole('combobox', { name: 'Sección de la materia' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Secciones de la materia' })).toHaveClass('flex');
+    expect(screen.queryByRole('combobox', { name: 'Sección de la materia' })).not.toBeInTheDocument();
   });
   it('retira Calificar cuando Evaluaciones es accesible al docente', async () => {
     materiaApi.getMateriaEstudiantes.mockResolvedValue({ ...materia, estudiantes: [] });
@@ -172,19 +173,73 @@ describe('MateriaDetailPage for students', () => {
     expect(materiaApi.getMateriaEstudiantes).not.toHaveBeenCalled();
   });
 
-  it('offers an explicit mobile section selector with only authorized destinations', async () => {
+  it('138 ofrece secciones visibles y deslizables con solo destinos autorizados', async () => {
     materiaApi.getMateria.mockResolvedValue(materia);
     const user = userEvent.setup();
 
     renderDetail();
 
-    const sectionSelect = await screen.findByRole('combobox', { name: 'Sección de la materia' });
-    expect(sectionSelect).toHaveValue('/app/materias/materia-1');
-    expect(screen.queryByRole('option', { name: 'Calificar' })).not.toBeInTheDocument();
+    const sections = await screen.findByRole('navigation', { name: 'Secciones de la materia' });
+    expect(sections).toHaveClass('flex', 'overflow-x-auto');
+    expect(sections).not.toHaveClass('hidden');
+    expect(screen.getByRole('link', { name: /Vista general/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('link', { name: 'Calificar' })).not.toBeInTheDocument();
 
-    await user.selectOptions(sectionSelect, '/app/materias/materia-1/evaluaciones');
+    await user.click(screen.getByRole('link', { name: /Evaluaciones/ }));
 
     expect(await screen.findByText('Evaluaciones confirmadas')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Sección de la materia' })).toHaveValue('/app/materias/materia-1/evaluaciones');
+    expect(screen.getByRole('link', { name: /Evaluaciones/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /Vista general/ })).not.toHaveAttribute('aria-current');
+  });
+
+  it('138 revela la sección activa solo en la fila horizontal y conserva la posición vertical', async () => {
+    materiaApi.getMateria.mockResolvedValue(materia);
+    const user = userEvent.setup();
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute('aria-label') === 'Secciones de la materia') return { left: 0, right: 250, top: 420, bottom: 476, width: 250, height: 56, x: 0, y: 420, toJSON: () => ({}) };
+      if (this.getAttribute('aria-current') === 'page' && this.textContent?.includes('Evaluaciones')) return { left: 400, right: 580, top: 420, bottom: 476, width: 180, height: 56, x: 400, y: 420, toJSON: () => ({}) };
+      return originalRect.call(this);
+    });
+    try {
+      renderDetail();
+      const sections = await screen.findByRole('navigation', { name: 'Secciones de la materia' });
+      const verticalPosition = window.scrollY;
+      expect(sections.scrollLeft).toBe(0);
+      await user.click(screen.getByRole('link', { name: /Evaluaciones/ }));
+      expect(await screen.findByText('Evaluaciones confirmadas')).toBeInTheDocument();
+      expect(sections.scrollLeft).toBe(330);
+      expect(window.scrollY).toBe(verticalPosition);
+    } finally { rect.mockRestore(); }
+  });
+
+  it('138 mantiene la pestaña activa a la vista cuando la fila se estrecha', async () => {
+    materiaApi.getMateria.mockResolvedValue(materia);
+    let resized: ResizeObserverCallback | undefined;
+    const disconnect = vi.fn();
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: ResizeObserverCallback) { resized = callback; }
+      observe() {}
+      unobserve() {}
+      disconnect = disconnect;
+    });
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    let narrowed = false;
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute('aria-label') === 'Secciones de la materia') return { left: 0, right: narrowed ? 100 : 300, top: 420, bottom: 476, width: narrowed ? 100 : 300, height: 56, x: 0, y: 420, toJSON: () => ({}) };
+      if (this.getAttribute('aria-current') === 'page') return { left: 20, right: 160, top: 420, bottom: 476, width: 140, height: 56, x: 20, y: 420, toJSON: () => ({}) };
+      return originalRect.call(this);
+    });
+    try {
+      const rendered = renderDetail();
+      const sections = await screen.findByRole('navigation', { name: 'Secciones de la materia' });
+      expect(sections.scrollLeft).toBe(0);
+      expect(resized).toBeTypeOf('function');
+      narrowed = true;
+      act(() => resized?.([], {} as ResizeObserver));
+      expect(sections.scrollLeft).toBe(60);
+      rendered.unmount();
+      expect(disconnect).toHaveBeenCalled();
+    } finally { rect.mockRestore(); vi.unstubAllGlobals(); }
   });
 });

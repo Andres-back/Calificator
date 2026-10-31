@@ -20,7 +20,7 @@ export function PublicFeedbackPage() {
   }, []);
   return <main className="min-h-dvh bg-bg px-4 py-6 text-fg sm:py-10">
     <div className="mx-auto max-w-3xl space-y-5 [overflow-wrap:anywhere]">
-      <p className="text-sm font-bold text-brand-600">XCalificator · Tu devolución</p>
+      <p className="text-sm font-bold text-brand-600">XCalificator · Tu retroalimentación</p>
       {/^[A-Za-z0-9_-]{43}$/.test(token) ? <FeedbackSession key={token} token={token} /> : <Unavailable />}
     </div>
   </main>;
@@ -73,7 +73,7 @@ function FeedbackSession({ token }: { token: string }) {
 
   if (closed || error?.status === 404) return <Unavailable />;
   if (error) return <section role="alert" className="space-y-4 rounded-2xl border border-border bg-surface p-5"><p>{error.message}</p><button className="min-h-11 rounded-xl border border-border px-4" onClick={() => setReload(value => value + 1)}>Volver a intentar</button></section>;
-  if (!result) return <p role="status">Abriendo tu devolución…</p>;
+  if (!result) return <p role="status">Abriendo tu retroalimentación…</p>;
   const data = result.resultado;
   return <>
     <header className="space-y-2 rounded-2xl border border-border bg-surface p-5">

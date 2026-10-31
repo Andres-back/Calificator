@@ -1,4 +1,5 @@
 import { routes } from '@/config/routes';
+import { buildReviewHref } from './reviewRoutes';
 
 export const TEACHER_REVIEW_RESUME_PREFIX = 'xcalificator.teacher-review.v1.';
 const MAX_AGE_MS = 7 * 86400000;
@@ -44,10 +45,10 @@ export function clearTeacherReviewResume(userId?: string) {
   } catch { /* Session cleanup must never depend on storage permission. */ }
 }
 
-export function teacherReviewResumeHref(record: TeacherReviewResume) {
+export function teacherReviewResumeHref(record: TeacherReviewResume, permissions?: readonly string[]) {
   if (!validId(record.materiaId) || !validId(record.evaluacionId)) return routes.materias;
   const params = new URLSearchParams({ materia: record.materiaId, evaluacion: record.evaluacionId });
   if (validId(record.estudianteId)) params.set('estudiante', record.estudianteId);
   if (validId(record.calificacionId)) params.set('calificacion', record.calificacionId);
-  return `${routes.calificacionesWorkspace}?${params.toString()}`;
+  return buildReviewHref({ params, permissions });
 }

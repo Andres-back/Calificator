@@ -21,7 +21,7 @@ export function FeedbackStudentList({ rows, accesses, selected, detailId, canDel
         {score?.nota != null && <span className="shrink-0 font-bold tabular-nums">{formatGradeScore(Number(score.nota))}<span className="text-xs font-normal text-muted"> / {formatGradeScore(Number(score.nota_maxima))}</span></span>}
       </div>
       {id && <div className="mt-2 flex flex-wrap gap-1">
-        <Button variant="link" disabled={busy} className="min-h-11" aria-label={'Ver devolución de ' + row.nombre} onClick={event => onOpen(id, event.currentTarget)}>Ver devolución<ChevronRight className="h-4 w-4" aria-hidden="true" /></Button>
+        <Button variant="link" disabled={busy} className="min-h-11" aria-label={'Ver retroalimentación de ' + row.nombre} onClick={event => onOpen(id, event.currentTarget)}>Ver retroalimentación<ChevronRight className="h-4 w-4" aria-hidden="true" /></Button>
         {canDeliver && hasLink && <Button variant="outline" aria-label={'Copiar enlace de ' + row.nombre} disabled={busy} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" onClick={event => onShare(id, event.currentTarget)}><Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />Copiar enlace</Button>}
       </div>}
     </li>;

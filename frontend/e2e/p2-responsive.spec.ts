@@ -323,7 +323,7 @@ for (const role of ['profesor', 'estudiante', 'admin'] as const) {
         await expect(page.locator('main#main-content').getByText('Cargando…', { exact: true })).toHaveCount(0);
         await page.waitForLoadState('networkidle');
         if (role === 'profesor' && viewport.width <= 390 && new URL(page.url()).pathname.startsWith('/app/materias/m1')) {
-          for (const element of [page.getByRole('heading', { name: materia.nombre, exact: true }), page.getByRole('combobox', { name: 'Sección de la materia' })]) {
+          for (const element of [page.getByRole('heading', { name: materia.nombre, exact: true }), page.getByRole('navigation', { name: 'Secciones de la materia' })]) {
             const bounds = (await element.boundingBox())!;
             expect(bounds.y).toBeGreaterThanOrEqual(0);
             expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
@@ -428,22 +428,24 @@ test('profesor recorre la materia, califica desde su evaluación y escribe un DB
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 
-  await expect(page.getByRole('combobox', { name: 'Sección de la materia' }).locator('option', { hasText: /^Calificar$/ })).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Secciones de la materia' }).getByRole('link', { name: 'Calificar', exact: true })).toHaveCount(0);
   await expect(page.getByText('Información de la materia').locator('..')).not.toHaveAttribute('open');
   await expect(page.getByText('Guía opcional de la materia').locator('..')).not.toHaveAttribute('open');
   await expect(page.getByRole('button', { name: 'Importar foto' })).toBeVisible();
   for (const tab of ['Vista general', 'Evaluaciones', 'Recursos', 'Asistencia', 'Boletín', 'Criterios de aprendizaje']) {
-    await page.getByRole('combobox', { name: 'Sección de la materia' }).selectOption({ label: tab });
+    await page.getByRole('navigation', { name: 'Secciones de la materia' }).getByRole('link', { name: tab, exact: true }).click();
     await expect(page.locator('main#main-content')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     if (tab === 'Evaluaciones') {
       await page.getByRole('link', { name: 'Ver notas', exact: true }).click();
-      await expect(page).toHaveURL(/\/app\/calificaciones\?/);
+      await expect(page).toHaveURL(/\/app\/materias\/m1\/evaluaciones\/[^/]+\/revision\?/);
       const context = new URL(page.url()).searchParams;
       expect(context.get('materia')).toBe('m1');
       expect(context.get('evaluacion')).toBe('e1');
       await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
-      await page.getByRole('link', { name: 'Volver a evaluaciones', exact: true }).click();
+      const evaluations = page.getByRole('link', { name: 'Evaluaciones de la materia', exact: true });
+      await expect(evaluations).toHaveAttribute('href', '/app/materias/m1/evaluaciones');
+      await evaluations.click();
       await expect(page).toHaveURL(/\/app\/materias\/m1\/evaluaciones$/);
     }
   }
@@ -624,7 +626,7 @@ for (const viewport of viewports.filter((item) => item.width !== 1024)) {
       await page.getByRole('link', { name: 'Evaluaciones de Matemáticas 8°' }).click();
       await expect(page).toHaveURL(/\/materias\/m1\/evaluaciones$/);
       await page.getByRole('link', { name: 'Ver notas', exact: true }).click();
-      await expect(page).toHaveURL(/\/app\/calificaciones\?/);
+      await expect(page).toHaveURL(/\/app\/materias\/m1\/evaluaciones\/[^/]+\/revision\?/);
       expect(new URL(page.url()).searchParams.get('evaluacion')).toBe('e1');
       await expect(page.locator('main#main-content')).toBeVisible();
       await page.waitForLoadState('networkidle');

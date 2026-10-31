@@ -45,7 +45,7 @@ describe('Xali desde enlace individual', () => {
     vi.mocked(client.ask).mockResolvedValue({ request_id: 'r', status: 'queued', respuesta: null, mensaje: null, cupo: { ...quota, restantes: 4 } });
     vi.mocked(client.poll).mockResolvedValue({ request_id: 'r', status: 'succeeded', respuesta: 'Busca una emoción en la primera frase.', mensaje: null, cupo: { ...quota, restantes: 4 } });
     send();
-    expect(await screen.findByText('Xali está preparando tu respuesta. Puedes seguir leyendo tu devolución.')).toBeInTheDocument();
+    expect(await screen.findByText('Xali está preparando tu respuesta. Puedes seguir leyendo tu retroalimentación.')).toBeInTheDocument();
     expect(await screen.findByText('Busca una emoción en la primera frase.', {}, { timeout: 4000 })).toBeInTheDocument();
     expect(client.ask).toHaveBeenCalledTimes(1);
     expect(client.poll).toHaveBeenCalledWith('r', expect.any(AbortSignal));

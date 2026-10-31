@@ -241,8 +241,8 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
     renderPage();
     const capture = await screen.findAllByRole('link', { name: 'Calificar por foto' });
     expect(capture).toHaveLength(2);
-    expect(capture[0]).toHaveAttribute('href', '/app/calificaciones?evaluacion=evaluation-1&materia=materia-1&modo=carga');
-    expect(capture[1]).toHaveAttribute('href', '/app/calificaciones?evaluacion=mixed&materia=materia-1&modo=carga');
+    expect(capture[0]).toHaveAttribute('href', '/app/calificaciones?materia=materia-1&evaluacion=evaluation-1&modo=carga');
+    expect(capture[1]).toHaveAttribute('href', '/app/calificaciones?materia=materia-1&evaluacion=mixed&modo=carga');
     expect(screen.getAllByRole('link', { name: 'Ver notas' })).toHaveLength(3);
   });
 
@@ -257,8 +257,14 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
     mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada' }, { ...evaluation, id: 'draft-1', nombre: 'Borrador' }]);
     renderPage();
     const action = await screen.findByRole('link', { name: 'Ver notas' });
-    expect(action).toHaveAttribute('href', '/app/calificaciones?evaluacion=evaluation-1&materia=materia-1');
+    expect(action).toHaveAttribute('href', '/app/calificaciones?materia=materia-1&evaluacion=evaluation-1');
     expect(screen.getAllByRole('link', { name: 'Ver notas' })).toHaveLength(1);
+  });
+  it('138 abre la revisión contextual con subjects.read sin perder materia/evaluación', async () => {
+    useAuth.setState({ user: { ...useAuth.getState().user!, permissions: [...useAuth.getState().user!.permissions!, 'subjects.read'] } });
+    mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada' }]);
+    renderPage();
+    expect(await screen.findByRole('link', { name: 'Ver notas' })).toHaveAttribute('href', '/app/materias/materia-1/evaluaciones/evaluation-1/revision?materia=materia-1&evaluacion=evaluation-1');
   });
   it('shows only learner actions with the real shared read permissions', async () => {
     mocks.context.canManageMateria = false;

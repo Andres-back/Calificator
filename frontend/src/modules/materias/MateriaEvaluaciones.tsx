@@ -48,6 +48,7 @@ import { ManualEvaluationDialog } from '@/modules/evaluaciones/EvaluacionesPage'
 import { EvaluationPreviewModal } from '@/modules/evaluaciones/components/EvaluationPreviewModal';
 import { getStudentEvaluationAction, getStudentEvaluationStatus } from '@/modules/evaluaciones/studentProgress';
 import { useAuth } from '@/stores/auth';
+import { buildReviewHref } from '@/modules/calificaciones/reviewRoutes';
 import { useMateriaContext } from './MateriaContext';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
@@ -269,7 +270,7 @@ export function MateriaEvaluaciones() {
             const receptionEnabled = evaluation.recepcion_habilitada ?? isDeliveryState;
             const canOpenOnline = (isDeliveryState || isClosed)
               && (Boolean(evaluation.entrega_realizada) || modality === 'online' || modality === 'mixta' || receptionEnabled);
-            const reviewRoute = routes.calificacionesEvaluacion(evaluation.id, materia.id);
+            const reviewRoute = buildReviewHref({ evaluationId: evaluation.id, materiaId: materia.id, permissions: user?.permissions });
 
             return (
               <Card key={evaluation.id} className="p-5">

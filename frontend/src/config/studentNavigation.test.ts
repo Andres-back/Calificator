@@ -29,13 +29,16 @@ describe('navegación del estudiante', () => {
 });
 
 describe('calificación desde las evaluaciones', () => {
-  it('oculta el acceso duplicado cuando el docente puede entrar desde materias', () => {
+  it('138 mantiene Pendientes como bandeja distinta de las evaluaciones de la materia', () => {
     const nav = visibleNavigationItems(profesorNav, new Set(['subjects.read', 'evaluations.read', 'grading.read']));
-    expect(nav.map((item) => item.to)).toEqual(['/app', '/app/materias']);
+    expect(nav.map((item) => item.to)).toEqual(['/app', '/app/materias', '/app/calificaciones']);
+    expect(nav.find(item => item.to === '/app/calificaciones')?.label).toBe('Pendientes');
   });
 
   it('conserva el acceso para roles sin navegación contextual y respeta permisos', () => {
     expect(visibleNavigationItems(profesorNav, new Set(['grading.read'])).map((item) => item.to))
+      .toEqual(['/app', '/app/calificaciones']);
+    expect(visibleNavigationItems(profesorNav, new Set(['grading.grade'])).map((item) => item.to))
       .toEqual(['/app', '/app/calificaciones']);
     expect(visibleNavigationItems(profesorNav, new Set(['subjects.read'])).map((item) => item.to))
       .toEqual(['/app', '/app/materias']);
