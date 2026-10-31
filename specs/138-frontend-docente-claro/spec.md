@@ -2,6 +2,7 @@
 
 **Feature Branch**: `codex/138-frontend-docente-claro`
 **Created**: 2026-10-30
+**Issue**: [#295](https://github.com/Andres-back/Calificator/issues/295)
 **Status**: Implementación verificada en local; CI y revisión del PR previos a cualquier fusión
 **Input**: «adelante vamos con los cambios que habíamos propuesto para mejorar el frontend».
 
