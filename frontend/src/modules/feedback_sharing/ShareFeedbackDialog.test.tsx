@@ -37,6 +37,36 @@ beforeEach(() => {
   });
 });
 describe('retroalimentaciones por evaluación', () => {
+  it('139 salir de la copia manual móvil cierra la escritura antes de restaurar la lista', async () => {
+    const media = Object.assign(new EventTarget(), { matches: true, media: '', onchange: null, addListener: () => {}, removeListener: () => {} }) as unknown as MediaQueryList;
+    const matchMedia = vi.spyOn(window, 'matchMedia').mockReturnValue(media);
+    const clipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    const access = { id: 'a2', calificacion_id: 'g2', estudiante: 'Luis Pérez', estado: 'active' as const, version: 1, fingerprint: 'f'.repeat(64), copy_available: true, expires_at: '2099-01-01T00:00:00Z' };
+    vi.mocked(getEvaluationReview).mockResolvedValue({ alumnos: [{ estudiante_id: 'a', nombre: 'Ana Pérez', calificacion_id: 'g1' }, { estudiante_id: 'b', nombre: 'Luis Pérez', calificacion_id: 'g2' }], siguiente_cursor: null } as never);
+    vi.mocked(teacherApi.previewFeedback).mockResolvedValue(['g1', 'g2'].map(calificacion_id => ({ calificacion_id, elegible: true, fingerprint: 'f'.repeat(64), resultado: result })));
+    vi.mocked(teacherApi.listFeedbackAccesses).mockResolvedValue([access]);
+    vi.mocked(teacherApi.copyFeedbackAccesses).mockResolvedValue([{ ...access, url: 'https://example.test/devolucion#' + 'a'.repeat(43) }]);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error('Synthetic denial')) } });
+    try {
+      render(<ShareFeedbackDialog evaluationId="e1" onClose={() => {}} onReview={() => {}} />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Generar enlaces' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Copiar lista de 1' }));
+      const manual = await screen.findByRole('textbox', { name: 'Enlaces para copiar manualmente' });
+      act(() => manual.focus());
+      const dialog = screen.getByRole('dialog', { name: 'Retroalimentación del grupo' });
+      await waitFor(() => expect(dialog).toHaveAttribute('data-writing', 'true'));
+      fireEvent.click(screen.getByRole('button', { name: 'Volver a estudiantes' }));
+      await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' });
+      expect(dialog).toHaveAttribute('data-writing', 'false');
+      expect(screen.getByRole('button', { name: 'Generar enlaces' })).toHaveFocus();
+      expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+      expect(teacherApi.publishFeedbackBatch).not.toHaveBeenCalled();
+    } finally {
+      matchMedia.mockRestore();
+      if (clipboard) Object.defineProperty(navigator, 'clipboard', clipboard);
+      else Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  });
   it('139 vuelve al estudiante con el mismo enlace visible sin generar ni aprobar', async () => {
     const access = { id: 'saved-link', calificacion_id: 'g1', estudiante: 'Ana Pérez', estado: 'active' as const,
       version: 4, expires_at: '2099-01-01T00:00:00Z', fingerprint: 'f'.repeat(64), copy_available: true };

@@ -74,3 +74,28 @@ Cobertura acumulada:296 escenarios distintos; el último resultado registrado de
 Converge contrastó16FR,5 criterios construibles,22 escenarios de aceptación,7 decisiones y8 principios: cero brechas funcionales, contradicciones o ampliaciones fuera del alcance. No añadió una fase vacía y no cambió tasks.md durante esa comprobación; después Implement cerró los marcadores de las19 tareas. Sin hooks de extensión configurados. El inventario conserva682 superficies. El PR se publica para revisión/CI; la fusión y cualquier despliegue requieren otra autorización.
 
 Cierre documental: inventario vigente y gobernanza completa61/61, sin exclusiones. Capturas inspeccionadas en384/1440 claro/oscuro, texto200 %, resultado parcial y errores con acción visible. Las fuentes y dependencias de producción no se modifican fuera del alcance descrito.
+
+## Corrección de CI del PR298 — 2026-11-01
+
+La ejecución remota41229182698 sobre15b4f2 falló en24 casos de motivos/impresión que todavía suponían selección inicial vacía y en4 casos móviles WebKit de retorno de posición. Backend, calidad/build frontend, contenedores, contexto y gobernanza habían pasado. No se sustituyen esos fallos por la validación local anterior ni se afirma fusión/despliegue.
+
+- Motivos: se comprueba primero la selección automática de30 estudiantes y la impresión habilitada; después se limpia la selección, se conserva el rechazo de impresión vacía y se vuelve a seleccionar. Galería, formatos, contenido, permisos y paginación siguen cubiertos.
+- Retorno móvil: una nueva unidad reprodujo en RED que salir de la copia manual dejaba `data-writing=true`. `leaveShare` termina escritura antes de remontar la lista, sin cambiar la restauración por identidad ni los permisos.
+- La primera matriz local tras ese arreglo pasó52/54 y aún falló en360px WebKit con−22px; no se dio por verde. La medición mostró fuentes cargadas y ancho constante348px, pero el último grupo de controles del encabezado pasó transitoriamente de92 a44px y volvió a92px al reajustar viewport. Se sustituyó ese flex-wrap por columnas explícitas, manteniendo44px táctiles y texto ampliado. La misma prueba pasó después; no se aumentaron tolerancias, tiempos máximos ni reintentos.
+- Se añadió cobertura para volver con el campo manual aún enfocado/viewport reducido, estabilidad del grupo de controles, foco y selección; otra unidad conserva el ancla cuando se acorta contenido anterior. Se retiró toda instrumentación temporal.
+
+Resultados finales locales, sin sumar repeticiones como escenarios distintos:
+
+| Comprobación | Resultado | Límite de interpretación |
+| --- | --- | --- |
+| Módulo de retroalimentación |204/204 unidades aprobadas| Incluye RED→GREEN de escritura y protección del ancla cuando cambia altura. |
+| Frontend completo |1378 aprobadas/1 timeout, de1379| La prueba de edición de rúbrica superó10s durante la ejecución concurrente; no se da esa ejecución por verde. |
+| Repetición aislada GenerationWizard |35/35 aprobadas| Mismo código, límite de10s y archivo completo; sin modificar el creador ni omitir pruebas. Último resultado de los1379 casos aprobado, no una ejecución única1379/1379. |
+| Matriz final de impresión/navegación |53 aprobadas/1 timeout, de54| Los30 casos de navegación pasaron, incluidos los4 móviles de CI y los2 nuevos. Biblioteca1440 claro WebKit alcanzó60s bajo carga concurrente. |
+| Repetición aislada biblioteca1440 claro WebKit |1/1 aprobada en41.6s| Mismos60s, pasos nativos y comprobaciones; informe ci-fix-isolated-print.json. Último resultado de los54 casos aprobado, no una ejecución única54/54. |
+| Calidad frontend |Tipos, lint estricto, build, auditoría de acciones/build aprobados|674 botones y125 enlaces; sin cambios de dependencias, workflows, reintentos ni límites. |
+| Particiones E2E |1004 escenarios,263/239/252/250|Cero faltantes/duplicados; enumeración, no ejecución completa local. |
+
+Informes ignorados en E:/tesis/output/spec139-tests/ci-fix-{affected,final,isolated-print}.json; los primeros fallos permanecen registrados. Se inspeccionó la captura móvil del retorno con controles de copia visibles. Solo datos sintéticos y emulación; no se acreditan teléfono físico, producción ni cambios de notas/evidencias/modelos. Linux/WebKit se comprobará otra vez mediante el CI íntegro del nuevo commit, sin omitir controles.
+
+Cierre de la corrección: inventario vigente682 superficies, gobernanza completa61/61 y validación de contexto de PR con spec-approved/plan-approved/Closes#297 aprobadas. T020–T022 completas; sin hooks de extensión configurados. La publicación del commit no acredita CI remoto verde ni autoriza fusión/despliegue.

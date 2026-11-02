@@ -42,6 +42,15 @@ describe('feedback list reading position', () => {
     expect(list.scrollTop).toBe(248);
   });
 
+  it('keeps the same student when earlier content becomes shorter', () => {
+    const { list, offsets } = fixture();
+    const position = readFeedbackListPosition(list);
+    offsets.last -= 36;
+    restoreFeedbackListPosition(list, position);
+    expect(list.scrollTop).toBe(164);
+    expect(readFeedbackListPosition(list).anchor).toEqual(position.anchor);
+  });
+
   it('uses the saved offset if the anchored student is no longer present', () => {
     const { list } = fixture();
     const position = readFeedbackListPosition(list);

@@ -119,6 +119,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   const back = dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true });
   await expect(back).toBeEnabled();
   await back.press('Enter');
+  await expect(dialog).toHaveAttribute('data-writing', 'false');
   await expect(dialog.locator('[data-feedback-actions]').getByRole('button', { name: 'Copiar lista de 2', exact: true })).toBeFocused();
   await expect(dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(39), exact: true })).toBeChecked();
   await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(2);
@@ -136,6 +137,38 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   await expect(dialog.getByText('2 seleccionados · 1 fuera del filtro', { exact: true })).toBeVisible();
   await dialog.getByRole('searchbox').fill('');
   await page.setViewportSize({ width, height: 850 });
+});
+
+test('139 volver desde copia manual con el teclado abierto restaura lista y foco', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 384, height: 850 });
+  const { dialog, calls } = await install(page);
+  for (const index of [39, 40]) await dialog.getByRole('checkbox', { name: 'Seleccionar ' + name(index), exact: true }).check();
+  const last = dialog.getByRole('checkbox', { name: 'Seleccionar Estudiante Prueba', exact: true });
+  await last.scrollIntoViewIfNeeded();
+  const list = dialog.locator('[data-feedback-list-scroll]');
+  const position = await list.evaluate(element => element.scrollTop);
+  const selectionTools = list.getByRole('button', { name: 'Revisar y publicar notas', exact: true }).locator('..');
+  const toolsHeight = await selectionTools.evaluate(element => element.getBoundingClientRect().height);
+  await dialog.getByRole('button', { name: 'Generar enlaces', exact: true }).press('Enter');
+  await dialog.getByRole('button', { name: 'Generar 1 enlace', exact: true }).press('Enter');
+  await dialog.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }).press('Enter');
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('Synthetic denial'); } } }));
+  await dialog.getByRole('button', { name: 'Copiar lista de 2', exact: true }).press('Enter');
+  const manual = dialog.getByRole('textbox', { name: 'Enlaces para copiar manualmente' });
+  await manual.focus();
+  await expect(dialog).toHaveAttribute('data-writing', 'true');
+  await page.setViewportSize({ width: 384, height: 450 });
+  await dialog.getByRole('button', { name: 'Volver a estudiantes', exact: true }).press('Enter');
+  await expect(dialog).toHaveAttribute('data-writing', 'false');
+  await expect(dialog.locator('[data-feedback-actions]').getByRole('button', { name: 'Copiar lista de 2', exact: true })).toBeFocused();
+  await expect.poll(() => selectionTools.evaluate((element, saved) => Math.abs(element.getBoundingClientRect().height - saved), toolsHeight)).toBeLessThanOrEqual(1);
+  await expect(last).toBeInViewport({ ratio: 0.999 });
+  await expect(dialog.locator('input[aria-label^="Seleccionar "]:checked')).toHaveCount(2);
+  await expect.poll(() => list.evaluate((element, saved) => element.scrollTop - Math.min(saved, Math.max(0, element.scrollHeight - element.clientHeight)), position)).toBeGreaterThanOrEqual(-1);
+  expect(calls).toHaveLength(1);
+  await page.setViewportSize({ width: 384, height: 850 });
+  await expect(last).toBeInViewport({ ratio: 0.999 });
 });
 
 test('129 paginación completa de 105 sin incluir activos en nuevas emisiones', async ({ page }) => {

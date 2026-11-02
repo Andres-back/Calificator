@@ -48,6 +48,12 @@ Prueba independiente: copia desde tarjeta y lote, fallback manual, WhatsApp/nati
 - [x] T018 Regenerar specs/system-inventory/current.json, ajustar test de baseline para Spec139 en tests/spec_governance/, ejecutar inventario/gobernanza completa y Converge, cerrando solo tareas realizadas en specs/139-envio-retroalimentacion-simple/tasks.md. FR-015/FR-016; SC-005.
 - [x] T019 Preparar PR del issue297 con evidencias y límites en specs/139-envio-retroalimentacion-simple/quickstart.md; no afirmar CI/fusión/despliegue antes de verificarlos. Registrar ensayo posterior de SC-006 sin inventar docentes ni resultados. FR-016; SC-005/SC-006.
 
+## Corrección del CI del PR298
+
+- [x] T020 Mantener cobertura de selección automática, selección vacía e impresión en frontend/e2e/motif-library.spec.ts y motif-print.spec.ts, conforme a US2/FR-013.
+- [x] T021 Reproducir el modo escritura retenido y la redistribución transitoria del encabezado en WebKit; cerrar escritura y estabilizar controles antes de restaurar la lista, verificando foco/ancla sin ampliar tolerancias en frontend/src/modules/feedback_sharing/ShareFeedbackDialog.tsx, sus pruebas, feedbackListPosition.test.ts y frontend/e2e/feedback-workspace-responsive.spec.ts. FR-014/FR-015.
+- [x] T022 Repetir validaciones afectadas, documentar resultados reales y preparar la corrección para reenviar PR298 a CI; sin fusionar ni desplegar. FR-015/FR-016.
+
 ## Dependencias y estrategia incremental
 
 T001→T002 preceden código funcional. T003 precede integración de estados frontend; pruebas RED de T004 y backend de T007/T011 son independientes de ese modelo y pueden comenzar tras T002. T004→T005→T006 entrega primero reentrada individual. T008 requiere T007/T003/T005; T009→T010 completan grupo. T011 puede desarrollarse junto a T007 por el mismo responsable backend sin edición simultánea de service.py; T012 requiere T003/T011 y T013 cierra estados. T014 es independiente de archivos funcionales compartidos; T015 requiere T008/T012/T014 y T016 completa responsividad. T017→T018→T019 cierran el alcance.
