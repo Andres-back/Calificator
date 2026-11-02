@@ -99,3 +99,54 @@ Resultados finales locales, sin sumar repeticiones como escenarios distintos:
 Informes ignorados en E:/tesis/output/spec139-tests/ci-fix-{affected,final,isolated-print}.json; los primeros fallos permanecen registrados. Se inspeccionó la captura móvil del retorno con controles de copia visibles. Solo datos sintéticos y emulación; no se acreditan teléfono físico, producción ni cambios de notas/evidencias/modelos. Linux/WebKit se comprobará otra vez mediante el CI íntegro del nuevo commit, sin omitir controles.
 
 Cierre de la corrección: inventario vigente682 superficies, gobernanza completa61/61 y validación de contexto de PR con spec-approved/plan-approved/Closes#297 aprobadas. T020–T022 completas; sin hooks de extensión configurados. La publicación del commit no acredita CI remoto verde ni autoriza fusión/despliegue.
+
+## Segunda corrección de CI del PR298 — 2026-11-02
+
+El CI41388764306 del commitc2052eb no quedó verde: el trabajo general3/4 aprobó247 casos y falló5. Cuatro eran el retorno360/390 claro/oscuro en Linux/WebKit, con−10px frente al mínimo de−1px; el quinto terminó en `page.goto` con `WebKit encountered an internal error`. Los tres controles rojos visibles corresponden a este trabajo primario y sus dos puertas agregadas. Backend, calidad/build frontend (1379/1379 unidades), contenedores, contexto y gobernanza aprobaron ese commit; no se acredita con ello el código de esta segunda corrección.
+
+El trace del quinto caso registra `Network process crashed` antes de abrir la retroalimentación o enviar una operación. No demuestra un fallo de autenticación ni de enlaces; tampoco permite atribuir la caída del proceso a una causa definitiva. Su prueba permanece intacta y se ejecutará con el resto; no se añadieron reintentos ni una excepción de aplicación para ocultarlo.
+
+La primera hipótesis fue una reserva tardía de10px y una posición intermedia guardada. Se ensayó una copia inmutable del estudiante/ancla con ResizeObserver hasta el primer gesto. Esa hipótesis se descartó después de medir el caso real: no es la solución final ni se publican su observador/listeners. La tolerancia de1px permanece intacta.
+
+Una unidad de aquella propuesta reprodujo el desfase simulado190/200px. La versión experimental congelada pasó19/19 unidades de posición,215/215 del módulo y15/15 recorridos de workspace en Chromium, sin resolver todavía Linux. TypeScript, lint estricto, build, auditoría de acciones/build y enumeración1004 escenarios (263/239/252/250; cero ausentes/duplicados) aprobaron. Son comprobaciones solapadas e históricas, no casos adicionales sumables ni acreditación de la solución final.
+
+Un ensayo Windows/WebKit y una ejecución de unidades durante edición/HMR no se dan por aprobados; se conservaron como diagnósticos y se repitieron con las fuentes congeladas. No se modificaron dependencias, workflows, tiempos máximos, reintentos, modelos, notas, evidencias ni producción.
+
+Regresión frontend completa de la propuesta experimental:1390/1390 unidades en200 archivos, cero omitidas/fallidas,301.37s, dos workers (Windows, Node22.14.0/npm10.9.2). Informe local ignorado `E:/tesis/output/spec139-tests/late-layout-all-unit.json`. Se conserva el resultado histórico, pero su helper experimental se retiró al comprobar que no resolvía la causa real.
+
+### Control negativo en Linux
+
+Se preparó una imagen local Debian12, Node22.23.4, npm11.6.1 y Playwright1.61.1/WebKit26.5 (build2311), con el lockfile intacto. Las pruebas se ejecutan sin red, sin volúmenes de producción ni credenciales, raíz de solo lectura y salidas/cachés efímeras. La preparación inicial de esa imagen no es una prueba de aplicación.
+
+El control negativo monta únicamente un adaptador local que reproduce la restauración anterior de una sola ejecución, sin observar cambios tardíos. El caso384px de copia manual pasó con ese adaptador y no se cuenta como reproducción. Después, los cuatro casos360/390 claro/oscuro fallaron exactamente con−10px en la misma comprobación de retorno de CI; no por arranque, permisos o un timeout de servicio. Informe `E:/tesis/output/spec139-tests/linux-baseline-mobile/results.json` (cuatro fallos esperados del control anterior). El adaptador no forma parte del código publicado.
+
+La imagen inicial contiene el helper experimental con SHA256 `7544e017fc28331ffebfcea918a2b00050d39848bb9513a0133cf01fe0f538a1`; el lockfile coincide con SHA256 `5e1730becc47ad8c35b7174cc21893b17edeefba67100d3a5f4ae34ba6c36888`. El primer ensayo ejecutó82 escenarios de los tres archivos feedback-workspace-responsive, feedback-share-review y feedback-link-reentry, incluidos los cuatro móviles y el caso de navegación cuyo proceso WebKit cayó en CI. No confundir el control negativo con una regresión del código final ni Linux emulado con un iPhone físico.
+
+La primera matriz con ese helper no aprobó:77/82 casos pasaron y5 fallaron, sin omitidos/reintentos,549.51s. Los cuatro móviles mantuvieron−10px; la observación de cambios por sí sola todavía no corrige el caso. El quinto esperó el botón de ingreso hasta el cierre de su prueba, antes de enviar `/auth/login`; su trace no acredita un error de enlaces ni registra `Network process crashed`. Informe `E:/tesis/output/spec139-tests/linux-final/results.json`. Se conserva este resultado fallido y se continúa el diagnóstico antes del push; T023/T024 permanecen pendientes.
+
+### Diagnóstico definitivo y solución mínima
+
+La instrumentación de una copia local, nunca publicada, midió NAV206→264 (58px), pero el control siguiente empezaba en262 en vez de272: se solapaba2px en vez de conservar8px. Tras un gesto el navegador incorporaba los10px del riel al flujo y el encabezado pasaba281→291px. Al volver montaba otra vez el encabezado de281px; el anclaje conservaba correctamente el mismo estudiante a552px y por ello calculaba5903 frente a5913 guardados. No había gesto prematuro, corrupción del snapshot ni clamping. Los registros están en linux-diagnostic/; reservar gutter vertical, forzar scroll vertical o separar el flex interno no corrigió este comportamiento.
+
+Se probó un mínimo adaptable de3rem (control2.75rem más padding0.25rem) más los10px del riel: el encabezado quedó291px desde el montaje y al volver, con separación8px y scroll5913 idéntico. Pasaron el caso aislado y los cuatro360/390 claro/oscuro con la restauración original, sin observador. No se suman como casos nuevos. La implementación final comparte `--app-scrollbar-size` con la barra existente, cuyo ancho/alto siguen siendo10px; solo añade el mínimo del filtro. No impone máximo ni altura fija, y el control/padding crecen con el texto ampliado. Se retiraron el helper experimental y sus once unidades; el anclaje y onScroll previos quedan intactos.
+
+La regresión final comprueba separación real de al menos7px (8px con el mismo píxel de redondeo) antes del primer gesto y después de volver, además de todas las comprobaciones anteriores de scroll≥−1, selección, foco y solicitudes. Sobre el código anterior esa nueva comprobación falló en RED con−2px, exactamente el solapamiento medido: linux-flow-red/results.json. No se cambian tiempos máximos ni reintentos.
+
+La validación final monta las fuentes congeladas src/e2e del worktree en solo lectura sobre la imagen QA y ejecuta82 casos con dos workers, sin red, credenciales ni volúmenes de producción. Solo se impide crear nuevos volcados nativos gigantes en este contenedor local mediante core=0; las aserciones, traces y fallos permanecen activos y CI no se modifica. Registrar abajo el resultado de linux-release/results.json y release-all-unit.json antes del push.
+
+### Resultados de las fuentes finales
+
+| Comprobación | Resultado de una ejecución completa | Evidencia local ignorada |
+| --- | --- | --- |
+| Linux/WebKit, tres archivos de feedback |82/82 aprobadas, cero omitidas/fallidas/flaky,641.18s|linux-release/results.json|
+| Chromium, workspace completo |15/15 aprobadas, cero omitidas/fallidas/reintentos|chromium-release.json|
+| Unidades frontend completas |1379/1379 en200 archivos, cero omitidas/fallidas,529.02s|release-all-unit.json|
+| Calidad final |TypeScript, lint estricto, build, auditorías de acciones/build aprobadas|674 botones y125 enlaces; presupuesto del build conservado|
+| Auditoría de dependencias productivas |Umbral moderate aprobado; cuatro avisos low de KaTeX/transitivas preexistentes|Sin audit fix, cambios de versiones ni excepciones|
+| Enumeración E2E |1004 escenarios,263/239/252/250, cero ausentes/duplicados|Enumeración, no ejecución local de todo CI|
+
+Los82 casos incluyen los cuatro móviles que fallaban, reentrada/nueva sesión, permisos, errores de consulta/copia, generación parcial,105 destinatarios, ambos temas, teclado y texto200 %. El caso cuya navegación sufrió la caída nativa en CI pasa en esta matriz sin editarlo. Chromium comparte15 recorridos con WebKit: no se suman como casos funcionales nuevos. Las1379 unidades conservan exactamente los casos publicados; las once del observador experimental nunca publicado se retiraron junto con ese experimento, no para omitir un fallo real.
+
+Se inspeccionaron capturas finales384px/escritorio en Chromium, retorno390/1440 en WebKit y texto200 %, con controles accesibles y sin datos reales. La emulación no acredita teléfonos físicos. T023/T024 completadas; la publicación enviará CI íntegro, sin fusión ni despliegue y sin modificar modelos, notas, evidencias, claves o configuración productiva. Los ensayos fallidos anteriores permanecen registrados arriba; los resultados locales no sustituyen los controles remotos.
+
+Cierre: inventario vigente682 superficies, gobernanza completa61/61 en19.05s y contexto de PR con spec-approved/plan-approved/Closes#297 aprobados. La primera invocación de gobernanza en el sandbox de Windows no aprobó (37pasadas,21errores de temporales y3fallos de arranque Git Bash por permisos); se repitió exactamente la misma suite con permisos normales y basetemp nuevo dentro del directorio de pruebas, sin cambiar tests ni controles. Converge contrastó16FR,5SC construibles,22 escenarios de aceptación,7 decisiones y8 principios: cero brechas; tasks.md quedó byte por byte sin cambios durante esa comprobación y no se añadió otra fase. Sin hooks de extensión configurados. Chromium final tardó69.67s y el servidor propio de loopback se cerró al terminar. SC-006 sigue siendo ensayo humano posterior, no una afirmación de facilidad o mejora pedagógica demostrada.

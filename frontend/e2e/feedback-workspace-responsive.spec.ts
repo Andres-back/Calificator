@@ -1,9 +1,15 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { login } from './fixtures/explainableGrading';
 
 test.use({ reducedMotion: 'reduce' });
 const name = (index: number) => index === 1 ? 'Estudiante Prueba' : `Alumno ${String(index).padStart(3, '0')} María Fernanda López`;
 const url = (id: string) => `https://example.test/devolucion#${id.padEnd(43, 'a')}`;
+async function expectFilterFlow(frame: Locator) {
+  const filters = frame.getByRole('navigation', { name: 'Filtrar retroalimentaciones' });
+  // WebKit must include the horizontal scrollbar in the header's normal flow,
+  // not paint it over the next control. Allow the existing one-pixel rounding.
+  await expect.poll(() => filters.evaluate(element => element.nextElementSibling!.getBoundingClientRect().top - element.getBoundingClientRect().bottom)).toBeGreaterThanOrEqual(7);
+}
 async function install(page: Page, total = 40, mixed = false) {
   await login(page, 'profesor', { rosterSize: total });
   const calls: { ids: string[]; request: string }[] = [];
@@ -42,6 +48,7 @@ async function install(page: Page, total = 40, mixed = false) {
   }
   const workspace = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
   await expect(workspace).toHaveCSS('transform', 'none');
+  await expectFilterFlow(workspace);
   await workspace.getByRole('button', { name: 'Limpiar selección', exact: true }).press('Enter');
   return { calls, dialog: workspace, accesses };
 }
@@ -127,6 +134,7 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   // the same visible student, not a stale document offset from before sharing.
   await expect(last).toBeInViewport({ ratio: 0.999 });
   expect(await list.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+  await expectFilterFlow(dialog);
   // Keep the existing lower-bound/clamping contract and one CSS pixel of
   // rounding. Exact row offsets may change with the viewport; the same
   // student's selection/header must remain visible (asserted above).

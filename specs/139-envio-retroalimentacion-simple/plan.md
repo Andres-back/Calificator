@@ -55,6 +55,7 @@ frontend/src/modules/feedback_sharing/
 frontend/e2e/feedback-link-reentry.spec.ts
 frontend/e2e/feedback-share-review.spec.ts
 frontend/e2e/feedback-workspace-responsive.spec.ts
+frontend/src/index.css           # tamaño compartido del riel, sin cambiar sus10px existentes
 backend/app/modules/feedback_sharing/{schemas,service,router,link_service}.py
 backend/tests/                  # regresiones en las suites de feedback existentes
 specs/135-retroalimentacion-entrega-simple/ # contrato dueño se actualizará al aprobar
