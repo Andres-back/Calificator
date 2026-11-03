@@ -296,9 +296,13 @@ for (const width of [384, 1440]) for (const theme of ['light', 'dark']) {
     expect(server.forbiddenWrites).toEqual([]);
     await expectNoStoredUrl(page, identity.url);
 
-    await page.goto('/app/calificaciones?materia=m1&evaluacion=e1', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/evaluacion=e1/);
-    await page.goto('/app/materias', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Volver a lista', exact: true }).click();
+    await expect(page.getByTestId('grade-review-roster').getByRole('button', { name: /Estudiante Prueba/ })).toBeVisible();
+    const menu = page.getByRole('button', { name: 'Abrir menú principal', exact: true });
+    if (await menu.isVisible()) await menu.click();
+    await page.getByRole('link', { name: 'Materias', exact: true }).click();
+    await expect(page).toHaveURL(/\/app\/materias(?:[?#]|$)/);
+    await expect(page.locator('main#main-content').getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Enlace para el estudiante', exact: true })).toHaveCount(0);
     block = await openStudent(page, theme);
     await expectAvailable(block, identity);
