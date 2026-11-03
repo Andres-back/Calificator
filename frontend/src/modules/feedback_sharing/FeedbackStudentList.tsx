@@ -12,16 +12,16 @@ export function FeedbackStudentList({ rows, accesses, selected, detailId, canDel
   onOpen: (id: string, trigger: HTMLButtonElement) => void; onShare: (id: string, trigger: HTMLButtonElement) => void;
   renderLink?: (row: FeedbackStudentRow) => ReactNode;
 }) {
-  return <ul className="space-y-2" aria-label="Retroalimentaciones del grupo">{rows.map(row => {
+  return <ul className="divide-y divide-border" aria-label="Retroalimentaciones del grupo">{rows.map(row => {
     const id = row.calificacion_id;
     const score = row.preview?.resultado ?? row.preview?.borrador_docente;
-    const hasLink = accesses.some(access => access.calificacion_id === id && access.estado === 'active' && access.copy_available !== false);
-    return <li key={row.estudiante_id} data-feedback-student-id={row.estudiante_id} className={`min-w-0 rounded-xl border bg-surface p-3 ${id && id === detailId ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
+    const hasLink = accesses.some(access => access.calificacion_id === id && access.estado === 'active' && Date.parse(access.expires_at) > Date.now() && access.copy_available !== false);
+    return <li key={row.estudiante_id} data-feedback-student-id={row.estudiante_id} className={`min-w-0 px-2 py-3 ${id && id === detailId ? 'rounded-lg bg-brand-500/10' : ''}`}>
       <div className="flex items-start gap-2">
         {canDeliver && <label className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center"><input type="checkbox" className="h-5 w-5" aria-label={'Seleccionar ' + row.nombre} checked={selected.includes(id ?? '')} disabled={busy || !id || !(row.preview?.seleccionable || row.preview?.elegible)} onChange={event => { if (id) onToggle(id, event.target.checked); }} /></label>}
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1"><p className="min-w-0 flex-[1_1_10rem] break-words font-semibold leading-6">{row.nombre}</p>
           {score?.nota != null && <span className="shrink-0 font-bold tabular-nums">{formatGradeScore(Number(score.nota))}<span className="text-xs font-normal text-muted"> / {formatGradeScore(Number(score.nota_maxima))}</span></span>}
-        </div><p className="mt-1 text-sm text-muted">{row.preview?.elegible ? 'Lista para entregar' : row.preview?.motivo ?? 'Sin calificación todavía.'}</p></div>
+        </div><p className="mt-1 text-sm text-muted">{hasLink ? <span className="text-emerald-700 dark:text-emerald-300">Enlace disponible</span> : row.preview?.elegible ? 'Lista para entregar' : row.preview?.motivo ?? 'Sin calificación todavía.'}</p></div>
       </div>
       {id && <div className="mt-2 flex flex-wrap gap-1">
         <Button variant="link" disabled={busy} className="h-auto min-h-11 max-w-full whitespace-normal px-[8px] py-2 text-left [overflow-wrap:normal]" aria-label={'Ver retroalimentación de ' + row.nombre} onClick={event => onOpen(id, event.currentTarget)}>Ver retroalimentación<ChevronRight className="hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" /></Button>

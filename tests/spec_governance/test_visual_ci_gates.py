@@ -40,7 +40,9 @@ def test_frontend_suites_preserve_all_cases_and_diagnostics():
     assert 'max-parallel: 4' in general
     assert 'npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line' in general
     assert 'npm run test:mock -- grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts --reporter=line' in contextual
-    assert 'timeout-minutes: 30' in general and 'timeout-minutes: 25' in contextual
+    assert re.search(r'^    timeout-minutes: 40$', general, re.M)
+    assert re.search(r'- name: Run general end-to-end tests\s+timeout-minutes: 35\s+run:', general)
+    assert 'timeout-minutes: 25' in contextual
     assert 'playwright-diagnostics-general-${{ matrix.shard }}' in general
     assert 'playwright-diagnostics-contextual' in contextual
     assert 'needs: [frontend-e2e-general, frontend-e2e-contextual]' in suites

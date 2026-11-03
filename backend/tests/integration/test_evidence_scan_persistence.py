@@ -334,6 +334,86 @@ async def test_reprocessing_keeps_same_manifest_and_replacement_archives_previou
 
 
 @pytest.mark.asyncio
+async def test_edit_existing_pages_checks_role_and_preserves_original_on_replay(scan_engine, tmp_path, monkeypatch):
+    import json
+    from unittest.mock import AsyncMock
+    from fastapi import FastAPI
+    from httpx import ASGITransport, AsyncClient
+    from sqlalchemy import select
+    from app.core.config import settings
+    from app.core.permissions import get_current_user
+    from app.db.session import get_db
+    from app.modules.authorization.catalog import default_permissions_for_role
+    from app.modules.calificaciones import revision_router
+    from app.modules.calificaciones.evidence_manifest import read_manifest
+    from app.modules.calificaciones.evidence_preparation import read_verified_asset
+    from app.modules.calificaciones.models import Calificacion
+    from app.modules.jobs import service as jobs
+    from app.modules.users.models import User
+    from app.workers.tasks_grading import grade_delivery
+
+    monkeypatch.setattr(settings, "EVIDENCE_SCAN_ENABLED", True)
+    monkeypatch.setattr(settings, "EVIDENCE_SCAN_TEACHER_IDS", "")
+    monkeypatch.setattr(jobs, "_resolve_job_ai_config", AsyncMock(return_value={}))
+    monkeypatch.setattr(grade_delivery, "apply_async", lambda **_kwargs: None)
+    sessions = async_sessionmaker(scan_engine, expire_on_commit=False)
+    async with sessions() as db:
+        delivery, _, _ = await make_preparation_job(db, tmp_path, monkeypatch)
+        grade = await db.scalar(select(Calificacion).where(Calificacion.evaluacion_id == delivery.evaluacion_id))
+        teacher = await db.get(User, grade.profesor_id)
+        student = await db.get(User, grade.estudiante_id)
+        teacher._effective_permissions = default_permissions_for_role("profesor")
+        student._effective_permissions = default_permissions_for_role("estudiante")
+        grade.entrega = delivery
+        await db.execute(text("UPDATE ai_jobs SET estado='failed' WHERE entrega_id=:id"), {"id": delivery.id})
+        await db.commit()
+        previous = read_manifest(delivery)
+        original = await read_verified_asset(previous.pages[0].source)
+        app = FastAPI()
+        app.include_router(revision_router.router, prefix="/api")
+        actor = {"value": teacher}
+
+        async def current():
+            return actor["value"]
+
+        async def database():
+            yield db
+
+        app.dependency_overrides[get_current_user] = current
+        app.dependency_overrides[get_db] = database
+        grade_url = f"/api/calificaciones/{grade.id}"
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            metadata_response = await client.get(grade_url + "/evidencia/edicion")
+            assert metadata_response.status_code == 200, metadata_response.text
+            metadata = metadata_response.json()
+            assert ".private/" not in metadata_response.text
+            page = metadata["paginas"][0]
+            source_response = await client.get(page["fuente_url"])
+            assert source_response.status_code == 200 and source_response.content == original
+            actor["value"] = student
+            assert (await client.get(page["fuente_url"])).status_code == 403
+            actor["value"] = teacher
+            request_id = uuid4()
+            edition = {"fingerprint": metadata["fingerprint"], "paginas": [{"referencia": page["referencia"], "rotacion": 90}, {"archivo_indice": 0}]}
+            fields = {"solicitud_id": str(request_id), "version_esperada": metadata["version_esperada"], "confirmar_reapertura": "true", "edicion_evidencia": json.dumps(edition)}
+            files = [("foto", ("synthetic.png", original, "image/png"))]
+            admitted = await client.post(grade_url + "/recalificar", data=fields, files=files)
+            assert admitted.status_code == 202, admitted.text
+            replay = await client.post(grade_url + "/recalificar", data=fields, files=files)
+            assert replay.status_code == 202, replay.text
+            assert replay.json()["id"] == admitted.json()["id"]
+            edition["paginas"][0]["rotacion"] = 180
+            conflict = await client.post(grade_url + "/recalificar", data={**fields, "edicion_evidencia": json.dumps(edition)}, files=files)
+            assert conflict.status_code == 409
+            archived = await db.get(CalificacionRevision, request_id)
+            assert archived.snapshot_json["entrega"]["evidencia_manifiesto"] == previous.model_dump(mode="json")
+            latest = read_manifest(delivery)
+            assert latest.version_id == request_id
+            assert latest.pages[0].source == previous.pages[0].source
+            assert latest.pages[0].rotation == 90 and len(latest.pages) == 2
+
+
+@pytest.mark.asyncio
 async def test_twenty_persisted_jobs_use_their_canonical_pages_without_real_ai(scan_engine, tmp_path, monkeypatch):
     from decimal import Decimal
     from sqlalchemy import select

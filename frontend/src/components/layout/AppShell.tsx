@@ -18,6 +18,11 @@ export function AppShell() {
   const isGradingReview = isTeacher && isReviewPath(location.pathname);
   const pendingInbox = isPendingReviewRoute(location.pathname, new URLSearchParams(location.search));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopMenuOverride, setDesktopMenuOverride] = useState<{ context: string; open: boolean } | null>(null);
+  const reviewParams = new URLSearchParams(location.search);
+  const inStudentReview = isGradingReview && Boolean(reviewParams.get('calificacion')) && reviewParams.get('modo') !== 'carga';
+  const menuContext = `${location.pathname}:${reviewParams.get('evaluacion') ?? ''}:${inStudentReview ? 'detalle' : 'lista'}`;
+  const desktopMenuOpen = !inStudentReview || (desktopMenuOverride?.context === menuContext && desktopMenuOverride.open);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const appContentRef = useRef<HTMLDivElement>(null);
   const lastTrackedPathRef = useRef<string | null>(null);
@@ -82,7 +87,7 @@ export function AppShell() {
         Saltar al contenido principal
       </a>
 
-      <div className="hidden lg:block">
+      <div className={cn('shrink-0', desktopMenuOpen ? 'hidden lg:block' : 'hidden')}>
         <Sidebar />
       </div>
 
@@ -104,6 +109,7 @@ export function AppShell() {
           onMenu={() => setMobileOpen(true)}
           menuButtonRef={menuButtonRef}
           menuExpanded={mobileOpen}
+          desktopMenu={inStudentReview ? { expanded: desktopMenuOpen, onToggle: () => setDesktopMenuOverride({ context: menuContext, open: !desktopMenuOpen }) } : undefined}
         />
         {isTeacher && (!isGradingReview || pendingInbox) && <GradingJobMonitor />}
         <main

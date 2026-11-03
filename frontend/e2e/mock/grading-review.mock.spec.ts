@@ -43,20 +43,23 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 664 }
     await page.screenshot({ path: `../output/playwright/teacher-flow/review099-${viewport.width}.png` });
     await nav.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
     await expect(detail.locator('#grade-review-panel')).toBeVisible();
+    await detail.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
     await nav.getByRole('button', { name: 'Evidencia', exact: true }).click();
     await expect(detail.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante' })).toBeVisible();
     for (const control of await detail.locator('#grade-evidence-panel').getByRole('button').all()) {
       expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     }
     await expect(detail.locator('#grade-review-panel')).toBeHidden();
+    await detail.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
     await nav.getByRole('button', { name: 'Historial', exact: true }).click();
     await expect(detail.getByRole('heading', { name: 'Historial de la calificación' })).toBeVisible();
+    await detail.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
     await nav.getByRole('button', { name: 'Retroalimentación', exact: true }).click();
     await expect(detail.getByTestId('grade-feedback-text')).toContainText('Identificaste al personaje.');
     await detail.getByRole('button', { name: 'Editar retroalimentación', exact: true }).click();
     const feedback = detail.getByRole('textbox', { name: 'Retroalimentación', exact: true });
     await feedback.fill('Conserva este borrador docente.');
-    await nav.getByRole('button', { name: 'Historial', exact: true }).click();
+    await detail.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
     await expect(feedback).toBeVisible();
     await expect(feedback).toHaveValue('Conserva este borrador docente.');
     if (viewport.width === 360) {
@@ -153,6 +156,7 @@ test('prioriza excepciones en móvil sin confirmar ni publicar automáticamente'
   await expect(page.getByText('1 sin revisión completa al inicio')).toBeVisible();
   await page.getByRole('button', { name: /Ver primera respuesta con aviso/ }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A3/);
+  await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
   await page.getByRole('button', { name: 'Historial', exact: true }).click();
   await page.getByRole('button', { name: /Ver siguiente respuesta con aviso/ }).click();
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
@@ -245,18 +249,20 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(history).not.toHaveAttribute('open');
       await expect(page.getByTestId('grade-review-scroll').getByRole('paragraph').filter({ hasText: /^Nota final$/ })).toBeVisible();
       await page.getByText('Ver cálculo de la nota', { exact: true }).click();
-      await expect(page.getByText(/Equivale a 2.50/)).toBeVisible();
+      await expect(page.getByText('Nota en la escala de la evaluación', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
       await expect(page.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante' })).toBeVisible();
       await page.getByLabel('Páginas de evidencia').getByRole('button', { name: '2', exact: true }).click();
       await expect(page.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Abrir en grande' })).toHaveAttribute('href', '/api/evidencia-sintetica/paginas/2');
+      await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
       await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
       const contextualEvidence = page.getByRole('region', { name: 'Evidencia de la respuesta seleccionada' });
       await expect(contextualEvidence.getByRole('img', { name: 'Hoja 2 de la evidencia' })).toBeVisible();
       await contextualEvidence.getByRole('button', { name: 'Ampliar evidencia', exact: true }).click();
       await expect(page.getByRole('dialog', { name: 'Hoja 2 de la evidencia' })).toBeVisible();
       await page.getByRole('button', { name: 'Volver a la respuesta' }).click();
+      await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
       await page.getByRole('button', { name: 'Historial', exact: true }).click();
       await history.locator('summary').click();
       await expect(history).toContainText('En el análisis inicial, la IA propuso una nota distinta a la suma por preguntas.');
@@ -264,6 +270,7 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(page.getByText('provider_error:HTTP_503_trace_ab12', { exact: true })).toHaveCount(0);
       await history.getByRole('button', { name: 'Ver puntajes por pregunta' }).first().click();
       await expect(page.locator('#grade-review-panel')).toBeVisible();
+      await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
       await page.getByRole('button', { name: 'Historial', exact: true }).click();
       await history.locator('summary').click();
       const scroller = page.getByTestId('grade-review-scroll');
@@ -281,6 +288,7 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await scroller.evaluate((element) => { element.scrollTop = 0; });
       await page.screenshot({ path: `../output/playwright/teacher-flow/review094-${width}-${mode}.png`, fullPage: true });
       if (width < 1280) await page.getByRole('button', { name: 'Volver a lista', exact: true }).click();
+      else await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
       await roster.locator('[data-review-grade="c2"]').click();
       await expect(page.getByTestId('grade-review-identity')).toContainText(longName);
       await expect(history).not.toHaveAttribute('open');
@@ -510,12 +518,14 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
       await page.screenshot({ path: `../output/playwright/teacher-flow/grade-${viewport.width}-${mode}.png`, fullPage: true });
       await evidence.click();
       await expect(page.locator('#grade-evidence-panel')).toBeVisible();
+      await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
       await answers.click();
       await expect(page.locator('#grade-review-panel')).toBeVisible();
       await expect(page.locator('#grade-evidence-panel')).toBeHidden();
       const comparison = page.getByTestId('grade-answer-comparison').first();
       await expect(comparison).toContainText('Respuesta de referencia');
       expect((await comparison.boundingBox())!.height).toBeLessThan(180);
+      await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
       await feedback.click();
       await expect(page.getByTestId('grade-feedback-text')).toBeVisible();
       const book = page.getByRole('navigation', { name: 'Ubicación de la revisión', exact: true }).getByRole('link', { name: 'Libro de notas', exact: true });
@@ -584,21 +594,51 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
 test('abre enlaces a pregunta y hoja y protege el ajuste sin guardar', async ({ page }) => {
   await login(page, 'profesor');
   await page.goto('/app/calificaciones/workspace/e1?calificacion=c1&pregunta=pregunta%3A1');
-  await expect(page.getByRole('button', { name: 'Respuestas y puntajes' })).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#grade-review-panel')).toBeVisible();
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel(/Puntos \(máximo/).fill('0.7');
   await page.getByLabel(/Motivo interno del cambio/).fill('Revisión parcial');
-  await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
-  await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
+  await page.getByRole('button', { name: 'Ver evidencia completa', exact: true }).click();
+  await expect(page.locator('#grade-evidence-panel')).toBeVisible();
   await page.getByRole('button', { name: 'Volver a lista', exact: true }).filter({ visible: true }).click();
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
   await page.getByRole('button', { name: 'Seguir editando', exact: true }).click();
-  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a respuestas', exact: true }).click();
   await expect(page.getByLabel(/Puntos \(máximo/)).toHaveValue('0.7');
   await page.getByRole('button', { name: 'Volver a lista', exact: true }).filter({ visible: true }).click();
   await page.getByRole('button', { name: 'Descartar y continuar', exact: true }).click();
   await page.goto('/app/calificaciones/workspace/e1?calificacion=c1&hoja=1');
-  await expect(page.getByRole('button', { name: 'Evidencia', exact: true })).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#grade-evidence-panel')).toBeVisible();
+});
+
+for (const width of [384, 1440]) test(`141 mosaico y vistas exclusivas de revisión ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 850 });
+  await login(page, 'profesor');
+  const writes: string[] = [];
+  page.on('request', request => { if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones)\//.test(request.url())) writes.push(request.url()); });
+  await page.goto('/app/calificaciones/workspace/e1?calificacion=c1');
+  const options = page.getByRole('navigation', { name: 'Secciones de la calificación' });
+  const back = page.getByRole('button', { name: 'Volver a opciones', exact: true });
+  const choices = [
+    ['Respuestas y puntajes', '#grade-review-panel'],
+    ['Evidencia', '#grade-evidence-panel'],
+    ['Retroalimentación', '#grade-feedback-panel'],
+    ['Historial', '#grade-history-panel'],
+  ] as const;
+  await expect(options.getByRole('button')).toHaveCount(4);
+  for (const [name, selector] of choices) {
+    const card = options.getByRole('button', { name, exact: true });
+    await card.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator(selector)).toBeVisible();
+    await expect(options).toBeHidden();
+    for (const [, other] of choices.filter(([, other]) => other !== selector)) await expect(page.locator(other)).toBeHidden();
+    await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toBeHidden();
+    await back.click();
+    await expect(card).toBeFocused();
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(writes).toEqual([]);
 });
 
 test('crea desde una materia sin repetir el contexto y permite abrir opciones', async ({ page }) => {

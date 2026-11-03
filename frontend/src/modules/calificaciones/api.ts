@@ -115,9 +115,39 @@ export async function getRegradingContext(id: string): Promise<RegradingContext>
   return data;
 }
 
+export interface EditableEvidencePage {
+  referencia: string; numero: number; preview_url: string; fuente_url?: string | null;
+  rotacion: import('@/components/evidence/scanGeometry').ScanRotation;
+  receta?: import('@/components/evidence/scanTypes').EvidenceScanRecipe | null;
+}
+
+export interface EvidenceEditContext {
+  version_esperada: string; fingerprint: string; paginas: EditableEvidencePage[];
+  limites: { max_pages: number; max_file_bytes: number; max_total_bytes: number };
+}
+
+export interface EvidenceEditManifest {
+  fingerprint: string;
+  paginas: ({ referencia: string; rotacion?: number; receta?: EditableEvidencePage['receta'] }
+    | { archivo_indice: number; rotacion: number; receta?: EditableEvidencePage['receta'] })[];
+}
+
+export async function getEvidenceEditContext(id: string, signal?: AbortSignal): Promise<EvidenceEditContext> {
+  const { data } = await api.get<EvidenceEditContext>(`/calificaciones/${encodeURIComponent(id)}/evidencia/edicion`, { signal });
+  return data;
+}
+
+export async function readEvidenceEditSource(id: string, url: string, signal: AbortSignal): Promise<Blob> {
+  const prefix = `/calificaciones/${encodeURIComponent(id)}/evidencia/edicion/`;
+  const path = url.startsWith('/api/') ? url.slice(4) : url;
+  if (!path.startsWith(prefix) || !/^[a-zA-Z0-9_-]+\?fingerprint=[a-f0-9]{64}$/.test(path.slice(prefix.length))) throw new Error('La fuente de esta hoja no está disponible.');
+  const { data } = await api.get<Blob>(path, { signal, responseType: 'blob' });
+  return data;
+}
+
 export async function reprocessGrade(id: string, payload: {
   requestId: string; version: string; confirmed: boolean; reason: string;
-  files?: File[]; rotations?: number[];
+  files?: File[]; rotations?: number[]; evidenceEdit?: EvidenceEditManifest;
   scan?: import('@/components/evidence/scanSubmission').ScanSubmission;
   useCurrentScores?: boolean; targetScoreVersion?: string; scoreContextFingerprint?: string;
 }): Promise<Calificacion> {
@@ -130,7 +160,8 @@ export async function reprocessGrade(id: string, payload: {
   if (payload.scoreContextFingerprint) body.append('contexto_puntajes_fingerprint', payload.scoreContextFingerprint);
   if (payload.reason.trim()) body.append('motivo', payload.reason.trim());
   payload.files?.forEach((file) => body.append('foto', file));
-  if (payload.scan) body.append('escaneo', JSON.stringify(payload.scan));
+  if (payload.evidenceEdit) body.append('edicion_evidencia', JSON.stringify(payload.evidenceEdit));
+  else if (payload.scan) body.append('escaneo', JSON.stringify(payload.scan));
   else if (payload.files?.length) body.append('rotaciones', JSON.stringify(payload.rotations ?? payload.files.map(() => 0)));
   const { data } = await api.post<Calificacion>(`/calificaciones/${id}/recalificar`, body);
   return data;

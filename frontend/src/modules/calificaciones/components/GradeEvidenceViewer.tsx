@@ -1,26 +1,30 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { Expand, Move, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { Expand, Move, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { Modal } from '@/components/ui';
 import {
-  clampEvidenceViewport, evidenceImageLayout, focusEvidenceRegion, panEvidenceViewport, validEvidenceBox, zoomEvidenceViewport,
-  type EvidenceBox, type EvidenceDimensions, type EvidenceViewport,
+  clampEvidenceViewport, evidenceImageLayout, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport,
+  type EvidenceBox, type EvidenceDimensions, type EvidenceRotation, type EvidenceViewport,
 } from './evidenceViewport';
 
 type Point = { x: number; y: number };
-type Props = { src: string; label: string; region?: EvidenceBox };
+type Props = { src: string; label: string; region?: EvidenceBox; sheetView?: boolean };
 const initial: EvidenceViewport = { zoom: 1, centerX: 0.5, centerY: 0.5 };
 const controlClass = 'focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-semibold text-fg disabled:opacity-50';
 
-function EvidenceCanvas({ src, label, region, expanded = false }: Props & { expanded?: boolean }) {
+function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = false, sheetView = false, extraControl }: Props & { rotation: EvidenceRotation; onRotate: (direction: -1 | 1) => void; expanded?: boolean; extraControl?: ReactNode }) {
   const frame = useRef<HTMLDivElement>(null);
   const instructionId = useId();
-  const [size, setSize] = useState<EvidenceDimensions>({ width: 0, height: 0, imageWidth: 0, imageHeight: 0 });
+  const [naturalSize, setSize] = useState<EvidenceDimensions>({ width: 0, height: 0, imageWidth: 0, imageHeight: 0 });
+  const swapped = rotation % 180 !== 0;
+  const size = useMemo(() => swapped ? { ...naturalSize, imageWidth: naturalSize.imageHeight, imageHeight: naturalSize.imageWidth } : naturalSize, [naturalSize, swapped]);
+  const orientedRegion = useMemo(() => validEvidenceBox(region) ? rotateEvidenceBox(region, rotation) : undefined, [region, rotation]);
   const [viewport, setViewport] = useState(initial);
   const currentViewport = useRef(viewport);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const focused = useRef(false);
+  const lastRotation = useRef(rotation);
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<{ viewport: EvidenceViewport; origin: Point; distance?: number } | null>(null);
   const ready = loaded && size.width > 0 && size.height > 0;
@@ -47,11 +51,17 @@ function EvidenceCanvas({ src, label, region, expanded = false }: Props & { expa
 
   useEffect(() => {
     if (!loaded || size.width <= 0 || size.height <= 0) return;
-    const next = focused.current ? clampEvidenceViewport(size, currentViewport.current) : focusEvidenceRegion(size, region);
+    const rotated = lastRotation.current !== rotation;
+    const next = focused.current && !rotated ? clampEvidenceViewport(size, currentViewport.current) : focusEvidenceRegion(size, orientedRegion);
+    if (rotated) {
+      pointers.current.clear();
+      gesture.current = null;
+    }
+    lastRotation.current = rotation;
     focused.current = true;
     currentViewport.current = next;
     setViewport(next);
-  }, [loaded, size, region]);
+  }, [loaded, size, orientedRegion, rotation]);
 
   const point = (event: PointerEvent<HTMLDivElement>): Point => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -104,17 +114,22 @@ function EvidenceCanvas({ src, label, region, expanded = false }: Props & { expa
     }
   };
 
-  return <div className={expanded ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-3'}>
-    <div className="flex flex-wrap items-center gap-2">
+  const tools = <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Controles de la imagen">
       <button type="button" className={controlClass} aria-label="Alejar imagen" disabled={!ready || viewport.zoom <= 1} onClick={() => zoom(0.8)}><ZoomOut aria-hidden="true" className="h-4 w-4" /></button>
-      <output className="min-w-16 text-center text-sm font-semibold tabular-nums" aria-label="Nivel de ampliación">{Math.round(viewport.zoom * 100)} %</output>
+      <output className="min-w-12 text-center text-sm font-semibold tabular-nums" aria-label="Nivel de ampliación">{Math.round(viewport.zoom * 100)} %</output>
       <button type="button" className={controlClass} aria-label="Acercar imagen" disabled={!ready || viewport.zoom >= 8} onClick={() => zoom(1.25)}><ZoomIn aria-hidden="true" className="h-4 w-4" /></button>
-      <button type="button" className={controlClass} disabled={!ready} onClick={() => updateViewport(initial)}><RotateCcw aria-hidden="true" className="h-4 w-4" />Ver hoja completa</button>
-      {validEvidenceBox(region) && <button type="button" className={controlClass} disabled={!ready} onClick={() => updateViewport(focusEvidenceRegion(size, region))}>Ver zona sugerida</button>}
-    </div>
-    <p id={instructionId} className="flex items-start gap-2 text-xs leading-5 text-muted"><Move aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span>Amplía con dos dedos o los botones. Arrastra la imagen ampliada para ver más.<span className="hidden sm:inline"> Con teclado: +, − y flechas; 0 muestra toda la hoja.</span></span></p>
+      {sheetView && <button type="button" className={controlClass} aria-label="Girar a la izquierda" title="Girar a la izquierda" disabled={!ready} onClick={() => onRotate(-1)}><RotateCcw aria-hidden="true" className="h-4 w-4" /></button>}
+      <button type="button" className={controlClass} aria-label={sheetView ? 'Girar a la derecha' : 'Girar vista 90 grados'} title="Girar a la derecha" disabled={!ready} onClick={() => onRotate(1)}><RotateCw aria-hidden="true" className="h-4 w-4" />{!sheetView && 'Girar vista'}</button>
+      {!sheetView && <button type="button" className={controlClass} aria-label="Ver hoja completa" title="Ver hoja completa" disabled={!ready} onClick={() => updateViewport(initial)}><RotateCcw aria-hidden="true" className="h-4 w-4" />Ver hoja completa</button>}
+      {orientedRegion && <button type="button" className={controlClass} disabled={!ready} onClick={() => updateViewport(focusEvidenceRegion(size, orientedRegion))}>Ver zona sugerida</button>}
+      {extraControl}
+    </div>;
+  const instructions = <p id={instructionId} className={sheetView ? 'sr-only' : 'flex items-start gap-2 text-xs leading-5 text-muted'}><Move aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span>Amplía con dos dedos o los botones. Arrastra la imagen ampliada para ver más.<span className="hidden sm:inline"> Con teclado: +, − y flechas; 0 muestra toda la hoja.</span></span></p>;
+  return <div className={expanded ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-2'}>
+    {!sheetView && tools}
+    {instructions}
     <div ref={frame} role="group" aria-label="Imagen ampliable de la evidencia" aria-describedby={instructionId} tabIndex={0}
-      className={`focus-ring relative isolate min-w-0 overflow-hidden rounded-lg border border-border bg-slate-100 text-slate-950 ${expanded || viewport.zoom > 1 ? 'touch-none' : 'touch-pan-y'} ${expanded ? 'min-h-32 flex-1' : 'h-64 sm:h-80'} ${ready ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`focus-ring relative isolate min-w-0 overflow-hidden rounded-lg border border-border bg-slate-100 text-slate-950 ${expanded || viewport.zoom > 1 ? 'touch-none' : 'touch-pan-y'} ${expanded ? 'min-h-32 flex-1' : sheetView ? 'h-[clamp(16rem,45dvh,34rem)]' : 'h-64 sm:h-80'} ${ready ? 'cursor-grab active:cursor-grabbing' : ''}`}
       onKeyDown={keyboard} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd} onLostPointerCapture={pointerEnd}>
       {!loaded && !failed && <p role="status" aria-label="Estado de la imagen" className="absolute inset-0 flex items-center justify-center p-4 text-sm">Cargando evidencia…</p>}
       {failed ? <div role="alert" className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center text-sm"><p>No pudimos abrir esta hoja. Puedes intentarlo de nuevo.</p><button type="button" className={controlClass} onClick={() => { focused.current = false; setFailed(false); setLoaded(false); setAttempt((value) => value + 1); }}>Reintentar imagen</button></div> : <img key={attempt} src={src} alt={label} draggable={false} decoding="async" referrerPolicy="no-referrer"
@@ -125,25 +140,40 @@ function EvidenceCanvas({ src, label, region, expanded = false }: Props & { expa
           setLoaded(true);
         }} onError={() => { setLoaded(false); setFailed(true); }}
         className="absolute max-w-none select-none"
-        style={{ opacity: ready ? 1 : 0, width: layout?.width ?? '100%', height: layout?.height ?? 'auto', left: layout?.left ?? 0, top: layout?.top ?? 0 }} />}
+        style={{
+          opacity: ready ? 1 : 0,
+          width: layout ? (swapped ? layout.height : layout.width) : '100%',
+          height: layout ? (swapped ? layout.width : layout.height) : 'auto',
+          left: layout ? layout.left + (swapped ? (layout.width - layout.height) / 2 : 0) : 0,
+          top: layout ? layout.top + (swapped ? (layout.height - layout.width) / 2 : 0) : 0,
+          transform: `rotate(${rotation}deg)`,
+        }} />}
     </div>
+    {sheetView && tools}
     {validEvidenceBox(region) && <p className="text-xs leading-5 text-muted">Ubicación sugerida. Consulta la hoja completa para comprobar el contexto.</p>}
   </div>;
 }
 
 /** Read-only photo inspection. The caller only supplies evidence it may already read. */
-export function GradeEvidenceViewer({ src, label, region }: Props) {
+export function GradeEvidenceViewer(props: Props) {
+  return <EvidenceViewerSession key={`${props.src}:${props.region?.join(',') ?? 'hoja'}`} {...props} />;
+}
+
+function EvidenceViewerSession({ src, label, region, sheetView = false }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const contentKey = `${src}:${region?.join(',') ?? 'hoja'}`;
-  return <div className="min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-3">
-    <div className="flex flex-wrap items-center justify-between gap-2">
+  const [rotation, setRotation] = useState<EvidenceRotation>(0);
+  const rotate = (direction: -1 | 1) => setRotation(value => ((value + 360 + direction * 90) % 360) as EvidenceRotation);
+  const canvasProps = { src, label, region, rotation, onRotate: rotate };
+  return <div className={sheetView ? 'min-w-0 space-y-2' : 'min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-3'}>
+    {sheetView && !expanded && <EvidenceCanvas {...canvasProps} sheetView extraControl={<button type="button" className={controlClass} aria-label="Ampliar evidencia" title="Ampliar evidencia" onClick={() => setExpanded(true)}><Expand aria-hidden="true" className="h-4 w-4" /></button>} />}
+    {!sheetView && <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="text-sm font-bold text-fg">{label}</p>
       <button type="button" className={controlClass} onClick={() => setExpanded(true)}><Expand aria-hidden="true" className="h-4 w-4" />Ampliar evidencia</button>
-    </div>
-    {!expanded && <EvidenceCanvas key={contentKey} src={src} label={label} region={region} />}
+    </div>}
+    {!sheetView && !expanded && <EvidenceCanvas {...canvasProps} />}
     <Modal open={expanded} onClose={() => setExpanded(false)} title={label} className="flex h-[calc(100dvh-2rem)] max-w-6xl flex-col overflow-y-auto p-3 sm:p-4">
-      <EvidenceCanvas key={`amplia:${contentKey}`} src={src} label={label} region={region} expanded />
-      <button type="button" className={`${controlClass} mt-3 shrink-0`} onClick={() => setExpanded(false)}>Volver a la respuesta</button>
+      <EvidenceCanvas {...canvasProps} expanded sheetView={sheetView} />
+      <button type="button" className={`${controlClass} mt-3 shrink-0`} onClick={() => setExpanded(false)}>{sheetView ? 'Volver a la evidencia' : 'Volver a la respuesta'}</button>
     </Modal>
   </div>;
 }

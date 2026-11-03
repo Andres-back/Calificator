@@ -20,10 +20,19 @@ import { readFeedbackListPosition, restoreFeedbackListPosition, type FeedbackLis
 import { feedbackScrollLayout } from './feedbackScrollLayout';
 import { FeedbackStudentLink } from './FeedbackStudentLink';
 import { FeedbackLinkActions } from './FeedbackLinkActions';
+import { IndividualFeedbackSurface } from './IndividualFeedbackSurface';
 
 interface WorkspaceProps { evaluationId: string; initialGradeId?: string; initialSelectedIds?: string[]; suggestedArea?: string | null; embedded?: boolean; onDirtyChange?: (dirty: boolean) => void; onBusyChange?: (busy: boolean) => void; onFinishEditing?: () => void; onClose: () => void; onReview: (gradeId: string) => void }
 
 export function ShareFeedbackDialog(props: WorkspaceProps) {
+  return <FeedbackDeliveryWorkspace {...props} />;
+}
+
+export function StudentFeedbackPanel(props: Omit<WorkspaceProps, 'embedded' | 'initialSelectedIds' | 'initialGradeId' | 'onClose'> & { initialGradeId: string }) {
+  return <FeedbackDeliveryWorkspace {...props} embedded onClose={() => {}} />;
+}
+
+function FeedbackDeliveryWorkspace(props: WorkspaceProps) {
   const user = useAuth(state => state.user);
   // A renewed session for the same actor keeps selection. A changed account or
   // permission set unmounts private contents and rejects late responses.
@@ -32,6 +41,7 @@ export function ShareFeedbackDialog(props: WorkspaceProps) {
 }
 
 function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedIds, suggestedArea, embedded, onDirtyChange, onBusyChange, onFinishEditing, onClose, onReview }: WorkspaceProps) {
+  const individual = Boolean(embedded && initialGradeId);
   const user = useAuth(state => state.user);
   const actorId = user?.id;
   const permitted = Boolean(actorId) && ['profesor', 'admin'].includes(user?.rol ?? '') && Boolean(user?.permissions?.includes('grading.read'));
@@ -91,9 +101,16 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
     // window focus can immediately steal that same focus; copying still does
     // its own authorized server read before touching the clipboard.
     if (valid() && !hasAccessMetadata.current) setAccessStatus('loading');
-    try { const items = await listFeedbackAccesses(evaluationId, signal); if (!signal.aborted && valid()) { hasAccessMetadata.current = true; setAccesses(items); setAccessStatus('loaded'); } }
+    try {
+      const items = await listFeedbackAccesses(evaluationId, signal, individual ? initialGradeId : undefined);
+      if (!signal.aborted && valid()) {
+        hasAccessMetadata.current = true;
+        setAccesses(individual ? items.filter(item => item.calificacion_id === initialGradeId) : items);
+        setAccessStatus('loaded');
+      }
+    }
     catch { if (!signal.aborted && valid()) { setAccessStatus('error'); setError('No pudimos consultar tus enlaces. Reintenta.'); } }
-  }, [evaluationId, valid]);
+  }, [evaluationId, initialGradeId, individual, valid]);
   useEffect(() => {
     if (!permitted) return;
     const refresh = () => { if (!busy && document.visibilityState !== 'hidden' && !locked.current) void refreshAccesses(); };
@@ -112,7 +129,9 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
         do {
           const page = await getEvaluationReview(evaluationId, { filtro: 'todas', limit: 100, cursor }, abort.signal);
           if (!current()) return;
-          students.push(...page.alumnos); cursor = page.siguiente_cursor ?? undefined;
+          students.push(...page.alumnos);
+          cursor = individual && page.alumnos.some(item => item.calificacion_id === initialGradeId)
+            ? undefined : page.siguiente_cursor ?? undefined;
           if (cursor && seen.has(cursor)) throw new Error('Incomplete list');
           if (cursor) seen.add(cursor);
         } while (cursor);
@@ -133,7 +152,7 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
       finally { if (current()) setLoading(false); }
     }
     void load(); return () => abort.abort();
-  }, [evaluationId, initialGradeId, permitted, canBatchPublish, reload, refreshAccesses, valid]);
+  }, [evaluationId, initialGradeId, individual, permitted, canBatchPublish, reload, refreshAccesses, valid]);
 
   const eligible = rows.filter(row => row.preview?.elegible && row.preview.fingerprint);
   const selectedRows = rows.filter(row => selected.includes(row.calificacion_id ?? ''));
@@ -221,25 +240,52 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   if (!permitted) return null;
   const scrollLayout = feedbackScrollLayout(embedded);
   const score = detailRow?.preview?.resultado ?? detailRow?.preview?.borrador_docente;
+  const message = detailRow?.preview?.resultado?.retroalimentacion ?? detailRow?.preview?.batch_candidate?.feedback_text
+    ?? detailRow?.preview?.revision_docente?.feedback_text ?? score?.retroalimentacion;
   const close = () => { if (!blocked) onClose(); else if (reviewDirty) setNotice('Guarda o descarta el mensaje antes de cerrar.'); };
-  const detailView = detailRow && <section className="space-y-4 p-4 max-sm:px-[12px]" aria-label={'Retroalimentación de ' + detailRow.nombre}>
+  const editDetail = (trigger: HTMLElement) => { if (!detailRow?.calificacion_id) return; rememberFocus(trigger); setReviewing(detailRow.calificacion_id); };
+  const canEditDetail = Boolean((canDeliver && detailRow?.preview?.revision_docente) || (canEditMessage && detailRow?.preview?.mensaje_editable));
+  const studentLink = canDeliver && detailRow?.calificacion_id && <FeedbackStudentLink key={detailRow.calificacion_id}
+    evaluationId={evaluationId} gradeId={detailRow.calificacion_id} studentName={detailRow.nombre}
+    evaluationName={detailRow.preview?.resultado?.evaluacion || 'esta evaluación'} preview={detailRow.preview}
+    accesses={accesses} queryStatus={accessStatus} signal={controller.current.signal} valid={valid}
+    compact={individual} disabled={blocked} onBusy={setBusy} onRetry={() => { void refreshAccesses(); }}
+    onGenerate={() => openShare([detailRow.calificacion_id!], undefined, true)}
+    onReview={() => { if (detailRow.preview?.elegible) setManageAccesses(true); else if (detailRow.preview?.revision_docente || detailRow.preview?.mensaje_editable) openShare([detailRow.calificacion_id!]); else onReview(detailRow.calificacion_id!); }} onManage={() => setManageAccesses(true)} />;
+  const accessManager = canDeliver && detailRow && <FeedbackAccessList showCopy={false} evaluationId={evaluationId}
+    accesses={accesses.filter(access => access.calificacion_id === detailRow.calificacion_id)} previews={detailRow.preview ? [detailRow.preview] : []}
+    signal={controller.current.signal} valid={valid} onBusy={setBusy} onChanged={refreshAccesses}
+    onIssued={() => setNotice(individual ? 'Cambio guardado.' : 'Cambio guardado. Copia el enlace vigente en el bloque del estudiante.')} />;
+  const individualView = individual && detailRow && <IndividualFeedbackSurface name={detailRow.nombre} message={message}
+    pendingReason={!detailRow.preview?.elegible ? detailRow.preview?.motivo : undefined}
+    canEdit={canEditDetail} blocked={blocked} onEdit={event => editDetail(event.currentTarget)}
+    actions={[
+      { label: 'Revisar respuestas y evidencia', onSelect: () => onReview(detailRow.calificacion_id!) },
+      ...(canDeliver ? [
+        { label: 'Imprimir retroalimentación', onSelect: () => { rememberFocus(); if (pendingRows.length) setPendingPrint(true); else void preparePrint(); } },
+        ...(accesses.some(access => access.calificacion_id === detailRow.calificacion_id) ? [{ label: 'Gestionar enlace', onSelect: () => setManageAccesses(true) }] : []),
+      ] : []),
+      ...(canBatchPublish && !eligible.length ? [{ label: 'Revisar antes de publicar', onSelect: () => { rememberFocus(); setPublishing(true); } }] : []),
+    ]}
+    link={studentLink} management={canDeliver && <Modal open={manageAccesses} title="Gestionar enlace"
+      closeOnEscape={!busy} closeOnBackdrop={!busy} showCloseButton={!busy} onClose={() => { if (!busy) setManageAccesses(false); }}>
+      {accessManager}
+    </Modal>} />;
+  const detailView = !individual && detailRow && <section className="space-y-4 p-4 max-sm:px-[12px]" aria-label={'Retroalimentación de ' + detailRow.nombre}>
     {!initialGradeId && <Button variant="link" disabled={blocked} onClick={() => { setDetail(null); restoreFocus(); }}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Volver a la lista</Button>}
     <h3 className="break-words text-lg font-bold">{detailRow.nombre}</h3>
     {score?.nota != null && <p className="text-xl font-bold tabular-nums">{formatGradeScore(Number(score.nota))} / {formatGradeScore(Number(score.nota_maxima))}</p>}
     <p className="text-sm text-muted">{detailRow.preview?.elegible ? 'Lista para entregar' : detailRow.preview?.motivo ?? 'Primero revisa la retroalimentación.'}</p>
-    {(detailRow.preview?.batch_candidate?.feedback_text || detailRow.preview?.revision_docente?.feedback_text || score?.retroalimentacion) && <FeedbackMessage text={detailRow.preview?.resultado?.retroalimentacion ?? detailRow.preview?.batch_candidate?.feedback_text ?? detailRow.preview?.revision_docente?.feedback_text ?? score!.retroalimentacion} />}
-    {canDeliver && detailRow.calificacion_id && <FeedbackStudentLink key={detailRow.calificacion_id}
-      evaluationId={evaluationId} gradeId={detailRow.calificacion_id} studentName={detailRow.nombre}
-      evaluationName={detailRow.preview?.resultado?.evaluacion || 'esta evaluación'} preview={detailRow.preview}
-      accesses={accesses} queryStatus={accessStatus} signal={controller.current.signal} valid={valid}
-      disabled={blocked} onBusy={setBusy} onRetry={() => { void refreshAccesses(); }}
-      onGenerate={() => openShare([detailRow.calificacion_id!], undefined, true)}
-      onReview={() => { if (detailRow.preview?.elegible) setManageAccesses(true); else if (detailRow.preview?.revision_docente || detailRow.preview?.mensaje_editable) openShare([detailRow.calificacion_id!]); else onReview(detailRow.calificacion_id!); }} onManage={() => setManageAccesses(true)} />}
+    {message ? <FeedbackMessage text={message} /> : <p className="py-3 text-base text-muted">Todavía no hay retroalimentación guardada.</p>}
+    {studentLink}
     <div className="flex flex-wrap gap-2">
-      {((canDeliver && detailRow.preview?.revision_docente) || (canEditMessage && detailRow.preview?.mensaje_editable)) && <Button variant="outline" disabled={blocked} aria-label={'Revisar retroalimentación de ' + detailRow.nombre} onClick={event => { rememberFocus(event.currentTarget); setReviewing(detailRow.calificacion_id!); }}>Editar y revisar retroalimentación</Button>}
+      {canEditDetail && <Button variant="outline" disabled={blocked} aria-label={'Revisar retroalimentación de ' + detailRow.nombre} onClick={event => editDetail(event.currentTarget)}>Editar y revisar retroalimentación</Button>}
       <Button variant="link" disabled={blocked} onClick={() => onReview(detailRow.calificacion_id!)}>Revisar respuestas y evidencia</Button>
     </div>
-    {canDeliver && <details open={manageAccesses} onToggle={event => setManageAccesses(event.currentTarget.open)} className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Opciones avanzadas del enlace</summary><FeedbackAccessList showCopy={false} evaluationId={evaluationId} accesses={accesses.filter(access => access.calificacion_id === detailRow.calificacion_id)} previews={detailRow.preview ? [detailRow.preview] : []} signal={controller.current.signal} valid={valid} onBusy={setBusy} onChanged={refreshAccesses} onIssued={() => { setNotice('Cambio guardado. Copia el enlace vigente en el bloque del estudiante.'); }} /></details>}
+    {canDeliver && <details open={manageAccesses} onToggle={event => setManageAccesses(event.currentTarget.open)} className="rounded-xl border border-border p-3">
+      <summary className="min-h-11 cursor-pointer py-3 font-semibold">Opciones avanzadas del enlace</summary>
+      {accessManager}
+    </details>}
   </section>;
   return <FeedbackFrame scope={frameScope} viewport={viewport} embedded={embedded} onClose={close} canClose={!blocked} title={initialGradeId ? 'Retroalimentación del estudiante' : 'Retroalimentación del grupo'}>
     {reviewDirty && <p role="status" className="shrink-0 border-b border-amber-400 p-3 text-sm">Tienes un mensaje sin guardar. Guarda o descarta los cambios antes de cerrar o cambiar de estudiante.</p>}
@@ -248,7 +294,9 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
       {loading ? <p role="status" className="p-4">Cargando estudiantes y retroalimentaciones…</p> : <>
         {error && <div role="alert" className="shrink-0 space-y-2 border-b border-amber-400 p-3 text-sm"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => setReload(value => value + 1)}>Actualizar lista</Button></div>}
         {pendingPrint && <section role="status" className="shrink-0 space-y-2 border-b border-amber-400 p-3 text-sm"><p>{pendingRows.length} retroalimentaciones seleccionadas necesitan revisión. No se entregarán sin tu aprobación.</p><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => { const row = pendingRows[0]; if (row?.preview?.revision_docente) setReviewing(row.calificacion_id!); else if (row?.calificacion_id) onReview(row.calificacion_id); }}>Revisar pendientes</Button>{chosen.length > 0 && <Button disabled={busy} onClick={() => void preparePrint()}>Entregar solo {chosen.length} {chosen.length === 1 ? 'lista' : 'listas'}</Button>}<Button variant="outline" onClick={() => setPendingPrint(false)}>Cancelar</Button></div></section>}
-        {publishing ? <div {...scrollLayout} className={`${scrollLayout.className} space-y-3 p-4`}><Button variant="link" disabled={busy} onClick={() => { setPublishing(false); restoreFocus(); }}>Volver a estudiantes</Button><FeedbackBatchPublish individual={Boolean(initialGradeId)} evaluationId={evaluationId} rows={rows} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy} onCompleted={published} /></div> : <div className="flex min-h-0 flex-1">
+        {publishing ? <div {...scrollLayout} className={`${scrollLayout.className} space-y-3 p-4`}><Button variant="link" disabled={busy} onClick={() => { setPublishing(false); restoreFocus(); }}>Volver a estudiantes</Button><FeedbackBatchPublish individual={Boolean(initialGradeId)} evaluationId={evaluationId} rows={rows} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy} onBusy={setBusy} onCompleted={published} /></div> : individual ? (
+          <div {...scrollLayout} className={scrollLayout.className}>{individualView ?? <p className="p-4 text-sm text-muted">No encontramos la retroalimentación de este estudiante.</p>}</div>
+        ) : <div className="flex min-h-0 flex-1">
           {!initialGradeId && <div ref={listScope} className={`min-h-0 min-w-0 flex-1 flex-col xl:flex xl:max-w-md xl:border-r xl:border-border ${detail ? 'hidden' : 'flex'}`}>
             <div {...scrollLayout} ref={listScroller} onScroll={event => { if (event.currentTarget.clientHeight) listPosition.current = readFeedbackListPosition(event.currentTarget); }} className={scrollLayout.className} data-feedback-list-scroll>
             <header className="shrink-0 space-y-2 border-b border-border p-3">
@@ -266,8 +314,8 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
           </div>}
           <div {...scrollLayout} className={`${initialGradeId || detail ? 'block' : 'hidden xl:block'} min-w-0 flex-1 ${scrollLayout.className}`}>{detailView ?? <div className="grid h-full place-content-center gap-3 p-8 text-center text-muted"><MessageSquareText className="mx-auto h-8 w-8" aria-hidden="true" /><p>Selecciona estudiantes para compartir o imprimir.</p><p className="text-sm">Abre una retroalimentación para leerla o revisarla aquí.</p></div>}</div>
         </div>}
-        {initialGradeId && canBatchPublish && !publishing && !eligible.length && <div className="shrink-0 border-t border-border p-3"><Button variant="outline" onClick={event => { rememberFocus(event.currentTarget); setPublishing(true); }}>Revisar antes de publicar</Button></div>}
-        {canDeliver && !publishing && <FeedbackSelectionBar showShare={!initialGradeId && selectedRows.some(row => !accesses.some(access => access.calificacion_id === row.calificacion_id))} copyAction={!initialGradeId && accessStatus === 'loaded' ? <FeedbackLinkActions direct selectionOnly evaluationId={evaluationId} evaluationName={rows.find(row => row.preview?.resultado?.evaluacion)?.preview?.resultado?.evaluacion || 'esta evaluación'} accesses={accesses} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy || reviewDirty} onBusy={setBusy} onManage={id => openDetail(id)} /> : undefined} count={selectedRows.length} hiddenCount={hiddenSelected} busy={busy} onShare={trigger => openShare(selected, trigger)} onPrint={trigger => { rememberFocus(trigger); if (pendingRows.length) setPendingPrint(true); else void preparePrint(); }} />}
+        {!individual && initialGradeId && canBatchPublish && !publishing && !eligible.length && <div className="shrink-0 border-t border-border p-3"><Button variant="outline" onClick={event => { rememberFocus(event.currentTarget); setPublishing(true); }}>Revisar antes de publicar</Button></div>}
+        {!individual && canDeliver && !publishing && <FeedbackSelectionBar showShare={!initialGradeId && selectedRows.some(row => !accesses.some(access => access.calificacion_id === row.calificacion_id))} copyAction={!initialGradeId && accessStatus === 'loaded' ? <FeedbackLinkActions direct selectionOnly evaluationId={evaluationId} evaluationName={rows.find(row => row.preview?.resultado?.evaluacion)?.preview?.resultado?.evaluacion || 'esta evaluación'} accesses={accesses} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy || reviewDirty} onBusy={setBusy} onManage={id => openDetail(id)} /> : undefined} count={selectedRows.length} hiddenCount={hiddenSelected} busy={busy} onShare={trigger => openShare(selected, trigger)} onPrint={trigger => { rememberFocus(trigger); if (pendingRows.length) setPendingPrint(true); else void preparePrint(); }} />}
       </>}
     </>}
   </FeedbackFrame>;

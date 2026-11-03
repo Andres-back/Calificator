@@ -5,11 +5,12 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft, BookOpenCheck, Camera, CheckCircle2, ChevronDown, ChevronRight,
-  Clock, ExternalLink, FileImage, FileText, Pencil, RotateCcw,
-  LoaderCircle, Pause, Play, Search, ShieldAlert, Sparkles, Square, X,
+  Clock, Download, ExternalLink, FileImage, FileText, Pencil, RotateCcw,
+  LoaderCircle, Pause, Play, Search, ShieldAlert, Sparkles, Square, Users, X,
 } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Modal, Select, Skeleton, Textarea } from '@/components/ui';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
+import { GradebookExport } from '@/modules/materias/GradebookExport';
 import { useEstudiantes } from '@/modules/materias/hooks';
 import { getEvaluacion, listEvaluaciones } from '@/modules/evaluaciones/api';
 import { queryClient } from '@/lib/queryClient';
@@ -57,6 +58,7 @@ import { GradeFeedback } from './components/GradeFeedback';
 import { GradeReprocessing } from './components/GradeReprocessing';
 import { VerificationPendingNotice } from './components/VerificationPendingNotice';
 import { gradeCalculationPresentation } from './components/gradeCalculationPresentation';
+import { GradeFormula } from './components/GradeFormula';
 import { GradeFinalEditor } from './components/GradeFinalEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
@@ -281,7 +283,7 @@ export function MobileReviewActionBar({
   );
 }
 
-export function GradeNoteExplanation({ cal, score, compact = false }: { cal: CalificacionDetalle; score: number | null; compact?: boolean }) {
+export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle; score: number | null }) {
   const breakdown = cal.desglose;
   const decision = [...(cal.timeline ?? [])].reverse().find((event) => event.tipo === 'ajustada' && event.detalle)?.detalle;
   if (!breakdown) {
@@ -294,33 +296,21 @@ export function GradeNoteExplanation({ cal, score, compact = false }: { cal: Cal
   }
   const formula = breakdown.formula;
   const calculation = gradeCalculationPresentation(breakdown);
-  const adjustment = Number(formula.ajuste_global);
   const overridesFormula = score != null && Math.abs(score - Number(formula.nota_final)) > 0.005;
   const content = (
-    <div className="space-y-2 text-sm">
-      {calculation.provisional && <p className="leading-6 text-amber-800 dark:text-amber-200">{calculation.explanation}</p>}
-      <p>Puntos por respuestas: <strong>{Number(formula.puntos_obtenidos).toFixed(2)} / {Number(formula.puntos_posibles).toFixed(2)}</strong>.</p>
-      {compact ? <p className="text-muted">Equivale a {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)} en la escala de esta evaluación, antes de cualquier ajuste del docente.</p> : <details>
-        <summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>
-        <p className="text-muted">Equivale a {Number(formula.nota_base).toFixed(2)} / {Number(formula.nota_maxima).toFixed(1)} en la escala de esta evaluación, antes de cualquier ajuste del docente. Puedes comprobar cada respuesta en «Respuestas y puntajes».</p>
-      </details>}
-      {adjustment !== 0 && (
-        <div className="space-y-1 rounded-lg bg-surface-2 p-2">
-          <p>Ajuste docente registrado: <strong>{adjustment > 0 ? '+' : ''}{adjustment.toFixed(2)}</strong>, separado de los puntos por respuesta.</p>
-          <p>{breakdown.ajuste_global_detalle?.motivo_interno || breakdown.ajuste_global_detalle?.explicacion_estudiante || 'Sin motivo de ajuste registrado.'}</p>
-        </div>
-      )}
+    <div className="max-w-2xl space-y-2 text-sm">
+      <GradeFormula formula={formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} />
       {overridesFormula && (
         <div role="status" className="space-y-1 text-amber-800 dark:text-amber-200">
           <p>{DONE_STATES.has(cal.estado)
-            ? `La nota actual es distinta del cálculo por respuestas (${Number(formula.nota_final).toFixed(2)}). ${decision ? 'Consulta el historial para conocer la decisión del docente.' : 'No hay un motivo de ajuste registrado en este resultado.'}`
+            ? `La nota final (${score?.toFixed(2)}) es distinta del cálculo por respuestas (${Number(formula.nota_final).toFixed(2)}). ${decision ? 'Consulta el historial para conocer la decisión del docente.' : 'No hay un motivo de ajuste registrado en este resultado.'}`
             : `El ${calculation.label.toLowerCase()} da ${Number(formula.nota_final).toFixed(2)}, distinto de la sugerencia de IA (${score?.toFixed(2)}). Revisa los puntajes antes de confirmar.`}</p>
           {decision && <p>{decision}</p>}
         </div>
       )}
     </div>
   );
-  return compact ? <details><summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>{content}</details> : content;
+  return <details><summary className="focus-ring flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 dark:text-brand-200">Ver cálculo de la nota</summary>{content}</details>;
 }
 
 /* ─── Sub-componente: Timeline ─── */
@@ -693,6 +683,7 @@ function PanelDetalle({
   const detailActorId = useAuth((state) => state.user?.id ?? '');
   const reviewSectionRef = useRef<HTMLDivElement | null>(null);
   const detailViewRef = useRef<HTMLDivElement | null>(null);
+  const reviewNavigationHeading = useRef<HTMLHeadingElement>(null);
   const incomingQuestion = useRef(detailParams.get('pregunta'));
   useEffect(() => {
     if (!incomingQuestion.current) return;
@@ -905,6 +896,10 @@ function PanelDetalle({
   }
 
   function canChangeDetailView(nextView: ReviewSection) {
+    if (reprocessingDirty && nextView !== 'evidencia') {
+      toast('Guarda o cancela los cambios de evidencia antes de salir.');
+      return false;
+    }
     if (feedbackBusy) {
       toast('Espera a que termine la preparación antes de cambiar de sección.');
       return false;
@@ -942,11 +937,15 @@ function PanelDetalle({
     mobileForm.finishWriting();
     setMobileTab(nextView);
     const focusAtRequest = document.activeElement;
-    if (nextView !== 'resumen') window.requestAnimationFrame(() => {
-      const target = nextView === 'revision' ? reviewSectionRef.current : nextView === 'evidencia' ? evidenceSectionRef.current : nextView === 'retroalimentacion' ? feedbackSectionRef.current : null;
-      focusReviewSection(target, focusAtRequest, () => {
-        if (nextView === 'revision' || nextView === 'evidencia') revealWithinReview(detailViewRef.current);
-        if (nextView === 'retroalimentacion') revealFeedback();
+    window.requestAnimationFrame(() => {
+      const heading = reviewNavigationHeading.current;
+      const returningCard = nextView === 'resumen' ? heading?.parentElement?.querySelector<HTMLButtonElement>(`[data-review-option="${mobileTab}"]`) : null;
+      const panel = nextView === 'revision' ? reviewSectionRef.current : nextView === 'evidencia' ? evidenceSectionRef.current : nextView === 'retroalimentacion' ? feedbackSectionRef.current : null;
+      const target = returningCard ?? panel ?? heading;
+      const focusWasHidden = !focusAtRequest?.isConnected || Boolean(focusAtRequest.closest('[hidden]'));
+      const expectedFocus = focusWasHidden && document.activeElement === document.body ? document.body : focusAtRequest;
+      focusReviewSection(target, expectedFocus, () => {
+        revealWithinReview(nextView === 'resumen' ? target : heading?.parentElement ?? target, nextView === 'resumen' ? 'nearest' : 'start');
       });
     });
   }
@@ -1064,6 +1063,7 @@ function PanelDetalle({
 
       <div className={cn('min-w-0 flex-1 space-y-3 p-3 [overflow-wrap:anywhere] sm:space-y-5 sm:p-5 xl:pb-5', mobileTab === 'retroalimentacion' ? 'pb-3' : 'pb-32 sm:pb-32')}>
         {/* Nota principal */}
+        <div hidden={mobileTab !== 'resumen'} className="space-y-3 sm:space-y-5">
         <h2 className="sr-only">1. Nota y explicación</h2>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className={mobileTab === 'retroalimentacion' ? 'flex flex-wrap items-baseline gap-x-2' : undefined}>
@@ -1093,8 +1093,8 @@ function PanelDetalle({
 
         {editingFinalGrade && finalGradeSnapshot && <div ref={finalGradeEditorRef} className="scroll-mt-24"><GradeFinalEditor grade={finalGradeSnapshot} maximum={Number(finalGradeSnapshot.nota_maxima ?? notaMaxima ?? 5)} onCancel={() => { mobileForm.finishWriting(); setEditingFinalGrade(false); setFinalGradeSnapshot(null); void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] }); window.requestAnimationFrame(() => editGradeButtonRef.current?.focus()); }} onSave={(change) => finalGradeMutation.mutateAsync(change)} /></div>}
 
-        <section aria-label="Cálculo y criterios registrados" className="text-sm" hidden={mobileTab === 'retroalimentacion'}>
-          {!presentation.processing && <GradeNoteExplanation compact cal={cal} score={presentation.score} />}
+        <section aria-label="Cálculo y criterios registrados" className="text-sm">
+          {!presentation.processing && <GradeNoteExplanation cal={cal} score={presentation.score} />}
           {criterionRows.length ? <details className="mt-2">
             <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold">Ver valoración por criterios ({criterionRows.length})</summary>
             <p className="mt-1 text-xs text-muted">{rubricComponents.length ? 'Criterios de rúbrica registrados' : 'Valoración inicial guardada; no recalculada por ajustes globales.'}</p>
@@ -1106,6 +1106,7 @@ function PanelDetalle({
             </dl>
           </details> : null}
         </section>
+        </div>
 
         {presentation.processing && (
           <Card className="flex items-start gap-3 border-brand-200 bg-brand-50 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -1117,23 +1118,19 @@ function PanelDetalle({
           </Card>
         )}
 
+        <ReviewNavigation active={mobileTab} onChange={changeDetailView} headingRef={reviewNavigationHeading} />
+        {editingComponentId && mobileTab === 'revision' && <Button type="button" variant="ghost" className="min-h-11" onClick={() => changeDetailView('evidencia')}>Ver evidencia completa</Button>}
+        {editingComponentId && mobileTab === 'evidencia' && <Button type="button" variant="ghost" className="min-h-11" onClick={() => changeDetailView('revision')}>Volver a respuestas</Button>}
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
-        {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && reviewNotices}
-        <ReviewNavigation active={mobileTab} onChange={changeDetailView} />
-        {canGrade && <div hidden={mobileTab === 'retroalimentacion'}><GradeReprocessing key={cal.id} cal={cal} onDirtyChange={setReprocessingDirty} disabled={isDirty || feedbackBusy || editingComponentDirty || editingFinalGrade || claimDirty}
-          onAccepted={(grade) => {
-            const jobId = grade.resultado_json?.job_id;
-            if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
-            onSaved();
-          }} /></div>}
-        {canReviewClaims && <div hidden={mobileTab === 'retroalimentacion'}><IncidenciasSection calificacionId={cal.id} active={mobileTab === 'reclamos'} onToggle={() => changeDetailView('reclamos')} onDirtyChange={setClaimDirty} onOpenComponent={(id) => {
+        {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && (mobileTab === 'resumen' || mobileTab === 'revision') && reviewNotices}
+        {canReviewClaims && <div hidden={mobileTab !== 'resumen' && mobileTab !== 'reclamos'}><IncidenciasSection calificacionId={cal.id} active={mobileTab === 'reclamos'} onToggle={() => changeDetailView('reclamos')} onDirtyChange={setClaimDirty} onOpenComponent={(id) => {
           const component = activeBreakdown?.componentes.find((item) => item.id === id || item.clave === id);
           if (component) openReviewComponent(component.id);
           else { setDetailParams((previous) => { const next = new URLSearchParams(previous); next.set('pregunta', id); return next; }); toast('La pregunta pertenece a una versión anterior y no tiene equivalencia vigente.'); }
         }} /></div>}
 
         {/* Evidencia */}
-        {evidenciaConsolidada?.modalidad === 'mixta' && (
+        {mobileTab === 'evidencia' && evidenciaConsolidada?.modalidad === 'mixta' && (
           <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm dark:border-sky-500/30 dark:bg-sky-500/10">
             <p className="font-semibold text-sky-900 dark:text-sky-100">Calificación mixta consolidada</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -1148,32 +1145,32 @@ function PanelDetalle({
           </div>
         )}
         <div ref={detailViewRef} className="min-w-0 scroll-mt-4" aria-label="Vista de la revisión">
-          <section hidden={mobileTab !== 'evidencia'} className="min-w-0 rounded-xl border border-border">
-          <div id="grade-evidence-panel" className="min-w-0 space-y-4 p-3">
+          <section hidden={mobileTab !== 'evidencia'} className="min-w-0">
+          <div id="grade-evidence-panel" className="min-w-0 space-y-4">
             {evidenceUrl ? (
-              <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="scroll-mt-4 rounded-xl border border-border bg-surface-2">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2 text-sm font-semibold text-muted">
-                  <h2 id="evidence-title" className="flex flex-wrap items-center gap-2 text-base font-bold text-fg">
+              <section ref={evidenceSectionRef} tabIndex={-1} aria-labelledby="evidence-title" className="min-w-0 scroll-mt-4 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-1 text-sm font-semibold text-muted">
+                  <h2 id="evidence-title" className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-bold text-fg">
                     {isPdfEvidence ? <FileText className="h-5 w-5" /> : <FileImage className="h-5 w-5" />}
-                    Evidencia del estudiante
-                    <Badge tone="neutral">{evidencePages} {evidencePages === 1 ? 'hoja' : 'hojas'}</Badge>
+                    Hoja {evidencePage} de {evidencePages}
                   </h2>
                   <a
                     href={evidencePageUrl ?? evidenceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-brand-700 hover:bg-brand-50 hover:text-brand-800 dark:text-brand-200 dark:hover:bg-brand-500/10 dark:hover:text-brand-100"
+                    className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs text-brand-700 hover:bg-surface-2 dark:text-brand-200"
                   >
                     Abrir en grande <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
-                {cal.entrega_original_disponible && <div className="flex flex-wrap items-center gap-2 border-b border-border p-3" aria-label="Versión de la evidencia">
+                {cal.entrega_original_disponible && <div className="flex flex-wrap items-center gap-2" aria-label="Versión de la evidencia">
                   <Button type="button" size="sm" className="min-h-11" variant={evidenceVariant === 'preparada' ? 'primary' : 'outline'}
                     aria-pressed={evidenceVariant === 'preparada'} onClick={() => setVariantSelection({ scope: evidenceScope, value: 'preparada' })}>Foto preparada</Button>
                   <Button type="button" size="sm" className="min-h-11" variant={evidenceVariant === 'original' ? 'primary' : 'outline'}
                     aria-pressed={evidenceVariant === 'original'} onClick={() => setVariantSelection({ scope: evidenceScope, value: 'original' })}>Foto original</Button>
                 </div>}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+                {mobileTab === 'evidencia' && <GradeEvidenceViewer sheetView key={`${evidenceScope}:${evidencePageUrl}`} src={evidencePageUrl ?? evidenceUrl} label={`Hoja ${evidencePage} de la evidencia del estudiante`} />}
+                {evidencePages > 1 && <div className="flex items-center gap-2 border-t border-border pt-2">
                   <Button type="button" size="sm" className="min-h-11" variant="ghost" disabled={evidencePage <= 1} onClick={() => showEvidencePage(evidencePage - 1)}>Anterior</Button>
                   <div className="flex max-w-full gap-1 overflow-x-auto py-1" aria-label="Páginas de evidencia">
                     {Array.from({ length: evidencePages }, (_, index) => index + 1).map((page) => (
@@ -1187,14 +1184,7 @@ function PanelDetalle({
                     ))}
                   </div>
                   <Button type="button" size="sm" className="min-h-11" variant="ghost" disabled={evidencePage >= evidencePages} onClick={() => showEvidencePage(evidencePage + 1)}>Siguiente</Button>
-                </div>
-                {mobileTab === 'evidencia' && <GradeEvidenceViewer key={`${evidenceScope}:${evidencePageUrl}`} src={evidencePageUrl ?? evidenceUrl} label={`Hoja ${evidencePage} de la evidencia del estudiante`} />}
-                <div className="flex flex-col gap-2 border-t border-border p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs leading-5 text-muted">Si falta una hoja o la foto no corresponde, solicita todas las hojas de nuevo.</p>
-                  {canReviewClaims && <Button type="button" size="sm" className="min-h-11" variant="outline" onClick={() => setReplacementOpen(true)}>
-                    <RotateCcw className="h-4 w-4" /> Solicitar reemplazo
-                  </Button>}
-                </div>
+                </div>}
               </section>
             ) : (
               <section ref={evidenceSectionRef} tabIndex={-1} className="rounded-xl border border-border bg-surface-2 p-5">
@@ -1209,18 +1199,27 @@ function PanelDetalle({
                 <p className="whitespace-pre-wrap text-base leading-7 text-fg">{cal.entrega_respuesta_texto}</p>
               </section>
             )}
+            {canGrade && <GradeReprocessing key={cal.id} cal={cal} evidenceView={mobileTab === 'evidencia'} onDirtyChange={setReprocessingDirty} disabled={isDirty || feedbackBusy || editingComponentDirty || editingFinalGrade || claimDirty}
+              onAccepted={(grade) => {
+                const jobId = grade.resultado_json?.job_id;
+                if (typeof jobId === 'string') addPendingGrading({ jobId, evaluacionId: grade.evaluacion_id, materiaId: grade.materia_id, estudianteId: grade.estudiante_id, estudianteNombre: cal.estudiante_nombre || 'Estudiante' });
+                onSaved();
+              }} />}
+            {evidenceUrl && canReviewClaims && <Button type="button" size="sm" className="min-h-11" variant="ghost" onClick={() => setReplacementOpen(true)}>
+              <RotateCcw className="h-4 w-4" /> Solicitar reemplazo
+            </Button>}
           </div>
 
           </section>
-          <section hidden={mobileTab !== 'revision'} className="min-w-0 rounded-xl border border-border">
-          <div id="grade-review-panel" ref={reviewSectionRef} tabIndex={-1} className="min-w-0 scroll-mt-4 p-3">
+          <section hidden={mobileTab !== 'revision'} className="min-w-0">
+          <div id="grade-review-panel" ref={reviewSectionRef} tabIndex={-1} className="min-w-0 scroll-mt-4">
             {detailParams.has('pregunta') && !activeBreakdown?.componentes.some((component) => [component.id, component.clave].includes(detailParams.get('pregunta')!)) && <p role="status" className="mb-3 text-sm text-amber-700 dark:text-amber-300">La referencia corresponde a otra versión. Se muestra la primera pregunta vigente; consulta el historial para comparar.</p>}
             {questionReview}
           </div>
           </section>
         </div>
 
-        <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 rounded-xl border border-border p-4 sm:p-5 xl:scroll-mt-32">
+        <div id="grade-feedback-panel" ref={feedbackSectionRef} tabIndex={-1} hidden={mobileTab !== 'retroalimentacion'} className="scroll-mt-4 border-t border-border px-1 py-3 sm:py-4 xl:scroll-mt-32">
           {mobileTab === 'retroalimentacion' && (presentation.processing ? <><h2 className="mb-2 text-base font-bold">Retroalimentación para el estudiante</h2><p className="text-sm text-muted">La retroalimentación estará disponible cuando termine el análisis.</p></> : <FeedbackWorkspace key={cal.id} evaluationId={cal.evaluacion_id} gradeId={cal.id} suggestedArea={suggestedArea} onDirtyChange={setFeedbackDirty} onBusyChange={setFeedbackBusy} onFinishEditing={mobileForm.finishWriting} onActiveChange={setFeedbackWorkspaceActive} onReview={() => changeDetailView('revision')} fallback={<GradeFeedback key={cal.id} value={adjFeedback} original={originalFeedback} canEdit={canGrade} onChange={setAdjFeedback} onSave={submitAjuste} saving={adjustPending} saveDisabled={adjNota === '' || editingComponentDirty || editingFinalGrade || claimDirty} error={adjError} onFinishEditing={mobileForm.finishWriting} />} />)}
         </div>
 
@@ -1273,7 +1272,7 @@ function PanelDetalle({
         <Timeline events={cal.timeline} />
         </details>
         </div>
-        <ReviewHelp />
+        {mobileTab === 'historial' && <ReviewHelp />}
         {/* Acciones */}
         {canGrade && !done && !presentation.processing && (
           <div className="hidden flex-wrap gap-2 xl:flex">
@@ -1298,7 +1297,7 @@ function PanelDetalle({
             </Button>
           </div>
         )}
-        {published && <p className="text-sm text-muted">Nota publicada en la plataforma. Compartir por enlace se prepara en Retroalimentación.</p>}
+        {published && mobileTab === 'resumen' && <p className="text-sm text-muted">Nota publicada en la plataforma. Compartir por enlace se prepara en Retroalimentación.</p>}
         {canGrade && !done && !presentation.processing && <details className="xl:hidden">
           <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold text-muted">Opciones de la nota</summary>
           <div className="flex flex-wrap gap-2">
@@ -1872,6 +1871,7 @@ function GradingCenter() {
   const setSelectedId = (id: string | null) => changeContext({ calificacion: id, estudiante: null, pregunta: null, hoja: null });
   const [selectedBatch, setSelectedBatch] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedRosterEvaluation, setExpandedRosterEvaluation] = useState<string | null>(null);
   const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 300);
   const requestedFilter = searchParams.get('filtro') ?? 'todas';
   const gradeFilter: ReviewFilter = ['pendientes', 'alertas', 'procesando', 'publicadas'].includes(requestedFilter) ? requestedFilter as ReviewFilter : 'todas';
@@ -1885,6 +1885,7 @@ function GradingCenter() {
   const updateDeliveryBusy = useCallback((busy: boolean) => { deliveryBusyRef.current = busy; setDeliveryBusy(busy); }, []);
   const [manualGradeOpen, setManualGradeOpen] = useState(false);
   const [mobileMoreActionsOpen, setMobileMoreActionsOpen] = useState(false);
+  const [exportEvaluationId, setExportEvaluationId] = useState<string | null>(null);
   const [contextExpanded, setContextExpanded] = useState(false);
   const reviewRosterRef = useRef<HTMLDivElement>(null);
   const reviewScrollRef = useRef<HTMLDivElement>(null);
@@ -2238,6 +2239,10 @@ function GradingCenter() {
             {mobileMoreActionsOpen && <div id="grading-more-actions" className="absolute right-0 top-full z-20 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg">
               {materiaId && canOpenEvaluations && <Link to={routes.materiaEvaluaciones(materiaId)} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2">Evaluaciones de la materia</Link>}
               {currentBook && <Link to={currentBook} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold hover:bg-surface-2"><BookOpenCheck className="h-4 w-4" /> Libro de notas</Link>}
+              {selectedEval && selectedEval.estado !== 'borrador' && canOpenEvaluations && permissions.includes('grading.read') &&
+                <Button variant="ghost" fullWidth disabled={mobileDirty || deliveryBusy} onClick={() => { setExportEvaluationId(selectedEval.id); setMobileMoreActionsOpen(false); }}>
+                  <Download className="h-4 w-4" aria-hidden="true" /> Exportar notas CSV
+                </Button>}
               {evalId && <FeedbackToolsButton evaluationId={evalId} initialSelectedIds={[...selectedBatch]} suggestedArea={selectedMateria?.area} disabled={mobileDirty || deliveryBusy} />}
               {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty || deliveryBusy} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
               {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
@@ -2256,6 +2261,10 @@ function GradingCenter() {
           </Select>
         </Field>
       </MobileReviewContext>
+      {selectedEval && selectedEval.id === exportEvaluationId && selectedEval.estado !== 'borrador' && canOpenEvaluations && permissions.includes('grading.read') &&
+        <GradebookExport key={`${materiaId}:${selectedEval.id}`} materiaId={materiaId} materiaName={selectedMateria?.nombre ?? 'Materia'}
+          evaluations={[selectedEval]} initialEvaluationId={selectedEval.id} studentCount={counters?.todas ?? estudiantes.length}
+          onClose={() => setExportEvaluationId(null)} />}
 
       {gradingFeatureFlags.teacherWorkTiming && evalId && (
         <TeacherWorkTimer key={evalId} evaluacionId={evalId} />
@@ -2307,8 +2316,8 @@ function GradingCenter() {
       {directEvaluation.error && <p role="alert" className="p-4 text-rose-600">No se pudo abrir esta evaluación. Comprueba el acceso o selecciona otra.</p>}
       <div className={cn('min-w-0 flex-1 flex-col gap-3 xl:flex-row', splitLayout && 'xl:min-h-0', mode === 'carga' ? 'hidden' : 'flex')}>
         {/* Left panel — list */}
-        <div ref={reviewRosterRef} data-testid="grade-review-roster" className={cn('min-w-0 flex-col rounded-xl border border-border bg-surface',
-          selectedId ? 'hidden xl:flex xl:w-[min(20rem,26vw)] xl:shrink-0 2xl:w-[min(22.5rem,26vw)]' : 'flex flex-1',
+        <div id="grade-review-roster" ref={reviewRosterRef} data-testid="grade-review-roster" className={cn('min-w-0 flex-col rounded-xl border border-border bg-surface',
+          selectedId ? (expandedRosterEvaluation === evalId ? 'hidden xl:flex xl:w-[min(20rem,26vw)] xl:shrink-0 2xl:w-[min(22.5rem,26vw)]' : 'hidden') : 'flex flex-1',
           splitLayout && 'xl:min-h-0',
         )}>
           {/* Summary + filters */}
@@ -2426,8 +2435,12 @@ function GradingCenter() {
           {selectedId && mode !== 'carga' ? (
             <>
               {/* One identity/navigation row outside the scroller at every width. */}
-              <div data-testid="grade-review-identity" className="z-10 shrink-0 border-b border-border bg-surface px-2 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+              <div data-testid="grade-review-identity" className="z-10 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-surface px-2 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
                 {breadcrumb(true)}
+                <Button type="button" variant="ghost" size="sm" className="hidden xl:inline-flex" aria-controls="grade-review-roster" aria-expanded={expandedRosterEvaluation === evalId}
+                  onClick={() => setExpandedRosterEvaluation(current => current === evalId ? null : evalId)}>
+                  <Users className="h-4 w-4" aria-hidden="true" />{expandedRosterEvaluation === evalId ? 'Ocultar estudiantes' : 'Mostrar estudiantes'}
+                </Button>
               </div>
               <div ref={reviewScrollRef} data-mobile-scroll data-testid="grade-review-scroll" role="region" tabIndex={0} aria-label="Detalle de la calificación" className={cn('mb-[var(--grade-review-actions-height,5rem)] min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-brand-500 xl:mb-0', splitLayout ? 'xl:overscroll-contain' : 'xl:overflow-visible')}>
                 {detalleQuery.isLoading ? (

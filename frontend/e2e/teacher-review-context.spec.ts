@@ -3,6 +3,53 @@ import { login } from './fixtures/explainableGrading';
 
 const contextual = '/app/materias/m1/evaluaciones/e1/revision';
 
+test('141 revisión en escritorio amplía el detalle y deja reabrir ambos paneles', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await login(page, 'profesor', { rosterSize: 8, questionCount: 8 });
+  await page.goto(contextual);
+  const sidebar = page.locator('#main-navigation-desktop');
+  const roster = page.getByTestId('grade-review-roster');
+  const search = roster.getByRole('searchbox', { name: 'Buscar estudiante' });
+  await expect(sidebar).toBeVisible();
+  await search.fill('Estudiante Prueba');
+  await roster.locator('[data-review-grade="c1"]').click();
+
+  const identity = page.getByTestId('grade-review-identity');
+  const detail = page.getByTestId('grade-review-panel');
+  await expect(identity).toContainText('Estudiante Prueba');
+  await expect(sidebar).toBeHidden();
+  await expect(roster).toBeHidden();
+  const focusedWidth = (await detail.boundingBox())!.width;
+
+  const showMenu = page.getByRole('button', { name: 'Mostrar menú principal', exact: true });
+  await expect(showMenu).toHaveAttribute('aria-expanded', 'false');
+  await showMenu.click();
+  await expect(sidebar).toBeVisible();
+  await expect(roster).toBeHidden();
+  expect((await detail.boundingBox())!.width).toBeLessThan(focusedWidth);
+  const hideMenu = page.getByRole('button', { name: 'Ocultar menú principal', exact: true });
+  await expect(hideMenu).toHaveAttribute('aria-expanded', 'true');
+  await hideMenu.click();
+
+  const showStudents = page.getByRole('button', { name: 'Mostrar estudiantes', exact: true });
+  await expect(showStudents).toHaveAttribute('aria-expanded', 'false');
+  await showStudents.click();
+  await expect(roster).toBeVisible();
+  await expect(sidebar).toBeHidden();
+  await expect(search).toHaveValue('Estudiante Prueba');
+  await expect(identity).toContainText('Estudiante Prueba');
+  expect((await detail.boundingBox())!.width).toBeLessThan(focusedWidth);
+  const hideStudents = page.getByRole('button', { name: 'Ocultar estudiantes', exact: true });
+  await expect(hideStudents).toHaveAttribute('aria-expanded', 'true');
+  await hideStudents.click();
+  await expect(roster).toBeHidden();
+  expect((await detail.boundingBox())!.width).toBe(focusedWidth);
+  await page.getByRole('button', { name: 'Volver a lista', exact: true }).filter({ visible: true }).click();
+  await expect(roster).toBeVisible();
+  await expect(search).toHaveValue('Estudiante Prueba');
+  await expect(sidebar).toBeVisible();
+});
+
 for (const width of [384, 1440]) for (const theme of ['light', 'dark']) {
   test(`138 revisión contextual conserva ubicación y selección ${width}px ${theme}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
@@ -16,9 +63,9 @@ for (const width of [384, 1440]) for (const theme of ['light', 'dark']) {
     await expect(location).toContainText('Matemáticas');
     await expect(location).toContainText('Multiplicación');
     await expect(location).toContainText('Estudiante Prueba');
-    const tabs = page.getByRole('navigation', { name: 'Secciones de la calificación' });
-    // The deep link already opens Respuestas; clicking its toggle would close it.
-    await expect(tabs.getByRole('button', { name: 'Respuestas y puntajes', exact: true })).toHaveAttribute('aria-expanded', 'true');
+    // The deep link opens the dedicated view without showing the mosaic.
+    await expect(page.locator('#grade-review-panel')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Secciones de la calificación' })).toBeHidden();
     await expect(page.getByRole('navigation', { name: 'Preguntas y criterios' }).getByRole('button').nth(1)).toHaveAttribute('aria-current', 'step');
     await expect(page.locator('#grade-review-panel').getByText('Proceso: evidencia extraída', { exact: false })).toHaveCount(0);
     await expect(page.getByText('Cada puntaje muestra la evidencia y la razón que lo respalda.')).toHaveCount(0);

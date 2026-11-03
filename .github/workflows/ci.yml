@@ -239,7 +239,7 @@ jobs:
     name: Frontend general shard (${{ matrix.shard }}/4)
     needs: frontend-quality
     runs-on: ubuntu-22.04
-    timeout-minutes: 35
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -269,7 +269,7 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       - name: Run general end-to-end tests
-        timeout-minutes: 30
+        timeout-minutes: 35
         run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line
 
       - name: Upload general E2E diagnostics on failure

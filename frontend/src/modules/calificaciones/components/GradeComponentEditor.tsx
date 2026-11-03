@@ -68,7 +68,12 @@ export function GradeComponentEditor({ component, formula, saving, saveError, on
           <Input type="number" inputMode="decimal" min={0} max={Number(component.puntos_maximos)} step="any" value={points} onChange={(event) => setPoints(event.target.value)} />
         </Field>
         <Field label="Estado" required>
-          <Select value={state} onChange={(event) => setState(event.target.value)}>
+          <Select value={state} onChange={(event) => {
+            const next = event.target.value;
+            setState(next);
+            if (next === 'correcta') setPoints(formatScoreInput(component.puntos_maximos));
+            if (next === 'incorrecta' || next === 'sin_respuesta') setPoints('0');
+          }}>
             {!['correcta', 'parcial', 'incorrecta', 'sin_respuesta'].includes(state) && <option value={state}>Selecciona un estado tras revisar</option>}
             <option value="correcta">Correcta</option>
             <option value="parcial">Parcial</option>

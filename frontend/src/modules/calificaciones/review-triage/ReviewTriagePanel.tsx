@@ -69,21 +69,35 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
     const firstException = summary.exceptions[0];
     const firstNotice = notices[0];
     const mismatch = Boolean(primaryMessage || rawReasons[0]?.includes('nota_global_no_coincide_con_suma'));
-    const hasNotices = Boolean(firstException || firstNotice || primaryMessage);
+    if (!firstException && !firstNotice && !primaryMessage) return null;
+    const primaryNotice = primaryMessage
+      ? notices.find(notice => notice.message.startsWith('La nota propuesta por la IA no coincide'))
+      : mismatch || !firstException ? firstNotice : undefined;
+    const otherNotices = notices.filter(notice => notice !== primaryNotice);
+    const otherQuestions = mismatch ? summary.exceptions : summary.exceptions.slice(1);
+    const hasMore = otherNotices.length > 0 || otherQuestions.length > 0;
     return <section aria-label="Resumen de revisión" className="space-y-2">
-      {hasNotices ? <div role="alert" data-review-priority={firstException?.level ?? 'attention'} className={`rounded-xl border p-3 text-sm ${reviewPriorityPresentation[firstException?.level ?? 'attention'].classes}`}>
+      <div role="alert" data-review-priority={firstException?.level ?? 'attention'} className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border px-3 py-2 text-sm ${reviewPriorityPresentation[firstException?.level ?? 'attention'].classes}`}>
         <p className="font-semibold">{primaryMessage || (mismatch ? firstNotice?.message : firstException ? `${componentLabel(firstException)} necesita tu revisión.` : firstNotice?.message)}</p>
-        {summary.exceptions.length > 1 && <p className="mt-1">{summary.exceptions.length} respuestas necesitan comprobación.</p>}
-        <Button variant="outline" className="mt-2 min-h-11" onClick={() => {
+        <Button variant="link" className="min-h-11 px-0" onClick={() => {
           if (mismatch) onReviewGeneral?.('revision');
           else if (firstException) select(firstException, 1);
           else if (firstNotice) onReviewGeneral?.(firstNotice.target);
         }}>Revisar ahora <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
-      </div> : <p className="text-sm text-muted">Sin avisos de revisión. Comprueba una muestra antes de confirmar.</p>}
-      {hasNotices && <details open={detailsOpen} className="rounded-lg border border-border px-3">
+      </div>
+      {hasMore && <details open={detailsOpen}>
         <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold" onClick={(event) => { event.preventDefault(); setDetailsOpen((open) => !open); }}>Ver todos los avisos</summary>
-        {detailsOpen && <ReviewTriagePanel summary={summary} compact selectedComponentId={selectedComponentId} onSelectComponent={onSelectComponent}
-          extraReasons={extraReasons} onReviewGeneral={onReviewGeneral} />}
+        {detailsOpen && <ul className="divide-y divide-border text-sm">
+          {otherNotices.map((notice, index) => <li key={index} className="py-2">
+            <p>{notice.message}</p>
+            {onReviewGeneral && <Button variant="link" className="min-h-11 px-0" onClick={() => onReviewGeneral(notice.target)}>{notice.action}</Button>}
+          </li>)}
+          {otherQuestions.map(item => <li key={item.component.id}>
+            <button type="button" className="focus-ring min-h-11 text-left font-semibold" onClick={() => select(item, summary.exceptions.indexOf(item) + 1)}>
+              {componentLabel(item)} · {reviewPriorityPresentation[item.level].label}
+            </button>
+          </li>)}
+        </ul>}
       </details>}
     </section>;
   }

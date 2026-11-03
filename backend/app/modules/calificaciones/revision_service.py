@@ -142,6 +142,7 @@ async def reprocess_grade(
     reason=None,
     bundle=None,
     scan_replacement=None,
+    reused_scan_pages=None,
     usar_puntajes_actuales=False,
     version_puntajes_objetivo=None,
     contexto_puntajes_fingerprint=None,
@@ -277,7 +278,10 @@ async def reprocess_grade(
                 evaluation, delivery, bundle
             )
         elif scan_context is not None:
-            manifest = await persist_scan_sources(scan_context, submission, sources)
+            if reused_scan_pages:
+                manifest = await persist_scan_sources(scan_context, submission, sources, reused=reused_scan_pages)
+            else:
+                manifest = await persist_scan_sources(scan_context, submission, sources)
             delivery.evidencia_manifiesto = manifest.model_dump(mode="json")
             delivery.archivo_url = f"{settings.PUBLIC_UPLOADS_BASE_URL.rstrip('/')}/{manifest.pages[0].source.key}"
             if delivery.tipo != "mixta":

@@ -1,5 +1,7 @@
 # Índice de especificaciones de XCalificator
 
+Revisión individual y retroalimentación: [141-revision-estudiante-clara](141-revision-estudiante-clara/spec.md), [issue #301](https://github.com/Andres-back/Calificator/issues/301). Cálculo claro, edición de hojas con originales conservados y acciones de compartir más visibles. [Validación y pendientes](141-revision-estudiante-clara/validation.md).
+
 Corrección de puntajes al recalificar: [140-recalificar-puntajes-actuales](140-recalificar-puntajes-actuales/spec.md), [issue299](https://github.com/Andres-back/Calificator/issues/299). Confirmar el reparto actual sin perder evidencia ni historial; no adoptar cambios de preguntas, claves o material.
 
 Incremento de enlaces: [139-envio-retroalimentacion-simple](139-envio-retroalimentacion-simple/spec.md), [issue297](https://github.com/Andres-back/Calificator/issues/297): generar con confirmación y volver a copiar el enlace guardado, centro individual/grupal común, estados diferenciados y canales individuales. [Plan](139-envio-retroalimentacion-simple/plan.md) aprobado; [verificación](139-envio-retroalimentacion-simple/quickstart.md) local con datos sintéticos. Evoluciona el contrato de entrega135 y conserva navegación138; no modifica modelos, datos académicos ni duración de enlaces. Fusión/despliegue requieren autorización separada y CI verde.

@@ -1,41 +1,55 @@
+import { useId } from 'react';
 import type { GradeFormulaData } from '@/types/api';
-import type { GradeCalculationPresentation } from './gradeCalculationPresentation';
+import { formatScoreInput, type GradeCalculationPresentation } from './gradeCalculationPresentation';
 
-function number(value: number | string): number {
-  return Number(value ?? 0);
+function exact(value: number | string) {
+  return formatScoreInput(value);
+}
+
+function result(value: number | string, decimals: number) {
+  return Number(value).toFixed(Number.isInteger(decimals) && decimals >= 0 && decimals <= 10 ? decimals : 2);
+}
+
+function numeric(value: unknown): boolean {
+  return (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '')) && Number.isFinite(Number(value));
 }
 
 export function GradeFormula({ formula, adjustmentDetail, calculation }: { formula: GradeFormulaData; adjustmentDetail?: { valor: number | string; motivo_interno?: string; explicacion_estudiante?: string } | null; calculation?: GradeCalculationPresentation }) {
+  const titleId = useId();
+  if (![formula.puntos_obtenidos, formula.puntos_posibles, formula.nota_maxima, formula.nota_base, formula.ajuste_global, formula.nota_final].every(numeric)
+    || Number(formula.puntos_posibles) <= 0 || Number(formula.nota_maxima) <= 0) {
+    return <p className="py-3 text-sm text-muted">No están guardados todos los datos necesarios para explicar el cálculo de esta nota.</p>;
+  }
+  const adjustment = Number(formula.ajuste_global);
+  const final = result(formula.nota_final, formula.decimales);
+  const before = formula.nota_antes_redondeo;
+  const signedAdjustment = `${adjustment > 0 ? '+' : ''}${exact(formula.ajuste_global)}`;
   return (
-    <section aria-labelledby="grade-formula-title" className="rounded-xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
-      <h3 id="grade-formula-title" className="font-bold text-fg">Cómo se obtiene la nota</h3>
-      {calculation?.provisional && <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-amber-200">{calculation.explanation}</p>}
-      <div className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
-        <div className="rounded-lg bg-surface p-3">
-          <span className="block text-xs text-muted">Puntos logrados</span>
-          <strong className="text-lg">{number(formula.puntos_obtenidos).toFixed(2)} / {number(formula.puntos_posibles).toFixed(2)}</strong>
+    <section aria-labelledby={titleId} className="space-y-3 border-t border-border py-4 text-sm leading-6">
+      <h3 id={titleId} className="font-bold text-fg">Cómo se obtiene la nota</h3>
+      {calculation?.provisional && <p className="text-amber-800 dark:text-amber-200">{calculation.explanation}</p>}
+      <dl className="divide-y divide-border">
+        <div className="flex flex-wrap justify-between gap-x-4 py-2">
+          <dt className="text-muted">Puntos por respuestas</dt>
+          <dd className="font-semibold tabular-nums">{exact(formula.puntos_obtenidos)} / {exact(formula.puntos_posibles)}</dd>
         </div>
-        <div className="rounded-lg bg-surface p-3">
-          <span className="block text-xs text-muted">Nota proporcional</span>
-          <strong className="text-lg">{number(formula.nota_base).toFixed(2)}</strong>
+        <div className="flex flex-wrap justify-between gap-x-4 py-2">
+          <dt className="text-muted">Nota en la escala de la evaluación</dt>
+          <dd className="font-semibold tabular-nums">{exact(formula.nota_base)} / {exact(formula.nota_maxima)}</dd>
         </div>
-        <div className="rounded-lg bg-surface p-3">
-          <span className="block text-xs text-muted">{calculation?.provisional ? calculation.label : 'Nota final'}</span>
-          <strong className="text-lg text-brand-700 dark:text-brand-200">{number(formula.nota_final).toFixed(formula.decimales)} / {number(formula.nota_maxima).toFixed(1)}</strong>
+        {adjustment !== 0 && <div className="flex flex-wrap justify-between gap-x-4 py-2">
+          <dt className="text-muted">Ajuste docente registrado</dt><dd className="font-semibold tabular-nums">{signedAdjustment}</dd>
+        </div>}
+        <div className="flex flex-wrap justify-between gap-x-4 py-2">
+          <dt className="font-semibold">{calculation?.provisional ? calculation.label : 'Resultado del cálculo'}</dt>
+          <dd className="font-bold tabular-nums text-brand-700 dark:text-brand-200">{final} / {exact(formula.nota_maxima)}</dd>
         </div>
-      </div>
-      {adjustmentDetail && number(formula.ajuste_global) !== 0 && (
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-500/30 dark:bg-amber-500/10">
-          <p className="font-semibold text-fg">Ajuste docente: {number(formula.ajuste_global) > 0 ? '+' : ''}{number(formula.ajuste_global).toFixed(2)}</p>
-          {adjustmentDetail.explicacion_estudiante && <p className="mt-1 text-muted">{adjustmentDetail.explicacion_estudiante}</p>}
-          {adjustmentDetail.motivo_interno && <p className="mt-1 text-xs text-muted">Motivo interno: {adjustmentDetail.motivo_interno}</p>}
-        </div>
-      )}
-      <p className="mt-3 text-xs leading-5 text-muted">
-        ({number(formula.puntos_obtenidos).toFixed(2)} ÷ {number(formula.puntos_posibles).toFixed(2)}) × {number(formula.nota_maxima).toFixed(1)}
-        {number(formula.ajuste_global) !== 0 ? ` ${number(formula.ajuste_global) > 0 ? '+' : '−'} ${Math.abs(number(formula.ajuste_global)).toFixed(2)}` : ''}
-        {' '}= {number(formula.nota_final).toFixed(formula.decimales)}. Redondeo decimal estándar.
-      </p>
+      </dl>
+      <p className="text-muted">({exact(formula.puntos_obtenidos)} ÷ {exact(formula.puntos_posibles)}) × {exact(formula.nota_maxima)} da la nota en la escala de la evaluación.</p>
+      {adjustment !== 0 && <p className="text-muted">{adjustmentDetail?.motivo_interno || adjustmentDetail?.explicacion_estudiante || 'Sin motivo de ajuste registrado.'}</p>}
+      {numeric(before) && formula.regla_redondeo === 'half_up' && Number.isInteger(formula.decimales) && formula.decimales >= 0 && formula.decimales <= 10 && <p className="text-muted">
+        {adjustment !== 0 ? `Tras aplicar el ajuste y el límite de la escala (0 a ${exact(formula.nota_maxima)}),` : 'En el registro,'} la nota antes de redondear es {exact(before)}. Redondeada a {formula.decimales} {formula.decimales === 1 ? 'decimal' : 'decimales'}: <strong>{final}</strong>.
+      </p>}
     </section>
   );
 }

@@ -26,7 +26,7 @@ describe('GradeQuestionEvidence', () => {
   it('explica que conocer la hoja no significa tener localizada la respuesta antigua', () => {
     render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} />);
     expect(screen.getByText(/No hay una zona localizada/)).toBeInTheDocument();
-    expect(screen.getByText(/Puedes ampliar la hoja manualmente/)).toBeInTheDocument();
+    expect(screen.getByText(/se muestra la hoja completa/)).toBeInTheDocument();
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/evidencia/paginas/2');
   });
 

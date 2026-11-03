@@ -40,7 +40,7 @@ describe('GradeBreakdown', () => {
     expect(select).toHaveBeenLastCalledWith('p2');
     const current = within(nav).getAllByRole('button')[0];
     expect(current).toHaveAccessibleDescription('1.00/1.00 · Correcta');
-    expect(current.querySelector('[data-question-score]')).toHaveClass('hidden', 'sm:inline');
+    expect(current.querySelector('[data-question-score]')).toHaveClass('hidden', 'lg:inline');
     view.rerender(<GradeBreakdown breakdown={{ ...breakdown, componentes: components }} compactTeacher selectedComponentId={`p${count}`} onSelectComponent={select} />);
     expect(screen.getByRole('button', { name: 'Pregunta siguiente' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Pregunta anterior' }));
@@ -51,15 +51,22 @@ describe('GradeBreakdown', () => {
     expect(screen.queryByRole('button', { name: 'Pregunta siguiente' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('article')).toHaveLength(count);
   });
-  it('identifica el cálculo incompleto como provisional solo en la revisión docente', () => {
+  it('141 evita duplicar el cálculo docente en las respuestas y conserva el cálculo del estudiante', () => {
     const incomplete = { ...breakdown, cobertura_estado: 'incompleta', componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: null }], formula: { ...breakdown.formula, nota_final: 1.85 } };
     const view = render(<GradeBreakdown breakdown={incomplete} onSelectComponent={vi.fn()} compactTeacher />);
-    expect(screen.getByText('Cálculo provisional · 1.85')).toBeInTheDocument();
-    expect(screen.getByText(/Falta 1 pregunta por puntuar/)).toBeInTheDocument();
+    expect(screen.queryByText('Cálculo provisional · 1.85')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Falta 1 pregunta por puntuar/)).not.toBeInTheDocument();
     expect(screen.queryByText('Nota final')).not.toBeInTheDocument();
     view.rerender(<GradeBreakdown breakdown={incomplete} student />);
-    expect(screen.getByText('Nota final')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cómo se obtiene la nota' })).toBeInTheDocument();
     expect(screen.queryByText(/Falta 1 pregunta por puntuar/)).not.toBeInTheDocument();
+  });
+  it('141 conserva puntaje y explicación sin mensajes de éxito redundantes', () => {
+    render(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} />);
+    expect(screen.queryByText('Puntajes registrados')).not.toBeInTheDocument();
+    expect(within(screen.getByRole('article')).queryByText('Sin avisos de revisión')).not.toBeInTheDocument();
+    expect(screen.getByText(/Coincide con la clave oficial/)).toBeVisible();
+    expect(screen.getByText('1.00 / 1.00')).toBeVisible();
   });
   it('usa comparación conjunta solo al pedir la variante docente y conserva el cero', () => {
     const zero = { ...breakdown, componentes: [{ ...breakdown.componentes[0], respuesta_estudiante: '0', respuesta_referencia: '0' }] };
@@ -70,10 +77,19 @@ describe('GradeBreakdown', () => {
     expect(screen.queryByTestId('grade-answer-comparison')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ajustar/ })).not.toBeInTheDocument();
   });
+  it('mantiene la explicación y el ajuste junto a la respuesta, separados del visor', () => {
+    render(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1"
+      onEdit={vi.fn()} renderEvidence={() => <p>Visor de prueba</p>} />);
+    const reading = within(screen.getByTestId('grade-question-reading'));
+    expect(reading.getByText('Respuesta del estudiante')).toBeVisible();
+    expect(reading.getByText(/Coincide con la clave oficial/)).toBeVisible();
+    expect(reading.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeEnabled();
+    expect(within(screen.getByTestId('grade-question-evidence-column')).getByText('Visor de prueba')).toBeVisible();
+  });
   it('explica fórmula, respuesta, puntaje, motivo y evidencia', () => {
     render(<GradeBreakdown breakdown={breakdown} />);
     expect(screen.getByRole('heading', { name: 'Respuestas y puntajes' })).toBeInTheDocument();
-    expect(screen.getByText('3.00 / 4.00')).toBeInTheDocument();
+    expect(screen.getByText('Puntos por respuestas').closest('div')).toHaveTextContent(/3(?:\.00)? \/ 4(?:\.00)?/);
     expect(screen.getAllByText('24')).toHaveLength(2);
     expect(screen.getByText(/Coincide con la clave oficial/)).toBeInTheDocument();
     expect(screen.getByText('Evidencia: hoja 2.')).toBeInTheDocument();
@@ -188,7 +204,7 @@ describe('GradeBreakdown', () => {
       formula: { ...breakdown.formula, ajuste_global: 0.25, nota_final: 4 },
       ajuste_global_detalle: { valor: 0.25, explicacion_estudiante: 'Se reconoció el procedimiento adicional.' },
     }} student />);
-    expect(screen.getByText('Ajuste docente: +0.25')).toBeInTheDocument();
+    expect(screen.getByText('Ajuste docente registrado').closest('div')).toHaveTextContent('+0.25');
     expect(screen.getByText('Se reconoció el procedimiento adicional.')).toBeInTheDocument();
   });
 });

@@ -135,6 +135,7 @@ ALL_SPECS = {
     "138-frontend-docente-claro",
     "139-envio-retroalimentacion-simple",
     "140-recalificar-puntajes-actuales",
+    "141-revision-estudiante-clara",
 }
 OWNED_SPECS = {
     name

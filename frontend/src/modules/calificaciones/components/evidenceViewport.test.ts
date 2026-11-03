@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { clampEvidenceViewport, evidenceImageLayout, focusEvidenceRegion, panEvidenceViewport, validEvidenceBox, zoomEvidenceViewport } from './evidenceViewport';
+import { clampEvidenceViewport, evidenceImageLayout, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
 
 const dimensions = { width: 400, height: 300, imageWidth: 800, imageHeight: 1200 };
 const initial = { zoom: 1, centerX: 0.5, centerY: 0.5 };
 
 describe('evidenceViewport', () => {
+  it.each<[EvidenceRotation, EvidenceBox]>([
+    [0, [0.1, 0.2, 0.3, 0.4]],
+    [90, [0.4, 0.1, 0.4, 0.3]],
+    [180, [0.6, 0.4, 0.3, 0.4]],
+    [270, [0.2, 0.6, 0.4, 0.3]],
+  ])('proyecta la región original en un giro de %i grados', (rotation, expected) => {
+    const region = rotateEvidenceBox([0.1, 0.2, 0.3, 0.4], rotation);
+    region.forEach((value, index) => expect(value).toBeCloseTo(expected[index]));
+    expect(validEvidenceBox(region)).toBe(true);
+    expect(rotateEvidenceBox([0, 0, 1, 1], rotation)).toEqual([0, 0, 1, 1]);
+  });
   it('ajusta la hoja entera descontando las bandas laterales', () => {
     expect(evidenceImageLayout(dimensions, initial)).toMatchObject({ width: 200, height: 300, left: 100, top: 0 });
   });

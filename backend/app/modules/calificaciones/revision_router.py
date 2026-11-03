@@ -3,6 +3,7 @@
 from datetime import datetime
 import json
 import mimetypes
+from types import SimpleNamespace
 from uuid import UUID
 from typing import Annotated
 
@@ -22,6 +23,8 @@ from app.modules.calificaciones.models import (
 )
 from app.modules.calificaciones.evidence_manifest import EvidenceManifest, EvidenceManifestError, parse_scan_submission
 from app.modules.calificaciones.evidence_preparation import validate_scan_sources
+from app.modules.calificaciones.evidence_preparation import scan_limits
+from app.modules.calificaciones.evidence_edit import read_editing_evidence, resolve_edited_pages
 from app.modules.calificaciones.evidence_scan_admission import lock_scan_request, require_scan_enabled
 from app.modules.calificaciones.evidence_scan_reads import EvidenceVariant, manifest_response, require_original_access
 from app.modules.calificaciones.evidence_service import EvidencePageError, MAX_EVIDENCE_PAGES, _render_cached_evidence_page
@@ -82,6 +85,7 @@ async def recalificar_entrega(
     foto: list[UploadFile] | None = File(None),
     rotaciones: str | None = Form(None),
     escaneo: Annotated[str | None, Form(max_length=16384)] = None,
+    edicion_evidencia: Annotated[str | None, Form(max_length=16384)] = None,
     usar_puntajes_actuales: bool = Form(False),
     version_puntajes_objetivo: UUID | None = Form(None),
     contexto_puntajes_fingerprint: str | None = Form(None, min_length=64, max_length=64, pattern=r'^[a-f0-9]{64}$'),
@@ -89,7 +93,7 @@ async def recalificar_entrega(
     db=Depends(get_db),
 ):
     require_permission_now(current_user, "grading.grade")
-    if escaneo is not None:
+    if escaneo is not None or edicion_evidencia is not None:
         require_scan_enabled(current_user)
     await owned_grade(db, calificacion_id, current_user)
     # Serialize an idempotency key across both evidence modes and grades.
@@ -101,7 +105,29 @@ async def recalificar_entrega(
     service.ensure_evaluation_active(evaluation)
     bundle = None
     scan_replacement = None
-    if escaneo is not None:
+    reused_scan_pages = None
+    if edicion_evidencia is not None:
+        if escaneo is not None or rotaciones is not None:
+            raise HTTPException(422, "Elige una sola forma de cambiar la evidencia.")
+        if not confirmar_reapertura:
+            raise HTTPException(409, "Confirma que quieres guardar las hojas y volver a calificar.")
+        delivery = grade.entrega
+        previous = await db.get(CalificacionRevision, solicitud_id)
+        if previous is not None:
+            if previous.calificacion_id != grade.id or previous.actor_id != current_user.id or delivery is None:
+                raise HTTPException(409, "Esta solicitud ya corresponde a otra operación.")
+            previous_delivery = (previous.snapshot_json or {}).get("entrega", {})
+            delivery = SimpleNamespace(
+                id=delivery.id, evaluacion_id=delivery.evaluacion_id, estudiante_id=delivery.estudiante_id,
+                materia_id=delivery.materia_id, archivo_url=previous_delivery.get("archivo_url"),
+                evidencia_manifiesto=previous_delivery.get("evidencia_manifiesto"),
+            )
+        else:
+            revision_service.ensure_reprocessing_allowed(grade, version_esperada, confirmar_reapertura)
+        base = await read_editing_evidence(delivery)
+        submission, sources, reused_scan_pages = await resolve_edited_pages(edicion_evidencia, foto or [], base, solicitud_id)
+        scan_replacement = (submission, sources)
+    elif escaneo is not None:
         if not foto or rotaciones:
             raise HTTPException(400, "La preparación necesita sus fotos originales y una sola receta por hoja.")
         try:
@@ -131,10 +157,82 @@ async def recalificar_entrega(
         reason=motivo,
         bundle=bundle,
         scan_replacement=scan_replacement,
+        reused_scan_pages=reused_scan_pages,
         usar_puntajes_actuales=usar_puntajes_actuales,
         version_puntajes_objetivo=version_puntajes_objetivo,
         contexto_puntajes_fingerprint=contexto_puntajes_fingerprint,
     )
+
+
+async def owned_editable_evidence(db, calificacion_id, actor):
+    from app.modules.materias.service import get_materia_or_404
+    from app.shared.enums import MateriaEstado
+
+    grade, evaluation = await owned_grade(db, calificacion_id, actor)
+    require_scan_enabled(actor)
+    materia = await get_materia_or_404(db, evaluation.materia_id)
+    if materia.estado == MateriaEstado.ARCHIVADA.value:
+        raise HTTPException(409, "Esta materia está archivada.")
+    service.ensure_evaluation_active(evaluation)
+    if grade.estado in {"procesando", "anulada"}:
+        raise HTTPException(409, "Esta calificación no admite cambios en este momento.")
+    return grade, await read_editing_evidence(grade.entrega)
+
+
+@router.get("/calificaciones/{calificacion_id}/evidencia/edicion")
+async def consultar_edicion_evidencia(
+    calificacion_id: UUID,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    grade, editable = await owned_editable_evidence(db, calificacion_id, current_user)
+    count, per_file, total = scan_limits()
+    response.headers["Cache-Control"] = "private, no-store"
+    base = f"/api/calificaciones/{calificacion_id}/evidencia/edicion"
+    return {
+        "version_esperada": grade.updated_at,
+        "fingerprint": editable.fingerprint,
+        "limites": {"max_pages": count, "max_file_bytes": per_file, "max_total_bytes": total},
+        "paginas": [
+            {
+                "referencia": page.ref,
+                "numero": index,
+                "preview_url": f"{base}/{page.ref}?fingerprint={editable.fingerprint}",
+                "fuente_url": f"{base}/{page.ref}?fingerprint={editable.fingerprint}",
+                "rotacion": page.manifest_page.rotation if page.manifest_page else 0,
+                "receta": page.manifest_page.recipe if page.manifest_page else None,
+                "ancho": page.manifest_page.source.width if page.manifest_page else page.legacy_source.width,
+                "alto": page.manifest_page.source.height if page.manifest_page else page.legacy_source.height,
+                "marco": "original_orientado",
+                "original_disponible": page.manifest_page is not None,
+            }
+            for index, page in enumerate(editable.pages, 1)
+        ],
+    }
+
+
+@router.get("/calificaciones/{calificacion_id}/evidencia/edicion/{referencia}")
+async def consultar_fuente_edicion_evidencia(
+    calificacion_id: UUID,
+    referencia: UUID,
+    fingerprint: Annotated[str, Query(pattern=r"^[a-f0-9]{64}$")],
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    _, editable = await owned_editable_evidence(db, calificacion_id, current_user)
+    if fingerprint != editable.fingerprint:
+        raise HTTPException(409, "La evidencia cambió. Abre de nuevo el editor de hojas.")
+    page = next((page for page in editable.pages if page.ref == referencia), None)
+    if page is None:
+        raise HTTPException(404, "Hoja no encontrada.")
+    try:
+        source = await page.source()
+    except EvidenceManifestError as exc:
+        raise HTTPException(409, "No pudimos comprobar esta hoja guardada.") from exc
+    return Response(source.content, media_type=source.mime, headers={
+        "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
+    })
 
 
 @router.get(

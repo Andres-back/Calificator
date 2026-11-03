@@ -12,6 +12,8 @@ test('088 revisión amplia mantiene lista y detalle independientes', async ({ pa
   const list = page.getByTestId('grade-review-students');
   const detail = page.getByTestId('grade-review-scroll');
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
+  await expect(roster).toBeVisible();
   expect((await roster.boundingBox())!.width).toBeGreaterThanOrEqual(320);
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await page.getByRole('button', { name: 'Pregunta 20, Sin avisos de revisión', exact: true }).click();
@@ -38,6 +40,7 @@ test('088 cabecera compacta deja cinco filas y conserva edición al redimensiona
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
   const header = page.getByTestId('grade-review-header');
   expect((await header.boundingBox())!.height).toBeLessThanOrEqual(112);
+  await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
   const list = page.getByTestId('grade-review-students');
   const visibleRows = await list.evaluate((element) => {
     const box = element.getBoundingClientRect();
@@ -68,6 +71,7 @@ test('088 cien alumnos conservan búsqueda, filtros, paginación y modos complet
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
   const roster = page.getByTestId('grade-review-roster');
   const students = page.getByTestId('grade-review-students');
+  await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
   await expect(students.locator('[data-review-student]').first()).toBeVisible();
   const initialRows = await students.locator('[data-review-student]').count();
   expect(initialRows).toBeGreaterThan(0);
@@ -78,6 +82,7 @@ test('088 cien alumnos conservan búsqueda, filtros, paginación y modos complet
   await expect(students.locator('[data-review-student]')).toHaveCount(1);
   await students.getByRole('button', { name: /Alumno 099 María Fernanda López/ }).click();
   await expect(page.getByTestId('grade-review-identity')).toContainText('Alumno 099');
+  await expect(roster).toBeVisible();
   await roster.getByRole('checkbox', { name: /Seleccionar nota de Alumno 099/ }).click();
   await expect(page.getByText('1 seleccionado', { exact: true })).toBeVisible();
   // El transform del toolbar animado puede introducir error subpíxel en DOMRect.
@@ -132,7 +137,8 @@ test('aviso general con respuestas sin alertas conduce al desglose sin escribir 
   });
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
   await expect(page.getByRole('alert')).toContainText('La nota propuesta por la IA no coincide');
-  await expect(page.getByText('Ver todos los avisos', { exact: true })).toBeVisible();
+  // The only active cause is already visible; there is no duplicate panel.
+  await expect(page.getByText('Ver todos los avisos', { exact: true })).toHaveCount(0);
   await expect(page.getByText(/Sin señales de incertidumbre/)).toHaveCount(0);
   await expect(page.getByText(code, { exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: 'Revisar ahora', exact: true }).click();
@@ -214,7 +220,9 @@ test('resumen móvil preserva contexto y despliega detalles sin mutaciones', asy
   page.on('request', (request) => { if (request.method() !== 'GET' && /calificaciones|jobs/.test(request.url())) mutations.push(request.url()); });
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1');
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('Puntos por respuestas: 1.00 / 1.00');
+  const calculation = page.getByRole('region', { name: 'Cálculo y criterios registrados' });
+  await calculation.getByText('Ver cálculo de la nota', { exact: true }).click();
+  await expect(calculation.getByText('Puntos por respuestas')).toBeVisible();
   await expect(page.getByText(/Ver valoración por criterios/)).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeHidden();
   const location = page.getByRole('navigation', { name: 'Ubicación de la revisión' }).filter({ visible: true });
@@ -230,7 +238,7 @@ test('resumen móvil preserva contexto y despliega detalles sin mutaciones', asy
   await expect(page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel(/Puntos/).fill('0.7');
-  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
   await expect(page.getByLabel(/Puntos/)).toHaveValue('0.7');
   expect(mutations).toEqual([]);
 });
@@ -267,13 +275,17 @@ test('detalle en procesamiento no convierte ausencia de nota en cero y mantiene 
   }));
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
   await expect(page.getByText('Calificando en segundo plano', { exact: true })).toBeVisible();
+  const detail = page.getByRole('region', { name: 'Detalle de la calificación' });
+  await expect(detail.getByText('Analizando evidencia…', { exact: true })).toBeVisible();
+  await expect(detail.getByText('Ver cálculo de la nota', { exact: true })).toHaveCount(0);
+  await expect(detail).not.toContainText(/\b0[.,]00\b/);
   await page.getByRole('button', { name: 'Historial', exact: true }).click();
   await page.locator('summary', { hasText: 'Avisos del análisis en curso' }).click();
   await expect(page.getByText(/La entrega sigue en análisis/)).toBeVisible();
   await expect(page.getByText('En el análisis inicial se registró un aviso adicional. Puedes consultar las respuestas y la evidencia.', { exact: true })).toBeVisible();
   await expect(page.getByText('Comprobar evidencia pendiente', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirmar nota', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).not.toContainText('0.00');
+  await expect(detail).not.toContainText(/\b0[.,]00\b/);
 });
 
 test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async ({ page }) => {
@@ -285,7 +297,7 @@ test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async (
   await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
     ...grade, estado: saved ? 'ajustada' : 'sugerida', nota_sugerida: saved ? 3.5 : 5, nota_confirmada: saved ? 3.5 : null,
     estudiante_nombre: student.nombre, materia_id: 'm1', entrega_evidencia_paginas: 0, timeline: [], feedback: 'Retroalimentación inicial',
-    desglose: saved ? { ...breakdown, version: 2, formula: { ...breakdown.formula, puntos_obtenidos: 0.7, nota_final: 3.5 }, componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: 0.7, estado: 'parcial', explicacion: 'Procedimiento parcialmente completo.' }] } : breakdown,
+    desglose: saved ? { ...breakdown, version: 2, formula: { ...breakdown.formula, puntos_obtenidos: 0.7, nota_base: 3.5, nota_antes_redondeo: 3.5, nota_final: 3.5 }, componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: 0.7, estado: 'parcial', explicacion: 'Procedimiento parcialmente completo.' }] } : breakdown,
   }));
   await page.route('**/api/calificaciones/c1/desglose', (route) => {
     expect(route.request().postDataJSON()).toMatchObject({ version_esperada: 1, cambios_componentes: [{ componente_id: 'q1', puntos_obtenidos: 0.7 }] });
@@ -305,8 +317,11 @@ test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async (
   await page.getByRole('button', { name: 'Guardar y recalcular', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
   await expect(page.locator('#grade-component-q1').getByText('0.70 / 1.00', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('0.70 / 1.00');
+  await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
+  const calculation = page.getByRole('region', { name: 'Cálculo y criterios registrados' });
+  await calculation.getByText('Ver cálculo de la nota', { exact: true }).click();
+  await expect(calculation.getByText('0.7 / 1', { exact: true })).toBeVisible();
+  await expect(calculation.getByText('3.50 / 5', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Historial', exact: true }).click();
   await page.getByText('Historial y opciones de la nota', { exact: true }).click();
   await page.getByRole('button', { name: 'Historial del cálculo' }).click();
@@ -330,11 +345,20 @@ test('texto extenso y controles táctiles permanecen completos en claro y oscuro
     await page.evaluate((value) => document.documentElement.classList.toggle('dark', value), dark);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
     expect(await page.locator('#grade-review-panel').evaluate((element) => element.scrollWidth <= element.clientWidth)).toBeTruthy();
-    for (const name of ['Volver a lista', 'Respuestas y puntajes', 'Evidencia', 'Ajustar puntaje y explicación']) {
+    for (const name of ['Volver a lista', 'Volver a opciones', 'Ajustar puntaje y explicación']) {
       const control = page.getByRole('button', { name, exact: true });
+      await expect(control).toBeVisible();
       const box = await control.boundingBox();
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
+    await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
+    for (const name of ['Respuestas y puntajes', 'Evidencia']) {
+      const card = page.getByRole('button', { name, exact: true });
+      await expect(card).toBeVisible();
+      expect((await card.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+    await expect(comparison).toBeVisible();
   }
 });
 
@@ -398,7 +422,7 @@ test('la rueda sobre el panel derecho desplaza la revisión en escritorio', asyn
   await page.getByText('Estudiante Prueba', { exact: true }).click();
 
   const scroller = page.getByTestId('grade-review-scroll');
-  const reviewHeading = page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true });
+  const reviewHeading = page.getByRole('heading', { name: 'Revisión por pregunta', exact: true });
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await expect(reviewHeading).toBeVisible();
   await reviewHeading.hover();
@@ -582,9 +606,9 @@ test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobrev
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel('Motivo interno del cambio').fill('No perder este borrador');
-  await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver evidencia completa', exact: true }).click();
   await expect(page.getByAltText('Hoja 2 de la evidencia del estudiante')).toBeVisible();
-  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a respuestas', exact: true }).click();
   await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('No perder este borrador');
   await page.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();

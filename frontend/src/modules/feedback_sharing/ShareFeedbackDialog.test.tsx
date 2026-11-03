@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '@/stores/auth';
-import { ShareFeedbackDialog } from './ShareFeedbackDialog';
+import { ShareFeedbackDialog, StudentFeedbackPanel } from './ShareFeedbackDialog';
 import type { User } from '@/types/api';
 import * as teacherApi from './api';
 import { getEvaluationReview } from '@/modules/calificaciones/api';
@@ -37,6 +37,56 @@ beforeEach(() => {
   });
 });
 describe('retroalimentaciones por evaluación', () => {
+  it('141 la vista propia consulta únicamente la retroalimentación y accesos del estudiante abierto', async () => {
+    vi.mocked(getEvaluationReview).mockResolvedValueOnce({ alumnos: [
+      { estudiante_id: 'a', nombre: 'Ana Pérez', calificacion_id: 'g1' },
+      { estudiante_id: 'b', nombre: 'Luis Pérez', calificacion_id: 'g2' },
+    ], siguiente_cursor: 'otro-grupo-de-resultados' } as never);
+    render(<StudentFeedbackPanel evaluationId="e1" initialGradeId="g1" onReview={() => {}} />);
+    await screen.findByRole('button', { name: 'Generar enlace' });
+    expect(getEvaluationReview).toHaveBeenCalledTimes(1);
+    expect(teacherApi.previewFeedback).toHaveBeenCalledWith('e1', ['g1'], expect.any(AbortSignal));
+    expect(teacherApi.listFeedbackAccesses).toHaveBeenCalledWith('e1', expect.any(AbortSignal), 'g1');
+    expect(screen.queryByText('Luis Pérez')).not.toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+  it('141 el detalle individual no monta selección, publicación ni un desplegable avanzado permanente', async () => {
+    render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
+    await screen.findByText(result.retroalimentacion);
+    expect(screen.queryByText('1 seleccionado')).not.toBeInTheDocument();
+    expect(screen.queryByText('Opciones avanzadas del enlace')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Revisar antes de publicar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Retroalimentaciones del grupo' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Generar enlace' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Opciones de retroalimentación' })).toBeEnabled();
+  });
+  it('141 reserva impresión como secundaria y conserva su permiso al abrir opciones', async () => {
+    render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
+    await screen.findByText(result.retroalimentacion);
+    expect(screen.queryByRole('button', { name: 'Preparar impresión' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Opciones de retroalimentación' }));
+    expect(screen.getByRole('menuitem', { name: 'Imprimir retroalimentación' })).toBeEnabled();
+  });
+  it('141 recupera el enlace guardado y solo muestra la URL si falla el portapapeles', async () => {
+    const access = { id: 'saved-141', calificacion_id: 'g1', estudiante: 'Ana Pérez', estado: 'active' as const, version: 1, fingerprint: 'f'.repeat(64), expires_at: '2099-01-01T00:00:00Z' };
+    const url = 'https://example.test/devolucion#' + 'a'.repeat(43);
+    const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) } });
+    try {
+      vi.mocked(teacherApi.listFeedbackAccesses).mockResolvedValue([access]);
+      vi.mocked(teacherApi.copyFeedbackAccesses).mockResolvedValue([{ ...access, url }]);
+      render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
+      const copy = await screen.findByRole('button', { name: 'Copiar enlace' });
+      expect(screen.queryByRole('textbox', { name: 'Enlace del estudiante' })).not.toBeInTheDocument();
+      fireEvent.click(copy);
+      expect(await screen.findByRole('textbox', { name: 'Enlace del estudiante' })).toHaveValue(url);
+      expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
+    } finally {
+      if (original) Object.defineProperty(navigator, 'clipboard', original);
+      else Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  });
   it('139 salir de la copia manual móvil cierra la escritura antes de restaurar la lista', async () => {
     const media = Object.assign(new EventTarget(), { matches: true, media: '', onchange: null, addListener: () => {}, removeListener: () => {} }) as unknown as MediaQueryList;
     const matchMedia = vi.spyOn(window, 'matchMedia').mockReturnValue(media);
@@ -142,7 +192,10 @@ describe('retroalimentaciones por evaluación', () => {
     expect(within(block).getByRole('button', { name: 'Generar enlace' })).toBeEnabled();
     expect(screen.getAllByRole('button', { name: /^(Generar enlace|Copiar enlace)$/ })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^Compartir/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Preparar impresión' })).toBeEnabled();
+    if (embedded) {
+      fireEvent.click(screen.getByRole('button', { name: 'Opciones de retroalimentación' }));
+      expect(screen.getByRole('menuitem', { name: 'Imprimir retroalimentación' })).toBeEnabled();
+    } else expect(screen.getByRole('button', { name: 'Preparar impresión' })).toBeEnabled();
     expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
     expect(teacherApi.publishFeedbackBatch).not.toHaveBeenCalled();
   });
@@ -157,7 +210,10 @@ describe('retroalimentaciones por evaluación', () => {
     const input = await screen.findByRole('textbox', { name: 'Mensaje para el estudiante' });
     expect(input.closest('[data-feedback-scroll]')).toHaveAttribute('data-feedback-scroll', embedded ? 'outer' : 'self');
     fireEvent.click(screen.getByRole('button', { name: 'Volver sin aprobar' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Preparar impresión' }));
+    if (embedded) {
+      fireEvent.click(await screen.findByRole('button', { name: 'Opciones de retroalimentación' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Imprimir retroalimentación' }));
+    } else fireEvent.click(await screen.findByRole('button', { name: 'Preparar impresión' }));
     const preview = await screen.findByRole('region', { name: 'Vista previa de impresión' });
     expect(preview.parentElement).toHaveAttribute('data-feedback-scroll', embedded ? 'outer' : 'self');
     expect(preview.parentElement!.classList.contains('overscroll-contain')).toBe(!embedded);
@@ -246,7 +302,7 @@ describe('retroalimentaciones por evaluación', () => {
     expect(teacherApi.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ selecciones: [{ calificacion_id: 'g1', fingerprint: ready.fingerprint }], duracion_dias: 3, evidencia: false }), expect.any(AbortSignal));
     if (!embedded) fireEvent.click(screen.getByRole('button', { name: 'Volver a estudiantes' }));
     if (!embedded) expect(await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' })).toBeChecked();
-    expect(screen.getByText('Lista para entregar')).toBeInTheDocument();
+    expect(await screen.findByText('Enlace disponible')).toBeInTheDocument();
   });
 
   it('el modo integrado y el diálogo usan el mismo contenido, sin seleccionar todo al abrir', async () => {

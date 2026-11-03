@@ -21,3 +21,21 @@ it('135 conserva explicación y práctica juntas y tolera el motivo decorativo a
   expect(screen.getByText('Confundiste el propósito del viaje.')).toBeInTheDocument();
   expect(motif).not.toBeVisible();
 });
+
+it('141 presenta logros y próximos pasos sin tarjetas anidadas ni una cabecera decorativa', () => {
+  const { container } = render(<FeedbackMessage presentation="premium" text="Aciertos: Identificaste la idea principal. Qué mejorar: Explica el motivo. Siguiente paso: Añade un ejemplo." />);
+  expect(screen.getByRole('heading', { name: 'Lo que hiciste bien' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Qué puedes mejorar' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Tu siguiente paso' })).toBeInTheDocument();
+  expect(screen.queryByText('Aprende paso a paso')).not.toBeInTheDocument();
+  expect(container.querySelector('img')).toBeNull();
+  for (const section of container.querySelectorAll('[data-feedback-block]')) expect(section.className).not.toContain('rounded-xl');
+});
+
+it('141 conserva comentarios antiguos y Markdown seguro sin inventar aciertos', () => {
+  const { container } = render(<FeedbackMessage presentation="premium" text={'Revisa **el último párrafo**.\n\nNo se distingue la respuesta final. <script>no ejecutar</script>'} />);
+  expect(screen.queryByRole('heading', { name: 'Lo que hiciste bien' })).not.toBeInTheDocument();
+  expect(screen.getByText('el último párrafo').tagName).toBe('STRONG');
+  expect(container.textContent).toContain('No se distingue la respuesta final.');
+  expect(container.querySelector('script')).toBeNull();
+});

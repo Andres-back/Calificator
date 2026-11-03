@@ -6,7 +6,7 @@ import { feedbackAvailable } from './api';
 import { FeedbackWorkspace } from './FeedbackWorkspace';
 
 vi.mock('./api', () => ({ feedbackAvailable: vi.fn() }));
-vi.mock('./ShareFeedbackDialog', () => ({ ShareFeedbackDialog: ({ embedded }: { embedded?: boolean }) => <div>Gestión común {embedded ? 'integrada' : 'diálogo'}</div> }));
+vi.mock('./ShareFeedbackDialog', () => ({ StudentFeedbackPanel: () => <div>Gestión común integrada</div> }));
 beforeEach(() => { vi.resetAllMocks(); useAuth.setState({ user: { id: 'teacher', rol: 'profesor', permissions: ['grading.read'] } as User }); });
 function show(onActiveChange?: (active: boolean) => void) { return render(<FeedbackWorkspace evaluationId="e1" gradeId="g1" onDirtyChange={vi.fn()} onReview={vi.fn()} onActiveChange={onActiveChange} fallback={<p>Editor anterior</p>} />); }
 describe('puerta de gestión común', () => {

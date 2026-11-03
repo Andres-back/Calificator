@@ -1,0 +1,17 @@
+.grade-question-container {
+  container: grade-question / inline-size;
+}
+
+@container grade-question (min-width: 48rem) {
+  .grade-question-split {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 1.5rem;
+  }
+
+  .grade-question-evidence {
+    border-top-width: 0;
+    border-inline-start-width: 1px;
+    padding-top: 0;
+    padding-inline-start: 1.25rem;
+  }
+}

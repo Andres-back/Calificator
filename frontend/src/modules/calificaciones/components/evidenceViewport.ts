@@ -1,6 +1,16 @@
 export type EvidenceBox = [number, number, number, number];
 export type EvidenceViewport = { zoom: number; centerX: number; centerY: number };
 export type EvidenceDimensions = { width: number; height: number; imageWidth: number; imageHeight: number };
+export type EvidenceRotation = 0 | 90 | 180 | 270;
+
+export function rotateEvidenceBox([x, y, width, height]: EvidenceBox, rotation: EvidenceRotation): EvidenceBox {
+  switch (rotation) {
+    case 90: return [Math.max(0, 1 - (y + height)), x, height, width];
+    case 180: return [Math.max(0, 1 - (x + width)), Math.max(0, 1 - (y + height)), width, height];
+    case 270: return [y, Math.max(0, 1 - (x + width)), height, width];
+    default: return [x, y, width, height];
+  }
+}
 
 const complete = (): EvidenceViewport => ({ zoom: 1, centerX: 0.5, centerY: 0.5 });
 const clamp = (value: number, minimum: number, maximum: number) => Math.min(maximum, Math.max(minimum, value));

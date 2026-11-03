@@ -88,7 +88,7 @@ for (const width of [390, 1440]) test(`136 scroll desde texto y márgenes ${widt
   await feedback.getByRole('button', { name: 'Revisar retroalimentación de Estudiante Prueba', exact: true }).click();
   const input = feedback.getByRole('textbox', { name: 'Mensaje para el estudiante' });
   await input.fill('Un borrador que se debe conservar.');
-  await tabs.getByRole('button', { name: 'Historial', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
   await expect(input).toHaveValue('Un borrador que se debe conservar.');
   expect(writes).toEqual([]);
 });

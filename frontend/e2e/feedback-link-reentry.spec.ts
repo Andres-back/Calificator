@@ -46,7 +46,7 @@ function backend(seed: Access[] = []) {
     failList: false, failRecovery: false, loseNextIssueResponse: false,
   };
 
-  async function install(page: Page, options: { permissions?: string[]; denyClipboard?: boolean } = {}) {
+  async function install(page: Page, options: { permissions?: string[]; denyClipboard?: boolean; editableMessage?: string } = {}) {
     const actor = {
       id: 'p1', nombre: 'Profesora Prueba', email: 'profesora@example.test',
       rol: 'profesor', estado: 'activo', permissions: options.permissions ?? [...teacherPermissions],
@@ -78,7 +78,7 @@ function backend(seed: Access[] = []) {
       const grade = {
         id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1',
         nota_sugerida: 3.5, nota_confirmada: 3.5, estado: 'publicada', revisado_por_docente: true,
-        feedback, resultado_json: {}, created_at: '2026-10-29T12:00:00Z', updated_at: '2026-10-29T12:00:00Z',
+        feedback: options.editableMessage ?? feedback, resultado_json: {}, created_at: '2026-10-29T12:00:00Z', updated_at: '2026-10-29T12:00:00Z',
       };
       if (path === '/api/calificaciones/c1/detalle') return json({
         ...grade, estudiante_nombre: learnerName, evaluacion_nombre: evaluationName,
@@ -97,9 +97,10 @@ function backend(seed: Access[] = []) {
       if (path === '/api/evaluaciones/e1/devoluciones/previsualizar') return json({
         resultados: request.postDataJSON().calificacion_ids.map((id: string) => ({
           calificacion_id: id, elegible: true, seleccionable: true, preparacion: 'ready', fingerprint,
+          ...(options.editableMessage ? { mensaje_editable: { source_fingerprint: fingerprint, feedback_text: options.editableMessage, detail_available: false } } : {}),
           borrador_docente: { estado: 'publicada', nota: '3.5', nota_maxima: '5', retroalimentacion: feedback },
           resultado: { estudiante: learnerName, evaluacion: evaluationName, materia: 'Lenguaje',
-            nota: '3.5', nota_maxima: '5', retroalimentacion: feedback,
+            nota: '3.5', nota_maxima: '5', retroalimentacion: options.editableMessage ?? feedback,
             explicacion: 'Nota y mensaje ya revisados por el docente.', respuestas: [], claves_liberadas: false, alcance: 'summary' },
         })),
       });
@@ -177,7 +178,9 @@ async function activate(control: Locator) {
 }
 
 async function openFeedback(page: Page, theme = 'light') {
-  await page.goto(gradeHref);
+  // Wait for the review controls below, not unrelated image/style loads.
+  // WebKit can defer the page load event during consecutive hard navigations.
+  await page.goto(gradeHref, { waitUntil: 'domcontentloaded' });
   await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme);
   await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' })
     .getByRole('button', { name: 'Retroalimentación', exact: true }));
@@ -193,8 +196,7 @@ async function openStudent(page: Page, theme = 'light') {
 
 async function expectAvailable(block: Locator, access = savedAccess()) {
   await expect(block.getByText('Enlace disponible', { exact: true })).toBeVisible();
-  await expect(block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true })).toHaveValue(access.url);
-  await expect(block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true })).toHaveAttribute('readonly', '');
+  await expect(block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true })).toHaveCount(0);
   await expect(block.locator('time')).toHaveAttribute('datetime', access.expires_at);
   await expect(block.getByRole('button', { name: 'Copiar enlace', exact: true })).toBeEnabled();
   await expect(block.getByRole('button', { name: 'Generar enlace', exact: true })).toHaveCount(0);
@@ -203,6 +205,43 @@ async function expectAvailable(block: Locator, access = savedAccess()) {
 async function copied(page: Page) {
   return page.evaluate(() => (window as BrowserState).__spec139Copied ?? []);
 }
+
+test('141 el detalle individual permite desplazarse y protege el borrador al volver al mosaico', async ({ page }) => {
+  await page.setViewportSize({ width: 384, height: 820 });
+  const server = backend([savedAccess()]);
+  const original = Array.from({ length: 24 }, (_, index) => `Paso ${index + 1}: explica tu respuesta usando un detalle de la lectura y revisa el ejemplo de clase.`).join('\n\n');
+  await server.install(page, { editableMessage: original });
+  await openFeedback(page);
+  const review = page.getByTestId('grade-review-scroll');
+  const feedbackRegion = page.getByRole('region', { name: 'Retroalimentación del estudiante', exact: true });
+  const box = await review.boundingBox();
+  expect(box).not.toBeNull();
+  await review.evaluate(element => { element.scrollTop = 0; });
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.wheel(0, 420);
+  await expect.poll(() => review.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+
+  const edit = feedbackRegion.getByRole('button', { name: 'Revisar retroalimentación de Estudiante Prueba' });
+  await edit.click();
+  const draft = page.getByRole('textbox', { name: 'Mensaje para el estudiante' });
+  await expect(draft).toHaveValue(original);
+  await draft.fill('Borrador nuevo que no debe guardarse.');
+  const back = page.getByRole('button', { name: 'Volver a opciones' });
+  await back.click();
+  await expect(draft).toHaveValue('Borrador nuevo que no debe guardarse.');
+  await expect(page.getByRole('navigation', { name: 'Secciones de la calificación' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Volver sin aprobar' }).click();
+  await expect(page.getByText('Tienes cambios sin guardar.', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Descartar cambios y volver' }).click();
+  await expect(edit).toBeFocused();
+  await edit.click();
+  await expect(draft).toHaveValue(original);
+  await page.getByRole('button', { name: 'Volver sin aprobar' }).click();
+  await back.click();
+  await expect(page.getByRole('navigation', { name: 'Secciones de la calificación' })).toBeVisible();
+  expect(server.state.forbiddenWrites).toEqual([]);
+});
 
 async function expectNoStoredUrl(page: Page, url = savedAccess().url) {
   const stored = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
@@ -257,9 +296,13 @@ for (const width of [384, 1440]) for (const theme of ['light', 'dark']) {
     expect(server.forbiddenWrites).toEqual([]);
     await expectNoStoredUrl(page, identity.url);
 
-    await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
-    await expect(page).toHaveURL(/evaluacion=e1/);
-    await page.goto('/app/materias');
+    await page.getByRole('button', { name: 'Volver a lista', exact: true }).click();
+    await expect(page.getByTestId('grade-review-roster').getByRole('button', { name: /Estudiante Prueba/ })).toBeVisible();
+    const menu = page.getByRole('button', { name: 'Abrir menú principal', exact: true });
+    if (await menu.isVisible()) await menu.click();
+    await page.getByRole('link', { name: 'Materias', exact: true }).click();
+    await expect(page).toHaveURL(/\/app\/materias(?:[?#]|$)/);
+    await expect(page.locator('main#main-content').getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Enlace para el estudiante', exact: true })).toHaveCount(0);
     block = await openStudent(page, theme);
     await expectAvailable(block, identity);
@@ -267,7 +310,7 @@ for (const width of [384, 1440]) for (const theme of ['light', 'dark']) {
     await expect.poll(() => copied(page)).toEqual([expectedMessage(identity)]);
 
     await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' })
       .getByRole('button', { name: 'Retroalimentación', exact: true }));
     await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme);
@@ -380,6 +423,7 @@ test('139 copia denegada conserva el enlace seleccionable sin anunciar copia o e
   await expect(block.getByText(/^(Enviado|Visto|Recibido)$/)).toHaveCount(0);
   const manual = block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true });
   await expect(manual).toHaveValue(identity.url);
+  await expect(manual).toHaveAttribute('readonly', '');
   await manual.focus();
   await expect.poll(() => manual.evaluate(element => {
     const field = element as HTMLInputElement | HTMLTextAreaElement;
