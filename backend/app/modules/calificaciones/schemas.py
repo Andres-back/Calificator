@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -75,6 +76,22 @@ class CalificacionRevisionRead(BaseModel):
     feedback_anterior: str | None = None
     evidencia_url: str | None = None
     originales_paginas: int = Field(default=0, ge=0, le=10)
+
+
+class ReprocessingScoreChange(BaseModel):
+    numero: str
+    puntaje_anterior: str
+    puntaje_actual: str
+
+
+class ReprocessingContextRead(BaseModel):
+    estado: Literal['sin_cambios', 'puntajes_actualizados', 'contenido_modificado', 'version_no_disponible']
+    version_entrega_id: UUID | None = None
+    version_objetivo_id: UUID | None = None
+    fingerprint: str | None = Field(default=None, pattern=r'^[a-f0-9]{64}$')
+    requiere_confirmacion: bool
+    cambios: list[ReprocessingScoreChange] = Field(default_factory=list)
+    mensaje: str
 
 
 class EntregaRead(BaseModel):

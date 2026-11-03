@@ -11,7 +11,7 @@ export default defineConfig({
   },
   retries: 0,
   projects: [
-    { name: 'webkit-grade-direct', testMatch: '**/grade-direct-review.spec.ts', use: { ...devices['Desktop Safari'] } },
+    { name: 'webkit-grade-direct', testMatch: ['**/grade-direct-review.spec.ts', '**/regrading-score-context.spec.ts'], use: { ...devices['Desktop Safari'] } },
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'webkit-evidence-scan', testMatch: '**/evidence-scan.spec.ts', use: { ...devices['Desktop Safari'] } },
     { name: 'webkit-evidence-review', testMatch: '**/grade-evidence-review.spec.ts', use: { ...devices['Desktop Safari'] } },

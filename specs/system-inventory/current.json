@@ -1,56 +1,30 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 586,
+      "covered": 588,
       "missing": 96
     },
     "by_kind": {
-      "endpoint": 321,
-      "frontend_call": 217,
+      "endpoint": 322,
+      "frontend_call": 218,
       "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 682
+    "total": 684
   },
   "exceptions": [],
   "findings": [
     {
-      "category": "missing_coverage",
-      "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
-      "id": "F-324D81DB301E",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/impacto/cualitativo",
-        "backend:GET:/impacto/estudios/{study_id}/export",
-        "backend:GET:/impacto/estudios/{study_id}/indicadores",
-        "backend:GET:/impacto/estudios/{study_id}/observaciones",
-        "backend:GET:/impacto/kappa",
-        "backend:GET:/impacto/likert",
-        "backend:GET:/impacto/tiempo-ahorrado",
-        "backend:GET:/reportes/estudiante/{estudiante_id}",
-        "backend:GET:/reportes/materia/{materia_id}",
-        "backend:POST:/impacto/encuestas",
-        "backend:POST:/impacto/estudios/{study_id}/activar",
-        "backend:POST:/impacto/estudios/{study_id}/cerrar",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
-        "backend:POST:/impacto/estudios/{study_id}/observaciones",
-        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
-        "backend:POST:/reportes/export/pdf",
-        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
-      ]
-    },
-    {
       "category": "orphan_candidate",
-      "description": "28 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
-      "id": "F-52C1F0C03994",
+      "description": "29 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
+      "id": "F-018BB7F0C1CE",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
         "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+        "backend:GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
         "backend:GET:/calificaciones/{calificacion_id}/revisiones",
         "backend:GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia",
         "backend:GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
@@ -78,6 +52,33 @@
         "table:profesor_ai_credentials",
         "table:profesor_ai_feature_preferences",
         "table:profesor_ai_provider_models"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
+      "id": "F-324D81DB301E",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/impacto/cualitativo",
+        "backend:GET:/impacto/estudios/{study_id}/export",
+        "backend:GET:/impacto/estudios/{study_id}/indicadores",
+        "backend:GET:/impacto/estudios/{study_id}/observaciones",
+        "backend:GET:/impacto/kappa",
+        "backend:GET:/impacto/likert",
+        "backend:GET:/impacto/tiempo-ahorrado",
+        "backend:GET:/reportes/estudiante/{estudiante_id}",
+        "backend:GET:/reportes/materia/{materia_id}",
+        "backend:POST:/impacto/encuestas",
+        "backend:POST:/impacto/estudios/{study_id}/activar",
+        "backend:POST:/impacto/estudios/{study_id}/cerrar",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
+        "backend:POST:/impacto/estudios/{study_id}/observaciones",
+        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
+        "backend:POST:/reportes/export/pdf",
+        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
       ]
     },
     {
@@ -647,7 +648,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "860f455d479b3ea4cd9ddcd5eddf3289911194a600c83604687c4bace8b15e31",
+  "source_digest": "11ca34d1b703e1d18486e083d5675b36c02c511e65b6ddc608c5932103d74888",
   "surfaces": [
     {
       "actors": [
@@ -4634,6 +4635,72 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "consultar_contexto_recalificacion",
+        "registered": false,
+        "router": "router"
+      },
+      "id": "backend:GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+      "kind": "endpoint",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+      "source_line": 140,
+      "source_path": "backend/app/modules/calificaciones/revision_router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_reprocessing_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
         "admin",
         "profesor"
       ],
@@ -4652,7 +4719,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones",
-      "source_line": 131,
+      "source_line": 163,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -4712,7 +4779,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia",
-      "source_line": 210,
+      "source_line": 242,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -4772,7 +4839,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
-      "source_line": 243,
+      "source_line": 275,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -15582,7 +15649,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/recalificar",
-      "source_line": 70,
+      "source_line": 71,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -22336,6 +22403,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
         },
         {
@@ -22882,6 +22955,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_reprocessing_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_resource_motif_render.py"
         },
         {
@@ -23207,6 +23286,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/e2e/regrading-score-context.spec.ts"
         },
         {
           "level": "e2e",
@@ -24783,6 +24868,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/regrading-score-context.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/resources-creation.spec.ts"
         },
         {
@@ -26133,6 +26224,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/regrading-score-context.spec.ts"
         },
         {
           "level": "e2e",
@@ -30838,7 +30935,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesionId}",
-      "source_line": 158,
+      "source_line": 177,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -34479,7 +34576,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesionId}",
-      "source_line": 126,
+      "source_line": 145,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -34772,7 +34869,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose/historial",
-      "source_line": 233,
+      "source_line": 252,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -34830,7 +34927,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose",
-      "source_line": 223,
+      "source_line": 242,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -34888,7 +34985,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/detalle",
-      "source_line": 175,
+      "source_line": 194,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -34946,7 +35043,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 209,
+      "source_line": 228,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -34983,6 +35080,64 @@
         {
           "level": "unit",
           "reference": "GET:/calificaciones/{calificacionId}/incidencias",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/calificaciones/{id}/recalificacion-contexto:frontend/src/modules/calificaciones/api.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/{id}/recalificacion-contexto",
+      "source_line": 114,
+      "source_path": "frontend/src/modules/calificaciones/api.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{id}/recalificacion-contexto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/{id}/recalificacion-contexto",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
@@ -35342,7 +35497,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/boletin",
-      "source_line": 161,
+      "source_line": 180,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -35400,7 +35555,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/resumen-academico",
-      "source_line": 167,
+      "source_line": 186,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -40292,7 +40447,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacionId}/publicar",
-      "source_line": 196,
+      "source_line": 215,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -40564,7 +40719,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
-      "source_line": 238,
+      "source_line": 257,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -41267,7 +41422,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidenciaId}/resolver",
-      "source_line": 219,
+      "source_line": 238,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44140,7 +44295,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 188,
+      "source_line": 207,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44198,7 +44353,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 154,
+      "source_line": 173,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44262,7 +44417,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 183,
+      "source_line": 202,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44320,7 +44475,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 201,
+      "source_line": 220,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44384,7 +44539,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 120,
+      "source_line": 139,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44442,7 +44597,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesionId}/foto",
-      "source_line": 134,
+      "source_line": 153,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44735,7 +44890,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 214,
+      "source_line": 233,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44909,7 +45064,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{id}/recalificar",
-      "source_line": 116,
+      "source_line": 135,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48611,7 +48766,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacionId}/desglose",
-      "source_line": 228,
+      "source_line": 247,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48910,6 +49065,12 @@
           "level": "unit",
           "reference": "cloudflare",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
           "test_path": "backend/tests/integration/test_score_allocation_operations.py"
         },
         {
@@ -48959,6 +49120,12 @@
           "reference": "cloudflare",
           "status": "direct",
           "test_path": "frontend/e2e/p2-responsive.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "frontend/e2e/regrading-score-context.spec.ts"
         },
         {
           "level": "unit",
@@ -49296,6 +49463,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "domain",
           "test_path": "backend/tests/integration/test_score_allocation_operations.py"
         },
         {
@@ -49453,6 +49626,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "frontend/e2e/regrading-score-context.spec.ts"
         },
         {
           "level": "e2e",
@@ -49654,6 +49833,12 @@
           "level": "unit",
           "reference": "redis",
           "status": "domain",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "domain",
           "test_path": "backend/tests/integration/test_score_allocation_operations.py"
         },
         {
@@ -49709,6 +49894,12 @@
           "reference": "redis",
           "status": "domain",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "frontend/e2e/regrading-score-context.spec.ts"
         },
         {
           "level": "unit",
@@ -51368,6 +51559,12 @@
           "level": "unit",
           "reference": "ai_jobs",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "ai_jobs",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_score_allocation_persistence.py"
         },
         {
@@ -51793,6 +51990,12 @@
           "reference": "audit_events",
           "status": "direct",
           "test_path": "backend/tests/integration/test_multipage_recovery.py"
+        },
+        {
+          "level": "unit",
+          "reference": "audit_events",
+          "status": "direct",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
         },
         {
           "level": "unit",
@@ -52948,6 +53151,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_score_allocation_operations.py"
         },
         {
@@ -53320,6 +53529,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_reprocessing_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
         },
         {
@@ -53471,6 +53686,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/reading-controls.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/regrading-score-context.spec.ts"
         },
         {
           "level": "e2e",
@@ -54615,6 +54836,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/integration/test_regrading_score_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
         },
         {
@@ -54934,6 +55161,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_photo_grading_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
           "level": "unit",

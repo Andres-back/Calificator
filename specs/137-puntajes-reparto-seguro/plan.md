@@ -4,6 +4,13 @@
 
 ## Resumen
 
+**Ampliación posterior aprobada — Spec140, issue #299**: la actualización masiva
+de este plan sigue siendo separada y protege ajustes manuales. La reapertura
+individual permite ahora adoptar explícitamente los puntos actuales únicamente
+si el contenido académico coincide, con comparación, confirmación y conservación
+del contexto previo. Véase [plan140](../140-recalificar-puntajes-actuales/plan.md).
+No sustituye el contexto por la última versión de forma implícita.
+
 Plan aprobado en el chat, incluida ampliación por rangos: editor de reparto total/tipo/sección/rango, valores fijados y remanentes por bloque. Guardado con referencia anterior y actualización de notas como acción separada con vista previa, confirmación y recibo idempotente. Sin cambios de escala, texto, evidencia, modelos o producción durante la implementación.
 
 ## Contexto técnico

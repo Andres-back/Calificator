@@ -18,6 +18,7 @@ from app.modules.calificaciones.evidence_manifest import EvidenceManifestError, 
 from app.modules.calificaciones.evidence_preparation import (
     ScanAdmissionContext, admission_draft, persist_scan_sources, read_verified_asset,
 )
+from app.modules.calificaciones.reprocessing_context import validate_reprocessing_target
 from app.modules.evaluaciones.grading_visual_context import grading_job_reference
 from app.modules.feedback_sharing.invalidations import suspend_grade_publications
 from app.services.storage_service import resolve_upload_path, save_upload
@@ -85,13 +86,15 @@ def revision_snapshot(grade) -> dict:
     return json.loads(json.dumps(jsonable_encoder(data, custom_encoder={Decimal: str})))
 
 
-def operation_fingerprint(*, version, reason, confirmed, content) -> str:
+def operation_fingerprint(*, version, reason, confirmed, content, scoring_context=None) -> str:
     value = {
         "version": normalized_version(version).isoformat(),
         "reason": reason or "",
         "confirmed": confirmed,
         "content": hashlib.sha256(content).hexdigest() if content is not None else None,
     }
+    if scoring_context is not None:
+        value['recalificacion_puntajes'] = scoring_context
     return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
 
@@ -139,6 +142,9 @@ async def reprocess_grade(
     reason=None,
     bundle=None,
     scan_replacement=None,
+    usar_puntajes_actuales=False,
+    version_puntajes_objetivo=None,
+    contexto_puntajes_fingerprint=None,
 ):
     if bundle is not None and scan_replacement is not None:
         raise HTTPException(400, "Elige una sola forma de cambiar la evidencia.")
@@ -161,8 +167,16 @@ async def reprocess_grade(
     )
     if scan_context is not None:
         content = scan_fingerprint.encode()
+    scoring_context = None
+    if usar_puntajes_actuales or version_puntajes_objetivo is not None or contexto_puntajes_fingerprint is not None:
+        scoring_context = {
+            'usar_puntajes_actuales': usar_puntajes_actuales,
+            'version_puntajes_objetivo': str(version_puntajes_objetivo) if version_puntajes_objetivo is not None else None,
+            'contexto_puntajes_fingerprint': contexto_puntajes_fingerprint,
+        }
     fingerprint = operation_fingerprint(
-        version=expected_version, reason=reason, confirmed=confirmed, content=content
+        version=expected_version, reason=reason, confirmed=confirmed, content=content,
+        scoring_context=scoring_context,
     )
     existing = await db.get(CalificacionRevision, request_id)
     if existing:
@@ -198,7 +212,14 @@ async def reprocess_grade(
         raise HTTPException(
             409, "Esta entrega ya está en cola o calificándose. Espera a que termine."
         )
-    # Keep the historical evaluation context, including its visual material.
+    # Keep historical content unless the teacher explicitly accepts the exact
+    # current weights. Validation precedes evidence storage and queue writes.
+    accepted = await validate_reprocessing_target(
+        db, evaluation, grade, actor_id=actor_id,
+        use_current=usar_puntajes_actuales, target_version=version_puntajes_objetivo,
+        context_fingerprint=contexto_puntajes_fingerprint,
+    )
+    evaluation = accepted.evaluation
     await grading_job_reference(db, evaluation, delivery)
     if bundle is None and scan_context is None:
         try:
@@ -217,6 +238,9 @@ async def reprocess_grade(
                 409,
                 "No está disponible la evidencia anterior. Usa «Cambiar evidencia».",
             ) from exc
+    snapshot = revision_snapshot(grade)
+    if accepted.metadata is not None:
+        snapshot['recalificacion_puntajes'] = accepted.metadata
     revision = CalificacionRevision(
         id=request_id,
         calificacion_id=grade.id,
@@ -225,7 +249,7 @@ async def reprocess_grade(
         motivo=reason,
         request_fingerprint=fingerprint,
         archivo_url=delivery.archivo_url,
-        snapshot_json=revision_snapshot(grade),
+        snapshot_json=snapshot,
     )
     db.add(revision)
     metadata = (
@@ -235,6 +259,8 @@ async def reprocess_grade(
     )
     new_url = None
     try:
+        if accepted.target_version is not None:
+            delivery.contenido_version_id = accepted.target_version
         if bundle:
             limit = int(getattr(settings, "MAX_EVIDENCE_TOTAL_MB", 40)) * 1024 * 1024
             new_url = await save_upload(

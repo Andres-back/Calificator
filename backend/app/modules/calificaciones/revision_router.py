@@ -6,7 +6,7 @@ import mimetypes
 from uuid import UUID
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Path as ApiPath, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Path as ApiPath, Query, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from sqlalchemy import select
@@ -29,6 +29,7 @@ from app.services.answer_evidence_regions import evidence_version
 from app.modules.calificaciones.schemas import (
     CalificacionRead,
     CalificacionRevisionRead,
+    ReprocessingContextRead,
 )
 from app.modules.evaluaciones import service as evaluation_service
 from app.modules.users.models import User
@@ -81,14 +82,19 @@ async def recalificar_entrega(
     foto: list[UploadFile] | None = File(None),
     rotaciones: str | None = Form(None),
     escaneo: Annotated[str | None, Form(max_length=16384)] = None,
+    usar_puntajes_actuales: bool = Form(False),
+    version_puntajes_objetivo: UUID | None = Form(None),
+    contexto_puntajes_fingerprint: str | None = Form(None, min_length=64, max_length=64, pattern=r'^[a-f0-9]{64}$'),
     current_user: User = Depends(get_current_user),
     db=Depends(get_db),
 ):
     require_permission_now(current_user, "grading.grade")
     if escaneo is not None:
         require_scan_enabled(current_user)
-        await owned_grade(db, calificacion_id, current_user)
-        await lock_scan_request(db, solicitud_id)
+    await owned_grade(db, calificacion_id, current_user)
+    # Serialize an idempotency key across both evidence modes and grades.
+    # Always acquire this before grade/delivery/evaluation row locks.
+    await lock_scan_request(db, solicitud_id)
     grade, evaluation = await owned_grade(db, calificacion_id, current_user, lock=True)
     from app.modules.materias.service import ensure_active_materia
     await ensure_active_materia(db, evaluation.materia_id)
@@ -125,7 +131,33 @@ async def recalificar_entrega(
         reason=motivo,
         bundle=bundle,
         scan_replacement=scan_replacement,
+        usar_puntajes_actuales=usar_puntajes_actuales,
+        version_puntajes_objetivo=version_puntajes_objetivo,
+        contexto_puntajes_fingerprint=contexto_puntajes_fingerprint,
     )
+
+
+@router.get(
+    '/calificaciones/{calificacion_id}/recalificacion-contexto',
+    response_model=ReprocessingContextRead,
+)
+async def consultar_contexto_recalificacion(
+    calificacion_id: UUID,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    from app.modules.calificaciones.reprocessing_context import read_reprocessing_context
+    from app.modules.materias.service import get_materia_or_404
+    from app.shared.enums import MateriaEstado
+    grade, evaluation = await owned_grade(db, calificacion_id, current_user)
+    # A preview is read-only. The POST retains the exclusive admission gate.
+    materia = await get_materia_or_404(db, evaluation.materia_id)
+    if materia.estado == MateriaEstado.ARCHIVADA.value:
+        raise HTTPException(409, 'Esta materia está archivada. Puedes consultar su historial o restaurarla desde Materias.')
+    service.ensure_evaluation_active(evaluation)
+    response.headers['Cache-Control'] = 'private, no-store'
+    return await read_reprocessing_context(db, evaluation, grade, actor_id=current_user.id)
 
 
 @router.get(

@@ -100,15 +100,34 @@ export async function listGradingRevisions(id: string): Promise<GradingRevision[
   return data;
 }
 
+export interface RegradingContext {
+  estado: 'sin_cambios' | 'puntajes_actualizados' | 'contenido_modificado' | 'version_no_disponible';
+  version_entrega_id: string | null;
+  version_objetivo_id: string | null;
+  fingerprint: string | null;
+  requiere_confirmacion: boolean;
+  cambios: { numero: string; puntaje_anterior: string; puntaje_actual: string }[];
+  mensaje: string;
+}
+
+export async function getRegradingContext(id: string): Promise<RegradingContext> {
+  const { data } = await api.get<RegradingContext>(`/calificaciones/${id}/recalificacion-contexto`);
+  return data;
+}
+
 export async function reprocessGrade(id: string, payload: {
   requestId: string; version: string; confirmed: boolean; reason: string;
   files?: File[]; rotations?: number[];
   scan?: import('@/components/evidence/scanSubmission').ScanSubmission;
+  useCurrentScores?: boolean; targetScoreVersion?: string; scoreContextFingerprint?: string;
 }): Promise<Calificacion> {
   const body = new FormData();
   body.append('solicitud_id', payload.requestId);
   body.append('version_esperada', payload.version);
   body.append('confirmar_reapertura', String(payload.confirmed));
+  if (payload.useCurrentScores !== undefined) body.append('usar_puntajes_actuales', String(payload.useCurrentScores));
+  if (payload.targetScoreVersion) body.append('version_puntajes_objetivo', payload.targetScoreVersion);
+  if (payload.scoreContextFingerprint) body.append('contexto_puntajes_fingerprint', payload.scoreContextFingerprint);
   if (payload.reason.trim()) body.append('motivo', payload.reason.trim());
   payload.files?.forEach((file) => body.append('foto', file));
   if (payload.scan) body.append('escaneo', JSON.stringify(payload.scan));
