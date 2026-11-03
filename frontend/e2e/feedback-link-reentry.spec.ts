@@ -178,7 +178,9 @@ async function activate(control: Locator) {
 }
 
 async function openFeedback(page: Page, theme = 'light') {
-  await page.goto(gradeHref);
+  // Wait for the review controls below, not unrelated image/style loads.
+  // WebKit can defer the page load event during consecutive hard navigations.
+  await page.goto(gradeHref, { waitUntil: 'domcontentloaded' });
   await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme);
   await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' })
     .getByRole('button', { name: 'Retroalimentación', exact: true }));
@@ -294,9 +296,9 @@ for (const width of [384, 1440]) for (const theme of ['light', 'dark']) {
     expect(server.forbiddenWrites).toEqual([]);
     await expectNoStoredUrl(page, identity.url);
 
-    await page.goto('/app/calificaciones?materia=m1&evaluacion=e1');
+    await page.goto('/app/calificaciones?materia=m1&evaluacion=e1', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/evaluacion=e1/);
-    await page.goto('/app/materias');
+    await page.goto('/app/materias', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('region', { name: 'Enlace para el estudiante', exact: true })).toHaveCount(0);
     block = await openStudent(page, theme);
     await expectAvailable(block, identity);
@@ -304,7 +306,7 @@ for (const width of [384, 1440]) for (const theme of ['light', 'dark']) {
     await expect.poll(() => copied(page)).toEqual([expectedMessage(identity)]);
 
     await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' })
       .getByRole('button', { name: 'Retroalimentación', exact: true }));
     await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme);
