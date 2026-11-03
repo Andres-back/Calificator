@@ -2,7 +2,7 @@
 from uuid import UUID
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator
 
 
 class Input(BaseModel):
@@ -55,6 +55,7 @@ class AccessCreate(SelectedInput):
     request_id: UUID
     duracion_dias: StrictInt = Field(default=3, ge=1, le=30)
     evidencia: bool = False
+    solo_si_falta: StrictBool = False
 
 
 class AccessAction(Input):
@@ -66,6 +67,7 @@ class ReactivateInput(AccessAction):
     duracion_dias: StrictInt = Field(default=3, ge=1, le=30)
     fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
     evidencia: bool = False
+    mantener_vencimiento: StrictBool = False
 
 
 class RenewInput(AccessAction):

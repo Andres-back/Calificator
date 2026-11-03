@@ -100,3 +100,9 @@ Como docente quiero leer y entregar desde una vista amplia con acciones cercanas
 - La aprobación humana corresponde al diseño presentado y se concreta aquí sin ampliar a regeneración masiva ni nuevas inferencias.
 - «Buena» retroalimentación implica conservar explicaciones y pasos específicos ya sustentados, y no presentar decoración como evidencia de validez pedagógica. La evaluación humana de calidad es independiente.
 - Se reutilizan biblioteca y operaciones actuales. No se introduce una migración, un modelo de IA, una cuota ni un enlace público con las notas del grupo.
+
+## Evolución de presentación y recuperación (Spec139)
+
+Spec139 conserva las garantías anteriores y concreta su continuidad al salir y volver: bloque individual siempre visible, recuperación del mismo acceso guardado desde el servidor y copia por fila/barra; generar y copiar son acciones distintas. Los nuevos textos son Revisar → Generar enlaces → Copiar y compartir. No se infiere ausencia por error de consulta, ni envío/lectura por copiar.
+
+Sus guardias privadas opcionales impiden emisión adicional por una carrera entre dispositivos y permiten reaprobación explícita de contenido suspendido aún vigente, conservando credencial y vencimiento exactos. No reabren enlaces revocados/vencidos por copiar, no cambian recibos de consumidores antiguos ni extienden duración. Aprobar sigue siendo una decisión expresa; abrir/copiar no aprueba notas. Ver specs/139-envio-retroalimentacion-simple/contracts/frontend.md y sus regresiones sintéticas.

@@ -1888,6 +1888,17 @@ function GradingCenter() {
   const [contextExpanded, setContextExpanded] = useState(false);
   const reviewRosterRef = useRef<HTMLDivElement>(null);
   const reviewScrollRef = useRef<HTMLDivElement>(null);
+  const [textSizeProbe, setTextSizeProbe] = useState<HTMLSpanElement | null>(null);
+  const [largeReviewText, setLargeReviewText] = useState(false);
+  useEffect(() => {
+    const probe = textSizeProbe;
+    if (!probe) return;
+    const measure = () => setLargeReviewText(probe.getBoundingClientRect().width >= 24);
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(probe); window.addEventListener('resize', measure);
+    return () => { observer?.disconnect(); window.removeEventListener('resize', measure); };
+  }, [textSizeProbe]);
   const previousSelectedId = useRef<string | null>(null);
   const [reviewCompleted, setReviewCompleted] = useState(false);
   const [savedStudents, setSavedStudents] = useState<Record<string, string[]>>({});
@@ -2181,7 +2192,7 @@ function GradingCenter() {
 
   const splitLayout = isTeacher && Boolean(evalId && materiaId) && mode === 'revision' && !contextExpanded
     && !mobileMoreActionsOpen && !batchResult && selectedBatch.size === 0
-    && !gradingFeatureFlags.teacherWorkTiming && !directEvaluation.error;
+    && !gradingFeatureFlags.teacherWorkTiming && !directEvaluation.error && !largeReviewText;
   const canOpenSubject = permissions.includes('subjects.read');
   const canOpenEvaluations = canOpenSubject && permissions.includes('evaluations.read');
   const currentBook = materiaId && canOpenSubject && permissions.includes('gradebook.read')
@@ -2206,6 +2217,7 @@ function GradingCenter() {
     <div data-grading-layout={splitLayout ? 'split' : 'flow'} className={cn(
       'flex min-w-0 flex-col [&_button]:min-h-11 [&_button]:min-w-11', splitLayout ? 'xl:h-full xl:min-h-0' : 'min-h-full',
     )}>
+      <span ref={setTextSizeProbe} aria-hidden="true" className="pointer-events-none absolute h-px w-[1rem] opacity-0" />
       <MobileReviewContext materiaName={selectedMateria?.nombre} evaluationName={selectedEval?.nombre}
         navigation={!selectedId ? <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">{breadcrumb()}</div> : undefined}
         compactContext={Boolean(evalId && materiaId)}
@@ -2296,7 +2308,7 @@ function GradingCenter() {
       <div className={cn('min-w-0 flex-1 flex-col gap-3 xl:flex-row', splitLayout && 'xl:min-h-0', mode === 'carga' ? 'hidden' : 'flex')}>
         {/* Left panel — list */}
         <div ref={reviewRosterRef} data-testid="grade-review-roster" className={cn('min-w-0 flex-col rounded-xl border border-border bg-surface',
-          selectedId ? 'hidden xl:flex xl:w-80 xl:shrink-0 2xl:w-[22.5rem]' : 'flex flex-1',
+          selectedId ? 'hidden xl:flex xl:w-[min(20rem,26vw)] xl:shrink-0 2xl:w-[min(22.5rem,26vw)]' : 'flex flex-1',
           splitLayout && 'xl:min-h-0',
         )}>
           {/* Summary + filters */}

@@ -44,6 +44,7 @@
 /* ───────────────────────── Tokens de tema ───────────────────────── */
 @layer base {
   :root {
+    --app-scrollbar-size: 10px;
     --bg: 248 250 252;
     --surface: 255 255 255;
     --surface-2: 241 245 249;
@@ -111,7 +112,7 @@
   ::selection { @apply bg-brand-500/25; }
 
   /* Scrollbar premium */
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar { width: var(--app-scrollbar-size); height: var(--app-scrollbar-size); }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     @apply bg-muted/30 rounded-full border-2 border-solid border-transparent bg-clip-padding;

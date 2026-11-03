@@ -29,7 +29,7 @@ async function setup(page: Page, ready = false) {
     if (path === '/api/evaluaciones/e1/devoluciones/accesos' && route.request().method() === 'GET') return route.fulfill({ json: { resultados: published ? [{ id: 'access1', calificacion_id: 'c1', estudiante: 'Estudiante Prueba', estado: 'active', version: 1, expires_at: '2099-01-01T00:00:00Z', copy_available: true }] : [], next_cursor: null } });
     if (path === '/api/evaluaciones/e1/devoluciones/accesos/copiar') {
       calls.push('copy');
-      return route.fulfill({ json: { resultados: [{ id: 'access1', calificacion_id: 'c1', estudiante: 'Estudiante Prueba', url: 'https://example.test/devolucion#' + 'a'.repeat(43) }] } });
+      return route.fulfill({ json: { resultados: [{ id: 'access1', calificacion_id: 'c1', estudiante: 'Estudiante Prueba', expires_at: '2099-01-01T00:00:00Z', url: 'https://example.test/devolucion#' + 'a'.repeat(43) }] } });
     }
     if (path === '/api/evaluaciones/e1/devoluciones/fichas') return route.fulfill({ json: { resultados: route.request().postDataJSON().selecciones.map((item: { calificacion_id: string }) => ({ calificacion_id: item.calificacion_id, resultado: publicResult(Number(item.calificacion_id.slice(1))) })) } });
     return route.fallback();
@@ -56,10 +56,9 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await expect(dialog.getByText('30 seleccionados', { exact: true })).toBeVisible();
     expect(calls).toEqual(['publish', 'publish']);
     await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('blocked for synthetic test'); } } }); });
-    await dialog.getByRole('button', { name: 'Compartir', exact: true }).click();
-    await dialog.getByRole('button', { name: 'Copiar 1 disponible', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Copiar lista de 1', exact: true }).click();
     const manual = dialog.getByRole('textbox', { name: 'Enlaces para copiar manualmente' });
-    await expect(manual).toHaveValue('Estudiante Prueba\nhttps://example.test/devolucion#' + 'a'.repeat(43));
+    await expect(manual).toHaveValue('Estudiante Prueba: https://example.test/devolucion#' + 'a'.repeat(43));
     await expect(manual).toHaveCSS('font-size', '16px');
     await manual.focus();
     await page.setViewportSize({ width, height: 450 });

@@ -19,6 +19,7 @@ async function install(page: Page, initiallyApproved = false, composed = false, 
   const sourceMessage = composed ? 'Aciertos: identificaste la idea principal. Pregunta 2: Falta explicar la decisión del personaje. Siguiente paso: Relee el párrafo inicial y escribe una frase que justifique tu respuesta.' : message;
   let approvedMessage = sourceMessage;
   let issued = false;
+  const access = { id: 'a1', calificacion_id: 'c1', estudiante: 'Estudiante Prueba', estado: 'active', copy_available: true, version: 1, expires_at: '2099-01-01T00:00:00Z' };
   const operations: string[] = [];
   const grade = { id: 'c1', evaluacion_id: 'e1', estudiante_id: 's1', materia_id: 'm1', nota_sugerida: 3.5, nota_confirmada: 3.5,
     estado: 'publicada', revisado_por_docente: true, feedback: sourceMessage, resultado_json: {}, created_at: '2026-10-29T12:00:00Z', updated_at: '2026-10-29T12:00:00Z' };
@@ -57,12 +58,13 @@ async function install(page: Page, initiallyApproved = false, composed = false, 
       return json(preview());
     }
     if (path.endsWith('/devoluciones/accesos')) {
-      if (route.request().method() === 'GET') return json({ resultados: issued ? [{ id: 'a1', calificacion_id: 'c1', estado: 'active', copy_available: true, version: 1 }] : [], next_cursor: null });
+      if (route.request().method() === 'GET') return json({ resultados: issued ? [access] : [], next_cursor: null });
       expect(approved).toBe(true);
       expect(route.request().postDataJSON()).toMatchObject({ duracion_dias: 3, evidencia: false, selecciones: [{ calificacion_id: 'c1', fingerprint: 'f'.repeat(64) }] });
       issued = true; operations.push('issue');
-      return json({ resultados: [{ calificacion_id: 'c1', id: 'a1', url: link, credential_available: true }] });
+      return json({ resultados: [{ ...access, url: link, credential_available: true }] });
     }
+    if (path.endsWith('/devoluciones/accesos/copiar')) return json({ resultados: issued ? [{ ...access, url: link }] : [] });
     if (path === '/api/calificaciones/c1/confirmar' || path === '/api/calificaciones/c1/publicar' || path === '/api/calificaciones/c1/ajustar') throw new Error('Compartir no debe modificar ni publicar la nota.');
     return route.fallback();
   });
@@ -87,8 +89,8 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     expect(operations).toEqual([]);
     expect(await panel.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
     if ([390, 1440].includes(width)) await page.screenshot({ path: `output/playwright/spec135-confirm-${entry}-${width}-${theme}-${browserName}.png` });
-    await activate(panel.getByRole('button', { name: 'Confirmar y preparar 1 enlace', exact: true }));
-    await expect(panel.getByRole('button', { name: 'Copiar 1 enlace', exact: true })).toBeInViewport({ ratio: 0.999 });
+    await activate(panel.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }));
+    await expect(panel.getByRole('button', { name: 'Copiar lista de 1', exact: true })).toBeInViewport({ ratio: 0.999 });
     expect(operations).toEqual(['approve-batch', 'issue']);
     await expect(page.getByText('Sin guardar', { exact: true })).toHaveCount(0);
     if (entry === 'integrado') {
@@ -98,8 +100,8 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('Synthetic denial'); } } }));
     // This combined flow also exercises keyboard access. Native pointer copy
     // remains covered separately below; keep the same 30s budget and assertions.
-    await activate(panel.getByRole('button', { name: 'Copiar 1 enlace', exact: true }));
-    await expect(panel.getByRole('textbox', { name: 'Enlaces para copiar manualmente', exact: true })).toHaveValue('Estudiante Prueba\n' + link);
+    await activate(panel.getByRole('button', { name: 'Copiar lista de 1', exact: true }));
+    await expect(panel.getByRole('textbox', { name: 'Enlaces para copiar manualmente', exact: true })).toHaveValue('Estudiante Prueba: ' + link);
     expect(operations).toEqual(['approve-batch', 'issue']);
   });
 }
@@ -113,17 +115,30 @@ async function openWorkspace(page: Page, entry: string, theme: string) {
     // review, approval, creation and legacy copy pointer checks intact.
     await activate(page.getByRole('button', { name: 'Más acciones', exact: true }));
     await activate(page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }));
-  } else await page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Retroalimentación', exact: true }).click();
+  // Navigation is exercised by keyboard here; the cases below retain native
+  // pointer creation, editing and copy, without increasing the 30s limit.
+  } else await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Retroalimentación', exact: true }));
   const workspace = entry === 'grupo' ? page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true }) : page.getByRole('region', { name: 'Retroalimentación del estudiante', exact: true });
   if (entry === 'grupo') {
     const selection = workspace.getByRole('checkbox', { name: 'Seleccionar Estudiante Prueba', exact: true });
     await expect(selection).toBeEnabled();
     await selection.focus();
     await expect(selection).toBeFocused();
-    await selection.press('Space');
+    if (!await selection.isChecked()) await selection.press('Space');
     await expect(selection).toBeChecked();
   }
-  await activate(workspace.getByRole('button', { name: 'Compartir', exact: true }));
+  if (entry === 'grupo') await activate(workspace.getByRole('button', { name: 'Generar enlaces', exact: true }));
+  else {
+    const block = workspace.getByRole('region', { name: 'Enlace para el estudiante' });
+    // Wait for the metadata query before deciding between ready/pending. A
+    // zero count during loading is not proof that generation is unavailable.
+    await activate(block.getByRole('button', { name: /^(Generar enlace|Revisar)$/ }));
+    const panel = workspace.getByRole('region', { name: 'Compartir retroalimentaciones', exact: true });
+    await expect(panel).toBeVisible();
+    await expect(panel.getByText('Comprobando retroalimentaciones y enlaces…', { exact: true })).toBeHidden();
+    const cancel = workspace.getByRole('button', { name: 'Volver sin aprobar', exact: true });
+    if (await cancel.count()) await activate(cancel);
+  }
   return workspace;
 }
 
@@ -140,7 +155,7 @@ for (const width of [360, 390, 1440]) for (const theme of ['light', 'dark']) for
     await panel.getByRole('textbox', { name: 'Mensaje para el estudiante' }).fill(message + ' Practica con un ejemplo del texto.');
     expect(operations).toEqual([]);
     await panel.getByRole('button', { name: 'Aprobar retroalimentación', exact: true }).click();
-    const create = panel.getByRole('button', { name: 'Crear 1 enlace faltante', exact: true });
+    const create = panel.getByRole('button', { name: 'Generar 1 enlace', exact: true });
     await expect(create).toBeVisible();
     await expect(create).toBeFocused();
     await expect(create).toBeInViewport({ ratio: 0.999 });
@@ -165,18 +180,19 @@ for (const width of [390, 1440]) for (const theme of ['light', 'dark']) for (con
     const operations = await install(page, true);
     const workspace = await openWorkspace(page, entry, theme);
     const panel = workspace.getByRole('region', { name: 'Compartir retroalimentaciones', exact: true });
-    const create = panel.getByRole('button', { name: 'Crear 1 enlace faltante', exact: true });
+    const create = panel.getByRole('button', { name: 'Generar 1 enlace', exact: true });
     await expect(create).toBeVisible();
     await expect(create).toBeInViewport({ ratio: 0.999 });
     if (entry === 'integrado') await expect(page.locator('[aria-label="Acciones de la calificación"]')).toBeHidden();
     expect(operations).toEqual([]);
     await create.click();
+    await activate(panel.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }));
     await expect(panel.getByRole('button', { name: 'Copiar enlace de Estudiante Prueba', exact: true })).toBeVisible();
-    await expect(panel.getByRole('button', { name: 'Copiar 1 enlace', exact: true })).toBeInViewport({ ratio: 0.999 });
+    await expect(panel.getByRole('button', { name: 'Copiar lista de 1', exact: true })).toBeInViewport({ ratio: 0.999 });
     expect(operations).toEqual(['issue']);
     await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('Synthetic denial'); } } }));
-    await panel.getByRole('button', { name: 'Copiar 1 enlace', exact: true }).click();
-    await expect(panel.getByRole('textbox', { name: 'Enlaces para copiar manualmente', exact: true })).toHaveValue('Estudiante Prueba\n' + link);
+    await panel.getByRole('button', { name: 'Copiar lista de 1', exact: true }).click();
+    await expect(panel.getByRole('textbox', { name: 'Enlaces para copiar manualmente', exact: true })).toHaveValue('Estudiante Prueba: ' + link);
     expect(await panel.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
     if (width !== 360) await page.screenshot({ path: `output/playwright/spec129-direct-share-${entry}-${width}-${theme}-${browserName}.png` });
   });
@@ -195,8 +211,8 @@ for (const width of [390, 1440]) test(`135 motivo ausente no bloquea lectura ni 
   await expect(practice).toBeInViewport({ ratio: 0.999 });
   await expect(confirmation.locator('img')).toBeHidden();
   expect(operations).toEqual([]);
-  await activate(panel.getByRole('button', { name: 'Confirmar y preparar 1 enlace', exact: true }));
-  await expect(panel.getByRole('button', { name: 'Copiar 1 enlace', exact: true })).toBeEnabled();
+  await activate(panel.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }));
+  await expect(panel.getByRole('button', { name: 'Copiar lista de 1', exact: true })).toBeEnabled();
   expect(operations).toEqual(['approve-batch', 'issue']);
 });
 
@@ -209,13 +225,13 @@ for (const width of [390, 1440]) test(`135 conserva la entrega al cambiar de pes
     const workspace = await openWorkspace(page, 'integrado', 'light');
     const panel = workspace.getByRole('region', { name: 'Compartir retroalimentaciones', exact: true });
     await activate(panel.getByRole('button', { name: 'Aprobar y crear 1 enlace', exact: true }));
-    await activate(panel.getByRole('button', { name: 'Confirmar y preparar 1 enlace', exact: true }));
+    await activate(panel.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }));
     await expect(page.getByText('Preparando entrega…', { exact: true })).toBeVisible();
     await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Historial', exact: true }));
     await expect(workspace).toBeVisible();
     await expect(page.getByText('Sin guardar', { exact: true })).toHaveCount(0);
     release();
-    await expect(panel.getByRole('button', { name: 'Copiar 1 enlace', exact: true })).toBeEnabled();
+    await expect(panel.getByRole('button', { name: 'Copiar lista de 1', exact: true })).toBeEnabled();
     expect(operations).toEqual(['approve-batch', 'issue']);
     await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Historial', exact: true }));
     await expect(workspace).toBeHidden();

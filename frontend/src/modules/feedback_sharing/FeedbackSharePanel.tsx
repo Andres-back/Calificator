@@ -10,6 +10,8 @@ import { clearApproval, createApproval, readApproval, runApproval, storeApproval
 import { queryClient } from '@/lib/queryClient';
 import { formatGradeScore } from '@/modules/calificaciones/gradePresentation';
 import { feedbackScrollLayout } from './feedbackScrollLayout';
+import { buildIndividualFeedbackMessage, buildPrivateFeedbackList, buildWhatsAppShareUrl, shareFeedbackMessage } from './feedbackShareMessage';
+import { deriveDeliveryAvailability, type AccessRecovery } from './deliveryAvailability';
 
 interface Target { calificacion_id?: string | null; nombre: string }
 interface Prepared { gradeId: string; accessId: string; name: string; url: string }
@@ -29,13 +31,14 @@ function watchRecovery(actorId: string) {
   });
 }
 
-export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, signal, valid, onBusy, onDirtyChange, onBack, onManage, onPreviewChanged, onFinishEditing, embedded }: {
+export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, signal, valid, onBusy, onDirtyChange, onBack, onManage, onPreviewChanged, onFinishEditing, embedded, confirmOnOpen = false, onComplete }: {
   actorId: string; evaluationId: string; rows: Target[]; knownRows?: Target[]; signal: AbortSignal; valid: () => boolean;
   onBusy: (busy: boolean) => void; onBack: () => void; onManage: (gradeId: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
   onPreviewChanged?: (preview: FeedbackPreview) => void;
   onFinishEditing?: () => void;
   embedded?: boolean;
+  confirmOnOpen?: boolean; onComplete?: () => void;
 }) {
   const user = useAuth(state => state.user);
   const [targets] = useState(rows);
@@ -55,7 +58,9 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
   const [uncertain, setUncertain] = useState(false);
   const [recovery, setRecovery] = useState(false);
   const [retryLoad, setRetryLoad] = useState(0);
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useState(confirmOnOpen);
+  const [returnAfterGeneration, setReturnAfterGeneration] = useState(confirmOnOpen);
+  const [recoveryErrors, setRecoveryErrors] = useState<Record<string, AccessRecovery>>({});
   const [approvalRecovery, setApprovalRecovery] = useState(false);
   const [progress, setProgress] = useState('');
   const approval = useRef<ApprovalManifest | null>(null);
@@ -117,7 +122,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
           const preview = previews.find(item => item.calificacion_id === id)!;
           const saved = classifyAccesses(id, accesses);
           return { id, name: names.find(row => row.calificacion_id === id)?.nombre ?? preview.resultado?.estudiante ?? 'Estudiante de la solicitud pendiente', preview, accesses: saved.accesses,
-            kind: saved.kind === 'existing' ? 'existing' : !preview.elegible || !preview.fingerprint ? 'pending' : saved.kind, activeId: saved.active[0]?.id } as ShareRow;
+            kind: saved.kind === 'existing' ? 'existing' : !preview.elegible || !preview.fingerprint ? 'pending' : saved.kind, activeId: saved.active.length === 1 ? saved.active[0].id : undefined } as ShareRow;
         });
         setItems(classified);
         // Loading or recovering never issues or publishes. Existing credentials
@@ -144,6 +149,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
         if (result.calificacion_id && result.calificacion_id !== identity.gradeId) throw new Error('Wrong context');
         if (result.url) recovered.push({ gradeId: identity.gradeId, accessId: result.id, name: source.find(item => item.id === identity.gradeId)?.name ?? result.estudiante ?? 'Estudiante seleccionado', url: result.url });
         else {
+          setRecoveryErrors(previous => ({ ...previous, [result.id]: { status: 'unavailable', code: result.code, error: result.error } }));
           setOutcomes(previous => ({ ...previous, [identity.gradeId]: 'unavailable' }));
           setError('Algunos enlaces no se pudieron recuperar. Revisa las opciones de esos estudiantes; no se renovaron ni crearon otros.');
         }
@@ -167,27 +173,36 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       try { storeManifest(sessionStorage, op); }
       catch {
         manifest.current = null; setRecovery(false); setUncertain(false);
-        setError('Tu navegador no permitió guardar la recuperación. No enviamos enlaces nuevos. Habilita el almacenamiento de esta página y vuelve a intentar.'); return;
+        setError('No enviamos enlaces nuevos porque el navegador no permitió guardar el intento. Habilita el almacenamiento de esta página y vuelve a intentar.'); return;
       }
       watchRecovery(actorId); setRecovery(true);
       for (const part of op.parts) {
         if (!current()) return;
         if (!part.confirmed) {
           setOutcomes(previous => ({ ...previous, ...Object.fromEntries(part.selections.map(item => [item.calificacion_id, 'uncertain' as const])) }));
-          const results = await issueFeedbackAccesses(evaluationId, { request_id: part.requestId, selecciones: part.selections, duracion_dias: op.days, evidencia: op.evidence }, abort.current.signal);
+          const results = await issueFeedbackAccesses(evaluationId, { request_id: part.requestId, selecciones: part.selections, duracion_dias: op.days, evidencia: op.evidence, ...(op.onlyIfMissing === undefined ? {} : { solo_si_falta: op.onlyIfMissing }) }, abort.current.signal);
           if (!current()) return;
           validateIssued(part.selections, results);
           setOutcomes(previous => ({ ...previous, ...Object.fromEntries(results.map(result => [result.calificacion_id, result.error ? 'failed' as const : 'confirmed' as const])) }));
           part.accesses = results.flatMap(result => !result.error && result.id ? [{ gradeId: result.calificacion_id, accessId: result.id }] : []);
           part.confirmed = true; storeManifest(sessionStorage, op);
           const failures = results.filter(result => result.error || !result.id);
-          if (failures.length) setError(`${failures.length} enlaces no se pudieron crear. Revisa esos estudiantes antes de preparar otra entrega.`);
+          if (failures.length) setError(`${failures.length === 1 ? '1 enlace no se pudo crear' : `${failures.length} enlaces no se pudieron crear`}. Revisa esos estudiantes antes de preparar otra entrega.`);
           const ready = results.flatMap(result => result.id && result.url && result.credential_available && !result.error ? [{ gradeId: result.calificacion_id, accessId: result.id, name: source.find(item => item.id === result.calificacion_id)?.name ?? 'Estudiante seleccionado', url: result.url }] : []);
           setPrepared(previous => [...previous.filter(item => !ready.some(next => next.gradeId === item.gradeId)), ...ready]);
           await recoverUrls(part.accesses.filter(item => !ready.some(result => result.gradeId === item.gradeId)), source);
         } else await recoverUrls(part.accesses, source);
       }
-      if (current()) { setUncertain(false); setRecovery(false); clearManifest(sessionStorage, actorId, evaluationId); clearApproval(sessionStorage, actorId, evaluationId); approval.current = null; setApprovalRecovery(false); setNotice('Preparación terminada. Comprueba los destinatarios y copia sus enlaces aquí.'); }
+      if (current()) setConfirming(false);
+      if (current()) {
+        const fresh = await listFeedbackAccesses(evaluationId, abort.current.signal);
+        if (!current()) return;
+        setItems(previous => previous.map(item => { const saved = classifyAccesses(item.id, fresh); return { ...item, accesses: saved.accesses, kind: saved.kind === 'existing' ? 'existing' : item.kind, activeId: saved.active.length === 1 ? saved.active[0].id : undefined }; }));
+        setUncertain(false); setRecovery(false); clearManifest(sessionStorage, actorId, evaluationId); manifest.current = null;
+        clearApproval(sessionStorage, actorId, evaluationId); approval.current = null; setApprovalRecovery(false);
+        setNotice('Ya puedes copiar aquí los enlaces disponibles.');
+        if (returnAfterGeneration && op.parts.every(part => part.accesses.length === part.selections.length)) onComplete?.();
+      }
     } catch {
       if (current()) { setUncertain(Boolean(manifest.current)); setError('La última respuesta no está confirmada. Recupera esta misma solicitud; no cambies de selección para repetirla.'); }
     } finally { lock.current = false; if (current()) setBusy(false); }
@@ -225,7 +240,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
         const saved = classifyAccesses(id, accesses);
         onPreviewChanged?.(preview);
         return { id, name: names.find(row => row.calificacion_id === id)?.nombre ?? 'Estudiante seleccionado', preview, accesses: saved.accesses,
-          kind: saved.kind === 'existing' ? 'existing' : !preview.elegible || !preview.fingerprint ? 'pending' : saved.kind, activeId: saved.active[0]?.id };
+          kind: saved.kind === 'existing' ? 'existing' : !preview.elegible || !preview.fingerprint ? 'pending' : saved.kind, activeId: saved.active.length === 1 ? saved.active[0].id : undefined };
       });
       setItems(fresh);
       setPrepared(previous => previous.filter(link => fresh.some(item => item.id === link.gradeId && item.accesses.some(access => access.id === link.accessId && access.estado === 'active' && access.copy_available !== false))));
@@ -244,15 +259,45 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       }
       if (current() && (failures.size || changed.length)) setError(`${failures.size + changed.length} estudiantes necesitan atención; no se crearon enlaces para ellos. Los demás resultados se conservan.`);
     } catch {
-      if (current()) { setApprovalRecovery(Boolean(approval.current)); setError(approval.current ? 'No pudimos confirmar toda la preparación. Recupera la misma aprobación; no aceptaremos otra nota ni repetiremos cambios ya confirmados.' : 'No pudimos guardar la recuperación. No se aprobaron notas ni se crearon enlaces. Puedes volver a intentar.'); }
+      if (current()) { setApprovalRecovery(Boolean(approval.current)); setError(approval.current ? 'No pudimos confirmar toda la preparación. Recupera la misma aprobación; no aceptaremos otra nota ni repetiremos cambios ya confirmados.' : 'No pudimos guardar el intento; no se aprobaron notas ni se crearon enlaces. Puedes volver a intentar.'); }
     } finally { lock.current = false; if (current()) { setBusy(false); setProgress(''); } }
   }
-  async function copy(links: Prepared[]) {
+  async function copy(links: Prepared[], asList = false) {
     if (!current() || !links.length || lock.current) return;
-    const ordered = [...links].sort((a, b) => a.name.localeCompare(b.name, 'es') || a.gradeId.localeCompare(b.gradeId));
-    const text = ordered.map(item => `${item.name.replace(/[\r\n]+/g, ' ')}\n${item.url}`).join('\n\n');
-    try { await navigator.clipboard.writeText(text); if (current()) { setNotice(`${links.length} ${links.length === 1 ? 'enlace copiado' : 'enlaces copiados'}. Entrégalos individualmente; no envíes la lista al grupo.`); setManual(''); } }
-    catch { if (current()) { setManual(text); setNotice('El navegador no permitió copiar. Selecciona el texto y elige «Copiar».'); } }
+    lock.current = true; setBusy(true); setError(''); setNotice(''); setManual('');
+    try {
+      const fresh: Prepared[] = [];
+      for (let offset = 0; offset < links.length; offset += 100) {
+        const batch = links.slice(offset, offset + 100);
+        const results = await copyFeedbackAccesses(evaluationId, batch.map(link => link.accessId), abort.current.signal);
+        if (!current()) return;
+        if (results.length !== batch.length || batch.some(link => results.filter(result => result.id === link.accessId).length !== 1)) throw new Error('Incomplete copy');
+        for (const result of results) {
+          const link = batch.find(item => item.accessId === result.id)!;
+          if (result.calificacion_id && result.calificacion_id !== link.gradeId) throw new Error('Wrong context');
+          if (result.url) fresh.push({ ...link, url: result.url });
+          else setRecoveryErrors(previous => ({ ...previous, [result.id]: { status: 'unavailable', code: result.code, error: result.error } }));
+        }
+      }
+      setPrepared(previous => [...previous.filter(link => !links.some(item => item.accessId === link.accessId)), ...fresh]);
+      if (!fresh.length) { setError('No pudimos recuperar estos enlaces. Reintenta o revisa los casos indicados.'); return; }
+      const ordered = [...fresh].sort((a, b) => a.name.localeCompare(b.name, 'es') || a.gradeId.localeCompare(b.gradeId));
+      const text = !asList && ordered.length === 1 ? messageFor(ordered[0]) : buildPrivateFeedbackList(ordered.map(item => ({ studentName: item.name, url: item.url, confirmed: true })));
+      if (fresh.length !== links.length) setError(`${links.length - fresh.length} enlaces no están disponibles. Revisa esos casos.`);
+      try { await navigator.clipboard.writeText(text); if (current()) { setNotice(`${fresh.length} ${fresh.length === 1 ? 'enlace copiado' : 'enlaces copiados'}. Entrégalos individualmente; no envíes la lista al grupo.`); setManual(''); } }
+      catch { if (current()) { setManual(text); setNotice('El navegador no permitió copiar. Selecciona el texto y elige «Copiar».'); } }
+    } catch { if (current()) setError('No pudimos recuperar estos enlaces. Reintenta.'); }
+    finally { lock.current = false; if (current()) setBusy(false); }
+  }
+  function messageFor(link: Prepared) { return buildIndividualFeedbackMessage({ studentName: link.name, evaluationName: items.find(item => item.id === link.gradeId)?.preview?.resultado?.evaluacion || 'esta evaluación', url: link.url }); }
+  async function chooseAccess(item: ShareRow, accessId: string) {
+    if (!current() || busy || !item.accesses.some(access => access.id === accessId && access.estado === 'active' && access.copy_available !== false)) return;
+    setPrepared(previous => previous.filter(link => link.gradeId !== item.id));
+    setItems(previous => previous.map(row => row.id === item.id ? { ...row, activeId: accessId } : row));
+    setBusy(true);
+    try { await recoverUrls([{ gradeId: item.id, accessId }]); }
+    catch { if (current()) setError('No pudimos recuperar su enlace. Reintenta.'); }
+    finally { if (current()) setBusy(false); }
   }
   function finishReviewInput() {
     // Safari may remove a focused field without dispatching focusout. Blur it
@@ -298,31 +343,37 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
     <header className="shrink-0 space-y-2 border-b border-border p-4">
       {!confirming && <Button variant="link" disabled={busy || Boolean(reviewing)} onClick={onBack}><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a estudiantes</Button>}
       <h3 className="text-lg font-bold">{confirming ? 'Confirmar entrega' : 'Compartir enlaces individuales'}</h3>
+      <ol aria-label="Pasos para compartir" className="flex gap-2 overflow-x-auto text-xs font-semibold"><li className="shrink-0 rounded-full border border-border px-3 py-2">1 Revisar</li><li aria-current={confirming ? 'step' : undefined} className="shrink-0 rounded-full border border-border px-3 py-2">2 Generar enlaces</li><li aria-current={!confirming && prepared.length ? 'step' : undefined} className="shrink-0 rounded-full border border-border px-3 py-2">3 Copiar y compartir</li></ol>
       {!confirming && <p className="text-sm text-muted">{items.length || targets.length} destinatarios · Solo cada estudiante y su familia deben recibir su enlace.</p>}
     </header>
     <div {...feedbackScrollLayout(embedded)} className={`${feedbackScrollLayout(embedded).className} space-y-4 p-4`}>
       {loading ? <p role="status">Comprobando retroalimentaciones y enlaces…</p> : reviewing?.preview ? <FeedbackDeliveryReview key={reviewing.id} evaluationId={evaluationId} name={reviewing.name} preview={reviewing.preview} signal={abort.current.signal} valid={current} onApproved={reviewChanged} onCancel={cancelReview} onBusy={setBusy} onDirtyChange={setReviewDirty} /> : <>
         {recovery && <p className="rounded-xl border border-amber-400 p-3 text-sm">Hay una solicitud pendiente. Recuperarla conserva sus destinatarios y opciones originales, aunque hayas cambiado la selección.</p>}
-        {newLinkCount > 0 && !manifest.current && !confirming && <fieldset className="space-y-3 rounded-xl border border-border p-3" disabled={busy || approvalRecovery}>
+        {newLinkCount > 0 && !manifest.current && !confirming && <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Opciones avanzadas</summary><fieldset className="space-y-3" disabled={busy || approvalRecovery}>
           <legend className="px-1 font-semibold">{newLinkCount === 1 ? 'Opciones del enlace nuevo' : `Opciones de los ${newLinkCount} enlaces nuevos`}</legend>
           <label className="block text-sm">Duración del enlace<select aria-label="Duración del enlace" value={days} onChange={event => setDays(Number(event.target.value))} className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-base">{Array.from({ length: 30 }, (_, index) => index + 1).map(value => <option key={value} value={value}>{value} {value === 1 ? 'día' : 'días'}</option>)}</select></label>
           <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="h-5 w-5 shrink-0" checked={evidence} onChange={event => setEvidence(event.target.checked)} />Permitir ver las fotos de su propia entrega</label>
           <p className="text-sm text-muted">Al crear autorizas compartir nota y mensaje. Los enlaces activos conservan su vigencia y todos mantienen cinco preguntas a Xali cada diez minutos.</p>
-        </fieldset>}
+        </fieldset></details>}
         {confirming && <section aria-label="Confirmar entrega" className="space-y-3">
           <h4 className="font-bold">Esto recibirá cada estudiante</h4>
-          <p className="text-sm leading-6">Aceptarás las notas y los mensajes mostrados; tus notas ajustadas se conservan. Enlaces nuevos: {days} {days === 1 ? 'día' : 'días'}, {evidence ? 'con su propia evidencia' : 'sin fotografías'}. Los existentes no se renuevan.</p>
+          <p className="text-sm">Vas a generar {newLinkCount} {newLinkCount === 1 ? 'enlace' : 'enlaces'}; {prepared.length} ya disponibles se conservan. {items.length - newLinkCount - prepared.length > 0 ? `${items.length - newLinkCount - prepared.length} necesitan revisión.` : ''}</p>
+          <p className="text-sm leading-6">Aceptarás las notas y los mensajes mostrados, conservando tus ajustes. Enlaces nuevos: {days} {days === 1 ? 'día' : 'días'}, {evidence ? 'con su propia evidencia' : 'sin fotografías'}; los existentes no se renuevan.</p>
           <ul className="space-y-3">{[...approvable, ...missing].map(item => <li key={item.id} className="rounded-xl border border-border bg-surface p-3"><p className="font-semibold">{item.name} <span className="ml-2 tabular-nums">{formatGradeScore(Number(item.preview?.batch_candidate?.nota ?? item.preview?.resultado?.nota ?? item.preview?.borrador_docente?.nota))}</span></p><FeedbackMessage text={item.preview?.batch_candidate?.feedback_text ?? item.preview?.resultado?.retroalimentacion ?? ''} />{item.preview?.batch_candidate?.avisos.map(warning => <p key={warning} className="mt-2 text-sm text-muted">{warning}</p>)}</li>)}</ul>
         </section>}
         {!confirming && <ul className="space-y-2" aria-label="Destinatarios y enlaces">{items.map(item => {
-          const ready = prepared.find(link => link.gradeId === item.id);
-          const readyForApproval = canApprove && item.kind === 'pending' && !item.accesses.length && item.preview?.batch_candidate;
+          const ready = prepared.find(link => link.gradeId === item.id && item.accesses.some(access => access.id === link.accessId && access.estado === 'active' && Date.parse(access.expires_at) > Date.now()));
+          const recoveries: Record<string, AccessRecovery> = { ...recoveryErrors };
+          if (ready) { const access = item.accesses.find(entry => entry.id === ready.accessId)!; recoveries[ready.accessId] = { status: 'ready', result: { id: access.id, calificacion_id: item.id, estudiante: item.name, url: ready.url, expires_at: access.expires_at } }; }
+          const availability = deriveDeliveryAvailability({ gradeId: item.id, preview: item.preview, query: { status: 'loaded', accesses: item.accesses }, recoveries, selectedAccessId: item.activeId });
           return <li key={item.id} className="min-w-0 rounded-xl border border-border p-3">
             <p className="break-words font-semibold">{item.name}</p>
-            <p className="mt-1 text-sm text-muted">{ready ? 'Enlace listo para copiar' : outcomes[item.id] === 'failed' ? 'No se pudo crear su enlace. Revisa este caso.' : outcomes[item.id] === 'uncertain' ? 'Pendiente de confirmar. Recupera la misma solicitud.' : outcomes[item.id] === 'unavailable' ? 'No pudimos recuperar su enlace. Revisa sus opciones.' : item.kind === 'closed' ? 'Su enlace necesita revisar vigencia o autorización.' : outcomes[item.id] === 'confirmed' ? 'Acceso guardado; falta recuperar su enlace.' : readyForApproval ? 'Lista para tu aprobación' : item.kind === 'missing' ? 'Falta crear su enlace' : item.kind === 'pending' ? item.preview?.motivo ?? 'Primero revisa la retroalimentación' : 'Revisa su enlace antes de compartir'}</p>
+            <p className="mt-1 text-sm text-muted">{outcomes[item.id] === 'failed' ? 'No pudimos generar su enlace. Reintenta.' : outcomes[item.id] === 'uncertain' ? 'Falta confirmar el resultado. Reintenta.' : availability.label}</p>
+            {ready && <><p className="text-xs text-muted">Vence <time dateTime={item.accesses.find(access => access.id === ready.accessId)!.expires_at}>{new Date(item.accesses.find(access => access.id === ready.accessId)!.expires_at).toLocaleString('es-CO')}</time></p><textarea aria-label={'Enlace de ' + item.name} rows={2} readOnly value={ready.url} onFocus={event => event.currentTarget.select()} className="mt-2 w-full resize-none rounded-lg border border-border bg-surface p-2 text-sm" /></>}
             {item.kind === 'pending' && item.preview?.revision_docente && !manifest.current && <p className="mt-2 text-sm leading-6">{canApprove && !item.accesses.length && item.preview.batch_candidate ? 'Puedes aprobar esta nota y su mensaje con el botón inferior. Los puntajes pendientes no se compartirán.' : 'La nota ya está confirmada. Puedes revisar el mensaje y aprobar solo nota y retroalimentación, sin entregar los puntajes pendientes.'}</p>}
-            {item.accesses.filter(access => access.estado === 'active').length > 1 && <p className="text-sm text-muted">Tiene varios enlaces guardados. Puedes elegir otro en sus opciones; no se reemplazó ninguno.</p>}
+            {item.accesses.filter(access => access.estado === 'active').length > 1 && <label className="mt-2 block text-sm">Elige su enlace<select aria-label={'Elegir enlace de ' + item.name} value={item.activeId ?? ''} disabled={busy} onChange={event => void chooseAccess(item, event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3"><option value="">Seleccionar enlace</option>{item.accesses.filter(access => access.estado === 'active').map(access => <option key={access.id} value={access.id}>{access.id.slice(0, 8)} · vence {new Date(access.expires_at).toLocaleString('es-CO')}</option>)}</select></label>}
             <div className="mt-2 flex flex-wrap gap-2">{ready && <Button variant="outline" aria-label={'Copiar enlace de ' + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => void copy([ready])}>Copiar enlace</Button>}
+              {ready && <><Button variant="outline" disabled={busy} onClick={() => window.open(buildWhatsAppShareUrl(messageFor(ready)), '_blank', 'noopener,noreferrer')}>WhatsApp</Button>{typeof navigator.share === 'function' && <Button variant="outline" disabled={busy} onClick={() => { void shareFeedbackMessage(messageFor(ready), navigator); }}>Compartir</Button>}</>}
               {item.kind === 'pending' && (item.preview?.revision_docente || (canApprove && item.preview?.mensaje_editable)) && !manifest.current && !approvalRecovery
                 ? <Button variant="outline" data-review-feedback={item.id} aria-label={(canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje de ' : 'Revisar y compartir retroalimentación de ') + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => { if (current()) { setError(''); setNotice(''); setReviewingId(item.id); } }}>{canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje' : 'Revisar y compartir'}</Button>
                 : (item.kind === 'closed' || item.kind === 'pending' || (item.kind === 'existing' && !ready) || (manifest.current && !ready) || item.accesses.length > 1) && <Button variant="link" data-manage-feedback={item.id} aria-label={'Revisar enlace de ' + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => onManage(item.id)}>Revisar caso</Button>}</div>
@@ -335,14 +386,14 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       {!reviewing && manual && <label className="block text-sm font-semibold">Enlaces para copiar manualmente<textarea readOnly aria-label="Enlaces para copiar manualmente" value={manual} onFocus={event => event.currentTarget.select()} className="mt-2 min-h-40 w-full rounded-xl border border-border bg-surface p-3 text-base font-normal" /></label>}
     </div>
     <footer className="sticky bottom-0 z-10 shrink-0 space-y-2 border-t border-border bg-surface p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] sm:p-4" data-feedback-actions>
-      {reviewing ? <p className="text-sm" aria-live="polite">Revisa y aprueba el mensaje. Aprobar no crea ni envía su enlace.</p> : confirming ? <p className="text-sm text-muted">Confirma para preparar; después podrás copiar.</p> : !loading && <p className={`text-sm ${prepared.length ? '' : 'text-muted'}`} aria-live="polite">{prepared.length ? <Check className="mr-1 inline h-4 w-4" aria-hidden="true" /> : <Clock3 className="mr-1 inline h-4 w-4" aria-hidden="true" />}{prepared.length} de {items.length} enlaces listos{!prepared.length ? ' · revisa el estado de cada destinatario para continuar' : prepared.length < items.length ? ' · los demás no se incluyen en la copia' : ''}</p>}
+      {reviewing ? <p className="text-sm" aria-live="polite">Revisa y aprueba el mensaje. No se enviará automáticamente.</p> : confirming ? <p className="text-sm text-muted">Confirma una vez; después podrás copiar aquí.</p> : !loading && <p className={`text-sm ${prepared.length ? '' : 'text-muted'}`} aria-live="polite">{prepared.length ? <Check className="mr-1 inline h-4 w-4" aria-hidden="true" /> : <Clock3 className="mr-1 inline h-4 w-4" aria-hidden="true" />}{prepared.length} de {items.length} enlaces disponibles</p>}
       {!reviewing && <div className="grid gap-2 sm:flex sm:flex-wrap">
         {(uncertain || recovery) ? <Button disabled={busy || loading} loading={busy} onClick={() => void issue()}>Recuperar la misma solicitud</Button>
           : approvalRecovery ? <Button disabled={busy || loading || !canApprove} loading={busy} onClick={() => void approveAndPrepare()}>Recuperar aprobación y enlaces</Button>
-            : confirming ? <><Button disabled={busy || loading} loading={busy} onClick={() => void approveAndPrepare()}>Confirmar y preparar {newLinkCount} {newLinkCount === 1 ? 'enlace' : 'enlaces'}</Button><Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Volver sin aprobar</Button></>
+            : confirming ? <><Button disabled={busy || loading || !newLinkCount} loading={busy} onClick={() => void (approvable.length ? approveAndPrepare() : issue())}>Confirmar y generar {newLinkCount} {newLinkCount === 1 ? 'enlace' : 'enlaces'}</Button><Button variant="outline" disabled={busy} onClick={() => { setConfirming(false); setReturnAfterGeneration(false); }}>Volver sin aprobar</Button></>
               : approvable.length > 0 && !manifest.current ? <Button disabled={busy || loading} onClick={() => setConfirming(true)}>Aprobar y crear {newLinkCount} {newLinkCount === 1 ? 'enlace' : 'enlaces'}</Button>
-                : missing.length > 0 && !manifest.current && <Button ref={createButtonRef} disabled={busy || loading} loading={busy} onClick={() => void issue()}><Link2 className="h-4 w-4" aria-hidden="true" />Crear {missing.length} {missing.length === 1 ? 'enlace faltante' : 'enlaces faltantes'}</Button>}
-        {prepared.length > 0 && <Button variant="outline" disabled={busy || loading} onClick={() => void copy(prepared)}><Copy className="h-4 w-4" aria-hidden="true" />Copiar {prepared.length}{prepared.length < items.length ? prepared.length === 1 ? ' disponible' : ' disponibles' : prepared.length === 1 ? ' enlace' : ' enlaces'}</Button>}
+                : missing.length > 0 && !manifest.current && <Button ref={createButtonRef} disabled={busy || loading} loading={busy} onClick={() => setConfirming(true)}><Link2 className="h-4 w-4" aria-hidden="true" />Generar {missing.length} {missing.length === 1 ? 'enlace' : 'enlaces'}</Button>}
+        {prepared.length > 0 && <Button variant="outline" disabled={busy || loading} onClick={() => void copy(prepared, true)}><Copy className="h-4 w-4" aria-hidden="true" />Copiar lista de {prepared.length}</Button>}
       </div>}
     </footer>
   </section>;

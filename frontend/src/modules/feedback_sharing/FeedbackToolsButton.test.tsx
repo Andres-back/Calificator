@@ -25,7 +25,7 @@ describe('entrada gradual de retroalimentaciones', () => {
     render(<MemoryRouter><FeedbackToolsButton evaluationId="e" /></MemoryRouter>);
     expect(screen.queryByRole('button')).toBeNull();
   });
-  it('copia el enlace existente desde la ficha individual sin crear otro', async () => {
+  it('139 abre el centro individual común sin otro circuito de copia', async () => {
     useAuth.setState({ user: { id: 't', rol: 'profesor', permissions: ['grading.read', 'grading.publish'] } as User });
     vi.mocked(feedbackAvailable).mockResolvedValue(true);
     vi.mocked(listFeedbackAccesses).mockResolvedValue([{ id: 'a1', calificacion_id: 'g1', estado: 'active', copy_available: true } as never]);
@@ -34,17 +34,18 @@ describe('entrada gradual de retroalimentaciones', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     render(<MemoryRouter><FeedbackToolsButton evaluationId="e" gradeId="g1" /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Copiar enlace' }));
-    expect(await screen.findByRole('status')).toHaveTextContent('Enlace copiado');
-    expect(writeText).toHaveBeenCalledWith(url);
-    expect(listFeedbackAccesses).toHaveBeenCalledWith('e', expect.any(AbortSignal), 'g1');
+    fireEvent.click(await screen.findByRole('button', { name: 'Compartir retroalimentación' }));
+    expect(await screen.findByRole('dialog')).toBeVisible();
+    expect(writeText).not.toHaveBeenCalled();
+    expect(listFeedbackAccesses).not.toHaveBeenCalled();
+    expect(copyFeedbackAccesses).not.toHaveBeenCalled();
   });
   it('abre las opciones individuales si todavía no hay enlace, sin emitirlo', async () => {
     useAuth.setState({ user: { id: 't', rol: 'profesor', permissions: ['grading.read', 'grading.publish'] } as User });
     vi.mocked(feedbackAvailable).mockResolvedValue(true);
     vi.mocked(listFeedbackAccesses).mockResolvedValue([]);
     render(<MemoryRouter><FeedbackToolsButton evaluationId="e" gradeId="g1" /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Copiar enlace' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Compartir retroalimentación' }));
     expect(await screen.findByRole('dialog')).toBeVisible();
     expect(copyFeedbackAccesses).not.toHaveBeenCalled();
   });

@@ -46,6 +46,9 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
     await page.getByRole('button', { name: 'Más acciones', exact: true }).click();
     await page.getByRole('button', { name: 'Retroalimentación del grupo', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Retroalimentación del grupo', exact: true });
+    await expect(dialog.getByRole('status').filter({ hasText: /^30 seleccionados$/ })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Preparar impresión', exact: true })).toBeEnabled();
+    await dialog.getByRole('button', { name: 'Limpiar selección', exact: true }).click();
     await expect(dialog.getByRole('button', { name: 'Preparar impresión', exact: true })).toBeDisabled();
     await dialog.getByRole('button', { name: 'Listos del filtro', exact: true }).click();
     await dialog.getByRole('button', { name: 'Preparar impresión', exact: true }).click();

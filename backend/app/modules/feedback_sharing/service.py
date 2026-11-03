@@ -9,7 +9,7 @@ from sqlalchemy import func, select, text
 
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
-from app.modules.feedback_sharing.access_policy import authorize_owner, authorize_teacher, credential_digest, db_now, enabled, load_source, project_source
+from app.modules.feedback_sharing.access_policy import authorize_owner, authorize_teacher, credential_digest, db_now, enabled, guard_access, load_source, project_source
 from app.modules.feedback_sharing.batch_policy import delivery_message
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackDeliveryReview, FeedbackPublication
 from app.modules.feedback_sharing.projection import build_review_projection, confirmed_score, digest
@@ -159,7 +159,7 @@ async def new_publication(db, source, actor, evidence: bool):
     return publication
 
 
-async def create_access(db, actor, evaluation_id: UUID, grade_id: UUID, fingerprint: str, request_id: UUID, days: int, evidence: bool):
+async def create_access(db, actor, evaluation_id: UUID, grade_id: UUID, fingerprint: str, request_id: UUID, days: int, evidence: bool, *, solo_si_falta: bool = False):
     enabled()
     if type(days) is not int or not 1 <= days <= 30:
         raise HTTPException(422, "Elige una duración de 1 a 30 días.")
@@ -169,12 +169,45 @@ async def create_access(db, actor, evaluation_id: UUID, grade_id: UUID, fingerpr
     await authorize_teacher(db, actor, source)
     if source.projection.fingerprint != fingerprint:
         raise HTTPException(409, "El resultado cambió. Actualiza la vista previa antes de compartir.")
-    creation = digest([str(grade_id), fingerprint, days, evidence])
+    # Keep the legacy digest byte-for-byte when the optional guard is false.
+    creation_values = [str(grade_id), fingerprint, days, evidence]
+    creation = digest([*creation_values, True] if solo_si_falta else creation_values)
     existing = await db.scalar(select(FeedbackAccess).where(FeedbackAccess.created_by == actor.id, FeedbackAccess.creation_request_id == request_id, FeedbackAccess.calificacion_id == grade_id))
     if existing:
         if existing.operations_json.get("creation") != creation:
             raise HTTPException(409, "Esta solicitud ya se utilizó con otras opciones.")
         return existing, None
+    # The grade lock above serializes both new credentials and receipts from
+    # another device. Do not overwrite the original creation_request_id.
+    accesses = list((await db.scalars(select(FeedbackAccess).where(
+        FeedbackAccess.calificacion_id == grade_id,
+    ).execution_options(populate_existing=True))).all())
+    receipt_key = f'creation:{actor.id}:{request_id}'
+    receipts = [access for access in accesses if receipt_key in (access.operations_json or {})]
+    if receipts:
+        if len(receipts) != 1 or receipts[0].operations_json[receipt_key] != creation:
+            raise HTTPException(409, 'Esta solicitud ya se utilizó con otras opciones.')
+        return receipts[0], None
+    if solo_si_falta and accesses:
+        now = await db_now(db)
+        available = []
+        for candidate in accesses:
+            if candidate.state != 'active' or candidate.disabled_at is not None or candidate.expires_at <= now:
+                continue
+            try:
+                context = await guard_access(db, candidate)
+            except HTTPException:
+                continue
+            available.append((candidate, context.publication))
+        if len(available) != 1:
+            raise HTTPException(409, 'Revisa los enlaces existentes antes de generar otro. No se creó un enlace adicional.')
+        access, publication = available[0]
+        if publication.evidence_enabled != evidence:
+            raise HTTPException(409, 'El enlace existente comparte otras opciones. Revísalo antes de generar otro.')
+        # Duration only applies to missing links; reuse never moves expiry.
+        access.operations_json = {**(access.operations_json or {}), receipt_key: creation}
+        await db.flush()
+        return access, None
     publication = await new_publication(db, source, actor, evidence)
     token = secrets.token_urlsafe(32)
     now = await db_now(db)
@@ -215,7 +248,10 @@ async def manage_access(db, actor, access_id, action, payload):
         raise ValueError("Unsupported feedback access operation")
     access, publication = await _lock_managed_access(db, actor, access_id)
     operation_key = str(payload.request_id)
-    operation_digest = digest([action, payload.model_dump(mode="json")])
+    operation_body = payload.model_dump(mode="json")
+    if action == 'reactivate' and not payload.mantener_vencimiento:
+        operation_body.pop('mantener_vencimiento', None)
+    operation_digest = digest([action, operation_body])
     operations = access.operations_json or {}
     previous = operations.get(operation_key)
     if previous is not None:
@@ -242,6 +278,11 @@ async def manage_access(db, actor, access_id, action, payload):
         metadata["generation"] = access.credential_generation
         event = "renewed"
     else:
+        if payload.mantener_vencimiento and (
+            access.state != 'active' or access.disabled_at is not None
+            or access.expires_at <= now or publication.state != 'suspended'
+        ):
+            raise HTTPException(409, 'Solo puedes conservar el vencimiento de un enlace vigente suspendido por cambios. Revisa sus opciones.')
         source = await load_source(db, access.calificacion_id)
         await authorize_teacher(db, actor, source)
         if source.projection.fingerprint != payload.fingerprint:
@@ -254,7 +295,8 @@ async def manage_access(db, actor, access_id, action, payload):
         access.publication_id = replacement.id
         access.state = "active"
         access.disabled_at = None
-        access.expires_at = now + timedelta(days=payload.duracion_dias)
+        if not payload.mantener_vencimiento:
+            access.expires_at = now + timedelta(days=payload.duracion_dias)
         metadata["previous_revision"] = publication.revision
         metadata["revision"] = replacement.revision
         event = "reactivated"
