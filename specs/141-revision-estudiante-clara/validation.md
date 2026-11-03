@@ -55,3 +55,8 @@ Se inspeccionaron visualmente las vistas de retroalimentación de escritorio y c
 ## Pendiente
 
 Integración con PostgreSQL aislado (motor Docker no disponible), pruebas físicas Android/iPhone y CI. No se fusionó, desplegó ni modificó producción.
+
+## Primera ejecución del PR #302
+
+- En `193fd67`, Backend quality and tests y Container builds pasaron en GitHub. Frontend pasó 1414 de 1415 pruebas; la prueba de Xali encontraba la respuesta antes de terminar la animación. La aserción ahora espera que sea visible, sin alterar la aplicación. Las seis pruebas locales de Xali pasaron.
+- Se incorporó Spec 141 al registro de pruebas de gobernanza y se regeneró el inventario. Se mantienen abiertas las tareas sin evidencia, incluidas las comprobaciones físicas. No se modifica la política de gobernanza ni se omiten controles.

@@ -28,7 +28,8 @@ describe('teacher page integration', () => {
     await user.type(screen.getByLabelText('Mensaje para Xali'), 'Soluciones razonadas');
     await user.click(screen.getByRole('button', { name: 'Enviar mensaje a Xali' }));
     expect(mocks.send).toHaveBeenCalledWith('Soluciones razonadas', 'm1', expect.any(AbortSignal));
-    expect(await screen.findByText('Explicación docente')).toBeVisible();
+    // The message mounts at opacity 0 before its entrance animation completes.
+    await waitFor(() => expect(screen.getByText('Explicación docente')).toBeVisible());
     expect(screen.queryByText('Recursos para practicar')).not.toBeInTheDocument();
   });
   it('does not show a late answer or its controls in a different subject', async () => {
