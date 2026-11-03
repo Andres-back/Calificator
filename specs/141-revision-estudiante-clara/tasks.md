@@ -12,7 +12,7 @@ Alcance y plan aprobados el 2026-11-02. No iniciar código funcional hasta compl
 
 ## Fase 2: Fundamentos
 
-- [ ] T005 Añadir fixtures comunes de contexto/resultado/evidencia/enlaces y pruebas de aislamiento/estado anterior en `frontend/e2e/mock/spec141-fixtures.ts` y `frontend/src/modules/feedback_sharing/FeedbackWorkspace.test.tsx` para conservar sesión, permisos, borradores y retorno (FR-001, FR-002, FR-015, FR-016, FR-017, FR-019).
+- [X] T005 Añadir fixtures comunes de contexto/resultado/evidencia/enlaces y pruebas de aislamiento/estado anterior en `frontend/e2e/mock/spec141-fixtures.ts` y `frontend/src/modules/feedback_sharing/FeedbackWorkspace.test.tsx` para conservar sesión, permisos, borradores y retorno (FR-001, FR-002, FR-015, FR-016, FR-017, FR-019).
 
 ## Fase 3: Historia 4 — lectura y enlace individual (P1, primera entrega visual)
 
@@ -61,16 +61,16 @@ Alcance y plan aprobados el 2026-11-02. No iniciar código funcional hasta compl
 - [X] T026 [US5] Escribir pruebas de selección/filtros/retorno, enlaces existentes y fallos parciales en `frontend/src/modules/feedback_sharing/ShareFeedbackDialog.test.tsx` y pruebas de navegación de `frontend/src/modules/calificaciones/` (FR-001, FR-002, FR-013, FR-015, FR-018, SC-003).
 - [X] T027 [US5] Aplicar lista compacta opción 1 y zona única generar/copiar en `frontend/src/modules/feedback_sharing/ShareFeedbackDialog.tsx`, `FeedbackStudentList.tsx` y `FeedbackSelectionBar.tsx`, conservando impresión/publicación y permisos (FR-001, FR-013, FR-014, FR-015, FR-016, FR-021, SC-002, SC-003, SC-008).
 - [X] T028 [US5] Compactar cabecera/retorno y diferenciar acciones de lista/detalle en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`, sin romper rutas antiguas ni libro/resumen (FR-001, FR-002, FR-018, FR-021, SC-005, SC-008).
-- [ ] T029 [US5] Completar E2E grupal de generación/copia/parciales/impresión/publicación/volver en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts` conservando privacidad del enlace público y cuota/chat existentes (FR-013, FR-015, FR-016, FR-020, SC-003, SC-007).
+- [X] T029 [US5] Completar E2E grupal de generación/copia/parciales/impresión/publicación/volver en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts` conservando privacidad del enlace público y cuota/chat existentes (FR-013, FR-015, FR-016, FR-020, SC-003, SC-007).
 
 ## Fase final: Pulido y validación
 
-- [ ] T030 Revisar jerarquía premium y estados vacío/carga/error/foco a 360/384/412/1440 px contra `specs/141-revision-estudiante-clara/contracts/diseno-premium.md`, con capturas de implementación y correcciones locales sin ampliar dependencias (FR-018, FR-021, SC-008).
+- [X] T030 Revisar jerarquía premium y estados vacío/carga/error/foco a 360/384/412/1440 px contra `specs/141-revision-estudiante-clara/contracts/diseno-premium.md`, con capturas de implementación y correcciones locales sin ampliar dependencias (FR-018, FR-021, SC-008).
 - [X] T031 Ejecutar TypeScript, lint, unidad, acciones/build/auditorías aplicables de `frontend/package.json` y registrar resultados reales en `specs/141-revision-estudiante-clara/validation.md`, sin marcar ejecuciones pendientes como verdes (FR-020, SC-007).
 - [X] T032 Ejecutar regresión backend/persistencia/permisos/desglose/feedback/revisión en `backend/tests/` con PostgreSQL aislado y registrar alcance/entorno en `specs/141-revision-estudiante-clara/validation.md` (FR-020, SC-004, SC-007).
-- [ ] T033 Ejecutar E2E Chromium/Firefox/WebKit, teclado, scroll central, claro/oscuro y capturas de app real 384/1440 px en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts`; registrar entorno estable y resultados en `specs/141-revision-estudiante-clara/validation.md` (FR-018, FR-020, SC-002, SC-005, SC-007, SC-008).
+- [X] T033 Ejecutar E2E Chromium/Firefox/WebKit, teclado, scroll central, claro/oscuro y capturas de app real 384/1440 px en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts`; registrar entorno estable y resultados en `specs/141-revision-estudiante-clara/validation.md` (FR-018, FR-020, SC-002, SC-005, SC-007, SC-008).
 - [X] T034 Obtener y registrar comprobación física Android/iPhone de los gestos nuevos en `specs/141-revision-estudiante-clara/validation.md`, sin atribuir pruebas de una versión anterior a esta entrega (FR-018, FR-020, SC-007).
-- [ ] T035 Ejecutar Converge y comprobar cobertura/retirada de controles y comportamiento en `specs/141-revision-estudiante-clara/tasks.md`; añadir trabajo pendiente real sin declarar completa una tarea no verificada (FR-001 a FR-021; SC-001 a SC-008).
+- [X] T035 Ejecutar Converge y comprobar cobertura/retirada de controles y comportamiento en `specs/141-revision-estudiante-clara/tasks.md`; añadir trabajo pendiente real sin declarar completa una tarea no verificada (FR-001 a FR-021; SC-001 a SC-008).
 - [X] T036 Preparar commit y PR con spec/issue, resumen, evidencia visual y validaciones de `specs/141-revision-estudiante-clara/validation.md`; respetar CI/gobernanza sin fusión ni despliegue en esta autorización (FR-020, SC-007).
 
 ## Dependencias

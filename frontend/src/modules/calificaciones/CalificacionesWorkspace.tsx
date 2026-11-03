@@ -942,7 +942,8 @@ function PanelDetalle({
       const returningCard = nextView === 'resumen' ? heading?.parentElement?.querySelector<HTMLButtonElement>(`[data-review-option="${mobileTab}"]`) : null;
       const panel = nextView === 'revision' ? reviewSectionRef.current : nextView === 'evidencia' ? evidenceSectionRef.current : nextView === 'retroalimentacion' ? feedbackSectionRef.current : null;
       const target = returningCard ?? panel ?? heading;
-      const expectedFocus = !focusAtRequest?.isConnected && document.activeElement === document.body ? document.body : focusAtRequest;
+      const focusWasHidden = !focusAtRequest?.isConnected || Boolean(focusAtRequest.closest('[hidden]'));
+      const expectedFocus = focusWasHidden && document.activeElement === document.body ? document.body : focusAtRequest;
       focusReviewSection(target, expectedFocus, () => {
         revealWithinReview(nextView === 'resumen' ? target : heading?.parentElement ?? target, nextView === 'resumen' ? 'nearest' : 'start');
       });

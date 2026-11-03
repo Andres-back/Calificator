@@ -1,32 +1,22 @@
 import { expect, test, type Route } from '@playwright/test';
-import { grade, login, student } from './fixtures/explainableGrading';
+import { login } from './fixtures/explainableGrading';
+import { spec141EvidenceContext, spec141EvidenceGrade, spec141EvidenceHref } from './mock/spec141-fixtures';
 
 const json = (route: Route, data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', json: data });
-const fingerprint = 'a'.repeat(64);
-const first = 'first-sheet';
-const second = 'second-sheet';
+const { fingerprint, paginas: [{ referencia: first }, { referencia: second }] } = spec141EvidenceContext;
 
 for (const { width, theme } of [{ width: 384, theme: 'dark' }, { width: 1440, theme: 'light' }]) {
   test(`141 editar hojas conserva originales y confirma solo referencias ${width}px ${theme}`, async ({ page, browserName }) => {
     await page.setViewportSize({ width, height: 900 });
     await login(page, 'profesor');
-    const detail = {
-      ...grade, estado: 'publicada', nota_confirmada: 5, revisado_por_docente: true,
-      estudiante_nombre: student.nombre, evaluacion_nombre: 'Evaluación sintética', materia_nombre: 'Matemáticas',
-      entrega_tipo: 'foto', entrega_archivo_url: '/api/calificaciones/c1/evidencia',
-      entrega_evidencia_paginas: 2, entrega_evidencia_tipo: 'foto', timeline: [], guia_revision: [],
-    };
+    const detail = spec141EvidenceGrade;
     const writes: { manifest: unknown; files: number; confirmed: string; version: string }[] = [];
     await page.route('**/api/calificaciones/c1/detalle', route => json(route, detail));
     await page.route('**/api/calificaciones/c1/recalificacion-contexto', route => json(route, {
       estado: 'sin_cambios', version_entrega_id: null, version_objetivo_id: null, fingerprint: null,
       requiere_confirmacion: false, cambios: [], mensaje: 'Se conservarán los puntajes de la entrega.',
     }));
-    await page.route('**/api/calificaciones/c1/evidencia/edicion', route => json(route, {
-      version_esperada: detail.updated_at, fingerprint,
-      paginas: [{ referencia: first, numero: 1, rotacion: 0 }, { referencia: second, numero: 2, rotacion: 90 }],
-      limites: { max_pages: 10, max_file_bytes: 1024, max_total_bytes: 4096 },
-    }));
+    await page.route('**/api/calificaciones/c1/evidencia/edicion', route => json(route, spec141EvidenceContext));
     await page.route('**/api/calificaciones/c1/recalificar', async route => {
       const body = route.request().postDataBuffer();
       const form = await new Response(body ? new Uint8Array(body) : null, { headers: { 'content-type': route.request().headers()['content-type'] } }).formData();
@@ -34,7 +24,7 @@ for (const { width, theme } of [{ width: 384, theme: 'dark' }, { width: 1440, th
         confirmed: String(form.get('confirmar_reapertura')), version: String(form.get('version_esperada')) });
       return json(route, { ...detail, estado: 'procesando', nota_confirmada: null }, 202);
     });
-    await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
+    await page.goto(spec141EvidenceHref);
     await page.evaluate(dark => document.documentElement.classList.toggle('dark', dark), theme === 'dark');
     await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
     const edit = page.getByRole('button', { name: 'Editar hojas', exact: true });

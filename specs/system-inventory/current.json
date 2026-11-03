@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "367686e9f6e07c993c6c98a05eb02c81686b10259d884add21d0995c5c54ede3",
+  "source_digest": "06f6b3bd15d507823ab87b803143c269b589afc8c86ec7611c6ab72de97bac68",
   "surfaces": [
     {
       "actors": [
@@ -23503,6 +23503,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/spec141-visual.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/student-activity-delivery.spec.ts"
         },
         {
@@ -24942,12 +24948,6 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
-          "test_path": "frontend/e2e/evidence-edit.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app",
-          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -25099,6 +25099,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/roster-import.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/spec141-visual.spec.ts"
         },
         {
           "level": "e2e",
@@ -26351,12 +26357,6 @@
           "level": "e2e",
           "reference": "/app/calificaciones",
           "status": "direct",
-          "test_path": "frontend/e2e/evidence-edit.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "/app/calificaciones",
-          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -26454,6 +26454,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/review-grade-csv.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/spec141-visual.spec.ts"
         },
         {
           "level": "e2e",
@@ -54082,6 +54088,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/review-grade-csv.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/spec141-visual.spec.ts"
         },
         {
           "level": "e2e",
