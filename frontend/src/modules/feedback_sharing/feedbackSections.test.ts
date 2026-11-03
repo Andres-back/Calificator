@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { feedbackSections, feedbackPrintText, feedbackLearningBlocks } from './feedbackSections';
 
 describe('presentación conservadora de retroalimentación', () => {
+  it('141 reconoce las etiquetas explícitas de diseño 3 conservando cada carácter', () => {
+    const text = 'Lo que hiciste bien: Identificaste el tema.\nQué puedes mejorar: Explica tu razón.\nTu siguiente paso: Añade un ejemplo.';
+    const blocks = feedbackLearningBlocks(text);
+    expect(blocks.map(block => block.original).join('')).toBe(text);
+    expect(blocks.map(block => block.kind)).toEqual(['strength', 'improvement']);
+    expect(blocks[1].steps).toEqual(['Añade un ejemplo.']);
+  });
   it('agrupa títulos explícitos sin inventar mensajes ni perder el original', () => {
     const text = 'Aciertos: Identificaste a Nico.\nQué mejorar: Explica su emoción.\nSiguiente paso: Relee el segundo párrafo.';
     const sections = feedbackSections(text);

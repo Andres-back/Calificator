@@ -193,8 +193,7 @@ async function openStudent(page: Page, theme = 'light') {
 
 async function expectAvailable(block: Locator, access = savedAccess()) {
   await expect(block.getByText('Enlace disponible', { exact: true })).toBeVisible();
-  await expect(block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true })).toHaveValue(access.url);
-  await expect(block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true })).toHaveAttribute('readonly', '');
+  await expect(block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true })).toHaveCount(0);
   await expect(block.locator('time')).toHaveAttribute('datetime', access.expires_at);
   await expect(block.getByRole('button', { name: 'Copiar enlace', exact: true })).toBeEnabled();
   await expect(block.getByRole('button', { name: 'Generar enlace', exact: true })).toHaveCount(0);
@@ -380,6 +379,7 @@ test('139 copia denegada conserva el enlace seleccionable sin anunciar copia o e
   await expect(block.getByText(/^(Enviado|Visto|Recibido)$/)).toHaveCount(0);
   const manual = block.getByRole('textbox', { name: 'Enlace del estudiante', exact: true });
   await expect(manual).toHaveValue(identity.url);
+  await expect(manual).toHaveAttribute('readonly', '');
   await manual.focus();
   await expect.poll(() => manual.evaluate(element => {
     const field = element as HTMLInputElement | HTMLTextAreaElement;

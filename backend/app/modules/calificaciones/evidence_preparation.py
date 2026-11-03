@@ -165,7 +165,7 @@ def admission_draft(context: ScanAdmissionContext, submission: ScanSubmission, s
     return data
 
 
-async def persist_scan_sources(context: ScanAdmissionContext, submission: ScanSubmission, sources: tuple[SourceImage, ...]) -> EvidenceManifest:
+async def persist_scan_sources(context: ScanAdmissionContext, submission: ScanSubmission, sources: tuple[SourceImage, ...], *, reused: dict[UUID, ManifestPage] | None = None) -> EvidenceManifest:
     """Write a stable intent receipt before sources; no commit or cleanup guesses."""
     from app.modules.calificaciones.evidence_scan_reconciliation import ScanReceipt
     from app.services.storage_service import MIME_EXTENSIONS
@@ -175,12 +175,30 @@ async def persist_scan_sources(context: ScanAdmissionContext, submission: ScanSu
         page["source"]["key"] = f".private/evidence-scan/sources/{identity.hex}{MIME_EXTENSIONS[source.mime]}"
     manifest = EvidenceManifest.model_validate(data)
     receipt = ScanReceipt.from_manifest(manifest)
+    reused = reused or {}
+    # The recovery receipt only enumerates request-derived keys. A reused
+    # asset already belongs to an earlier receipt and must never be retired
+    # with this request; its would-be new key is never written.
+    if reused:
+        for page in data["pages"]:
+            old = reused.get(UUID(page["page_id"]))
+            if old is None:
+                continue
+            if old.source.sha256 != page["source"]["sha256"]:
+                raise EvidenceManifestError("La hoja guardada no coincide con la fuente solicitada.")
+            page["source"] = old.source.model_dump(mode="json")
+            if old.revision == page["revision"] and old.prepared is not None:
+                page["prepared"] = old.prepared.model_dump(mode="json")
+                page["source_to_prepared"] = old.source_to_prepared
+        manifest = EvidenceManifest.model_validate(data)
     try:
         await save_private_evidence_asset(
             json.dumps(receipt.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode(), "application/json", category="receipts",
             asset_id=uuid5(context.request_id, f"receipt:{context.actor_id}"),
         )
         for page, source in zip(data["pages"], sources, strict=True):
+            if UUID(page["page_id"]) in reused:
+                continue
             key = await save_private_evidence_asset(source.content, source.mime, category="sources",
                 asset_id=uuid5(context.request_id, f"source:{context.actor_id}:{page['page_id']}:{source.sha256}"))
             if page["source"]["key"] != key:

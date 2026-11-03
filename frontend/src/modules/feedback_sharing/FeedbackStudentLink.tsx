@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Copy, Link2, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { ActionMenu, Button } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
 import { copyFeedbackAccesses, listFeedbackAccesses, type FeedbackAccess, type FeedbackCopiedAccess, type FeedbackPreview } from './api';
 import { deriveDeliveryAvailability, type AccessRecovery } from './deliveryAvailability';
@@ -8,11 +8,12 @@ import { buildIndividualFeedbackMessage, buildWhatsAppShareUrl, shareFeedbackMes
 
 /** Presentation of the saved access, not a second issuance workflow. */
 export function FeedbackStudentLink({ evaluationId, gradeId, evaluationName, studentName, preview, accesses, queryStatus,
-  signal, valid, disabled, onBusy, onRetry, onGenerate, onReview, onManage }: {
+  signal, valid, disabled, onBusy, onRetry, onGenerate, onReview, onManage, compact = false }: {
   evaluationId: string; gradeId: string; evaluationName: string; studentName: string; preview?: FeedbackPreview;
   accesses: FeedbackAccess[]; queryStatus: 'loading' | 'loaded' | 'error'; signal: AbortSignal; valid: () => boolean;
   disabled: boolean; onBusy: (busy: boolean) => void; onRetry: () => void;
   onGenerate: () => void; onReview: () => void; onManage: () => void;
+  compact?: boolean;
 }) {
   const user = useAuth(state => state.user);
   const [owner] = useState(user?.id);
@@ -21,6 +22,7 @@ export function FeedbackStudentLink({ evaluationId, gradeId, evaluationName, stu
   const [selectedAccessId, setSelectedAccessId] = useState('');
   const [retry, setRetry] = useState(0);
   const [notice, setNotice] = useState('');
+  const [manualScope, setManualScope] = useState('');
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now);
   const mounted = useRef(true);
@@ -103,23 +105,29 @@ export function FeedbackStudentLink({ evaluationId, gradeId, evaluationName, stu
       if (!current()) return;
       const text = buildIndividualFeedbackMessage({ studentName, evaluationName, url: result.url! });
       try { await navigator.clipboard.writeText(text); if (current()) setNotice('Enlace copiado. Entrégalo solo a este estudiante o su familia.'); }
-      catch { if (current()) setNotice('El navegador no permitió copiar. Selecciona el enlace y cópialo manualmente.'); }
+      catch { if (current()) { setManualScope(scope); setNotice('El navegador no permitió copiar. Selecciona el enlace y cópialo manualmente.'); } }
     } catch {
       if (current()) { setRecoveries({ [chosen!.id]: { status: 'error', error: 'No pudimos recuperar su enlace.' } }); setNotice('No pudimos recuperar su enlace. Reintenta.'); }
     } finally { lock.current = false; if (mounted.current && valid() && useAuth.getState().user?.id === owner) { setBusy(false); onBusy(false); } }
   }
   const retryRead = () => { setRetry(value => value + 1); onRetry(); };
-  return <section aria-label="Enlace para el estudiante" className="min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-4 max-sm:px-[12px] [overflow-wrap:anywhere]">
-    <h3 className="font-bold">Enlace para el estudiante</h3>
-    <p role="status" className="text-sm font-semibold">{availability.label}</p>
+  return <section aria-label="Enlace para el estudiante" className={compact ? 'min-w-0 space-y-2 border-t border-border bg-surface pt-4 [overflow-wrap:anywhere] max-sm:sticky max-sm:bottom-0 max-sm:z-[5] max-sm:pb-[max(.75rem,env(safe-area-inset-bottom))]' : 'min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-4 max-sm:px-[12px] [overflow-wrap:anywhere]'}>
+    {!compact && <h3 className="font-bold">Enlace para el estudiante</h3>}
+    <p role="status" className={`flex items-center gap-2 text-sm font-semibold ${compact && available ? 'text-emerald-700 dark:text-emerald-300' : ''}`}>{compact && <Link2 className="h-4 w-4 shrink-0" aria-hidden="true" />}{availability.label}</p>
     {availability.kind === 'query_error' && <p className="text-sm text-muted">No pudimos consultar su enlace. Reintenta.</p>}
     {availability.kind === 'attention' && <p className="text-sm text-muted">{availability.cause === 'multiple' ? 'Hay varios enlaces vigentes. Elige cuál quieres copiar.' : availability.cause === 'legacy_unrecoverable' ? 'Este enlace antiguo no permite recuperar su copia. Puedes reemplazarlo desde sus opciones.' : 'No pudimos recuperar su enlace. Reintenta.'}</p>}
     {available && <>
       <p className="text-sm text-muted">Vence <time dateTime={chosen!.expires_at}>{new Date(chosen!.expires_at).toLocaleString('es-CO')}</time></p>
-      <label className="block text-xs font-semibold text-muted">Enlace del estudiante<textarea aria-label="Enlace del estudiante" readOnly value={availability.url} rows={2} className="mt-1 w-full resize-none rounded-lg border border-border bg-surface p-3 text-sm font-normal text-fg" onFocus={event => event.currentTarget.select()} /></label>
-      <div className="flex flex-wrap gap-2"><Button className="h-auto min-h-11 max-w-full whitespace-normal px-[12px] py-2 [overflow-wrap:normal]" disabled={disabled || busy} onClick={event => void act('copy', event.currentTarget)}><Copy className="h-4 w-4 shrink-0" aria-hidden="true" />Copiar enlace</Button><Button className="h-auto min-h-11 max-w-full whitespace-normal px-[12px] py-2 [overflow-wrap:normal]" variant="outline" disabled={disabled || busy} onClick={() => void act('whatsapp')}>WhatsApp</Button>{typeof navigator.share === 'function' && <Button className="h-auto min-h-11 max-w-full whitespace-normal px-[12px] py-2 [overflow-wrap:normal]" variant="outline" disabled={disabled || busy} onClick={() => void act('native')}><Share2 className="h-4 w-4 shrink-0" aria-hidden="true" />Compartir</Button>}</div>
+      {(!compact || manualScope === scope) && <label className="block text-xs font-semibold text-muted">Enlace del estudiante<textarea aria-label="Enlace del estudiante" readOnly value={availability.url} rows={2} className="mt-1 w-full resize-none rounded-lg border border-border bg-surface p-3 text-sm font-normal text-fg" onFocus={event => event.currentTarget.select()} /></label>}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button className={`h-auto min-h-11 min-w-0 max-w-full whitespace-normal px-[12px] py-2 [overflow-wrap:normal] ${compact ? 'flex-[1_1_10rem] sm:flex-none' : ''}`} disabled={disabled || busy} onClick={event => void act('copy', event.currentTarget)}><Copy className="h-4 w-4 shrink-0" aria-hidden="true" /><span>Copiar enlace</span></Button>
+        {compact ? !disabled && !busy && <ActionMenu label="Canales de envío" items={[
+          { label: 'WhatsApp', onSelect: () => act('whatsapp') },
+          ...(typeof navigator.share === 'function' ? [{ label: 'Compartir', onSelect: () => act('native') }] : []),
+        ]} /> : <><Button variant="outline" className="min-h-11" disabled={disabled || busy} onClick={() => void act('whatsapp')}>WhatsApp</Button>{typeof navigator.share === 'function' && <Button variant="outline" className="min-h-11" disabled={disabled || busy} onClick={() => void act('native')}><Share2 className="h-4 w-4 shrink-0" aria-hidden="true" />Compartir</Button>}</>}
+      </div>
     </>}
-    {availability.kind === 'ready_to_generate' && <Button disabled={disabled || busy} onClick={onGenerate}><Link2 className="h-4 w-4" aria-hidden="true" />Generar enlace</Button>}
+    {availability.kind === 'ready_to_generate' && <Button className={compact ? 'min-h-11 w-full sm:w-auto' : undefined} disabled={disabled || busy} onClick={onGenerate}><Link2 className="h-4 w-4" aria-hidden="true" />Generar enlace</Button>}
     {availability.kind === 'needs_review' && <Button variant="outline" disabled={disabled || busy} onClick={onReview}>Revisar</Button>}
     {availability.kind === 'needs_resend' && <Button variant="outline" disabled={disabled || busy} onClick={onReview}>Revisar y aprobar</Button>}
     {(availability.kind === 'query_error' || availability.kind === 'attention') && <Button variant="outline" disabled={disabled || busy} onClick={retryRead}>Reintentar</Button>}

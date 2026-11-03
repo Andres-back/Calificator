@@ -24,6 +24,8 @@ function json(route: Route, body: unknown, status = 200) {
 
 type MockOptions = { breakdown?: Record<string, unknown>; permissions?: string[]; rosterSize?: number; questionCount?: number };
 
+export { grade, student };
+
 export async function installMocks(page: Page, role: 'profesor' | 'estudiante', options: MockOptions = {}) {
   let authenticated = false;
   const activeUser = { ...(role === 'profesor' ? teacher : student), ...(options.permissions ? { permissions: options.permissions } : {}) };

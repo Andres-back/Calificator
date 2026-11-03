@@ -10,6 +10,24 @@ function loadImage() {
 }
 
 describe('GradeEvidenceViewer', () => {
+  it('gira solo la vista, conserva el giro al ampliar y lo restablece al cambiar de hoja', () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const view = render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
+    loadImage();
+    const rotate = () => fireEvent.click(screen.getByRole('button', { name: 'Girar vista 90 grados' }));
+    for (const degrees of [90, 180, 270, 0, 90]) {
+      rotate();
+      expect(screen.getByRole('img')).toHaveStyle({ transform: `rotate(${degrees}deg)` });
+    }
+    expect(screen.getByRole('group', { name: 'Imagen ampliable de la evidencia' })).toHaveClass('touch-pan-y');
+    expect(parseFloat((screen.getByRole('img') as HTMLImageElement).style.width)).toBeCloseTo(800 / 3);
+    fireEvent.click(screen.getByRole('button', { name: 'Ampliar evidencia' }));
+    expect(loadImage()).toHaveStyle({ transform: 'rotate(90deg)' });
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a la respuesta' }));
+    view.rerender(<GradeEvidenceViewer src="/api/evidencia/paginas/3" label="Hoja 3 de la evidencia" />);
+    expect(screen.getByRole('img')).toHaveStyle({ transform: 'rotate(0deg)' });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
   afterEach(() => { vi.restoreAllMocks(); });
   beforeEach(() => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({ x: 0, y: 0, top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300, toJSON() {} }));

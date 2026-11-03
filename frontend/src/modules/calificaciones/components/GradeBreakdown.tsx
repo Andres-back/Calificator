@@ -35,12 +35,12 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           <h2 id="grade-breakdown-title" className="text-lg font-extrabold text-fg">{student ? 'Nota explicada respuesta por respuesta' : 'Respuestas y puntajes'}</h2>
           {student && <p className="text-sm text-muted">Cada puntaje muestra la evidencia y la razón que lo respalda.</p>}
         </div>
-        <Badge tone={breakdown.requiere_revision ? 'warning' : 'success'}>
+        {!compact && <Badge tone={breakdown.requiere_revision ? 'warning' : 'success'}>
           {breakdown.requiere_revision ? 'Requiere revisión' : 'Puntajes registrados'}
-        </Badge>
+        </Badge>}
       </div>
       {onSelectComponent && !student ? <>
-        <nav aria-label="Preguntas y criterios" className="grid grid-cols-[repeat(auto-fit,minmax(max(2.75rem,calc((100%_-_1.5rem)/4)),1fr))] gap-2 sm:flex sm:flex-wrap">
+        <nav aria-label="Preguntas y criterios" className="grid grid-cols-[repeat(auto-fit,minmax(max(2.75rem,calc((100%_-_1.5rem)/4)),1fr))] gap-2 lg:flex lg:flex-wrap">
           {breakdown.componentes.map((component, index) => {
             const item = priorities.get(component.id) ?? classifyReviewComponent(component);
             const { label, Icon, classes } = reviewPriorityPresentation[item.level];
@@ -52,7 +52,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             title={[label, ...item.reasons.map((reason) => reason.label)].join('. ')}
             data-review-priority={item.level}
             className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold sm:justify-start sm:gap-2 sm:px-3 ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
-          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-all">{component.numero ?? component.orden + 1}</span>{compact && <span data-question-score className="hidden text-left text-xs font-normal sm:inline">{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}{compact && <span className="sr-only" id={`grade-nav-summary-${component.id}`}>{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}</button>;
+          ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-all">{component.numero ?? component.orden + 1}</span>{compact && <span data-question-score aria-hidden="true" className="hidden text-left text-xs font-normal lg:inline">{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}{compact && <span className="sr-only" id={`grade-nav-summary-${component.id}`}>{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
         </nav>
         {selectedIndex >= 0 && <div className="flex min-w-0 items-center justify-between gap-2" aria-label="Recorrer preguntas">
@@ -60,8 +60,8 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           <p className="text-sm font-semibold tabular-nums" aria-live="polite">{selectedIndex + 1} de {breakdown.componentes.length}</p>
           <button type="button" aria-label="Pregunta siguiente" disabled={selectedIndex === breakdown.componentes.length - 1} onClick={() => onSelectComponent(breakdown.componentes[selectedIndex + 1].id)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-sm font-semibold disabled:opacity-40"><span className="hidden sm:inline">Siguiente</span><ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" /></button>
         </div>}
-        <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">{calculation?.provisional ? calculation.label : 'Cómo se calcula la nota'} · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} /></details>
-      </> : <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} />}
+        {!compact && <details className="rounded-lg border border-border px-3"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">{calculation?.provisional ? calculation.label : 'Cómo se calcula la nota'} · {Number(breakdown.formula.nota_final).toFixed(2)}</summary><GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} /></details>}
+      </> : !compact && <GradeFormula formula={breakdown.formula} adjustmentDetail={breakdown.ajuste_global_detalle} calculation={calculation} />}
       <div className="space-y-3">
         {breakdown.componentes.filter((component) => student || !selectedComponentId || component.id === selectedComponentId).map((component) => {
           const presentation = gradeComponentPresentation(component);
@@ -69,8 +69,8 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           const item = priorities.get(component.id);
           const priority = item ? reviewPriorityPresentation[item.level] : null;
           const PriorityIcon = priority?.Icon;
-          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 rounded-xl border p-4 [overflow-wrap:anywhere] ${priority ? `border-l-4 ${priority.classes}` : `border-border bg-surface border-l-4 ${presentation.cardClass}`}`}>
-            {priority && PriorityIcon && <div className="mb-3 space-y-1"><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{item.reasons.map((reason) => reason.label).join(' · ')}</p> : null}</div>}
+          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 [overflow-wrap:anywhere] ${compact ? 'border-t border-border pt-5' : `rounded-xl border border-l-4 p-4 ${priority ? priority.classes : `border-border bg-surface ${presentation.cardClass}`}`}`}>
+            {priority && PriorityIcon && (!compact || item?.level !== 'safe') && <div className={`mb-3 space-y-1 ${compact ? `rounded-lg border px-3 py-2 ${priority.classes}` : ''}`}><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{[...new Set(item.reasons.map((reason) => reason.label))].join(' · ')}</p> : null}</div>}
             <div className={`flex flex-col gap-2 ${selectedComponentId && !student ? '' : 'sm:flex-row sm:items-start sm:justify-between'}`}>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">
@@ -86,14 +86,14 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
               </div>
             </div>
             <div className="mt-3 grid items-start gap-3" style={renderEvidence && !student ? { gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,24rem),1fr))' } : undefined}>
-            {compact ? <div data-testid="grade-answer-comparison" className="divide-y divide-border rounded-lg border border-border bg-surface-2 px-3">
-              <div className={`grid gap-2 py-2 ${(component.respuesta_estudiante?.length ?? 0) > 80 ? 'grid-cols-1' : 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'}`}>
+            {compact ? <div data-testid="grade-answer-comparison" className="divide-y divide-border">
+              <div className="space-y-0.5 pb-2">
                 <p className="text-xs font-semibold text-muted">Respuesta del estudiante</p>
-                <p className="whitespace-pre-wrap text-sm leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</p>
+                <p className="whitespace-pre-wrap text-base leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</p>
               </div>
-              <div className={`grid gap-2 py-2 ${(component.respuesta_referencia?.length ?? 0) > 80 ? 'grid-cols-1' : 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'}`}>
+              <div className="space-y-0.5 pt-2">
                 <p className="text-xs font-semibold text-muted">Respuesta de referencia</p>
-                <p className="whitespace-pre-wrap text-sm leading-6 text-fg">{component.referencia_oculta ? 'Se mostrará cuando el docente libere las respuestas.' : component.respuesta_referencia || 'No aplica o no fue configurada.'}</p>
+                <p className="whitespace-pre-wrap text-base leading-6 text-fg">{component.referencia_oculta ? 'Se mostrará cuando el docente libere las respuestas.' : component.respuesta_referencia || 'No aplica o no fue configurada.'}</p>
               </div>
             </div> : <div className={`grid gap-3 ${selectedComponentId && !student ? '' : 'lg:grid-cols-2'}`}>
               <div className="rounded-lg bg-surface-2 p-3">
@@ -112,12 +112,12 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             </div>}
             {!student && renderEvidence?.(component)}
             </div>
-            <div className="mt-3 flex items-start gap-2 rounded-lg border border-border p-3 text-sm leading-6">
-              {PriorityIcon ? <PriorityIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : component.requiere_revision ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />}
+            <div className={compact ? 'mt-4 border-t border-border pt-3 text-base leading-7' : 'mt-3 flex items-start gap-2 rounded-lg border border-border p-3 text-sm leading-6'}>
+              {!compact && (PriorityIcon ? <PriorityIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : component.requiere_revision ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />)}
               <p><strong>Por qué:</strong> {component.explicacion || 'No hay una explicación verificable; debe revisarla el docente.'}</p>
             </div>
             {component.orientacion_mejora && (
-              <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
+              <div className={compact ? 'mt-3 text-base leading-7' : 'mt-2 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100'}>
                 <strong>Para mejorar:</strong> {component.orientacion_mejora}
               </div>
             )}

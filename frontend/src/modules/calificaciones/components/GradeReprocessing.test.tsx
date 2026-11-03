@@ -5,11 +5,11 @@ import { AxiosError } from 'axios';
 import type { CalificacionDetalle } from '@/types/api';
 import { GradeReprocessing } from './GradeReprocessing';
 
-const mocks = vi.hoisted(() => ({ send: vi.fn(), history: vi.fn(), context: vi.fn(), detail: vi.fn(), realPicker: false, scan: false }));
+const mocks = vi.hoisted(() => ({ send: vi.fn(), history: vi.fn(), context: vi.fn(), detail: vi.fn(), edit: vi.fn(), realPicker: false, scan: false }));
 vi.mock('@/components/evidence/useEvidenceScanCapability', () => ({
   useEvidenceScanCapability: () => ({ available: mocks.scan, scope: 'teacher:e1:s1' }),
 }));
-vi.mock('../api', () => ({ reprocessGrade: mocks.send, listGradingRevisions: mocks.history, getRegradingContext: mocks.context, getCalificacionDetalle: mocks.detail }));
+vi.mock('../api', () => ({ reprocessGrade: mocks.send, listGradingRevisions: mocks.history, getRegradingContext: mocks.context, getCalificacionDetalle: mocks.detail, getEvidenceEditContext: mocks.edit }));
 vi.mock('@/components/evidence/MultiPageEvidencePicker', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/components/evidence/MultiPageEvidencePicker')>();
   return { MultiPageEvidencePicker: (props: React.ComponentProps<typeof actual.MultiPageEvidencePicker>) => mocks.realPicker
@@ -36,6 +36,39 @@ const changed = { estado: 'puntajes_actualizados', version_entrega_id: 'old', ve
   requiere_confirmacion: true, cambios: [{ numero: '8', puntaje_anterior: '0.56', puntaje_actual: '1.25' }, { numero: '9', puntaje_anterior: '0.52', puntaje_actual: '1.25' }],
   mensaje: 'El reparto de puntos cambió. Confirma los puntos actuales antes de enviar.' };
 beforeEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); mocks.realPicker = false; mocks.scan = false; mocks.context.mockResolvedValue(unchanged); mocks.detail.mockResolvedValue(cal); mocks.history.mockResolvedValue([]); mocks.send.mockResolvedValue({ ...cal, estado: 'procesando', nota_confirmada: null, resultado_json: { job_id: 'job1' } }); });
+
+describe('141 editar hojas guardadas', () => {
+  async function openEditor() {
+    mocks.edit.mockResolvedValue({ version_esperada: cal.updated_at, fingerprint: 'a'.repeat(64), paginas: [
+      { referencia: 'first', numero: 1, rotacion: 0 }, { referencia: 'second', numero: 2, rotacion: 90 },
+    ], limites: { max_pages: 10, max_file_bytes: 1024, max_total_bytes: 4096 } });
+    render(<QueryClientProvider client={new QueryClient()}><GradeReprocessing cal={cal} evidenceView onAccepted={vi.fn()} /></QueryClientProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar hojas' }));
+    await screen.findByText('Hoja 2');
+    await screen.findByTestId('regrading-context-ready');
+  }
+
+  it('conserva las hojas por referencia y requiere confirmar antes de guardar el orden', async () => {
+    await openEditor();
+    const save = screen.getByRole('button', { name: 'Guardar y volver a calificar' });
+    expect(save).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Subir hoja 2' }));
+    expect(save).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo guardar las hojas/ }));
+    fireEvent.click(save);
+    await waitFor(() => expect(mocks.send).toHaveBeenCalledWith('c1', expect.objectContaining({
+      confirmed: true, files: [], evidenceEdit: { fingerprint: 'a'.repeat(64), paginas: [{ referencia: 'second' }, { referencia: 'first' }] },
+    })));
+  });
+
+  it('pide confirmar el descarte y no escribe al cancelar', async () => {
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar hoja 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Descartar cambios' }));
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+});
 
 describe('140 puntajes al volver a calificar', () => {
   it('compara máximos y exige aceptar puntos además de reabrir la nota', async () => {

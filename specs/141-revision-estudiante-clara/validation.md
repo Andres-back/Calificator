@@ -1,0 +1,57 @@
+# Registro de validación — Spec 141
+
+## Estado a 2026-11-02
+
+- Alcance y plan aprobados por el usuario; etiquetas `spec-approved` y `plan-approved` registradas en issue #301.
+- Diseño premium definido en `contracts/diseno-premium.md` y maqueta local `design/revision-premium.html`.
+- Checklist personalizado `ux-integridad.md`: 8 ítems pendientes del revisor. Se solicitó autorización explícita para asistir en la revisión. No se modificaron sus marcadores.
+- Código funcional de frontend/backend: no iniciado por este gate. No hay PR de implementación, CI, fusión o despliegue de Spec 141.
+- Ninguna nota, comentario, evidencia real, clave, configuración IA o dato de producción accedido o modificado para esta fase.
+
+## Maqueta sintética, no implementación
+
+Capturada con Chrome mediante Playwright CLI en Windows, tamaños de viewport 384×844 y 1440×1000. Los nombres, notas, comentarios y hoja de ejemplo son ficticios. Los botones de copia/edición no generan accesos ni escriben datos reales. Las esquinas del editor muestran distribución, no un algoritmo implementado.
+
+Archivos locales bajo `output/playwright/` de este worktree:
+
+- `spec141-design-feedback-384-light.png`: jerarquía móvil y acción principal.
+- `spec141-design-feedback-384-light-scroll.png`: desplazamiento desde el centro; medición de documento 384 px, viewport 384 px, desplazamiento vertical 121 px, sin desbordamiento horizontal en este estado.
+- `spec141-design-feedback-384-dark-scroll.png`: modo oscuro; el clic en Apariencia puede devolver arriba el viewport, no usar el nombre del archivo como prueba de posición de scroll.
+- `spec141-design-feedback-1440-light.png` y `spec141-design-feedback-1440-dark.png`: separación lista/detalle en escritorio.
+- `spec141-design-answers-384-light.png`: navegador compacto de preguntas y contenido de la respuesta.
+- `spec141-design-evidence-384-light.png`: hoja y herramientas contextuales.
+- `spec141-design-editor-384-light.png`: distribución de editor a pantalla completa.
+- `spec141-design-history-384-light.png`: eventos legibles sin repetir trazas en la pregunta.
+- `spec141-design-calculation-384-light.png`: ejemplo de puntos, escala y ajuste.
+
+Se inspeccionaron visualmente las vistas de retroalimentación de escritorio y celular; se recorrieron pestañas y se abrió/canceló el editor. Esto NO prueba el software de producción ni el comportamiento del escáner real.
+
+## Incidencias del entorno
+
+- El navegador de pruebas no pudo arrancar dentro del sandbox de Windows; la ejecución aislada autorizada fuera del sandbox funcionó.
+- La navegación `file:` está bloqueada por Playwright CLI; la maqueta se sirvió solo en `127.0.0.1:4196`, desde su carpeta de diseño. No se sirvió el repositorio ni archivos privados.
+- La sesión de navegador `spec141-design` y el servidor local se cerraron al terminar.
+- No se ejecutaron Docker/WSL ni WebKit para esta maqueta. No se reinstalaron dependencias o navegadores.
+
+## Implementación local — 2026-11-03
+
+- Checklist de requisitos y UX: 16/16 y 8/8. Revisión de UX autorizada en el chat. La revisión anterior queda registrada como estado histórico.
+- Caracterización previa: 56 pruebas aprobadas. La ejecución inicial falló por el directorio temporal del sandbox; las corridas nuevas usan TEMP/TMP dentro del espacio de trabajo.
+- Retroalimentación individual: lectura con divisores, acciones secundarias en menú, acción principal única y URL visible solo tras un fallo de portapapeles. Se reutiliza el controlador existente; falta terminar la separación interna del flujo individual.
+- Cálculo: se muestran puntos, escala, ajuste, redondeo y resultado guardados. Sin inferir subtotales históricos si el desglose no incluye secciones.
+- Respuestas: navegación compacta, resumen con causas distintas y trazabilidad en Historial. Evidencia: giro de vista sin escrituras, con región coherente al ampliar.
+- Grupo: filas compactas y prioridad visual a generar o copiar según la selección. Falta validar de punta a punta el flujo mixto y el retorno.
+- Sin implementación del contrato para recortar/guardar hojas existentes o añadir fotos conservando el paquete. Sigue disponible el flujo anterior de reemplazo completo. No se presenta el giro de vista como edición persistente.
+- TypeScript, lint estricto y build pasaron. La regresión de calificaciones y retroalimentación dio 506/506 pruebas unitarias en 63 archivos.
+- La corrida E2E Chromium de reentrada/cálculo no llegó a ejecutar pruebas: el servidor de pruebas no quedó escuchando en 127.0.0.1:4197. Se detuvo el intento. No equivale a una validación de navegador ni física.
+- No se tocó producción, no se fusionó ni se desplegó.
+
+## Continuación — edición de evidencia
+
+- «Editar hojas» permite ajustar, girar, ordenar, quitar o añadir fotos en un borrador. Cancelar no escribe; guardar exige confirmar la recalificación. El servidor comprueba acceso y versión, conserva las fuentes originales y rechaza referencias ajenas. Los PDF históricos aplanados conservan la opción de reemplazo completo.
+- Pasaron 22 pruebas locales de edición, manifiesto, preparación y almacenamiento y 27 pruebas frontend del borrador y su integración. Las cuatro incidencias de recuperación observadas en Windows también se reprodujeron en el código anterior; falta comprobarlas en Linux.
+- Chromium con datos simulados: 56 de 58 pruebas pasaron inicialmente; las otras dos, de texto al 200 %, pasaron tras corregir el ancho de «Copiar enlace». El editor se comprobó a 384 y 1440 px: cancelar no envía cambios y reordenar envía referencias, no vuelve a subir los originales.
+
+## Pendiente
+
+Integración con PostgreSQL aislado (motor Docker no disponible), pruebas físicas Android/iPhone y CI. No se fusionó, desplegó ni modificó producción.

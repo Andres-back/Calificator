@@ -34,7 +34,7 @@ function VersionedEvidence({ evidenceUrl, page, region }: { evidenceUrl: string;
   </div>;
   if (!loadedUrl) return <p role="status" className="rounded-xl border border-border p-4 text-sm text-muted">Comprobando la hoja de esta respuesta…</p>;
   return <>
-    <p className="text-xs leading-5 text-muted">Vista cercana de esta respuesta. Puedes ampliar o ver la hoja completa para comprobarla.</p>
+    <p className="sr-only">Vista cercana de esta respuesta.</p>
     <GradeEvidenceViewer src={loadedUrl} label={`Hoja ${page} de la evidencia`} region={region.bbox} />
   </>;
 }
@@ -56,7 +56,7 @@ export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, reg
   const [regionIndex, setRegionIndex] = useState(0);
   const activeRegion = pageRegions[Math.min(regionIndex, pageRegions.length - 1)];
   return <section className="min-w-0 space-y-2" aria-label="Evidencia de la respuesta seleccionada">
-    {!activeRegion && <p className="text-xs leading-5 text-muted">No hay una zona localizada para esta respuesta. Puedes ampliar la hoja manualmente para revisarla.</p>}
+    {!activeRegion && <p className="text-xs text-muted">No hay una zona localizada; se muestra la hoja completa.</p>}
     {available.length > 1 && <nav className="flex flex-wrap gap-2" aria-label="Hojas de esta respuesta">
       {available.map((item) => <button type="button" key={item} aria-current={item === page ? 'page' : undefined} onClick={() => onPageChange(item)}
         className={`focus-ring min-h-11 min-w-11 rounded-lg border px-3 text-sm font-semibold ${item === page ? 'border-brand-400 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200' : 'border-border bg-surface text-fg'}`}>Hoja {item}</button>)}

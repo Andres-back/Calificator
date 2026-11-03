@@ -28,7 +28,20 @@ describe('ReviewTriagePanel', () => {
     expect(review).toHaveBeenCalledWith('revision');
     fireEvent.click(screen.getByText(/Ver todos los avisos/));
     expect(screen.getByRole('button', { name: 'Ver evidencia' })).toBeInTheDocument();
+    expect(screen.getAllByText(/La nota propuesta por la IA no coincide/)).toHaveLength(1);
     expect(summary.globalReasons).toContain('hoja_faltante');
+  });
+  it('141 no agrega un aviso si no hay incidencias activas', () => {
+    const summary = buildReviewTriage(breakdown([component('p1', 0)]));
+    render(<ReviewTriagePanel focused summary={summary} onSelectComponent={vi.fn()} />);
+    expect(screen.queryByRole('region', { name: 'Resumen de revisión' })).not.toBeInTheDocument();
+  });
+  it('141 conserva una incidencia distinta cuando la discrepancia solo viene de los números guardados', () => {
+    const summary = buildReviewTriage({ ...breakdown([component('p1', 0)]), bloqueos: ['hoja_faltante'] });
+    render(<ReviewTriagePanel focused summary={summary} primaryMessage="La IA propone 4, pero el cálculo da 3."
+      onSelectComponent={vi.fn()} onReviewGeneral={vi.fn()} />);
+    fireEvent.click(screen.getByText('Ver todos los avisos'));
+    expect(screen.getByRole('button', { name: 'Ver evidencia' })).toBeVisible();
   });
   it('no afirma una decisión docente si el análisis todavía está en proceso', () => {
     render(<ReviewTriagePanel compact historical processing summary={buildReviewTriage(null)} extraReasons={['aviso_previo']} onSelectComponent={() => undefined} />);

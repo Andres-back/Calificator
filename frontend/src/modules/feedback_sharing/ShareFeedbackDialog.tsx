@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { ArrowLeft, MessageSquareText, RefreshCw } from 'lucide-react';
-import { Button, Modal } from '@/components/ui';
+import { ActionMenu, Button, Modal } from '@/components/ui';
 import { useAuth } from '@/stores/auth';
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { getEvaluationReview } from '@/modules/calificaciones/api';
@@ -221,25 +221,44 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   if (!permitted) return null;
   const scrollLayout = feedbackScrollLayout(embedded);
   const score = detailRow?.preview?.resultado ?? detailRow?.preview?.borrador_docente;
+  const individual = Boolean(embedded && initialGradeId);
+  const message = detailRow?.preview?.resultado?.retroalimentacion ?? detailRow?.preview?.batch_candidate?.feedback_text
+    ?? detailRow?.preview?.revision_docente?.feedback_text ?? score?.retroalimentacion;
   const close = () => { if (!blocked) onClose(); else if (reviewDirty) setNotice('Guarda o descarta el mensaje antes de cerrar.'); };
-  const detailView = detailRow && <section className="space-y-4 p-4 max-sm:px-[12px]" aria-label={'Retroalimentación de ' + detailRow.nombre}>
+  const detailView = detailRow && <section className={individual ? 'mx-auto w-full max-w-3xl space-y-4 px-1 py-3 sm:px-4' : 'space-y-4 p-4 max-sm:px-[12px]'} aria-label={'Retroalimentación de ' + detailRow.nombre}>
     {!initialGradeId && <Button variant="link" disabled={blocked} onClick={() => { setDetail(null); restoreFocus(); }}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Volver a la lista</Button>}
-    <h3 className="break-words text-lg font-bold">{detailRow.nombre}</h3>
-    {score?.nota != null && <p className="text-xl font-bold tabular-nums">{formatGradeScore(Number(score.nota))} / {formatGradeScore(Number(score.nota_maxima))}</p>}
-    <p className="text-sm text-muted">{detailRow.preview?.elegible ? 'Lista para entregar' : detailRow.preview?.motivo ?? 'Primero revisa la retroalimentación.'}</p>
-    {(detailRow.preview?.batch_candidate?.feedback_text || detailRow.preview?.revision_docente?.feedback_text || score?.retroalimentacion) && <FeedbackMessage text={detailRow.preview?.resultado?.retroalimentacion ?? detailRow.preview?.batch_candidate?.feedback_text ?? detailRow.preview?.revision_docente?.feedback_text ?? score!.retroalimentacion} />}
+    {individual ? <header className="flex flex-wrap items-center justify-between gap-2">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-muted">Para el estudiante</h3>
+      <div className="flex items-center gap-1">
+        {((canDeliver && detailRow.preview?.revision_docente) || (canEditMessage && detailRow.preview?.mensaje_editable)) && <Button variant="outline" className="min-h-11" disabled={blocked} aria-label={'Revisar retroalimentación de ' + detailRow.nombre} onClick={event => { rememberFocus(event.currentTarget); setReviewing(detailRow.calificacion_id!); }}>Editar</Button>}
+        {!blocked && <ActionMenu label="Opciones de retroalimentación" items={[
+          { label: 'Revisar respuestas y evidencia', onSelect: () => onReview(detailRow.calificacion_id!) },
+          ...(canDeliver ? [
+            { label: 'Imprimir retroalimentación', onSelect: () => { rememberFocus(); if (pendingRows.length) setPendingPrint(true); else void preparePrint(); } },
+            ...(accesses.some(access => access.calificacion_id === detailRow.calificacion_id) ? [{ label: 'Gestionar enlace', onSelect: () => setManageAccesses(true) }] : []),
+          ] : []),
+          ...(canBatchPublish && !eligible.length ? [{ label: 'Revisar antes de publicar', onSelect: () => { rememberFocus(); setPublishing(true); } }] : []),
+        ]} />}
+      </div>
+    </header> : <>
+      <h3 className="break-words text-lg font-bold">{detailRow.nombre}</h3>
+      {score?.nota != null && <p className="text-xl font-bold tabular-nums">{formatGradeScore(Number(score.nota))} / {formatGradeScore(Number(score.nota_maxima))}</p>}
+      <p className="text-sm text-muted">{detailRow.preview?.elegible ? 'Lista para entregar' : detailRow.preview?.motivo ?? 'Primero revisa la retroalimentación.'}</p>
+    </>}
+    {message ? <FeedbackMessage text={message} presentation={individual ? 'premium' : 'default'} /> : <p className="py-3 text-base text-muted">Todavía no hay retroalimentación guardada.</p>}
+    {individual && !detailRow.preview?.elegible && detailRow.preview?.motivo && <p className="text-sm text-muted">{detailRow.preview.motivo}</p>}
     {canDeliver && detailRow.calificacion_id && <FeedbackStudentLink key={detailRow.calificacion_id}
       evaluationId={evaluationId} gradeId={detailRow.calificacion_id} studentName={detailRow.nombre}
       evaluationName={detailRow.preview?.resultado?.evaluacion || 'esta evaluación'} preview={detailRow.preview}
       accesses={accesses} queryStatus={accessStatus} signal={controller.current.signal} valid={valid}
-      disabled={blocked} onBusy={setBusy} onRetry={() => { void refreshAccesses(); }}
+      compact={individual} disabled={blocked} onBusy={setBusy} onRetry={() => { void refreshAccesses(); }}
       onGenerate={() => openShare([detailRow.calificacion_id!], undefined, true)}
       onReview={() => { if (detailRow.preview?.elegible) setManageAccesses(true); else if (detailRow.preview?.revision_docente || detailRow.preview?.mensaje_editable) openShare([detailRow.calificacion_id!]); else onReview(detailRow.calificacion_id!); }} onManage={() => setManageAccesses(true)} />}
-    <div className="flex flex-wrap gap-2">
+    {!individual && <div className="flex flex-wrap gap-2">
       {((canDeliver && detailRow.preview?.revision_docente) || (canEditMessage && detailRow.preview?.mensaje_editable)) && <Button variant="outline" disabled={blocked} aria-label={'Revisar retroalimentación de ' + detailRow.nombre} onClick={event => { rememberFocus(event.currentTarget); setReviewing(detailRow.calificacion_id!); }}>Editar y revisar retroalimentación</Button>}
       <Button variant="link" disabled={blocked} onClick={() => onReview(detailRow.calificacion_id!)}>Revisar respuestas y evidencia</Button>
-    </div>
-    {canDeliver && <details open={manageAccesses} onToggle={event => setManageAccesses(event.currentTarget.open)} className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Opciones avanzadas del enlace</summary><FeedbackAccessList showCopy={false} evaluationId={evaluationId} accesses={accesses.filter(access => access.calificacion_id === detailRow.calificacion_id)} previews={detailRow.preview ? [detailRow.preview] : []} signal={controller.current.signal} valid={valid} onBusy={setBusy} onChanged={refreshAccesses} onIssued={() => { setNotice('Cambio guardado. Copia el enlace vigente en el bloque del estudiante.'); }} /></details>}
+    </div>}
+    {canDeliver && (individual ? <Modal open={manageAccesses} title="Gestionar enlace" closeOnEscape={!busy} closeOnBackdrop={!busy} showCloseButton={!busy} onClose={() => { if (!busy) setManageAccesses(false); }}><FeedbackAccessList showCopy={false} evaluationId={evaluationId} accesses={accesses.filter(access => access.calificacion_id === detailRow.calificacion_id)} previews={detailRow.preview ? [detailRow.preview] : []} signal={controller.current.signal} valid={valid} onBusy={setBusy} onChanged={refreshAccesses} onIssued={() => setNotice('Cambio guardado.')} /></Modal> : <details open={manageAccesses} onToggle={event => setManageAccesses(event.currentTarget.open)} className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Opciones avanzadas del enlace</summary><FeedbackAccessList showCopy={false} evaluationId={evaluationId} accesses={accesses.filter(access => access.calificacion_id === detailRow.calificacion_id)} previews={detailRow.preview ? [detailRow.preview] : []} signal={controller.current.signal} valid={valid} onBusy={setBusy} onChanged={refreshAccesses} onIssued={() => { setNotice('Cambio guardado. Copia el enlace vigente en el bloque del estudiante.'); }} /></details>)}
   </section>;
   return <FeedbackFrame scope={frameScope} viewport={viewport} embedded={embedded} onClose={close} canClose={!blocked} title={initialGradeId ? 'Retroalimentación del estudiante' : 'Retroalimentación del grupo'}>
     {reviewDirty && <p role="status" className="shrink-0 border-b border-amber-400 p-3 text-sm">Tienes un mensaje sin guardar. Guarda o descarta los cambios antes de cerrar o cambiar de estudiante.</p>}
@@ -266,8 +285,8 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
           </div>}
           <div {...scrollLayout} className={`${initialGradeId || detail ? 'block' : 'hidden xl:block'} min-w-0 flex-1 ${scrollLayout.className}`}>{detailView ?? <div className="grid h-full place-content-center gap-3 p-8 text-center text-muted"><MessageSquareText className="mx-auto h-8 w-8" aria-hidden="true" /><p>Selecciona estudiantes para compartir o imprimir.</p><p className="text-sm">Abre una retroalimentación para leerla o revisarla aquí.</p></div>}</div>
         </div>}
-        {initialGradeId && canBatchPublish && !publishing && !eligible.length && <div className="shrink-0 border-t border-border p-3"><Button variant="outline" onClick={event => { rememberFocus(event.currentTarget); setPublishing(true); }}>Revisar antes de publicar</Button></div>}
-        {canDeliver && !publishing && <FeedbackSelectionBar showShare={!initialGradeId && selectedRows.some(row => !accesses.some(access => access.calificacion_id === row.calificacion_id))} copyAction={!initialGradeId && accessStatus === 'loaded' ? <FeedbackLinkActions direct selectionOnly evaluationId={evaluationId} evaluationName={rows.find(row => row.preview?.resultado?.evaluacion)?.preview?.resultado?.evaluacion || 'esta evaluación'} accesses={accesses} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy || reviewDirty} onBusy={setBusy} onManage={id => openDetail(id)} /> : undefined} count={selectedRows.length} hiddenCount={hiddenSelected} busy={busy} onShare={trigger => openShare(selected, trigger)} onPrint={trigger => { rememberFocus(trigger); if (pendingRows.length) setPendingPrint(true); else void preparePrint(); }} />}
+        {!individual && initialGradeId && canBatchPublish && !publishing && !eligible.length && <div className="shrink-0 border-t border-border p-3"><Button variant="outline" onClick={event => { rememberFocus(event.currentTarget); setPublishing(true); }}>Revisar antes de publicar</Button></div>}
+        {!individual && canDeliver && !publishing && <FeedbackSelectionBar showShare={!initialGradeId && selectedRows.some(row => !accesses.some(access => access.calificacion_id === row.calificacion_id))} copyAction={!initialGradeId && accessStatus === 'loaded' ? <FeedbackLinkActions direct selectionOnly evaluationId={evaluationId} evaluationName={rows.find(row => row.preview?.resultado?.evaluacion)?.preview?.resultado?.evaluacion || 'esta evaluación'} accesses={accesses} selectedIds={selected} signal={controller.current.signal} valid={valid} disabled={busy || reviewDirty} onBusy={setBusy} onManage={id => openDetail(id)} /> : undefined} count={selectedRows.length} hiddenCount={hiddenSelected} busy={busy} onShare={trigger => openShare(selected, trigger)} onPrint={trigger => { rememberFocus(trigger); if (pendingRows.length) setPendingPrint(true); else void preparePrint(); }} />}
       </>}
     </>}
   </FeedbackFrame>;

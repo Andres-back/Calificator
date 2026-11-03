@@ -132,7 +132,8 @@ test('aviso general con respuestas sin alertas conduce al desglose sin escribir 
   });
   await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
   await expect(page.getByRole('alert')).toContainText('La nota propuesta por la IA no coincide');
-  await expect(page.getByText('Ver todos los avisos', { exact: true })).toBeVisible();
+  // The only active cause is already visible; there is no duplicate panel.
+  await expect(page.getByText('Ver todos los avisos', { exact: true })).toHaveCount(0);
   await expect(page.getByText(/Sin señales de incertidumbre/)).toHaveCount(0);
   await expect(page.getByText(code, { exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: 'Revisar ahora', exact: true }).click();
@@ -214,7 +215,9 @@ test('resumen móvil preserva contexto y despliega detalles sin mutaciones', asy
   page.on('request', (request) => { if (request.method() !== 'GET' && /calificaciones|jobs/.test(request.url())) mutations.push(request.url()); });
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1');
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('Puntos por respuestas: 1.00 / 1.00');
+  const calculation = page.getByRole('region', { name: 'Cálculo y criterios registrados' });
+  await calculation.getByText('Ver cálculo de la nota', { exact: true }).click();
+  await expect(calculation.getByText('Puntos por respuestas')).toBeVisible();
   await expect(page.getByText(/Ver valoración por criterios/)).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeHidden();
   const location = page.getByRole('navigation', { name: 'Ubicación de la revisión' }).filter({ visible: true });
@@ -285,7 +288,7 @@ test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async (
   await page.route('**/api/calificaciones/c1/detalle', (route) => json(route, {
     ...grade, estado: saved ? 'ajustada' : 'sugerida', nota_sugerida: saved ? 3.5 : 5, nota_confirmada: saved ? 3.5 : null,
     estudiante_nombre: student.nombre, materia_id: 'm1', entrega_evidencia_paginas: 0, timeline: [], feedback: 'Retroalimentación inicial',
-    desglose: saved ? { ...breakdown, version: 2, formula: { ...breakdown.formula, puntos_obtenidos: 0.7, nota_final: 3.5 }, componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: 0.7, estado: 'parcial', explicacion: 'Procedimiento parcialmente completo.' }] } : breakdown,
+    desglose: saved ? { ...breakdown, version: 2, formula: { ...breakdown.formula, puntos_obtenidos: 0.7, nota_base: 3.5, nota_antes_redondeo: 3.5, nota_final: 3.5 }, componentes: [{ ...breakdown.componentes[0], puntos_obtenidos: 0.7, estado: 'parcial', explicacion: 'Procedimiento parcialmente completo.' }] } : breakdown,
   }));
   await page.route('**/api/calificaciones/c1/desglose', (route) => {
     expect(route.request().postDataJSON()).toMatchObject({ version_esperada: 1, cambios_componentes: [{ componente_id: 'q1', puntos_obtenidos: 0.7 }] });
@@ -306,7 +309,10 @@ test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async (
   await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
   await expect(page.locator('#grade-component-q1').getByText('0.70 / 1.00', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Cálculo y criterios registrados' })).toContainText('0.70 / 1.00');
+  const calculation = page.getByRole('region', { name: 'Cálculo y criterios registrados' });
+  await calculation.getByText('Ver cálculo de la nota', { exact: true }).click();
+  await expect(calculation.getByText('0.7 / 1', { exact: true })).toBeVisible();
+  await expect(calculation.getByText('3.50 / 5', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Historial', exact: true }).click();
   await page.getByText('Historial y opciones de la nota', { exact: true }).click();
   await page.getByRole('button', { name: 'Historial del cálculo' }).click();
