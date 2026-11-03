@@ -66,3 +66,16 @@ Integración con PostgreSQL aislado (motor Docker no disponible), pruebas físic
 - En `12dc69f` pasaron Backend quality and tests, Container builds y Frontend quality and build. GitHub usó PostgreSQL aislado y ejecutó las pruebas de permisos de edición, conservación de originales, replay, recuperación y concurrencia; no se usaron datos reales.
 - El E2E contextual falló por una búsqueda de texto que encontró tanto la etiqueta como una frase explicativa. Se ajustó la prueba para verificar la etiqueta exacta, sin cambiar la fórmula ni la interfaz.
 - Las diez variantes afectadas pasaron después de la corrección en Chromium local: 360, 390, 768, 1280 y 1440 px, en claro y oscuro. No sustituye las pruebas físicas ni las de otros motores.
+
+## Mosaico de revisión individual
+
+- El mosaico reemplaza la tira de pestañas. Al entrar a una sección se ocultan las otras opciones y el resumen general; «Volver a opciones» restaura el foco. Se conservan los enlaces directos y los borradores de una pregunta al pasar entre Respuestas y Evidencia.
+- Chromium con datos ficticios: mosaico de dos columnas y vistas exclusivas a 384 y 1440 px, recorrido de teclado, regreso y ausencia de escrituras al navegar. También pasaron 38 pruebas unitarias del espacio móvil y del editor de hojas.
+- Cambio de presentación únicamente: sin modificar endpoints, modelos, notas o evidencias de producción. La prueba física de esta versión y el CI del cambio siguen pendientes.
+
+## Ajuste por respuesta y CSV de una evaluación
+
+- Elegir «Correcta» propone el máximo exacto de la pregunta; «Incorrecta» y «Sin respuesta» proponen cero. «Parcial» deja el puntaje editable. No se guarda ni publica hasta ejecutar la acción correspondiente.
+- «Más acciones → Exportar notas CSV» abre el exportador existente con la evaluación en curso. Chromium a 390 y 1440 px verificó una descarga real: nombre y evaluación, cero real y decimales, pendientes vacíos, sin correos ni escrituras. Pasaron también 10 pruebas de permisos y lectura de notas en el backend.
+- En el CI publicado `95b872d`, pasaron Backend, contenedores, calidad de frontend y E2E contextual. El E2E general falló en dos recorridos repetidos por tamaños, temas y navegadores: copiar un enlace ya listo con otros pendientes, y abrir la ayuda trasladada a Historial. Gobernanza continúa rechazando tareas pendientes; no se ha modificado su política.
+- Se corrigieron ambos recorridos; pasaron 16/16 variantes en Chromium local. Los resultados locales no sustituyen los controles del nuevo commit en GitHub.

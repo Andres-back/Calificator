@@ -10,7 +10,8 @@ export function FeedbackSelectionBar({ count, hiddenCount, busy, onShare, onPrin
     <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="text-sm font-semibold" role="status">{count} {count === 1 ? 'seleccionado' : 'seleccionados'}{hiddenCount > 0 ? ` · ${hiddenCount} fuera del filtro` : ''}</p>
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 max-sm:w-full">
-        {showShare ? <Button className="h-auto min-h-11 max-w-full whitespace-normal px-4 py-2 max-sm:w-full" disabled={busy || !count} onClick={event => onShare(event.currentTarget)}><Share2 className="h-4 w-4 shrink-0" aria-hidden="true" />Generar enlaces</Button> : copyAction}
+        {showShare && <Button className="h-auto min-h-11 max-w-full whitespace-normal px-4 py-2 max-sm:w-full" disabled={busy || !count} onClick={event => onShare(event.currentTarget)}><Share2 className="h-4 w-4 shrink-0" aria-hidden="true" />Generar enlaces</Button>}
+        {copyAction}
         <Button className="h-auto min-h-11 max-w-full whitespace-normal px-3 py-2" variant="ghost" disabled={busy || !count} onClick={event => onPrint(event.currentTarget)}><Printer className="h-4 w-4 shrink-0" aria-hidden="true" />Preparar impresión</Button>
       </div>
     </div>

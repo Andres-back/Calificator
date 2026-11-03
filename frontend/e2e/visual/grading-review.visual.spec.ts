@@ -17,7 +17,7 @@ for (const theme of ['light', 'dark'] as const) {
       document.documentElement.classList.toggle('dark', activeTheme === 'dark');
     }, theme);
     await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '3. Respuestas y puntajes', exact: true })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button')).toHaveCount(4);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
     await page.screenshot({ path: `output/playwright/088-review-${theme}-${viewport.width}.png`, fullPage: true, animations: 'disabled' });
     await expect(page).toHaveScreenshot(`grading-review-${theme}-${viewport.width}.png`, {

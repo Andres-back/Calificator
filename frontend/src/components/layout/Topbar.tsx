@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ClipboardCheck, LogOut, Menu, Smartphone, UserRound } from 'lucide-react';
+import { ChevronDown, ClipboardCheck, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Smartphone, UserRound } from 'lucide-react';
 import { EducationalIcon, ThemeToggle } from '@/components/ui';
 import type { EducationalIconName } from '@/components/ui/EducationalIcon';
 import { useAuth } from '@/stores/auth';
@@ -34,10 +34,12 @@ export function Topbar({
   onMenu,
   menuButtonRef,
   menuExpanded,
+  desktopMenu,
 }: {
   onMenu: () => void;
   menuButtonRef: RefObject<HTMLButtonElement>;
   menuExpanded: boolean;
+  desktopMenu?: { expanded: boolean; onToggle: () => void };
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -89,6 +91,12 @@ export function Topbar({
       >
         <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
+      {desktopMenu && <button type="button" onClick={desktopMenu.onToggle} aria-controls="main-navigation-desktop" aria-expanded={desktopMenu.expanded}
+        aria-label={desktopMenu.expanded ? 'Ocultar menú principal' : 'Mostrar menú principal'}
+        title={desktopMenu.expanded ? 'Ocultar menú principal' : 'Mostrar menú principal'}
+        className="focus-ring hidden min-h-11 min-w-11 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg lg:grid">
+        {desktopMenu.expanded ? <PanelLeftClose className="h-5 w-5" aria-hidden="true" /> : <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />}
+      </button>}
       <div className="min-w-0 flex-1 max-[480px]:[&>div]:hidden">
         {user?.rol === 'admin' && (
           <div className="flex min-w-0 items-center gap-2.5">

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { Expand, Move, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { Modal } from '@/components/ui';
 import {
@@ -7,11 +7,11 @@ import {
 } from './evidenceViewport';
 
 type Point = { x: number; y: number };
-type Props = { src: string; label: string; region?: EvidenceBox };
+type Props = { src: string; label: string; region?: EvidenceBox; sheetView?: boolean };
 const initial: EvidenceViewport = { zoom: 1, centerX: 0.5, centerY: 0.5 };
 const controlClass = 'focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-semibold text-fg disabled:opacity-50';
 
-function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = false }: Props & { rotation: EvidenceRotation; onRotate: () => void; expanded?: boolean }) {
+function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = false, sheetView = false, extraControl }: Props & { rotation: EvidenceRotation; onRotate: (direction: -1 | 1) => void; expanded?: boolean; extraControl?: ReactNode }) {
   const frame = useRef<HTMLDivElement>(null);
   const instructionId = useId();
   const [naturalSize, setSize] = useState<EvidenceDimensions>({ width: 0, height: 0, imageWidth: 0, imageHeight: 0 });
@@ -114,18 +114,22 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
     }
   };
 
-  return <div className={expanded ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-3'}>
-    <div className="flex flex-wrap items-center gap-2">
+  const tools = <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Controles de la imagen">
       <button type="button" className={controlClass} aria-label="Alejar imagen" disabled={!ready || viewport.zoom <= 1} onClick={() => zoom(0.8)}><ZoomOut aria-hidden="true" className="h-4 w-4" /></button>
-      <output className="min-w-16 text-center text-sm font-semibold tabular-nums" aria-label="Nivel de ampliación">{Math.round(viewport.zoom * 100)} %</output>
+      <output className="min-w-12 text-center text-sm font-semibold tabular-nums" aria-label="Nivel de ampliación">{Math.round(viewport.zoom * 100)} %</output>
       <button type="button" className={controlClass} aria-label="Acercar imagen" disabled={!ready || viewport.zoom >= 8} onClick={() => zoom(1.25)}><ZoomIn aria-hidden="true" className="h-4 w-4" /></button>
-      <button type="button" className={controlClass} aria-label="Girar vista 90 grados" title="Solo cambia la vista" disabled={!ready} onClick={onRotate}><RotateCw aria-hidden="true" className="h-4 w-4" />Girar vista</button>
-      <button type="button" className={controlClass} disabled={!ready} onClick={() => updateViewport(initial)}><RotateCcw aria-hidden="true" className="h-4 w-4" />Ver hoja completa</button>
+      {sheetView && <button type="button" className={controlClass} aria-label="Girar a la izquierda" title="Girar a la izquierda" disabled={!ready} onClick={() => onRotate(-1)}><RotateCcw aria-hidden="true" className="h-4 w-4" /></button>}
+      <button type="button" className={controlClass} aria-label={sheetView ? 'Girar a la derecha' : 'Girar vista 90 grados'} title="Girar a la derecha" disabled={!ready} onClick={() => onRotate(1)}><RotateCw aria-hidden="true" className="h-4 w-4" />{!sheetView && 'Girar vista'}</button>
+      {!sheetView && <button type="button" className={controlClass} aria-label="Ver hoja completa" title="Ver hoja completa" disabled={!ready} onClick={() => updateViewport(initial)}><RotateCcw aria-hidden="true" className="h-4 w-4" />Ver hoja completa</button>}
       {orientedRegion && <button type="button" className={controlClass} disabled={!ready} onClick={() => updateViewport(focusEvidenceRegion(size, orientedRegion))}>Ver zona sugerida</button>}
-    </div>
-    <p id={instructionId} className="flex items-start gap-2 text-xs leading-5 text-muted"><Move aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span>Amplía con dos dedos o los botones. Arrastra la imagen ampliada para ver más.<span className="hidden sm:inline"> Con teclado: +, − y flechas; 0 muestra toda la hoja.</span></span></p>
+      {extraControl}
+    </div>;
+  const instructions = <p id={instructionId} className={sheetView ? 'sr-only' : 'flex items-start gap-2 text-xs leading-5 text-muted'}><Move aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span>Amplía con dos dedos o los botones. Arrastra la imagen ampliada para ver más.<span className="hidden sm:inline"> Con teclado: +, − y flechas; 0 muestra toda la hoja.</span></span></p>;
+  return <div className={expanded ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-2'}>
+    {!sheetView && tools}
+    {instructions}
     <div ref={frame} role="group" aria-label="Imagen ampliable de la evidencia" aria-describedby={instructionId} tabIndex={0}
-      className={`focus-ring relative isolate min-w-0 overflow-hidden rounded-lg border border-border bg-slate-100 text-slate-950 ${expanded || viewport.zoom > 1 ? 'touch-none' : 'touch-pan-y'} ${expanded ? 'min-h-32 flex-1' : 'h-64 sm:h-80'} ${ready ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`focus-ring relative isolate min-w-0 overflow-hidden rounded-lg border border-border bg-slate-100 text-slate-950 ${expanded || viewport.zoom > 1 ? 'touch-none' : 'touch-pan-y'} ${expanded ? 'min-h-32 flex-1' : sheetView ? 'h-[clamp(16rem,45dvh,34rem)]' : 'h-64 sm:h-80'} ${ready ? 'cursor-grab active:cursor-grabbing' : ''}`}
       onKeyDown={keyboard} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd} onLostPointerCapture={pointerEnd}>
       {!loaded && !failed && <p role="status" aria-label="Estado de la imagen" className="absolute inset-0 flex items-center justify-center p-4 text-sm">Cargando evidencia…</p>}
       {failed ? <div role="alert" className="flex h-full flex-col items-center justify-center gap-3 p-4 text-center text-sm"><p>No pudimos abrir esta hoja. Puedes intentarlo de nuevo.</p><button type="button" className={controlClass} onClick={() => { focused.current = false; setFailed(false); setLoaded(false); setAttempt((value) => value + 1); }}>Reintentar imagen</button></div> : <img key={attempt} src={src} alt={label} draggable={false} decoding="async" referrerPolicy="no-referrer"
@@ -145,6 +149,7 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
           transform: `rotate(${rotation}deg)`,
         }} />}
     </div>
+    {sheetView && tools}
     {validEvidenceBox(region) && <p className="text-xs leading-5 text-muted">Ubicación sugerida. Consulta la hoja completa para comprobar el contexto.</p>}
   </div>;
 }
@@ -154,20 +159,21 @@ export function GradeEvidenceViewer(props: Props) {
   return <EvidenceViewerSession key={`${props.src}:${props.region?.join(',') ?? 'hoja'}`} {...props} />;
 }
 
-function EvidenceViewerSession({ src, label, region }: Props) {
+function EvidenceViewerSession({ src, label, region, sheetView = false }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [rotation, setRotation] = useState<EvidenceRotation>(0);
-  const rotate = () => setRotation(value => value === 270 ? 0 : (value + 90) as EvidenceRotation);
+  const rotate = (direction: -1 | 1) => setRotation(value => ((value + 360 + direction * 90) % 360) as EvidenceRotation);
   const canvasProps = { src, label, region, rotation, onRotate: rotate };
-  return <div className="min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-3">
-    <div className="flex flex-wrap items-center justify-between gap-2">
+  return <div className={sheetView ? 'min-w-0 space-y-2' : 'min-w-0 space-y-3 rounded-xl border border-border bg-surface-2 p-3'}>
+    {sheetView && !expanded && <EvidenceCanvas {...canvasProps} sheetView extraControl={<button type="button" className={controlClass} aria-label="Ampliar evidencia" title="Ampliar evidencia" onClick={() => setExpanded(true)}><Expand aria-hidden="true" className="h-4 w-4" /></button>} />}
+    {!sheetView && <div className="flex flex-wrap items-center justify-between gap-2">
       <p className="text-sm font-bold text-fg">{label}</p>
       <button type="button" className={controlClass} onClick={() => setExpanded(true)}><Expand aria-hidden="true" className="h-4 w-4" />Ampliar evidencia</button>
-    </div>
-    {!expanded && <EvidenceCanvas {...canvasProps} />}
+    </div>}
+    {!sheetView && !expanded && <EvidenceCanvas {...canvasProps} />}
     <Modal open={expanded} onClose={() => setExpanded(false)} title={label} className="flex h-[calc(100dvh-2rem)] max-w-6xl flex-col overflow-y-auto p-3 sm:p-4">
-      <EvidenceCanvas {...canvasProps} expanded />
-      <button type="button" className={`${controlClass} mt-3 shrink-0`} onClick={() => setExpanded(false)}>Volver a la respuesta</button>
+      <EvidenceCanvas {...canvasProps} expanded sheetView={sheetView} />
+      <button type="button" className={`${controlClass} mt-3 shrink-0`} onClick={() => setExpanded(false)}>{sheetView ? 'Volver a la evidencia' : 'Volver a la respuesta'}</button>
     </Modal>
   </div>;
 }

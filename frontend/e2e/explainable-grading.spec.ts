@@ -12,6 +12,8 @@ test('088 revisión amplia mantiene lista y detalle independientes', async ({ pa
   const list = page.getByTestId('grade-review-students');
   const detail = page.getByTestId('grade-review-scroll');
   await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
+  await expect(roster).toBeVisible();
   expect((await roster.boundingBox())!.width).toBeGreaterThanOrEqual(320);
   await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
   await page.getByRole('button', { name: 'Pregunta 20, Sin avisos de revisión', exact: true }).click();
@@ -38,6 +40,7 @@ test('088 cabecera compacta deja cinco filas y conserva edición al redimensiona
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
   const header = page.getByTestId('grade-review-header');
   expect((await header.boundingBox())!.height).toBeLessThanOrEqual(112);
+  await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
   const list = page.getByTestId('grade-review-students');
   const visibleRows = await list.evaluate((element) => {
     const box = element.getBoundingClientRect();
@@ -68,6 +71,7 @@ test('088 cien alumnos conservan búsqueda, filtros, paginación y modos complet
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
   const roster = page.getByTestId('grade-review-roster');
   const students = page.getByTestId('grade-review-students');
+  await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
   await expect(students.locator('[data-review-student]').first()).toBeVisible();
   const initialRows = await students.locator('[data-review-student]').count();
   expect(initialRows).toBeGreaterThan(0);
@@ -78,6 +82,7 @@ test('088 cien alumnos conservan búsqueda, filtros, paginación y modos complet
   await expect(students.locator('[data-review-student]')).toHaveCount(1);
   await students.getByRole('button', { name: /Alumno 099 María Fernanda López/ }).click();
   await expect(page.getByTestId('grade-review-identity')).toContainText('Alumno 099');
+  await expect(roster).toBeVisible();
   await roster.getByRole('checkbox', { name: /Seleccionar nota de Alumno 099/ }).click();
   await expect(page.getByText('1 seleccionado', { exact: true })).toBeVisible();
   // El transform del toolbar animado puede introducir error subpíxel en DOMRect.
@@ -233,7 +238,7 @@ test('resumen móvil preserva contexto y despliega detalles sin mutaciones', asy
   await expect(page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel(/Puntos/).fill('0.7');
-  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
   await expect(page.getByLabel(/Puntos/)).toHaveValue('0.7');
   expect(mutations).toEqual([]);
 });
@@ -308,7 +313,7 @@ test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async (
   await page.getByRole('button', { name: 'Guardar y recalcular', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
   await expect(page.locator('#grade-component-q1').getByText('0.70 / 1.00', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
   const calculation = page.getByRole('region', { name: 'Cálculo y criterios registrados' });
   await calculation.getByText('Ver cálculo de la nota', { exact: true }).click();
   await expect(calculation.getByText('0.7 / 1', { exact: true })).toBeVisible();
@@ -588,9 +593,9 @@ test('conserva borrador al cambiar pregunta, query y atrás; hoja y vista sobrev
   await expect(page).toHaveURL(/pregunta=pregunta%3A2/);
   await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
   await page.getByLabel('Motivo interno del cambio').fill('No perder este borrador');
-  await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver evidencia completa', exact: true }).click();
   await expect(page.getByAltText('Hoja 2 de la evidencia del estudiante')).toBeVisible();
-  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Volver a respuestas', exact: true }).click();
   await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('No perder este borrador');
   await page.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();

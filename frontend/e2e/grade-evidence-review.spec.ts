@@ -70,6 +70,7 @@ for (const width of [360, 390, 768, 1440]) for (const mode of ['light', 'dark'])
   test('original y preparada son vistas separadas sin trasladar regiones ni escribir', async ({ page }) => {
     const writes: string[] = [];
     page.on('request', (request) => { if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones|jobs)\//.test(request.url())) writes.push(request.url()); });
+    await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
     await page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Evidencia', exact: true }).click();
     const evidence = page.locator('#grade-evidence-panel');
     await page.evaluate(() => {
@@ -107,6 +108,8 @@ for (const width of [360, 390, 768, 1440]) for (const mode of ['light', 'dark'])
     const initialUrl = page.url();
     // General guidance was moved, not removed. Its interaction is independent
     // of the original/prepared page-switching test and keeps the same time cap.
+    await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
+    await page.getByRole('button', { name: 'Historial', exact: true }).click();
     const help = page.getByTestId('grade-review-scroll').locator('details').filter({
       has: page.locator('summary', { hasText: '¿Cómo funciona esta revisión?' }),
     });
@@ -119,6 +122,8 @@ for (const width of [360, 390, 768, 1440]) for (const mode of ['light', 'dark'])
     await help.locator('summary').click();
     await expect(help).not.toHaveAttribute('open');
     await expect(guidance).toBeHidden();
+    await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
+    await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
     await expect(page).toHaveURL(initialUrl);
     await expect(page.getByRole('navigation', { name: 'Preguntas y criterios' }).getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión', exact: true })).toHaveAttribute('aria-current', 'step');
     expect(writes).toEqual([]);
@@ -146,19 +151,18 @@ for (const width of [360, 390, 768, 1440]) for (const mode of ['light', 'dark'])
   test('cambiar original preparada conserva el ajuste sin guardar', async ({ page }) => {
     const writes: string[] = [];
     page.on('request', (request) => { if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones|jobs)\//.test(request.url())) writes.push(request.url()); });
-    const sections = page.getByRole('navigation', { name: 'Secciones de la calificación' });
     const review = page.locator('#grade-review-panel');
     await review.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
     await review.getByRole('spinbutton', { name: /Puntos/ }).fill('0.25');
     await expect(review.getByRole('spinbutton', { name: /Puntos/ })).toHaveValue('0.25');
-    await sections.getByRole('button', { name: 'Evidencia', exact: true }).click();
+    await page.getByRole('button', { name: 'Ver evidencia completa', exact: true }).click();
     const evidence = page.locator('#grade-evidence-panel');
     const image = evidence.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante', exact: true });
     await evidence.getByRole('button', { name: 'Foto original', exact: true }).click();
     await expect(image).toHaveAttribute('src', '/api/evidencia-131/paginas/1?version=original');
     await evidence.getByRole('button', { name: 'Foto preparada', exact: true }).click();
     await expect(image).toHaveAttribute('src', '/api/evidencia-131/paginas/1');
-    await sections.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+    await page.getByRole('button', { name: 'Volver a respuestas', exact: true }).click();
     await expect(review.getByRole('spinbutton', { name: /Puntos/ })).toHaveValue('0.25');
     await expect(review.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión', exact: true })).toHaveAttribute('aria-current', 'step');
     await expect(review.getByRole('region', { name: 'Evidencia de la respuesta seleccionada' }).getByRole('img')).toHaveAttribute('src', '/api/evidencia-131/paginas/1');
@@ -169,18 +173,17 @@ for (const width of [360, 390, 768, 1440]) for (const mode of ['light', 'dark'])
   test('cambiar hojas y volver conserva el ajuste sin guardar', async ({ page }) => {
     const writes: string[] = [];
     page.on('request', (request) => { if (request.method() !== 'GET' && /\/api\/(calificaciones|evaluaciones|jobs)\//.test(request.url())) writes.push(request.url()); });
-    const sections = page.getByRole('navigation', { name: 'Secciones de la calificación' });
     const review = page.locator('#grade-review-panel');
     await review.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
     await review.getByRole('spinbutton', { name: /Puntos/ }).fill('0.25');
     await expect(review.getByRole('spinbutton', { name: /Puntos/ })).toHaveValue('0.25');
-    await sections.getByRole('button', { name: 'Evidencia', exact: true }).click();
+    await page.getByRole('button', { name: 'Ver evidencia completa', exact: true }).click();
     const evidence = page.locator('#grade-evidence-panel');
     await evidence.locator('[aria-label="Páginas de evidencia"]').getByRole('button', { name: '2', exact: true }).click();
     await expect(evidence.getByRole('img', { name: 'Hoja 2 de la evidencia del estudiante', exact: true })).toHaveAttribute('src', '/api/evidencia-131/paginas/2');
     await evidence.locator('[aria-label="Páginas de evidencia"]').getByRole('button', { name: '1', exact: true }).click();
     await expect(evidence.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante', exact: true })).toHaveAttribute('src', '/api/evidencia-131/paginas/1');
-    await sections.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+    await page.getByRole('button', { name: 'Volver a respuestas', exact: true }).click();
     await expect(review.getByRole('spinbutton', { name: /Puntos/ })).toHaveValue('0.25');
     await expect(review.getByRole('button', { name: 'Pregunta 1, Sin avisos de revisión', exact: true })).toHaveAttribute('aria-current', 'step');
     expect(writes).toEqual([]);

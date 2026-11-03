@@ -10,6 +10,21 @@ function loadImage() {
 }
 
 describe('GradeEvidenceViewer', () => {
+  it('prioriza la hoja en su vista propia y vuelve a evidencia desde el visor ampliado', () => {
+    render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" sheetView />);
+    const image = loadImage();
+    const controls = screen.getByRole('group', { name: 'Controles de la imagen' });
+    expect(image.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(controls).queryByRole('button', { name: 'Ver hoja completa' })).not.toBeInTheDocument();
+    fireEvent.click(within(controls).getByRole('button', { name: 'Girar a la izquierda' }));
+    expect(image).toHaveStyle({ transform: 'rotate(270deg)' });
+    fireEvent.click(within(controls).getByRole('button', { name: 'Girar a la derecha' }));
+    expect(image).toHaveStyle({ transform: 'rotate(0deg)' });
+    fireEvent.click(within(controls).getByRole('button', { name: 'Ampliar evidencia' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Volver a la evidencia' }));
+    expect(screen.getByRole('img')).toBeInTheDocument();
+  });
+
   it('gira solo la vista, conserva el giro al ampliar y lo restablece al cambiar de hoja', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     const view = render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);

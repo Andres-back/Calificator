@@ -166,7 +166,7 @@ for (const width of [360, 390, 1440]) for (const theme of ['light', 'dark']) for
     expect(await panel.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
     if (width !== 360) await page.screenshot({ path: `output/playwright/spec129-direct-approved-${entry}-${width}-${theme}-${browserName}.png` });
     if (entry === 'integrado' && width < 1280) {
-      await page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Historial', exact: true }).click();
+      await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
       await expect(page.locator('[aria-label="Acciones de la calificación"]')).toBeVisible();
     }
   });
@@ -227,13 +227,13 @@ for (const width of [390, 1440]) test(`135 conserva la entrega al cambiar de pes
     await activate(panel.getByRole('button', { name: 'Aprobar y crear 1 enlace', exact: true }));
     await activate(panel.getByRole('button', { name: 'Confirmar y generar 1 enlace', exact: true }));
     await expect(page.getByText('Preparando entrega…', { exact: true })).toBeVisible();
-    await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Historial', exact: true }));
+    await activate(page.getByRole('button', { name: 'Volver a opciones', exact: true }));
     await expect(workspace).toBeVisible();
     await expect(page.getByText('Sin guardar', { exact: true })).toHaveCount(0);
     release();
     await expect(panel.getByRole('button', { name: 'Copiar lista de 1', exact: true })).toBeEnabled();
     expect(operations).toEqual(['approve-batch', 'issue']);
-    await activate(page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Historial', exact: true }));
+    await activate(page.getByRole('button', { name: 'Volver a opciones', exact: true }));
     await expect(workspace).toBeHidden();
   } finally { release(); }
 });

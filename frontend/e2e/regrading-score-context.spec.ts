@@ -43,6 +43,7 @@ async function setup(page: Page, options: { contextError?: boolean; conflict?: b
     return json(route, { ...grade, estado: 'procesando', nota_confirmada: null }, 202);
   });
   await page.goto('/app/calificaciones?materia=m1&evaluacion=e1&calificacion=c1&estudiante=s1');
+  await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
   await page.getByText('Recalificar y cambiar evidencia', { exact: true }).click();
   return { writes, contextCalls: () => contextCalls };
 }

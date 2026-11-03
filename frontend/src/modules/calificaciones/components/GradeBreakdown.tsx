@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import './gradeQuestionLayout.css';
 import { componentPoints } from '@/lib/componentPoints';
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, EyeOff, FileSearch, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui';
@@ -30,7 +31,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   const selectedIndex = breakdown.componentes.findIndex(component => component.id === selectedComponentId);
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className={compact ? 'sr-only' : 'flex flex-wrap items-center justify-between gap-2'}>
         <div>
           <h2 id="grade-breakdown-title" className="text-lg font-extrabold text-fg">{student ? 'Nota explicada respuesta por respuesta' : 'Respuestas y puntajes'}</h2>
           {student && <p className="text-sm text-muted">Cada puntaje muestra la evidencia y la razón que lo respalda.</p>}
@@ -55,7 +56,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-all">{component.numero ?? component.orden + 1}</span>{compact && <span data-question-score aria-hidden="true" className="hidden text-left text-xs font-normal lg:inline">{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}{compact && <span className="sr-only" id={`grade-nav-summary-${component.id}`}>{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
         </nav>
-        {selectedIndex >= 0 && <div className="flex min-w-0 items-center justify-between gap-2" aria-label="Recorrer preguntas">
+        {selectedIndex >= 0 && <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-surface-2 px-2 py-1" aria-label="Recorrer preguntas">
           <button type="button" aria-label="Pregunta anterior" disabled={selectedIndex === 0} onClick={() => onSelectComponent(breakdown.componentes[selectedIndex - 1].id)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-sm font-semibold disabled:opacity-40"><ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="hidden sm:inline">Anterior</span></button>
           <p className="text-sm font-semibold tabular-nums" aria-live="polite">{selectedIndex + 1} de {breakdown.componentes.length}</p>
           <button type="button" aria-label="Pregunta siguiente" disabled={selectedIndex === breakdown.componentes.length - 1} onClick={() => onSelectComponent(breakdown.componentes[selectedIndex + 1].id)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-sm font-semibold disabled:opacity-40"><span className="hidden sm:inline">Siguiente</span><ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" /></button>
@@ -69,9 +70,12 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           const item = priorities.get(component.id);
           const priority = item ? reviewPriorityPresentation[item.level] : null;
           const PriorityIcon = priority?.Icon;
-          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 [overflow-wrap:anywhere] ${compact ? 'border-t border-border pt-5' : `rounded-xl border border-l-4 p-4 ${priority ? priority.classes : `border-border bg-surface ${presentation.cardClass}`}`}`}>
+          const splitEvidence = compact && Boolean(renderEvidence);
+          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 [overflow-wrap:anywhere] ${compact ? 'grade-question-container border-t border-border pt-5' : `rounded-xl border border-l-4 p-4 ${priority ? priority.classes : `border-border bg-surface ${presentation.cardClass}`}`}`}>
+            <div className={splitEvidence ? 'grade-question-split grid items-start gap-5' : undefined}>
+            <div className="min-w-0" data-testid={compact ? 'grade-question-reading' : undefined}>
             {priority && PriorityIcon && (!compact || item?.level !== 'safe') && <div className={`mb-3 space-y-1 ${compact ? `rounded-lg border px-3 py-2 ${priority.classes}` : ''}`}><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{[...new Set(item.reasons.map((reason) => reason.label))].join(' · ')}</p> : null}</div>}
-            <div className={`flex flex-col gap-2 ${selectedComponentId && !student ? '' : 'sm:flex-row sm:items-start sm:justify-between'}`}>
+            <div className={`flex flex-col gap-2 ${compact || !selectedComponentId || student ? 'sm:flex-row sm:items-start sm:justify-between' : ''}`}>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">
                   {component.tipo === 'pregunta' ? `Pregunta ${component.numero ?? component.orden + 1}` : component.tipo === 'rubrica' ? 'Criterio de rúbrica' : 'Valoración docente'}
@@ -85,13 +89,13 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 <strong className="whitespace-nowrap text-base">{componentPoints(component.puntos_obtenidos)} / {componentPoints(component.puntos_maximos)}</strong>
               </div>
             </div>
-            <div className="mt-3 grid items-start gap-3" style={renderEvidence && !student ? { gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,24rem),1fr))' } : undefined}>
-            {compact ? <div data-testid="grade-answer-comparison" className="divide-y divide-border">
-              <div className="space-y-0.5 pb-2">
+            <div className="mt-3 grid items-start gap-3" style={!splitEvidence && renderEvidence && !student ? { gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,24rem),1fr))' } : undefined}>
+            {compact ? <div data-testid="grade-answer-comparison" className="min-w-0 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface-2">
+              <div className="space-y-0.5 px-3 pb-2">
                 <p className="text-xs font-semibold text-muted">Respuesta del estudiante</p>
                 <p className="whitespace-pre-wrap text-base leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</p>
               </div>
-              <div className="space-y-0.5 pt-2">
+              <div className="space-y-0.5 px-3 pt-2">
                 <p className="text-xs font-semibold text-muted">Respuesta de referencia</p>
                 <p className="whitespace-pre-wrap text-base leading-6 text-fg">{component.referencia_oculta ? 'Se mostrará cuando el docente libere las respuestas.' : component.respuesta_referencia || 'No aplica o no fue configurada.'}</p>
               </div>
@@ -110,7 +114,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 </p>
               </div>
             </div>}
-            {!student && renderEvidence?.(component)}
+            {!splitEvidence && !student && renderEvidence?.(component)}
             </div>
             <div className={compact ? 'mt-4 border-t border-border pt-3 text-base leading-7' : 'mt-3 flex items-start gap-2 rounded-lg border border-border p-3 text-sm leading-6'}>
               {!compact && (PriorityIcon ? <PriorityIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : component.requiere_revision ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />)}
@@ -150,6 +154,11 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
                 {renderEditor(component)}
               </div>
             ) : null}
+            </div>
+            {splitEvidence && <div className="grade-question-evidence min-w-0 border-t border-border pt-3" data-testid="grade-question-evidence-column">
+              {renderEvidence?.(component)}
+            </div>}
+            </div>
           </article>;
         })}
       </div>

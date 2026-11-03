@@ -19,6 +19,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
   await expect(page.getByRole('heading', { name: 'Respuestas y puntajes', exact: true })).toBeVisible();
   const panel = page.getByTestId('grade-review-panel');
   if (viewport.width >= 1280) {
+    await page.getByRole('button', { name: 'Mostrar estudiantes', exact: true }).click();
     const roster = page.getByTestId('grade-review-roster');
     expect((await roster.boundingBox())!.width).toBeGreaterThanOrEqual(320);
     await expect(roster.getByRole('searchbox')).toBeInViewport();
@@ -47,6 +48,7 @@ for (const theme of ['light', 'dark'] as const) for (const viewport of [
 
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => document.activeElement !== document.body)).toBeTruthy();
+  await panel.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
   await panel.getByRole('button', { name: 'Retroalimentación', exact: true }).click();
   await panel.getByRole('button', { name: 'Editar retroalimentación', exact: true }).click();
   const feedback = panel.locator('textarea');

@@ -147,9 +147,12 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
     && (mode !== 'replace' || (pages.length > 0 && !hasUnusableEvidence(pages) && (!usingScan || scanPagesReviewed(pages))));
 
   return <div className="min-w-0 space-y-3" aria-label="Corregir entrega y consultar historial">
-    {evidenceView && cal.entrega_archivo_url && <Button type="button" variant="outline" className="min-h-11" disabled={disabled || processing} onClick={() => open('edit')}><ScanLine className="h-4 w-4" aria-hidden="true" />Editar hojas</Button>}
-    <details className="rounded-xl border border-border px-3">
-      <summary className="focus-ring min-h-11 cursor-pointer py-3 text-sm font-semibold">Recalificar y cambiar evidencia</summary>
+    {evidenceView && cal.entrega_archivo_url && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 p-3">
+      <div><p className="text-sm font-bold text-fg">Gestionar hojas</p><p className="text-xs leading-5 text-muted">Añade, quita, ajusta u ordena las fotos.</p></div>
+      <Button type="button" variant="outline" className="min-h-11" disabled={disabled || processing} onClick={() => open('edit')}><ScanLine className="h-4 w-4" aria-hidden="true" />Editar hojas</Button>
+    </div>}
+    <details className={evidenceView ? 'border-t border-border' : 'rounded-xl border border-border px-3'}>
+      <summary className="focus-ring min-h-11 cursor-pointer py-3 text-sm font-semibold text-muted">Recalificar y cambiar evidencia</summary>
       <div className="space-y-3 pb-3">
     {cal.entrega_archivo_url && <div className="flex flex-wrap gap-2">
       <Button type="button" size="sm" variant="outline" className="min-h-11" disabled={disabled || processing} onClick={() => open('regrade')}><RotateCcw className="h-4 w-4" /> Volver a calificar</Button>

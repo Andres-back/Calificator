@@ -3,6 +3,27 @@ import { describe, expect, it, vi } from 'vitest';
 import { GradeComponentEditor } from './GradeComponentEditor';
 
 describe('GradeComponentEditor', () => {
+  it('asigna máximo exacto o cero al cambiar el estado, sin guardar automáticamente', () => {
+    const onSave = vi.fn();
+    render(<GradeComponentEditor component={{
+      id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Pregunta',
+      respuesta_estudiante: 'A', respuesta_referencia: 'B',
+      puntos_obtenidos: '0.25', puntos_maximos: '0.6250', estado: 'parcial',
+      explicacion: 'Respuesta registrada.', origen: 'ia', requiere_revision: false, evidencia_paginas: [],
+    }} formula={{ puntos_obtenidos: 0.25, puntos_posibles: 5, nota_maxima: 5, nota_base: 0.25, ajuste_global: 0, nota_antes_redondeo: 0.25, regla_redondeo: 'half_up', nota_final: 0.25, decimales: 2 }} onCancel={vi.fn()} onSave={onSave} />);
+    const state = screen.getByRole('combobox', { name: /^Estado/ });
+    const points = screen.getByRole('spinbutton');
+    fireEvent.change(state, { target: { value: 'correcta' } });
+    expect(points).toHaveValue(0.625);
+    fireEvent.change(state, { target: { value: 'incorrecta' } });
+    expect(points).toHaveValue(0);
+    fireEvent.change(state, { target: { value: 'parcial' } });
+    fireEvent.change(points, { target: { value: '0.35' } });
+    expect(points).toHaveValue(0.35);
+    fireEvent.change(state, { target: { value: 'sin_respuesta' } });
+    expect(points).toHaveValue(0);
+    expect(onSave).not.toHaveBeenCalled();
+  });
   it.each(['0.0000', '0.7000', '0.6250'])('abrir %s elimina ceros, conserva precisión y no marca dirty', (points) => {
     const onDirtyChange = vi.fn();
     render(<GradeComponentEditor component={{ id: 'p1', clave: 'pregunta:1', orden: 0, tipo: 'pregunta', numero: '1', titulo: 'Pregunta', respuesta_estudiante: 'A', respuesta_referencia: 'A', puntos_obtenidos: points, puntos_maximos: '1.0000', estado: 'correcta', explicacion: 'Respuesta registrada.', origen: 'ia', requiere_revision: false, evidencia_paginas: [] }} formula={{ puntos_obtenidos: points, puntos_posibles: 1, nota_maxima: 5, nota_base: 0, ajuste_global: 0, nota_antes_redondeo: 0, regla_redondeo: 'half_up', decimales: 2, nota_final: 0 }} onCancel={vi.fn()} onSave={vi.fn()} onDirtyChange={onDirtyChange} />);

@@ -3,8 +3,9 @@
 ## Individual — diseño 3
 
 1. Cabecera contextual única con regreso, evaluación y nombre. En móvil el nombre puede ocupar dos líneas; no repetir el bloque en la pestaña de comentario.
+   En escritorio, el detalle comienza sin menú lateral ni lista de estudiantes. Se pueden mostrar u ocultar por separado desde la barra superior y la cabecera del estudiante, sin cambiar de ruta ni perder la selección. «Volver a lista» sigue siendo el regreso al grupo.
 2. Nota y acceso al cálculo compactos; edición de nota sigue a mano, sin duplicar la fórmula en la pregunta.
-3. Pestañas consistentes para Respuestas, Evidencia, Retroalimentación e Historial; selección y foco reconocibles. No insertar un segundo marco con título dentro de Retroalimentación.
+3. Al abrir un estudiante, mostrar un mosaico de dos columnas con Respuestas y puntajes, Evidencia, Retroalimentación e Historial. Cada opción abre una vista exclusiva con «Volver a opciones» y devuelve el foco a su tarjeta al regresar. Conservar enlaces directos, protección de borradores y acceso cruzado entre respuesta y evidencia durante la edición. La nota y su cálculo se consultan en el mosaico; la gestión de hojas se encuentra en Evidencia. No insertar un segundo marco en el comentario.
 4. Comentario en una superficie sin borde exterior redundante. Separaciones por espacio y divisores, tres títulos con icono y acento suave cuando la información fuente lo permite. Texto completo conservado; no usar un resumen automático.
 5. Una zona de entrega: estado breve y generar/copiar según corresponda. En móvil la acción principal accesible sin desplazarse a extremos opuestos; no solapar la barra de nota ni el teclado. Editar/Imprimir son secundarios; vigencia, canales y gestión de acceso en menú contextual.
 
@@ -14,9 +15,9 @@ Lista compacta con búsqueda, estado y selección. Es un contexto diferente del 
 
 ## Respuestas y evidencia
 
-La pregunta activa se entiende por número, puntaje, respuesta/evidencia y porqué. Máximo una ubicación para cada incidencia activa. Información técnica/histórica en Historial, no otro aviso repetido sobre la imagen. Navegación compacta, al menos cuatro columnas de preguntas en móvil cuando el ancho disponible lo permite, sin ocho botones altos en columna única.
+La pregunta activa se entiende por número, puntaje, respuesta/evidencia y porqué. En un panel ancho, el enunciado, las respuestas, la explicación y el ajuste quedan en la misma columna, al lado de un visor de evidencia más amplio. Con menos espacio, el visor pasa debajo; la distribución sigue el ancho disponible aunque se abran los paneles laterales. Máximo una ubicación para cada incidencia activa. Información técnica/histórica en Historial, no otro aviso repetido sobre la imagen. Navegación compacta, al menos cuatro columnas de preguntas en móvil cuando el ancho disponible lo permite, sin ocho botones altos en columna única.
 
-El visor de Evidencia permite giros de vista y ampliación; el editor de hojas es una tarea aparte a pantalla completa en móvil. No se confunde girar una vista con guardar un cambio que afectará la recalificación.
+En Evidencia, la hoja se muestra antes de los controles de ampliación y giro. Si solo hay una hoja no se muestra paginación. «Gestionar hojas» agrupa la entrada para añadir, quitar, ajustar y ordenar fotos; reemplazar el paquete y recalificar siguen como acciones secundarias. El editor de hojas es una tarea aparte a pantalla completa en móvil. No se confunde girar una vista con guardar un cambio que afectará la recalificación.
 
 ## Sistema de estilo
 

@@ -77,6 +77,15 @@ describe('GradeBreakdown', () => {
     expect(screen.queryByTestId('grade-answer-comparison')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ajustar/ })).not.toBeInTheDocument();
   });
+  it('mantiene la explicación y el ajuste junto a la respuesta, separados del visor', () => {
+    render(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1"
+      onEdit={vi.fn()} renderEvidence={() => <p>Visor de prueba</p>} />);
+    const reading = within(screen.getByTestId('grade-question-reading'));
+    expect(reading.getByText('Respuesta del estudiante')).toBeVisible();
+    expect(reading.getByText(/Coincide con la clave oficial/)).toBeVisible();
+    expect(reading.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeEnabled();
+    expect(within(screen.getByTestId('grade-question-evidence-column')).getByText('Visor de prueba')).toBeVisible();
+  });
   it('explica fórmula, respuesta, puntaje, motivo y evidencia', () => {
     render(<GradeBreakdown breakdown={breakdown} />);
     expect(screen.getByRole('heading', { name: 'Respuestas y puntajes' })).toBeInTheDocument();
