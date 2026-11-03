@@ -245,7 +245,7 @@ for (const width of [360, 390, 768, 1280, 1440]) {
       await expect(history).not.toHaveAttribute('open');
       await expect(page.getByTestId('grade-review-scroll').getByRole('paragraph').filter({ hasText: /^Nota final$/ })).toBeVisible();
       await page.getByText('Ver cálculo de la nota', { exact: true }).click();
-      await expect(page.getByText('Nota en la escala de la evaluación')).toBeVisible();
+      await expect(page.getByText('Nota en la escala de la evaluación', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Evidencia', exact: true }).click();
       await expect(page.getByRole('img', { name: 'Hoja 1 de la evidencia del estudiante' })).toBeVisible();
       await page.getByLabel('Páginas de evidencia').getByRole('button', { name: '2', exact: true }).click();

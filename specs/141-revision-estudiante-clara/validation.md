@@ -60,3 +60,9 @@ Integración con PostgreSQL aislado (motor Docker no disponible), pruebas físic
 
 - En `193fd67`, Backend quality and tests y Container builds pasaron en GitHub. Frontend pasó 1414 de 1415 pruebas; la prueba de Xali encontraba la respuesta antes de terminar la animación. La aserción ahora espera que sea visible, sin alterar la aplicación. Las seis pruebas locales de Xali pasaron.
 - Se incorporó Spec 141 al registro de pruebas de gobernanza y se regeneró el inventario. Se mantienen abiertas las tareas sin evidencia, incluidas las comprobaciones físicas. No se modifica la política de gobernanza ni se omiten controles.
+
+## Segunda ejecución del PR #302
+
+- En `12dc69f` pasaron Backend quality and tests, Container builds y Frontend quality and build. GitHub usó PostgreSQL aislado y ejecutó las pruebas de permisos de edición, conservación de originales, replay, recuperación y concurrencia; no se usaron datos reales.
+- El E2E contextual falló por una búsqueda de texto que encontró tanto la etiqueta como una frase explicativa. Se ajustó la prueba para verificar la etiqueta exacta, sin cambiar la fórmula ni la interfaz.
+- Las diez variantes afectadas pasaron después de la corrección en Chromium local: 360, 390, 768, 1280 y 1440 px, en claro y oscuro. No sustituye las pruebas físicas ni las de otros motores.
