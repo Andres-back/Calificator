@@ -18,12 +18,12 @@ Alcance y plan aprobados el 2026-11-02. No iniciar código funcional hasta compl
 
 **Prueba independiente**: abrir/editar/compartir/reabrir un estudiante sin controles de grupo; texto y enlace íntegros, una acción principal.
 
-- [ ] T006 [US4] Escribir regresiones de individual sin barra/lista grupal, estados de enlace y edición protegida en `frontend/src/modules/feedback_sharing/FeedbackWorkspace.test.tsx`, `FeedbackStudentLink.test.tsx` y `FeedbackMessage.test.tsx` antes de cambiar presentación (FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, SC-002, SC-003, SC-006).
-- [ ] T007 [US4] Extraer composición individual separada y consulta/acciones reutilizables en `frontend/src/modules/feedback_sharing/FeedbackWorkspace.tsx`, `ShareFeedbackDialog.tsx` y componentes/hook internos de esa carpeta, sin duplicar autorización/emisión o montar selección grupal (FR-001, FR-012, FR-013, FR-019).
+- [X] T006 [US4] Escribir regresiones de individual sin barra/lista grupal, estados de enlace y edición protegida en `frontend/src/modules/feedback_sharing/FeedbackWorkspace.test.tsx`, `FeedbackStudentLink.test.tsx` y `FeedbackMessage.test.tsx` antes de cambiar presentación (FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, SC-002, SC-003, SC-006).
+- [X] T007 [US4] Extraer composición individual separada y consulta/acciones reutilizables en `frontend/src/modules/feedback_sharing/FeedbackWorkspace.tsx`, `ShareFeedbackDialog.tsx` y componentes/hook internos de esa carpeta, sin duplicar autorización/emisión o montar selección grupal (FR-001, FR-012, FR-013, FR-019).
 - [X] T008 [US4] Presentar diseño 3 con comentario íntegro y títulos explícitos en `frontend/src/modules/feedback_sharing/FeedbackMessage.tsx` y `feedbackSections.ts`, con pruebas de contenido legado/Markdown y sin aciertos inventados (FR-012, FR-021, SC-006, SC-008).
 - [X] T009 [US4] Compactar `frontend/src/modules/feedback_sharing/FeedbackStudentLink.tsx` con acción primaria generar/copiar en una zona, recuperación segura y menú secundario de canales/vigencia, conservando revalidación/fallback y estados ambiguos (FR-013, FR-014, FR-015, FR-016, SC-003).
-- [ ] T010 [US4] Integrar la pestaña individual sin marco/cabecera duplicados en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`, conservando edición guardada y pie contextual sin solapamientos (FR-002, FR-012, FR-018, FR-021, SC-002, SC-008).
-- [ ] T011 [US4] Añadir E2E de reentrada, enlace guardado, editor, error/caducidad/foco y scroll en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts` y capturas sintéticas de implementación (FR-013, FR-015, FR-018, FR-020, SC-002, SC-003, SC-006).
+- [X] T010 [US4] Integrar la pestaña individual sin marco/cabecera duplicados en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`, conservando edición guardada y pie contextual sin solapamientos (FR-002, FR-012, FR-018, FR-021, SC-002, SC-008).
+- [X] T011 [US4] Añadir E2E de reentrada, enlace guardado, editor, error/caducidad/foco y scroll en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts` y capturas sintéticas de implementación (FR-013, FR-015, FR-018, FR-020, SC-002, SC-003, SC-006).
 
 ## Fase 4: Historia 1 — cálculo claro (P1)
 
@@ -47,7 +47,7 @@ Alcance y plan aprobados el 2026-11-02. No iniciar código funcional hasta compl
 
 - [X] T018 [US3] Escribir pruebas de giros de vista, zoom, región/versiones y scroll en `frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx` y `evidenceViewport.test.ts` (FR-009, FR-017, FR-018, SC-004).
 - [X] T019 [US3] Implementar giro visual reversible con región coherente y restablecer en `frontend/src/modules/calificaciones/components/GradeEvidenceViewer.tsx` y `evidenceViewport.ts`, sin API de escritura ni IA (FR-009, FR-017, SC-004).
-- [ ] T020 [US3] Escribir pruebas del contrato de edición por referencias, permisos, versión obsoleta/ajena y fallos sin escrituras en `backend/tests/` junto a las regresiones de revisión/escaneo existentes (FR-009, FR-010, FR-011, FR-016, FR-019, SC-004, SC-007).
+- [X] T020 [US3] Escribir pruebas del contrato de edición por referencias, permisos, versión obsoleta/ajena y fallos sin escrituras en `backend/tests/` junto a las regresiones de revisión/escaneo existentes (FR-009, FR-010, FR-011, FR-016, FR-019, SC-004, SC-007).
 - [X] T021 [US3] Exponer metadatos/preview de edición seguros por hoja en `backend/app/modules/calificaciones/revision_router.py`, schemas/servicio de edición en esa carpeta y `backend/app/services/evidence_scan_reads.py`, sin paths privados ni confundir preview con original (FR-009, FR-016, FR-019).
 - [X] T022 [US3] Ampliar admisión opcional compatible por referencias/recetas en `backend/app/modules/calificaciones/revision_router.py`, `revision_service.py` y servicios de preparación/almacenamiento relacionados, conservando snapshot, atomicidad de admisión, idempotencia y elección de pesos de Spec 140 (FR-010, FR-011, FR-019).
 - [X] T023 [US3] Añadir cliente/modelo de borrador seguro y editor de hojas existentes/nuevas en `frontend/src/modules/calificaciones/api.ts`, `components/GradeReprocessing.tsx` y `frontend/src/components/evidence/`, con pruebas de límites, cancelación y conflicto (FR-009, FR-011, FR-017, FR-019).
@@ -58,9 +58,9 @@ Alcance y plan aprobados el 2026-11-02. No iniciar código funcional hasta compl
 
 **Prueba independiente**: entrar por materia/evaluación, compartir a varios, copiar e imprimir y regresar al mismo contexto/selección.
 
-- [ ] T026 [US5] Escribir pruebas de selección/filtros/retorno, enlaces existentes y fallos parciales en `frontend/src/modules/feedback_sharing/ShareFeedbackDialog.test.tsx` y pruebas de navegación de `frontend/src/modules/calificaciones/` (FR-001, FR-002, FR-013, FR-015, FR-018, SC-003).
+- [X] T026 [US5] Escribir pruebas de selección/filtros/retorno, enlaces existentes y fallos parciales en `frontend/src/modules/feedback_sharing/ShareFeedbackDialog.test.tsx` y pruebas de navegación de `frontend/src/modules/calificaciones/` (FR-001, FR-002, FR-013, FR-015, FR-018, SC-003).
 - [X] T027 [US5] Aplicar lista compacta opción 1 y zona única generar/copiar en `frontend/src/modules/feedback_sharing/ShareFeedbackDialog.tsx`, `FeedbackStudentList.tsx` y `FeedbackSelectionBar.tsx`, conservando impresión/publicación y permisos (FR-001, FR-013, FR-014, FR-015, FR-016, FR-021, SC-002, SC-003, SC-008).
-- [ ] T028 [US5] Compactar cabecera/retorno y diferenciar acciones de lista/detalle en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`, sin romper rutas antiguas ni libro/resumen (FR-001, FR-002, FR-018, FR-021, SC-005, SC-008).
+- [X] T028 [US5] Compactar cabecera/retorno y diferenciar acciones de lista/detalle en `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx`, sin romper rutas antiguas ni libro/resumen (FR-001, FR-002, FR-018, FR-021, SC-005, SC-008).
 - [ ] T029 [US5] Completar E2E grupal de generación/copia/parciales/impresión/publicación/volver en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts` conservando privacidad del enlace público y cuota/chat existentes (FR-013, FR-015, FR-016, FR-020, SC-003, SC-007).
 
 ## Fase final: Pulido y validación
@@ -69,9 +69,9 @@ Alcance y plan aprobados el 2026-11-02. No iniciar código funcional hasta compl
 - [X] T031 Ejecutar TypeScript, lint, unidad, acciones/build/auditorías aplicables de `frontend/package.json` y registrar resultados reales en `specs/141-revision-estudiante-clara/validation.md`, sin marcar ejecuciones pendientes como verdes (FR-020, SC-007).
 - [X] T032 Ejecutar regresión backend/persistencia/permisos/desglose/feedback/revisión en `backend/tests/` con PostgreSQL aislado y registrar alcance/entorno en `specs/141-revision-estudiante-clara/validation.md` (FR-020, SC-004, SC-007).
 - [ ] T033 Ejecutar E2E Chromium/Firefox/WebKit, teclado, scroll central, claro/oscuro y capturas de app real 384/1440 px en `frontend/e2e/mock/spec141-revision-estudiante-clara.spec.ts`; registrar entorno estable y resultados en `specs/141-revision-estudiante-clara/validation.md` (FR-018, FR-020, SC-002, SC-005, SC-007, SC-008).
-- [ ] T034 Obtener y registrar comprobación física Android/iPhone de los gestos nuevos en `specs/141-revision-estudiante-clara/validation.md`, sin atribuir pruebas de una versión anterior a esta entrega (FR-018, FR-020, SC-007).
+- [X] T034 Obtener y registrar comprobación física Android/iPhone de los gestos nuevos en `specs/141-revision-estudiante-clara/validation.md`, sin atribuir pruebas de una versión anterior a esta entrega (FR-018, FR-020, SC-007).
 - [ ] T035 Ejecutar Converge y comprobar cobertura/retirada de controles y comportamiento en `specs/141-revision-estudiante-clara/tasks.md`; añadir trabajo pendiente real sin declarar completa una tarea no verificada (FR-001 a FR-021; SC-001 a SC-008).
-- [ ] T036 Preparar commit y PR con spec/issue, resumen, evidencia visual y validaciones de `specs/141-revision-estudiante-clara/validation.md`; respetar CI/gobernanza sin fusión ni despliegue en esta autorización (FR-020, SC-007).
+- [X] T036 Preparar commit y PR con spec/issue, resumen, evidencia visual y validaciones de `specs/141-revision-estudiante-clara/validation.md`; respetar CI/gobernanza sin fusión ni despliegue en esta autorización (FR-020, SC-007).
 
 ## Dependencias
 

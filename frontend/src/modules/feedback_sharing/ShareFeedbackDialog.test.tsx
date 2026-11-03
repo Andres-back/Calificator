@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuth } from '@/stores/auth';
-import { ShareFeedbackDialog } from './ShareFeedbackDialog';
+import { ShareFeedbackDialog, StudentFeedbackPanel } from './ShareFeedbackDialog';
 import type { User } from '@/types/api';
 import * as teacherApi from './api';
 import { getEvaluationReview } from '@/modules/calificaciones/api';
@@ -37,6 +37,20 @@ beforeEach(() => {
   });
 });
 describe('retroalimentaciones por evaluación', () => {
+  it('141 la vista propia consulta únicamente la retroalimentación y accesos del estudiante abierto', async () => {
+    vi.mocked(getEvaluationReview).mockResolvedValueOnce({ alumnos: [
+      { estudiante_id: 'a', nombre: 'Ana Pérez', calificacion_id: 'g1' },
+      { estudiante_id: 'b', nombre: 'Luis Pérez', calificacion_id: 'g2' },
+    ], siguiente_cursor: 'otro-grupo-de-resultados' } as never);
+    render(<StudentFeedbackPanel evaluationId="e1" initialGradeId="g1" onReview={() => {}} />);
+    await screen.findByRole('button', { name: 'Generar enlace' });
+    expect(getEvaluationReview).toHaveBeenCalledTimes(1);
+    expect(teacherApi.previewFeedback).toHaveBeenCalledWith('e1', ['g1'], expect.any(AbortSignal));
+    expect(teacherApi.listFeedbackAccesses).toHaveBeenCalledWith('e1', expect.any(AbortSignal), 'g1');
+    expect(screen.queryByText('Luis Pérez')).not.toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
   it('141 el detalle individual no monta selección, publicación ni un desplegable avanzado permanente', async () => {
     render(<ShareFeedbackDialog embedded evaluationId="e1" initialGradeId="g1" onClose={() => {}} onReview={() => {}} />);
     await screen.findByText(result.retroalimentacion);
