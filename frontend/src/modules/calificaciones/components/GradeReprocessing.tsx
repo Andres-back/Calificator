@@ -12,16 +12,19 @@ import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/stores/auth';
 import type { Calificacion, CalificacionDetalle } from '@/types/api';
-import { listGradingRevisions, reprocessGrade } from '../api';
+import { getCalificacionDetalle, getRegradingContext, listGradingRevisions, reprocessGrade } from '../api';
 
 const previousStateLabels: Record<string, string> = {
   sugerida: 'Sugerida por IA', requiere_revision: 'Pendiente de revisión',
   confirmada: 'Confirmada', ajustada: 'Ajustada por el docente', publicada: 'Publicada',
 };
+const scoreFormat = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 4 });
+const formatPoints = (value: string) => Number.isFinite(Number(value)) ? scoreFormat.format(Number(value)) : value;
 
 function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = false }: {
   cal: CalificacionDetalle; onAccepted: (grade: Calificacion) => void; onDirtyChange?: (dirty: boolean) => void; disabled?: boolean;
 }) {
+  const actorId = useAuth((state) => state.user?.id ?? '');
   const [mode, setMode] = useState<'regrade' | 'replace' | null>(null);
   const [reason, setReason] = useState('');
   const [pages, setPages] = useState<EvidencePage[]>([]);
@@ -32,19 +35,44 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
   const [confirmed, setConfirmed] = useState(false);
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [expectedVersion, setExpectedVersion] = useState(cal.updated_at);
+  const [refreshedGrade, setRefreshedGrade] = useState<CalificacionDetalle | null>(null);
+  const mounted = useRef(false);
+  const openEpoch = useRef(0);
+  const mutationEpoch = useRef(0);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false; openEpoch.current += 1;
+      void queryClient.cancelQueries({ queryKey: ['grading-reprocessing-detail', actorId, cal.id], exact: true });
+    };
+  }, [actorId, cal.id]);
+  const [contextGeneration, setContextGeneration] = useState(0);
+  const [acceptedScoreFingerprint, setAcceptedScoreFingerprint] = useState<string | null>(null);
+  const [contextNeedsRefresh, setContextNeedsRefresh] = useState(false);
+  const [refreshingContext, setRefreshingContext] = useState(false);
   const [error, setError] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
   const scope = useRef<HTMLDivElement>(null);
   const viewport = useMobileFormViewport(Boolean(mode), scope);
-  const hasDecision = cal.revisado_por_docente || cal.nota_confirmada != null || ['confirmada', 'ajustada', 'publicada'].includes(cal.estado);
-  const processing = cal.estado === 'procesando';
+  const currentGrade = refreshedGrade ?? cal;
+  const hasDecision = currentGrade.revisado_por_docente || currentGrade.nota_confirmada != null || ['confirmada', 'ajustada', 'publicada'].includes(currentGrade.estado);
+  const processing = currentGrade.estado === 'procesando';
   useEffect(() => { onDirtyChange?.(mode !== null); }, [mode, onDirtyChange]);
   const history = useQuery({ queryKey: ['grading-revisions', cal.id], queryFn: () => listGradingRevisions(cal.id), enabled: historyOpen });
+  const scoreContext = useQuery({ queryKey: ['grading-reprocessing-context', actorId, cal.id, contextGeneration], queryFn: () => getRegradingContext(cal.id),
+    enabled: mode !== null, retry: false, staleTime: Infinity, gcTime: 0, refetchOnWindowFocus: false, refetchOnReconnect: false });
+  const context = scoreContext.data;
+  const currentPointsAccepted = Boolean(context?.fingerprint && context.version_objetivo_id && acceptedScoreFingerprint === context.fingerprint);
   const mutation = useMutation({
+    onMutate: () => { mutationEpoch.current = openEpoch.current; },
     mutationFn: () => reprocessGrade(cal.id, { requestId, version: expectedVersion, confirmed, reason,
+      ...(context?.estado === 'puntajes_actualizados' && currentPointsAccepted ? { useCurrentScores: true,
+        targetScoreVersion: context.version_objetivo_id!, scoreContextFingerprint: context.fingerprint! } : {}),
       ...(mode === 'replace' ? { files: pages.map((page) => page.file),
         ...(usingScan ? { scan: scanSubmission(pages) } : { rotations: pages.map((page) => page.rotation) }) } : {}) }),
     onSuccess: (grade) => {
+      if (!mounted.current || mutationEpoch.current !== openEpoch.current) return;
+      openEpoch.current += 1;
       setMode(null); setPages([]); setReason(''); setError('');
       for (const key of [['calificacion-detalle', cal.id], ['calificaciones', cal.evaluacion_id], ['evaluation-review', cal.evaluacion_id], ['grading-revisions', cal.id], ['grade-breakdown-history', cal.id]]) {
         void queryClient.invalidateQueries({ queryKey: key });
@@ -52,13 +80,53 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
       onAccepted(grade);
       toast.success('Enviado a calificar. Lo anterior se conserva en el historial.');
     },
-    onError: (cause) => setError(toApiError(cause).detail),
+    onError: (cause) => {
+      if (!mounted.current || mutationEpoch.current !== openEpoch.current) return;
+      const failure = toApiError(cause);
+      setError(failure.detail);
+      if (failure.status === 409) {
+        setAcceptedScoreFingerprint(null); setContextNeedsRefresh(true);
+      }
+    },
   });
   const open = (next: 'regrade' | 'replace') => {
+    openEpoch.current += 1;
     setMode(next); setReason(''); setPages([]); setConfirmed(false); setError(''); setRequestId(crypto.randomUUID()); setExpectedVersion(cal.updated_at);
+    setRefreshedGrade(null);
+    setAcceptedScoreFingerprint(null); setContextNeedsRefresh(false); setRefreshingContext(false); setContextGeneration((value) => value + 1);
+  };
+  const close = () => {
+    if (!mutation.isPending) { openEpoch.current += 1; setMode(null); }
   };
   const changeRequest = () => { setRequestId(crypto.randomUUID()); setError(''); };
+  const refreshPoints = async () => {
+    const epoch = openEpoch.current;
+    const isCurrentOpening = () => mounted.current && openEpoch.current === epoch;
+    setAcceptedScoreFingerprint(null); setRefreshingContext(true); changeRequest();
+    try {
+      const fresh = await queryClient.fetchQuery({ queryKey: ['grading-reprocessing-detail', actorId, cal.id],
+        queryFn: () => getCalificacionDetalle(cal.id), staleTime: 0, gcTime: 0, retry: false });
+      if (!isCurrentOpening()) return;
+      if (fresh.id !== cal.id || !fresh.updated_at || !Number.isFinite(Date.parse(fresh.updated_at))) throw new Error('No pudimos comprobar la nota actual.');
+      if (fresh.estado !== currentGrade.estado || fresh.revisado_por_docente !== currentGrade.revisado_por_docente
+        || fresh.nota_confirmada !== currentGrade.nota_confirmada) setConfirmed(false);
+      setRefreshedGrade(fresh);
+      setExpectedVersion(fresh.updated_at);
+      setContextGeneration((value) => value + 1);
+      setContextNeedsRefresh(false);
+    } catch {
+      if (!isCurrentOpening()) return;
+      setContextNeedsRefresh(true);
+      setError('No pudimos comprobar la nota actual. Pulsa «Actualizar puntos» para volver a intentarlo.');
+    } finally {
+      if (isCurrentOpening()) setRefreshingContext(false);
+    }
+  };
+  const contextReady = scoreContext.isSuccess && !scoreContext.isFetching && !contextNeedsRefresh && !refreshingContext
+    && context && ['sin_cambios', 'contenido_modificado', 'puntajes_actualizados'].includes(context.estado)
+    && (context.estado !== 'puntajes_actualizados' || currentPointsAccepted);
   const canSend = !disabled && !processing && !mutation.isPending && (!hasDecision || confirmed)
+    && contextReady
     && (mode !== 'replace' || (pages.length > 0 && !hasUnusableEvidence(pages) && (!usingScan || scanPagesReviewed(pages))));
 
   return <div className="min-w-0 space-y-3" aria-label="Corregir entrega y consultar historial">
@@ -92,12 +160,35 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
     </details>
       </div>
     </details>
-    <Modal open={mode !== null} onClose={() => { if (!mutation.isPending) setMode(null); }} title={mode === 'replace' ? 'Cambiar evidencia' : 'Volver a calificar'}
+    <Modal open={mode !== null} onClose={close} title={mode === 'replace' ? 'Cambiar evidencia' : 'Volver a calificar'}
       className="max-w-3xl" closeOnBackdrop={!mutation.isPending} closeOnEscape={!mutation.isPending} showCloseButton={!mutation.isPending}
       mobileViewport={viewport.viewport} mobileWriting={viewport.isWriting}>
       <div ref={scope} className="min-w-0 space-y-4">
         <p className="font-semibold [overflow-wrap:anywhere]">{cal.estudiante_nombre} · {cal.evaluacion_nombre}</p>
         <p className="text-sm leading-6 text-muted">{mode === 'replace' ? 'Selecciona todas las hojas de la entrega correcta. La evidencia anterior quedará en el historial.' : 'Usaremos la evidencia guardada. El resultado anterior quedará en el historial.'} La nueva nota necesitará tu revisión.</p>
+        {processing && <p role="status" className="text-sm leading-6 text-muted">Esta entrega ya está calificándose. Espera a que termine antes de enviarla otra vez.</p>}
+        {scoreContext.isFetching && <p role="status" className="text-sm leading-6 text-muted">Comprobando los puntos de la entrega…</p>}
+        {scoreContext.isError && !error && <div role="alert" className="space-y-2 rounded-xl border border-border p-3 text-sm">
+          <p>No pudimos comprobar los puntos de esta entrega.</p>
+          <Button type="button" variant="outline" className="min-h-11" disabled={mutation.isPending || refreshingContext} onClick={() => void refreshPoints()}>Consultar puntos de nuevo</Button>
+        </div>}
+        {scoreContext.isSuccess && context && !scoreContext.isFetching && <section data-testid="regrading-context-ready" aria-label="Puntos para esta recalificación"
+          className={`min-w-0 space-y-3 rounded-xl border p-3 text-sm leading-6 ${context.estado === 'puntajes_actualizados' ? 'border-brand-300 bg-brand-50/60 dark:border-brand-700 dark:bg-brand-950/30' : 'border-border'}`}>
+          {context.estado === 'puntajes_actualizados' && <h3 className="font-semibold">El reparto de puntos cambió</h3>}
+          <p>{context.mensaje}</p>
+          {context.estado === 'puntajes_actualizados' && <>
+            <dl className="divide-y divide-border">{context.cambios.map((change) => <div key={change.numero} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
+              <dt className="font-semibold [overflow-wrap:anywhere]">Pregunta {change.numero}</dt>
+              <dd className="shrink-0 tabular-nums"><span className="sr-only">Antes: </span><del className="text-muted">{formatPoints(change.puntaje_anterior)}</del><span aria-hidden="true"> → </span><span className="sr-only">Ahora: </span><strong>{formatPoints(change.puntaje_actual)}</strong></dd>
+            </div>)}</dl>
+            <label className="flex min-h-11 items-start gap-3 py-1">
+              <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={currentPointsAccepted} disabled={mutation.isPending || contextNeedsRefresh}
+                onChange={(event) => { setAcceptedScoreFingerprint(event.currentTarget.checked ? context.fingerprint : null); changeRequest(); }} />
+              Usar los puntos actuales al volver a calificar.
+            </label>
+          </>}
+          {context.estado === 'version_no_disponible' && <Button type="button" variant="outline" className="min-h-11" disabled={mutation.isPending || refreshingContext} onClick={() => void refreshPoints()}>Consultar puntos de nuevo</Button>}
+        </section>}
         {mode === 'replace' && <MultiPageEvidencePicker pages={pages} contextKey={`${capability.scope}:${cal.id}:${mode}`} scanEnabled={scanEnabled} suggestCorners={capability.suggestCorners}
           maxImageBytes={capability.limits?.max_file_bytes} maxTotalBytes={capability.limits?.max_total_bytes}
           maxFiles={capability.limits?.max_pages}
@@ -121,8 +212,9 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
           Confirmo reabrir esta nota. Lo anterior se conserva y la nueva nota no se publicará automáticamente.
         </label>}
         {error && <p role="alert" className="text-sm leading-6 text-rose-700 dark:text-rose-300">{error} Conservamos tus archivos para que puedas volver a intentarlo.</p>}
+        {contextNeedsRefresh && <Button type="button" variant="outline" className="min-h-11" disabled={mutation.isPending || scoreContext.isFetching || refreshingContext} onClick={() => void refreshPoints()}>Actualizar puntos</Button>}
         <div className="flex flex-wrap gap-2"><Button type="button" loading={mutation.isPending} disabled={!canSend} onClick={() => mutation.mutate()}>Enviar a calificar</Button>
-          <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => setMode(null)}>Cancelar</Button></div>
+          <Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancelar</Button></div>
       </div>
     </Modal>
   </div>;
