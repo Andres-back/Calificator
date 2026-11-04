@@ -398,6 +398,35 @@ def merge_detected_answers(
     return merged
 
 
+def objective_reading_candidates(online_answers: list[dict], vision_payload: dict | None) -> list[dict]:
+    """Keep per-sheet observations; the legacy merged reader can hide ambiguity."""
+    candidates = [{**answer, "_objective_source": "online"} for answer in online_answers]
+    if not vision_payload:
+        return candidates
+    extraction = vision_payload.get("vision_extraction")
+    pages = extraction.get("pages") if isinstance(extraction, dict) else None
+    if isinstance(pages, list) and pages:
+        uncertain_document = bool(extraction.get("requires_review")) or any(
+            isinstance(page, dict) and str(page.get("status", "")).startswith("failed_")
+            for page in pages
+        )
+        for page in pages:
+            if isinstance(page, dict) and isinstance(page.get("answers"), list):
+                candidates.extend({**answer, "_objective_source": "photo",
+                                   "needs_review": uncertain_document or bool(answer.get("needs_review"))}
+                                  for answer in page["answers"] if isinstance(answer, dict))
+    else:
+        answers = extraction.get("answers") if isinstance(extraction, dict) else None
+        if not isinstance(answers, list):
+            answers = vision_payload.get("respuestas_detectadas")
+        if isinstance(answers, list):
+            candidates.extend({**answer, "_objective_source": "photo",
+                               "needs_review": bool(vision_payload.get("alertas")) or bool(answer.get("needs_review"))
+                               or bool(isinstance(extraction, dict) and extraction.get("requires_review"))}
+                              for answer in answers if isinstance(answer, dict))
+    return candidates
+
+
 def format_structured_visual_answers(answers: list[dict]) -> str:
     """Hace explicita la correspondencia pregunta-respuesta sin inferir contenido."""
     lines: list[str] = []
@@ -443,6 +472,8 @@ def _all_components_claim_absence(result: AgentResult) -> bool:
 def build_objective_validation(
     blueprint: dict,
     detected_answers: list[dict] | None,
+    *,
+    exclude_safe_types: bool = False,
 ) -> list[dict]:
     """Compara respuestas verificables contra la clave oficial sin delegarlo al LLM."""
     questions = {
@@ -465,6 +496,11 @@ def build_objective_validation(
     validation: list[dict] = []
     for number, question in questions.items():
         question_type = str(question.get("tipo") or "").lower()
+        if exclude_safe_types and (
+            question_type in {"opcion_multiple", "verdadero_falso"}
+            or sum(str(item.get("numero")) == number for item in blueprint.get("preguntas", [])) != 1
+        ):
+            continue
         if question_type not in {"abierta", "opcion_multiple", "verdadero_falso", "completar", "numerica", "respuesta_corta", "emparejamiento"}:
             continue
         if number not in expected or number not in detected:
@@ -826,9 +862,11 @@ async def orchestrate_grading(
         texto_extraido = online_text
         online_answers = parse_numbered_answers(online_text)
         physical_answers: list[dict] = []
+        safe_objectives = settings.GRADING_SAFE_OBJECTIVE_ENABLED and settings.EXPLAINABLE_GRADING_GENERATION_ENABLED
         objective_validation = build_objective_validation(
             blueprint,
             online_answers,
+            exclude_safe_types=safe_objectives,
         )
         vision_result: AgentResult | None = None
         vision_reused = False
@@ -1005,6 +1043,7 @@ async def orchestrate_grading(
                         online_answers,
                         physical_answers,
                     ),
+                    exclude_safe_types=safe_objectives,
                 )
                 extraction_meta = vision_result.raw_output.get("vision_extraction")
                 if isinstance(extraction_meta, dict):
@@ -1053,6 +1092,15 @@ async def orchestrate_grading(
             )
 
         # ── Paso 2: contexto pertinente por pregunta ────────────────
+        objective_resolution = None
+        if safe_objectives:
+            from app.modules.calificaciones.objective_validation import build_safe_objective_validation
+
+            objective_resolution = build_safe_objective_validation(
+                blueprint,
+                objective_reading_candidates(online_answers, vision_result.raw_output if vision_result else None),
+                photographic=bool(image_bytes),
+            )
         detected_for_context = merge_detected_answers(
             blueprint,
             online_answers,
@@ -1425,6 +1473,7 @@ async def orchestrate_grading(
             "evidence_mode": "multimodal" if image_bytes else "digital_text",
             **({'evaluation_content': visual_provenance(blueprint, evaluation_visuals)} if blueprint.get('contenido_version_id') else {}),
             "objective_validation": objective_validation,
+            **({"objective_resolution_v1": objective_resolution} if objective_resolution is not None else {}),
             "objective_score_floor": float(deterministic_floor),
             "objective_floor_applied": objective_floor_applied,
             "pipeline_run_id": pipeline_run_id,

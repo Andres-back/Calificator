@@ -151,6 +151,7 @@ class Settings(BaseSettings):
     AI_JOB_MAX_ATTEMPTS: int = 3
     AI_PROVIDER_MAX_CONCURRENCY: int = 4
     EXPLAINABLE_GRADING_GENERATION_ENABLED: bool = True
+    GRADING_SAFE_OBJECTIVE_ENABLED: bool = False
     EXPLAINABLE_GRADING_AUTHORITY_ENABLED: bool = False
     # Despliegue progresivo de la evolución 032. Las correcciones de
     # integridad e idempotencia no dependen de estos interruptores.

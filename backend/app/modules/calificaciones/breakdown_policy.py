@@ -8,6 +8,13 @@ import unicodedata
 PENDING_STATES = {"ilegible", "no_evaluable", "revision_pendiente"}
 VALID_STATES = {"correcta", "parcial", "incorrecta", "sin_respuesta", *PENDING_STATES}
 ALLOWED_VALUATION_FIELDS = {"evaluador", "puntaje", "estado", "explicacion", "orientacion_mejora", "confianza", "proveedor", "modelo", "tiempo_ms"}
+OBJECTIVE_REVIEW_REASONS = {
+    "sin_lectura": "No se encontró una lectura de la respuesta.",
+    "lectura_ambigua": "Se encontraron marcas o lecturas incompatibles.",
+    "lectura_no_verificable": "La respuesta no se pudo leer con seguridad.",
+    "clave_no_verificable": "La clave oficial no es inequívoca.",
+    "identidad_ambigua": "No se pudo asociar la lectura con una sola pregunta.",
+}
 
 
 def _decimal(value: object, default: str = "0") -> Decimal:
@@ -93,12 +100,17 @@ def component_consensus(
     components_b: list[dict],
     objective_validation: list[dict] | None = None,
     *,
+    objective_resolution_v1: list[dict] | None = None,
     graphic_uncertain_questions: list[int | str] | None = None,
     verifier_disputed_questions: list[int | str] | None = None,
 ) -> tuple[list[dict], list[str]]:
     by_a = {str(item.get("clave")): item for item in components_a or []}
     by_b = {str(item.get("clave")): item for item in components_b or []}
     objective = {str(item.get("numero")): item for item in objective_validation or []}
+    resolved: dict[str, list[dict]] = {}
+    for item in objective_resolution_v1 or []:
+        if isinstance(item, dict) and isinstance(item.get("clave"), str):
+            resolved.setdefault(item["clave"], []).append(item)
     graphic_uncertain = {str(number) for number in graphic_uncertain_questions or []}
     verifier_disputed = {str(number) for number in verifier_disputed_questions or []}
     result: list[dict] = []
@@ -109,8 +121,29 @@ def component_consensus(
         b = sanitize_valuation({**by_b.get(key, {}), "evaluador": "B"}) if key in by_b else None
         maximum = _decimal(base["puntos_maximos"])
         validated = objective.get(str(base.get("numero")))
+        resolutions = resolved.get(key, [])
+        resolution = resolutions[0] if len(resolutions) == 1 else None
         response = (by_a.get(key) or {}).get("respuesta_estudiante") or (by_b.get(key) or {}).get("respuesta_estudiante")
-        if validated and validated.get("correcta") is True:
+        if resolutions:
+            # Esta valoración solo se aplica por clave estable. Una resolución
+            # pendiente no puede ser sustituida por el puntaje de los agentes.
+            if resolution is not None:
+                response = resolution.get("respuesta_detectada")
+            else:
+                response = None
+            correct = (resolution or {}).get("correcta")
+            if correct is True or correct is False:
+                score, state, origin = (maximum, "correcta", "objetivo") if correct else (Decimal("0"), "incorrecta", "objetivo")
+                explanation = "Coincide con la clave." if correct else "No coincide con la clave."
+                orientation, review = "", False
+            else:
+                score, state, origin = None, "revision_pendiente", "control_evidencia"
+                reason = (resolution or {}).get("motivo") if resolution is not None else "identidad_ambigua"
+                explanation = "Necesita revisión: " + OBJECTIVE_REVIEW_REASONS.get(
+                    str(reason), "No se pudo verificar la respuesta o su clave."
+                )
+                orientation, review = "Comprueba la marca y la clave de esta pregunta en la evidencia.", True
+        elif validated and validated.get("correcta") is True:
             score, state, origin = maximum, "correcta", "objetivo"
             explanation = "La respuesta coincide con la clave oficial y recibe el puntaje completo."
             orientation = ""
@@ -138,13 +171,17 @@ def component_consensus(
                 state = states[0] if pending_evaluator and len(set(states)) == 1 else "revision_pendiente"
                 explanation = "La valoración de esta respuesta no tiene consenso verificable; el docente debe revisar la evidencia y la clave."
                 orientation = "Revisa esta respuesta junto con tu docente."
-        if str(base.get("numero")) in verifier_disputed and not (validated and validated.get("correcta") is True):
+        if resolutions and any(item and item.get("estado") in PENDING_STATES | {"sin_respuesta"} for item in (a, b)):
+            score, state, origin, review = None, "revision_pendiente", "control_evidencia", True
+            explanation = "Necesita revisión: una valoración no pudo confirmar la respuesta en la evidencia."
+            orientation = "Comprueba la marca y la clave de esta pregunta en la evidencia."
+        if (str(base.get("numero")) in verifier_disputed or (resolutions and key in verifier_disputed)) and (resolutions or not (validated and validated.get("correcta") is True)):
             score, state, origin, review = None, "revision_pendiente", "control_verificador", True
             explanation = "El verificador cuestionó el puntaje o la clave de esta pregunta; no se confirma un cero automático."
             orientation = "El docente debe contrastar el enunciado, la clave y la evidencia original."
         if review:
             blockers.append(f"componente_pendiente:{key}")
-        if str(base.get("numero")) in graphic_uncertain:
+        if str(base.get("numero")) in graphic_uncertain or (resolutions and key in graphic_uncertain):
             score, state, origin, review = None, "no_evaluable", "control_evidencia", True
             explanation = (
                 "No se pudo confirmar la parte dibujada de esta respuesta. "
@@ -155,11 +192,17 @@ def component_consensus(
             if pending_blocker not in blockers:
                 blockers.append(pending_blocker)
         pages: list[int] = []
-        for item in (by_a.get(key), by_b.get(key)):
+        evidence_items = resolutions if resolutions else (by_a.get(key), by_b.get(key))
+        for item in evidence_items:
             for page in (item or {}).get("paginas", []) or []:
-                if isinstance(page, int) and page > 0 and page not in pages:
+                if type(page) is int and page > 0 and page not in pages:
                     pages.append(page)
-        result.append({**base, "respuesta_estudiante": response, "puntos_obtenidos": score, "estado": state, "explicacion_verificable": explanation, "explicacion_estudiante": explanation, "origen": origin, "requiere_revision": review, "evidencia_json": {"paginas": sorted(pages), "orientacion_mejora": orientation}, "valoraciones_json": [item for item in (a, b) if item]})
+        component = {**base, "respuesta_estudiante": response, "puntos_obtenidos": score, "estado": state, "explicacion_verificable": explanation, "explicacion_estudiante": explanation, "origen": origin, "requiere_revision": review, "evidencia_json": {"paginas": sorted(pages), "orientacion_mejora": orientation}, "valoraciones_json": [item for item in (a, b) if item]}
+        if resolutions:
+            # No exhibir la referencia por número o posición del scaffold si
+            # esta ejecución no verificó su asociación con la clave estable.
+            component["respuesta_referencia"] = (resolution or {}).get("respuesta_esperada")
+        result.append(component)
     return result, blockers
 
 

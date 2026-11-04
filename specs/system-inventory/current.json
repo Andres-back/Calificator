@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "5c65c49c14a11a804f1e8608bbfd0274f1772e08085c6d75018b12a2d418504c",
+  "source_digest": "bf00d0a670d600cd26ebb26b9ebb7b06f0e5f0b5c48ec0d84806c4a78bae8fe1",
   "surfaces": [
     {
       "actors": [
@@ -23144,6 +23144,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_safe_objective_validation.py"
         },
         {
           "level": "unit",
@@ -53877,6 +53883,18 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_objective_accuracy_comparison.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_objective_resolution_consensus.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_online_content_attempt.py"
         },
         {
@@ -53920,6 +53938,18 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_safe_objective_pipeline.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_safe_objective_validation.py"
         },
         {
           "level": "unit",
