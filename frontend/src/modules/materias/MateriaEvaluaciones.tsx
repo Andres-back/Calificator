@@ -29,6 +29,7 @@ import {
   QueryError,
   Select,
   Skeleton,
+  statusTone,
   Textarea,
 } from '@/components/ui';
 import {
@@ -45,6 +46,7 @@ import { EvaluationCriteriaEditor } from '@/modules/evaluaciones/components/Eval
 import { GenerationWizard } from '@/modules/evaluaciones/components/GenerationWizard';
 import { EvaluationCreateMenu } from '@/modules/evaluaciones/components/EvaluationCreateMenu';
 import { ManualEvaluationDialog } from '@/modules/evaluaciones/EvaluacionesPage';
+import { ESTADO_LABEL } from '@/modules/evaluaciones/evaluationStatus';
 import { EvaluationPreviewModal } from '@/modules/evaluaciones/components/EvaluationPreviewModal';
 import { getStudentEvaluationAction, getStudentEvaluationStatus } from '@/modules/evaluaciones/studentProgress';
 import { useAuth } from '@/stores/auth';
@@ -116,6 +118,8 @@ export function MateriaEvaluaciones() {
     enabled: canCopyEvaluation && canUpdateEvaluation, retry: false, staleTime: 30000 });
   const [criteriaEval, setCriteriaEval] = useState<Evaluacion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Evaluacion | null>(null);
+  // Spec 146: publicar y cerrar entregas se confirman antes de ejecutarse.
+  const [confirmAction, setConfirmAction] = useState<{ kind: 'publish' | 'pause'; evaluation: Evaluacion } | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -162,6 +166,7 @@ export function MateriaEvaluaciones() {
       toast.success('Evaluación publicada');
     },
     onError: (error) => toast.error(toApiError(error).detail),
+    onSettled: () => setConfirmAction(null),
   });
 
   const activateReception = useMutation({
@@ -180,6 +185,7 @@ export function MateriaEvaluaciones() {
       toast.success('Entregas cerradas. Puedes volver a abrirlas cuando quieras.');
     },
     onError: (error) => toast.error(toApiError(error).detail),
+    onSettled: () => setConfirmAction(null),
   });
 
   const removeEvaluation = useMutation({
@@ -277,14 +283,8 @@ export function MateriaEvaluaciones() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge
-                        tone={
-                          evaluation.estado === 'cerrada'
-                            ? 'neutral'
-                            : 'success'
-                        }
-                      >
-                        {evaluation.estado}
+                      <Badge tone={statusTone[evaluation.estado] ?? 'neutral'}>
+                        {ESTADO_LABEL[evaluation.estado] ?? 'Estado desconocido'}
                       </Badge>
                       <Badge tone="brand">
                         {MODALITY_LABELS[modality]}
@@ -341,8 +341,8 @@ export function MateriaEvaluaciones() {
                       {canPublishEvaluation && isDraft && (
                         <Button
                           size="sm"
-                          loading={publish.isPending}
-                          onClick={() => publish.mutate(evaluation.id)}
+                          loading={publish.isPending && publish.variables === evaluation.id}
+                          onClick={() => setConfirmAction({ kind: 'publish', evaluation })}
                         >
                           <Send className="h-4 w-4" /> Publicar
                         </Button>
@@ -387,8 +387,8 @@ export function MateriaEvaluaciones() {
                     {canCopyEvaluation && canUpdateEvaluation && documentCapabilities.data?.documento && !evaluation.estructura_documento && evaluation.tipo_origen === 'externa_digitalizada'
                       && <Button size="sm" variant="outline" onClick={() => setRecoveringEval(evaluation)}>Recuperar secciones</Button>}
                     {canPublishEvaluation && !isDraft && (receptionEnabled
-                      ? <Button size="sm" variant="outline" onClick={() => pauseReception.mutate(evaluation.id)} loading={pauseReception.isPending}><Eye className="h-4 w-4" /> Cerrar entregas</Button>
-                      : <Button size="sm" variant="outline" onClick={() => activateReception.mutate(evaluation.id)} loading={activateReception.isPending}><PlayCircle className="h-4 w-4" /> Abrir entregas</Button>)}
+                      ? <Button size="sm" variant="outline" onClick={() => setConfirmAction({ kind: 'pause', evaluation })} loading={pauseReception.isPending && pauseReception.variables === evaluation.id}><Eye className="h-4 w-4" /> Cerrar entregas</Button>
+                      : <Button size="sm" variant="outline" onClick={() => activateReception.mutate(evaluation.id)} loading={activateReception.isPending && activateReception.variables === evaluation.id}><PlayCircle className="h-4 w-4" /> Abrir entregas</Button>)}
                     {canDeleteEvaluation && <Button size="sm" variant="ghost" className="text-rose-700 dark:text-rose-300" onClick={() => setDeleteTarget(evaluation)}><Trash2 className="h-4 w-4" /> Eliminar</Button>}
                   </div>
                 </details>}
@@ -568,6 +568,21 @@ export function MateriaEvaluaciones() {
         cancelLabel="Conservar"
         tone="danger"
         loading={removeEvaluation.isPending}
+      />
+      <ConfirmDialog
+        open={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (!confirmAction) return;
+          if (confirmAction.kind === 'publish') publish.mutate(confirmAction.evaluation.id);
+          else pauseReception.mutate(confirmAction.evaluation.id);
+        }}
+        title={confirmAction?.kind === 'pause' ? 'Cerrar entregas' : 'Publicar evaluación'}
+        description={confirmAction?.kind === 'pause'
+          ? <>Los estudiantes no podrán entregar <strong>{confirmAction.evaluation.nombre}</strong> hasta que vuelvas a abrir las entregas. Las entregas y notas existentes se conservan.</>
+          : <><strong>{confirmAction?.evaluation.nombre}</strong> quedará visible para los estudiantes de la materia.</>}
+        confirmLabel={confirmAction?.kind === 'pause' ? 'Cerrar entregas' : 'Publicar'}
+        loading={publish.isPending || pauseReception.isPending}
       />
 
     </div>

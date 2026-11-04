@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "9e43a494432c9fa87844e2ccd0cf28c2ae813ea6bb3730f57f3eb870e2c7838c",
+  "source_digest": "5accd62732010b72b7891b5f5793e7c569ce63003f4779e94b335d3fac10ef67",
   "surfaces": [
     {
       "actors": [
@@ -1225,6 +1225,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -5086,6 +5092,12 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -5499,6 +5511,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/contenido-visual/capacidades",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/contenido-visual/capacidades",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -5550,6 +5568,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/copias/{job_id}",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/copias/{job_id}",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -5576,6 +5600,12 @@
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/impresion/{job_id}/pdf",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/impresion/{job_id}/pdf",
@@ -5611,6 +5641,12 @@
       "source_path": "backend/app/modules/evaluaciones/visual_router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/recursos/{recurso_id}/propuesta",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/recursos/{recurso_id}/propuesta",
@@ -5972,6 +6008,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -6095,6 +6137,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/actividad",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/actividad",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -6192,6 +6240,12 @@
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/docx",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/docx",
@@ -6425,6 +6479,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/original",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/original",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -6463,6 +6523,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/pdf",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/pdf",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -6489,6 +6555,12 @@
       "source_path": "backend/app/modules/evaluaciones/copy_router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/recuperacion-documental",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/recuperacion-documental",
@@ -6528,6 +6600,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/recursos/{recurso_id}",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/recursos/{recurso_id}",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -6562,6 +6640,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/reparto",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/reparto",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -6592,6 +6676,12 @@
       "source_path": "backend/app/modules/evaluaciones/score_router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/reparto/notas/operaciones/{request_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/reparto/notas/operaciones/{request_id}",
@@ -6694,6 +6784,12 @@
       "source_path": "backend/app/modules/evaluaciones/copy_router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}/ultima-copia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}/ultima-copia",
@@ -8303,6 +8399,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -8678,6 +8780,12 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -9011,6 +9119,12 @@
           "reference": "GET:/materias/{materia_id}/evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -12156,6 +12270,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -12347,6 +12467,12 @@
           "reference": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}/validar-estructura",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -12938,6 +13064,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -16881,6 +17013,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -17014,6 +17152,12 @@
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/externa/digitalizar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/externa/digitalizar",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizarEvaluacionModal.test.tsx"
         },
@@ -17060,6 +17204,12 @@
           "reference": "POST:/evaluaciones/externa/digitalizar-con-archivo",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/externa/digitalizar-con-archivo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17121,6 +17271,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/generar-borrador",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/generar-borrador",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17158,6 +17314,12 @@
           "reference": "POST:/evaluaciones/impresion/preparar",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/impresion/preparar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17218,6 +17380,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/recursos",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17264,6 +17432,12 @@
           "reference": "POST:/evaluaciones/recursos/estructurado",
           "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos/estructurado",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17321,6 +17495,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/recursos/generar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos/generar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17366,6 +17546,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/recursos/recortar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos/recortar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17394,6 +17580,12 @@
       "source_path": "backend/app/modules/evaluaciones/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/referencia/extraer",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/referencia/extraer",
@@ -17436,6 +17628,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/sorpresa",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/sorpresa",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17469,6 +17667,12 @@
           "reference": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_conversion_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/activar-recepcion",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17574,6 +17778,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacion_id}/cerrar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/cerrar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17613,6 +17823,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacion_id}/copiar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/copiar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17646,6 +17862,12 @@
           "reference": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/crear-blueprint",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17875,6 +18097,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/pausar-recepcion",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17908,6 +18136,12 @@
           "reference": "POST:/evaluaciones/{evaluacion_id}/publicar",
           "status": "direct",
           "test_path": "backend/tests/integration/test_api_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/publicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -17947,6 +18181,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/aplicar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/aplicar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -17977,6 +18217,12 @@
       "source_path": "backend/app/modules/evaluaciones/score_router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/previsualizar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacion_id}/reparto/notas/previsualizar",
@@ -20544,6 +20790,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -22031,6 +22283,12 @@
       "source_path": "backend/app/modules/evaluaciones/score_router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "PUT:/evaluaciones/{evaluacion_id}/reparto",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "PUT:/evaluaciones/{evaluacion_id}/reparto",
@@ -24139,6 +24397,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -25243,6 +25507,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -27134,6 +27404,12 @@
           "reference": "/app/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/StudentResultCard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -31601,6 +31877,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -35591,6 +35873,12 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -35951,6 +36239,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/copias/{id}",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/copias/{id}",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -35980,6 +36274,12 @@
           "reference": "GET:/evaluaciones/impresion/{id}/pdf",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evaluation_print_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/impresion/{id}/pdf",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -36025,6 +36325,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/recursos/{id}/propuesta",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/recursos/{id}/propuesta",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -36049,6 +36355,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/actividad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/actividad",
@@ -36139,6 +36451,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/mi-desglose",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -36167,6 +36485,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/mi-entrega",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/mi-entrega",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -36191,6 +36515,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/mi-solicitud-revision",
@@ -36547,6 +36877,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -36665,6 +37001,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluationId}/original",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluationId}/original",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -36691,6 +37033,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluationId}/recursos/{resourceId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluationId}/recursos/{resourceId}",
@@ -36781,6 +37129,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}/recuperacion-documental",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}/recuperacion-documental",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -36817,6 +37171,12 @@
       "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}",
@@ -36861,6 +37221,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}/reparto",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}/reparto",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -36885,6 +37251,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}/ultima-copia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}/ultima-copia",
@@ -37236,6 +37608,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -37974,6 +38352,12 @@
         {
           "level": "unit",
           "reference": "GET:/jobs/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
         },
@@ -38060,6 +38444,12 @@
           "reference": "GET:/jobs/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/GradingJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/jobs/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -38591,6 +38981,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -38869,6 +39265,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materiaId}/evaluaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "GET:/materias/{materiaId}/evaluaciones",
@@ -39228,6 +39630,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -41451,6 +41859,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
         },
         {
@@ -42095,6 +42509,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -45746,6 +46166,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/generar-borrador",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/generar-borrador",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -45781,6 +46207,12 @@
           "reference": "POST:/evaluaciones/impresion/preparar",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/impresion/preparar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -45838,6 +46270,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/recursos/estructurado",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos/estructurado",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -45890,6 +46328,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/recursos/generar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos/generar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -45930,6 +46374,12 @@
           "reference": "POST:/evaluaciones/recursos/recortar",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_permissions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos/recortar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -45983,6 +46433,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/recursos",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/recursos",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -46007,6 +46463,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/referencia/extraer",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/referencia/extraer",
@@ -46097,6 +46559,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacionId}/entregas/archivo",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacionId}/entregas/archivo",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -46121,6 +46589,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacionId}/entregas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacionId}/entregas",
@@ -46153,6 +46627,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{evaluacionId}/solicitud-revision",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{evaluacionId}/solicitud-revision",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -46177,6 +46657,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/activar-recepcion",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/activar-recepcion",
@@ -46209,6 +46695,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/cerrar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/cerrar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -46233,6 +46725,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/copiar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/copiar",
@@ -46265,6 +46763,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/pausar-recepcion",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/pausar-recepcion",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -46289,6 +46793,12 @@
       "source_path": "frontend/src/modules/evaluaciones/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/publicar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/publicar",
@@ -46333,6 +46843,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/reparto/notas/aplicar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/reparto/notas/aplicar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -46369,6 +46885,12 @@
       "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones/{id}/reparto/notas/previsualizar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/evaluaciones/{id}/reparto/notas/previsualizar",
@@ -46720,6 +47242,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -47270,6 +47798,12 @@
           "level": "unit",
           "reference": "POST:/jobs/{id}/cancelar",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{id}/cancelar",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -47296,6 +47830,12 @@
       "source_path": "frontend/src/modules/evaluaciones/visualApi.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/jobs/{id}/cancelar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "POST:/jobs/{id}/cancelar",
@@ -47839,6 +48379,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -49228,6 +49774,12 @@
           "level": "unit",
           "reference": "PUT:/evaluaciones/{id}/reparto",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PUT:/evaluaciones/{id}/reparto",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -50561,6 +51113,12 @@
           "level": "unit",
           "reference": "tasks.copy_evaluation",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "tasks.copy_evaluation",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -51161,6 +51719,12 @@
         "success"
       ],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "tasks.recover_evaluation_copies",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
         {
           "level": "unit",
           "reference": "tasks.recover_evaluation_copies",
@@ -54786,6 +55350,12 @@
           "level": "unit",
           "reference": "evaluacion_blueprints",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluacion_blueprints",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -54849,6 +55419,12 @@
           "reference": "evaluacion_contenido_versiones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_evaluation_visual_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluacion_contenido_versiones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -54940,6 +55516,12 @@
           "level": "unit",
           "reference": "evaluacion_recursos",
           "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluacion_recursos",
+          "status": "domain",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
         }
       ]
@@ -54991,6 +55573,12 @@
           "reference": "evaluacion_reparto_operaciones",
           "status": "direct",
           "test_path": "backend/tests/integration/test_score_allocation_operations.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluacion_reparto_operaciones",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -55881,6 +56469,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
@@ -57965,6 +58559,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/dashboard/TeacherInbox.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/EvaluacionesPage.test.tsx"
         },
         {
           "level": "unit",
