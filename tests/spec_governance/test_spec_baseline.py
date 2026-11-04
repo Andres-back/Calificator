@@ -136,6 +136,7 @@ ALL_SPECS = {
     "139-envio-retroalimentacion-simple",
     "140-recalificar-puntajes-actuales",
     "141-revision-estudiante-clara",
+    "142-exactitud-calificacion",
 }
 OWNED_SPECS = {
     name

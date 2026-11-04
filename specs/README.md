@@ -1,5 +1,7 @@
 # Índice de especificaciones de XCalificator
 
+Regla candidata desactivada: [142-exactitud-calificacion](142-exactitud-calificacion/spec.md), [issue #303](https://github.com/Andres-back/Calificator/issues/303). Identidad estable, puntajes objetivos y abstención ante lecturas dudosas. Comparación sintética sin llamadas de IA; activación y muestra docente real requieren decisión posterior.
+
 Revisión individual y retroalimentación: [141-revision-estudiante-clara](141-revision-estudiante-clara/spec.md), [issue #301](https://github.com/Andres-back/Calificator/issues/301). Cálculo claro, edición de hojas con originales conservados y acciones de compartir más visibles. [Validación y pendientes](141-revision-estudiante-clara/validation.md).
 
 Corrección de puntajes al recalificar: [140-recalificar-puntajes-actuales](140-recalificar-puntajes-actuales/spec.md), [issue299](https://github.com/Andres-back/Calificator/issues/299). Confirmar el reparto actual sin perder evidencia ni historial; no adoptar cambios de preguntas, claves o material.
