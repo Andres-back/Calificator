@@ -78,3 +78,54 @@ test('una ruta administrativa directa explica el acceso retirado', async ({ page
   await expect(page).toHaveURL(/\/app\/403/);
   await expect(page.getByText(/permiso|acceso/i).first()).toBeVisible();
 });
+
+// Spec 144: en un navegador real la confirmación debe quedar encima del editor
+// (jsdom no calcula apilamiento). Genera la evidencia visual del hotfix.
+test('144 la confirmación de reducción de acceso queda encima del editor', async ({ page }) => {
+  test.setTimeout(90_000);
+  const target = {
+    id: 'docente-e2e', nombre: 'Docente Sintético', email: 'docente@example.test', rol: 'profesor',
+    estado: 'activo', custom_role_id: null, solicitud_docente_estado: null,
+    created_at: '2026-08-30T12:00:00Z', updated_at: '2026-08-30T12:00:00Z',
+  };
+  let patched = false;
+  await installMocks(page, ['roles.read', 'users.read', 'users.update']);
+  await page.route('**/api/admin/users**', async (route) => {
+    if (route.request().method() === 'PATCH') { patched = true; return json(route, { ...target, estado: 'inactivo' }); }
+    const url = new URL(route.request().url());
+    return json(route, url.searchParams.get('solicitud_docente_estado') ? [] : [target]);
+  });
+  const evidence = '../specs/144-confirmar-reduccion-acceso/visual';
+  for (const [viewport, label] of [[{ width: 384, height: 800 }, '384'], [{ width: 1440, height: 900 }, '1440']] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: theme });
+      await page.setViewportSize(viewport);
+      await page.goto('/app/admin/usuarios');
+      await page.evaluate((mode) => document.documentElement.classList.toggle('dark', mode === 'dark'), theme);
+      await page.getByRole('button', { name: 'Editar Docente Sintético' }).click();
+      const editor = page.getByRole('dialog', { name: /Editar usuario/ });
+      await editor.getByLabel('Estado').selectOption('inactivo');
+      await editor.getByRole('button', { name: /Guardar usuario/ }).click();
+      const confirmation = page.getByRole('dialog', { name: /Confirmar reducción de acceso/ });
+      await expect(confirmation).toBeVisible();
+      const applyButton = confirmation.getByRole('button', { name: 'Aplicar cambio' });
+      const topmostIsConfirmation = await applyButton.evaluate((button) => {
+        const box = button.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        return Boolean(hit && button.contains(hit));
+      });
+      expect(topmostIsConfirmation).toBe(true);
+      await expect.poll(() => confirmation.evaluate((node) => node.contains(document.activeElement))).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await page.screenshot({ path: `${evidence}/confirmacion-${label}-${theme}-chromium.png` });
+      await page.keyboard.press('Escape');
+      await expect(confirmation).toBeHidden();
+      await expect(editor.getByLabel('Estado')).toHaveValue('inactivo');
+      expect(patched).toBe(false);
+    }
+  }
+  await page.getByRole('dialog', { name: /Editar usuario/ }).getByRole('button', { name: /Guardar usuario/ }).click();
+  await page.getByRole('dialog', { name: /Confirmar reducción de acceso/ }).getByRole('button', { name: 'Aplicar cambio' }).click();
+  await expect.poll(() => patched).toBe(true);
+  await expect(page.getByRole('dialog', { name: /Editar usuario/ })).toBeHidden();
+});
