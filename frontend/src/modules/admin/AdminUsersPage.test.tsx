@@ -121,6 +121,39 @@ describe('AdminUsersPage', () => {
     await waitFor(() => expect(api.updateAdminUser).toHaveBeenCalledWith('admin-1', expect.objectContaining({ rol: 'admin', estado: 'inactivo' })));
   });
 
+  // Regresión Spec 144: Modal considera superior al último diálogo modal del DOM
+  // (recibe foco, Escape y queda visible con el mismo z-index). La confirmación
+  // debe quedar encima del editor y, al cancelarla, conservar lo editado.
+  it('stacks the access-reduction confirmation above the editor and keeps the edit on cancel', async () => {
+    const user = userEvent.setup();
+    api.getAdminUsers.mockImplementation((filters: { solicitud_docente_estado?: string }) => Promise.resolve(
+      filters.solicitud_docente_estado ? [] : [admin],
+    ));
+    api.updateAdminUser.mockResolvedValue({ ...admin, estado: 'inactivo' });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Editar Admin Principal' }));
+    const editor = screen.getByRole('dialog', { name: /Editar usuario/ });
+    await user.selectOptions(within(editor).getByLabelText('Estado'), 'inactivo');
+    await user.click(within(editor).getByRole('button', { name: /Guardar usuario/ }));
+
+    const confirmation = await screen.findByRole('dialog', { name: /Confirmar reducción de acceso/ });
+    const modalDialogs = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+    expect(modalDialogs.item(modalDialogs.length - 1)).toBe(confirmation);
+    await waitFor(() => expect(confirmation.contains(document.activeElement)).toBe(true));
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /Confirmar reducción de acceso/ })).not.toBeInTheDocument());
+    const editorAfterCancel = screen.getByRole('dialog', { name: /Editar usuario/ });
+    expect(within(editorAfterCancel).getByLabelText('Estado')).toHaveValue('inactivo');
+    expect(api.updateAdminUser).not.toHaveBeenCalled();
+
+    await user.click(within(editorAfterCancel).getByRole('button', { name: /Guardar usuario/ }));
+    await user.click(await screen.findByRole('button', { name: 'Aplicar cambio' }));
+    await waitFor(() => expect(api.updateAdminUser).toHaveBeenCalledWith('admin-1', expect.objectContaining({ estado: 'inactivo' })));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /Editar usuario/ })).not.toBeInTheDocument());
+  });
+
   it('creates a user from the administrative form', async () => {
     const user = userEvent.setup();
     renderPage();
