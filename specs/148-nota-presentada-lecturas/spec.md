@@ -1,6 +1,6 @@
 # Especificación: La decisión del empate llega a todas las lecturas, la analítica y el PDF (backend)
 
-**Rama**: `codex/148-nota-presentada-lecturas` | **Creada**: 2026-11-04 | **Estado**: Borrador | **Issue**: [#314](https://github.com/Andres-back/Calificator/issues/314)
+**Rama**: `codex/148-nota-presentada-lecturas` | **Creada**: 2026-11-04 | **Estado**: Aprobada (spec y plan aprobados por el usuario el 2026-11-04) | **Issue**: [#314](https://github.com/Andres-back/Calificator/issues/314)
 
 **Entrada**: continúa la regla de redondeo acordada con el docente responsable (2026-11-04). La [Spec 147](../147-decision-empate-backend/spec.md) guarda la decisión del empate (2.9 o 3.0) aparte de la nota exacta. Esta spec es el **PR 2b**:
 

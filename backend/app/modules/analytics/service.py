@@ -12,6 +12,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.calificaciones import grade_rounding
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.modules.analytics.event_policy import AnalyticsValidationError, validate_event_payload
@@ -989,7 +990,10 @@ async def get_evaluaciones_list(
             "confirmadas": confirmadas,
             "publicadas": publicadas,
             "promedio": round(promedio, 2),
-            "tasa_aprobacion": round(sum(1 for n in notas if n >= max_nota * 0.6) / len(notas), 4) if notas else 0,
+            # Spec 148: aprobación con la nota presentada y la decisión docente del empate.
+            "tasa_aprobacion": round(grade_rounding.approval_rate(
+                [(c.nota_confirmada or c.nota_sugerida, getattr(c, "redondeo_empate", None) if c.nota_confirmada else None)
+                 for c in cal_list if c.nota_confirmada or c.nota_sugerida], ev.nota_maxima), 4),
             "created_at": ev.created_at.isoformat() if ev.created_at else None,
         })
 

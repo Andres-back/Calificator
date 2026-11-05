@@ -287,6 +287,7 @@ async def list_delivered_evaluations_for_student(
             "estado_calificacion": calificacion.estado,
             "nota_confirmada": calificacion.nota_confirmada,
             "nota_maxima": evaluacion.nota_maxima,
+            "redondeo_empate": calificacion.redondeo_empate,
             "puede_chatear": _can_chat_with_calificacion(calificacion),
         }
         current = by_evaluation.get(evaluacion.id)

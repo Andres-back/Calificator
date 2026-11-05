@@ -957,6 +957,7 @@ async def get_boletin(
             "nota_maxima": Decimal(str(definition(cal, evaluacion).get('nota_maxima', evaluacion.nota_maxima if evaluacion else '5'))),
             "estado": cal.estado,
             "feedback": cal.feedback,
+            "redondeo_empate": cal.redondeo_empate,
         }
         for cal, evaluacion in visible_rows
     ]

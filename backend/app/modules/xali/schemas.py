@@ -29,6 +29,7 @@ class XaliEvaluacionEntregadaRead(BaseModel):
     nota_confirmada: Decimal | None
     # Spec 145: permite presentar la nota con la misma regla (empate del umbral) que el resto de vistas.
     nota_maxima: Decimal | None = None
+    redondeo_empate: Literal["abajo", "arriba"] | None = None
     puede_chatear: bool
 
 

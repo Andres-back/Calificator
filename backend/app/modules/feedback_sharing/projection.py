@@ -35,10 +35,10 @@ def review_source_fingerprint(grade, evaluation, student_name, subject_name, bre
         for item in getattr(breakdown, 'componentes', [])
     ] if breakdown else []
     return digest({
-        'schema': 120, 'grade': {key: getattr(grade, key, None) for key in (
+        'schema': 120, 'grade': {**{key: getattr(grade, key, None) for key in (
             'id', 'estudiante_id', 'evaluacion_id', 'materia_id', 'estado',
             'nota_confirmada', 'revisado_por_docente', 'feedback', 'entrega_id', 'updated_at',
-        )},
+        )}, **_tie_fields(grade)},
         'student_name': student_name, 'subject_name': subject_name,
         'evaluation': {key: getattr(evaluation, key, None) for key in (
             'id', 'nombre', 'nota_maxima', 'preguntas', 'criterios', 'metas_profesor',
@@ -51,6 +51,12 @@ def review_source_fingerprint(grade, evaluation, student_name, subject_name, bre
         **({'contexto_documental': document_context(evaluation)}
            if getattr(evaluation, 'estructura_documento', None) is not None else {}),
     })
+
+
+def _tie_fields(grade) -> dict:
+    """Spec 148: la decisión del empate solo se añade si existe, para no cambiar huellas previas."""
+    decision = getattr(grade, 'redondeo_empate', None)
+    return {'redondeo_empate': decision} if decision else {}
 
 
 def confirmed_score(grade, evaluation):
@@ -74,7 +80,7 @@ def build_review_projection(grade, evaluation, student_name, subject_name, break
     reviewed = SimpleNamespace(**{key: getattr(grade, key) for key in (
         'id', 'estudiante_id', 'evaluacion_id', 'materia_id', 'estado',
         'revisado_por_docente', 'nota_confirmada',
-    )}, feedback=message)
+    )}, redondeo_empate=getattr(grade, 'redondeo_empate', None), feedback=message)
     if review.scope == 'detail':
         if breakdown is None:
             raise HTTPException(422, 'Esta nota no tiene detalle por pregunta revisado. Elige solo nota y retroalimentación.')
@@ -89,6 +95,7 @@ def build_review_projection(grade, evaluation, student_name, subject_name, break
             'nota': str(note), 'nota_maxima': str(maximum), 'retroalimentacion': message,
             'explicacion': 'Nota y retroalimentación revisadas por tu docente. Esta devolución no incluye detalle por pregunta.',
             'respuestas': [], 'claves_liberadas': False, 'alcance': 'summary',
+            **_tie_fields(grade),
         }
     else:
         raise HTTPException(422, 'Elige el contenido que deseas entregar.')
@@ -132,6 +139,7 @@ def build_projection(grade, evaluation, student_name: str, subject_name: str, br
         "claves_liberadas": released,
         **({'contexto_documental': document_context(evaluation)}
            if getattr(evaluation, 'estructura_documento', None) is not None else {}),
+        **_tie_fields(grade),
     }
     fingerprint = digest({
         "payload": payload, "grade": grade.id, "state": grade.estado,

@@ -13,7 +13,7 @@ from app.modules.xali.schemas import XaliEvaluacionEntregadaRead
 @pytest.mark.asyncio
 async def test_lista_entregadas_incluye_nota_maxima(monkeypatch):
     monkeypatch.setattr(service, "_can_chat_with_calificacion", lambda _c: True)
-    calificacion = SimpleNamespace(estado="publicada", nota_confirmada=Decimal("2.95"))
+    calificacion = SimpleNamespace(estado="publicada", nota_confirmada=Decimal("2.95"), redondeo_empate="arriba")
     entrega = SimpleNamespace(id=uuid4())
     evaluacion = SimpleNamespace(id=uuid4(), nombre="Multiplicación", nota_maxima=Decimal("5.00"))
     materia = SimpleNamespace(id=uuid4(), nombre="Matemáticas")
@@ -26,6 +26,7 @@ async def test_lista_entregadas_incluye_nota_maxima(monkeypatch):
     read = XaliEvaluacionEntregadaRead.model_validate(items[0])
     assert read.nota_confirmada == Decimal("2.95")
     assert read.nota_maxima == Decimal("5.00")
+    assert read.redondeo_empate == "arriba"
 
 
 def test_nota_maxima_es_opcional_para_clientes_existentes():
