@@ -9,6 +9,7 @@ import { useAuth } from '@/stores/auth';
 import { getBoletin } from './api';
 import { boletinTour } from './tourSteps';
 import { StudentResultCard } from './StudentResultCard';
+import { formatGradeScore } from './gradePresentation';
 import type { BoletinItem, User } from '@/types/api';
 
 function studentLabel(student: User) {
@@ -17,7 +18,7 @@ function studentLabel(student: User) {
 
 function formatScore(item: BoletinItem) {
   if (item.nota_confirmada == null) return 'Pendiente';
-  return `${Number(item.nota_confirmada).toFixed(1)} / ${Number(item.nota_maxima).toFixed(1)}`;
+  return `${formatGradeScore(item.nota_confirmada, item.nota_maxima)} / ${formatGradeScore(item.nota_maxima)}`;
 }
 
 function formatDate(value?: string | null) {

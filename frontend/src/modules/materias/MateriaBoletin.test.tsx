@@ -134,13 +134,13 @@ describe('libro docente contextual', () => {
     expect(screen.getByRole('status')).toHaveTextContent('ya no está disponible');
   });
 
-  it('preserves cents, scales and published states without displaying absent grades as zero', async () => {
+  it('145 shows one decimal, scales and published states without displaying absent grades as zero', async () => {
     mocks.grades.mockImplementation(async (id: string) => id === 'eval-1' ? [{ id: 'g1', estudiante_id: 'student-0', estado: 'publicada', nota_confirmada: 4.67, updated_at: '2026-01-01' }] : []);
     const user = userEvent.setup();
     renderPage();
     await user.click(await screen.findByRole('button', { name: 'Ver boletín de Alumno 0' }));
     const dialog = screen.getByRole('dialog');
-    await waitFor(() => expect(within(dialog).getByText('4.67 / 5.0')).toBeVisible());
+    await waitFor(() => expect(within(dialog).getByText('4.7 / 5.0')).toBeVisible());
     await waitFor(() => expect(within(dialog).getByText('Publicada')).toBeVisible());
     await waitFor(() => expect(within(dialog).getByText('Sin calificación')).toBeVisible());
     expect(within(dialog).queryByText('0.0 / 5.0')).not.toBeInTheDocument();
@@ -225,7 +225,7 @@ describe('libro docente contextual', () => {
     await user.click(await screen.findByRole('button', { name: 'Ver boletín de Alumno 0' }));
     act(() => client.setQueryData(['calificaciones', 'eval-1', 'solo-lectura', 'materia-1', 'teacher'], [{ id: 'g1', estudiante_id: 'student-0', nota_confirmada: 4.67, estado: 'publicada', updated_at: '2026-01-02' }]));
     // La nota puede estar en el DOM antes de terminar la animación de apertura.
-    await waitFor(() => expect(within(screen.getByRole('dialog')).getByText('4.67 / 5.0')).toBeVisible());
+    await waitFor(() => expect(within(screen.getByRole('dialog')).getByText('4.7 / 5.0')).toBeVisible());
   });
 
   it.each(['materia', 'usuario', 'permiso', 'matricula'])('discards a private preview after changing %s', async (kind) => {

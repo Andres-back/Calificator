@@ -2,6 +2,7 @@ import { ArrowRight, ChevronDown, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge, Card, RichContent } from '@/components/ui';
 import type { BoletinItem } from '@/types/api';
+import { formatGradeScore } from './gradePresentation';
 
 /** Presentación de una nota propia; no consulta datos ni concede permisos. */
 export function StudentResultCard({ item }: { item: BoletinItem }) {
@@ -21,8 +22,8 @@ export function StudentResultCard({ item }: { item: BoletinItem }) {
         </div>
         {confirmed && (
           <div className="shrink-0 rounded-xl bg-brand-50 px-3 py-2 text-center text-brand-800 dark:bg-brand-500/15 dark:text-brand-100">
-            <p className="font-display text-2xl font-extrabold tabular-nums">{Number(item.nota_confirmada).toFixed(1)}</p>
-            <p className="text-xs text-muted">/ {Number(item.nota_maxima).toFixed(1)}</p>
+            <p className="font-display text-2xl font-extrabold tabular-nums">{formatGradeScore(item.nota_confirmada!, item.nota_maxima)}</p>
+            <p className="text-xs text-muted">/ {formatGradeScore(item.nota_maxima)}</p>
           </div>
         )}
       </div>

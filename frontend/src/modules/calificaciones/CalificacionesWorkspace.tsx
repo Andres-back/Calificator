@@ -66,7 +66,7 @@ import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
 import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submissionCandidates';
 import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
-import { effectiveGradeScore, formatGradeScore, gradePresentation, isGradeProcessing } from './gradePresentation';
+import { effectiveGradeScore, formatGradeScore, formatScoreDetail, gradePresentation, isGradeProcessing } from './gradePresentation';
 import { PreviousGradeReference } from './components/PreviousGradeReference';
 import { formatTimelineScore } from './timeline';
 import { ReviewNavigation, type ReviewSection } from './ReviewNavigation';
@@ -1017,7 +1017,7 @@ function PanelDetalle({
   const formulaScore = cal.desglose?.formula.nota_final != null ? Number(cal.desglose.formula.nota_final) : null;
   const calculation = cal.desglose ? gradeCalculationPresentation(cal.desglose) : null;
   const scoreDifference = !done && !presentation.processing && presentation.score != null && formulaScore != null && Number.isFinite(formulaScore) && Math.abs(presentation.score - formulaScore) > 0.005
-    ? `La IA propone ${formatGradeScore(presentation.score)}, pero el ${calculation?.label.toLowerCase() ?? 'cálculo por respuestas'} da ${formatGradeScore(formulaScore)}. ${calculation?.provisional ? calculation.explanation : 'Revisa los puntajes antes de confirmar.'}` : undefined;
+    ? `La IA propone ${formatScoreDetail(presentation.score)}, pero el ${calculation?.label.toLowerCase() ?? 'cálculo por respuestas'} da ${formatScoreDetail(formulaScore)}. ${calculation?.provisional ? calculation.explanation : 'Revisa los puntajes antes de confirmar.'}` : undefined;
   const reviewNotices = <ReviewTriagePanel
     compact
     focused={!done && !presentation.processing}
@@ -1075,8 +1075,8 @@ function PanelDetalle({
               </div>
             ) : (
               <p className={cn('font-display font-extrabold text-fg', mobileTab === 'retroalimentacion' ? 'text-2xl' : 'text-4xl')}>
-                {formatGradeScore(presentation.score)}
-                {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {notaMaxima.toFixed(1)}</span>}
+                {formatGradeScore(presentation.score, notaMaxima)}
+                {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {formatGradeScore(notaMaxima)}</span>}
               </p>
             )}
           </div>
@@ -2412,7 +2412,7 @@ function GradingCenter() {
                           {summary.tiene_alertas && <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{['confirmada', 'ajustada', 'publicada'].includes(row.estado) ? 'Avisos del análisis inicial' : 'Respuestas por comprobar'}{summary.pqrs_abiertas ? ` · ${summary.pqrs_abiertas} reclamo(s)` : ''}</p>}
                           {row.calificacion_id && summary.version == null && row.estado !== 'procesando' && <p className="text-xs text-muted">Sin puntajes por pregunta guardados</p>}
                         </div>
-                        <span className="shrink-0 text-lg font-bold">{row.estado === 'procesando' ? <LoaderCircle className="h-5 w-5 animate-spin" aria-label="Calificando" /> : row.nota == null ? '—' : formatGradeScore(Number(row.nota))}</span>
+                        <span className="shrink-0 text-lg font-bold">{row.estado === 'procesando' ? <LoaderCircle className="h-5 w-5 animate-spin" aria-label="Calificando" /> : row.nota == null ? '—' : formatGradeScore(Number(row.nota), notaMaxima)}</span>
                       </button>
                     </div>
                   );
@@ -2536,7 +2536,7 @@ function GradingCenter() {
         description={
           <span>
             Vas a confirmar la nota de <strong>{confirmingSingle ? studentLabel(confirmingSingle, studentMap) : ''}</strong>
-            {confirmingSingle && effectiveGradeScore(confirmingSingle) != null && <> con <strong>{formatGradeScore(effectiveGradeScore(confirmingSingle)!)}</strong></>}.
+            {confirmingSingle && effectiveGradeScore(confirmingSingle) != null && <> con <strong>{formatGradeScore(effectiveGradeScore(confirmingSingle)!, notaMaxima)}</strong></>}.
           </span>
         }
       />

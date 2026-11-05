@@ -13,6 +13,7 @@ import { useMaterias } from '@/modules/materias/MateriaSelect';
 import { api, toApiError } from '@/lib/api';
 import { useAuth } from '@/stores/auth';
 import { XaliRefuerzoModal } from './XaliRefuerzoModal';
+import { formatGradeScore } from '@/modules/calificaciones/gradePresentation';
 
 /* ─── Types ─── */
 interface Overview {
@@ -843,7 +844,7 @@ function DetalleEstudiante({ data }: { data: EstudianteDetalle }) {
             {d.evaluaciones.map((ev, i) => (
               <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs">
                 <span className="font-medium text-fg">{ev.nombre}</span>
-                <span className="text-muted">{ev.nota.toFixed(1)}/{ev.nota_maxima.toFixed(1)} ({ev.porcentaje.toFixed(0)}%)</span>
+                <span className="text-muted">{formatGradeScore(ev.nota, ev.nota_maxima)}/{formatGradeScore(ev.nota_maxima)} ({ev.porcentaje.toFixed(0)}%)</span>
               </div>
             ))}
           </div>

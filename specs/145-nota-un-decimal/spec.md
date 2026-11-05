@@ -1,6 +1,6 @@
 # Especificación: Nota con un decimal y redondeo consistente en todas las vistas
 
-**Rama**: `codex/145-nota-un-decimal` | **Creada**: 2026-11-04 | **Estado**: Borrador | **Issue**: [#310](https://github.com/Andres-back/Calificator/issues/310)
+**Rama**: `codex/145-nota-un-decimal` | **Creada**: 2026-11-04 | **Estado**: Aprobada (spec y plan aprobados por el usuario el 2026-11-04) | **Issue**: [#310](https://github.com/Andres-back/Calificator/issues/310)
 
 **Entrada**: hallazgo A3 de la revisión del frontend de `main` (2026-11-04). La misma nota se ve distinta según la pantalla: el docente ve 2.95 y el estudiante 3.0, y algunos valores se redondean al revés (1.15 se ve 1.1). El docente responsable definió la regla en el chat de revisión: 1 decimal, la mitad sube, y el empate exacto en el umbral de aprobación lo decide el docente.
 

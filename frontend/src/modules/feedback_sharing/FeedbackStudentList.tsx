@@ -20,7 +20,7 @@ export function FeedbackStudentList({ rows, accesses, selected, detailId, canDel
       <div className="flex items-start gap-2">
         {canDeliver && <label className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center"><input type="checkbox" className="h-5 w-5" aria-label={'Seleccionar ' + row.nombre} checked={selected.includes(id ?? '')} disabled={busy || !id || !(row.preview?.seleccionable || row.preview?.elegible)} onChange={event => { if (id) onToggle(id, event.target.checked); }} /></label>}
         <div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1"><p className="min-w-0 flex-[1_1_10rem] break-words font-semibold leading-6">{row.nombre}</p>
-          {score?.nota != null && <span className="shrink-0 font-bold tabular-nums">{formatGradeScore(Number(score.nota))}<span className="text-xs font-normal text-muted"> / {formatGradeScore(Number(score.nota_maxima))}</span></span>}
+          {score?.nota != null && <span className="shrink-0 font-bold tabular-nums">{formatGradeScore(Number(score.nota), score.nota_maxima)}<span className="text-xs font-normal text-muted"> / {formatGradeScore(Number(score.nota_maxima))}</span></span>}
         </div><p className="mt-1 text-sm text-muted">{hasLink ? <span className="text-emerald-700 dark:text-emerald-300">Enlace disponible</span> : row.preview?.elegible ? 'Lista para entregar' : row.preview?.motivo ?? 'Sin calificación todavía.'}</p></div>
       </div>
       {id && <div className="mt-2 flex flex-wrap gap-1">

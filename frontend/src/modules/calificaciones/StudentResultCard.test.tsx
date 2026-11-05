@@ -18,6 +18,14 @@ describe('resultado estudiantil compartido', () => {
     expect(screen.getByText(result.feedback)).toBeVisible();
     expect(screen.queryByRole('button', { name: /Calificar|Editar|Publicar/ })).not.toBeInTheDocument();
   });
+  it('145 redondea la mitad hacia arriba y no decide el empate del umbral', () => {
+    const view = render(<MemoryRouter><StudentResultCard item={{ ...result, nota_confirmada: 1.15 }} /></MemoryRouter>);
+    expect(screen.getByText('1.2')).toBeVisible();
+    view.unmount();
+    render(<MemoryRouter><StudentResultCard item={{ ...result, nota_confirmada: 2.95 }} /></MemoryRouter>);
+    expect(screen.getByText('2.95')).toBeVisible();
+    expect(screen.queryByText('3.0')).not.toBeInTheDocument();
+  });
   it('preserves a confirmed zero and its explanation', () => {
     render(<MemoryRouter><StudentResultCard item={{ ...result, nota_confirmada: 0 }} /></MemoryRouter>);
     expect(screen.getByText('0.0')).toBeVisible();
