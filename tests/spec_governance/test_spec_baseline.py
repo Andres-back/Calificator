@@ -138,6 +138,7 @@ ALL_SPECS = {
     "141-revision-estudiante-clara",
     "142-exactitud-calificacion",
     "144-confirmar-reduccion-acceso",
+    "146-estado-acciones-evaluaciones",
 }
 OWNED_SPECS = {
     name

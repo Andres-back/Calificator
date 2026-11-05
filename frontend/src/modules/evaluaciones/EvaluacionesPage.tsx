@@ -7,7 +7,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Plus, ClipboardCheck, Send, Lock, FileText, Trash2, BookOpen, BookOpenCheck, UserPlus, Pencil, Sparkles, Eye } from 'lucide-react';
-import { Button, Card, Badge, statusTone, Skeleton, EmptyState, Modal, Input, Field, Textarea, Select } from '@/components/ui';
+import { Button, Card, Badge, statusTone, Skeleton, EmptyState, Modal, Input, Field, Textarea, Select, ConfirmDialog } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useMaterias, MateriaSelect } from '@/modules/materias/MateriaSelect';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
@@ -34,16 +34,10 @@ import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { useAuth } from '@/stores/auth';
-import type { DBAUnifiedItem, Evaluacion, EvaluacionEstado, EvaluacionModalidad } from '@/types/api';
+import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad } from '@/types/api';
 import { getStudentEvaluationAction, getStudentEvaluationStatus } from './studentProgress';
+import { ESTADO_LABEL } from './evaluationStatus';
 
-const ESTADO_LABEL: Record<EvaluacionEstado, string> = {
-  borrador: 'Borrador',
-  publicada: 'Publicada',
-  en_calificacion: 'En calificación',
-  pendiente_revision: 'Por revisar',
-  cerrada: 'Cerrada',
-};
 
 type ListField = 'metas' | 'criterios' | 'preguntas' | 'respuestas';
 
@@ -583,22 +577,27 @@ export function EvaluacionesPage() {
     onError: (error) => toast.error(toApiError(error).detail),
   });
 
+  // Spec 146: publicar y cerrar se confirman; la carga se muestra solo en la tarjeta afectada.
+  const [confirmAction, setConfirmAction] = useState<{ kind: 'publish' | 'close'; evaluation: Evaluacion } | null>(null);
+
   const publicar = useMutation({
-    mutationFn: publicarEvaluacion,
+    mutationFn: (id: string) => publicarEvaluacion(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(materiaId) });
-      toast.success('Evaluacion publicada');
+      toast.success('Evaluación publicada');
     },
     onError: (error) => toast.error(toApiError(error).detail),
+    onSettled: () => setConfirmAction(null),
   });
 
   const cerrar = useMutation({
-    mutationFn: cerrarEvaluacion,
+    mutationFn: (id: string) => cerrarEvaluacion(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.evaluaciones.list(materiaId) });
-      toast.success('Evaluacion cerrada');
+      toast.success('Evaluación cerrada');
     },
     onError: (error) => toast.error(toApiError(error).detail),
+    onSettled: () => setConfirmAction(null),
   });
 
   const noMaterias = !loadingMaterias && (!materias || materias.length === 0);
@@ -817,13 +816,13 @@ export function EvaluacionesPage() {
                           {canUpdate && <Button size="sm" variant="outline" onClick={() => openEditModal(ev)}>
                             <Pencil className="h-4 w-4" /> Editar
                           </Button>}
-                          {canPublish && <Button size="sm" loading={publicar.isPending} onClick={() => publicar.mutate(ev.id)}>
+                          {canPublish && <Button size="sm" loading={publicar.isPending && publicar.variables === ev.id} onClick={() => setConfirmAction({ kind: 'publish', evaluation: ev })}>
                             <Send className="h-4 w-4" /> Publicar
                           </Button>}
                         </>
                       )}
                       {canUpdate && (ev.estado === 'publicada' || ev.estado === 'en_calificacion' || ev.estado === 'pendiente_revision') && (
-                        <Button size="sm" variant="outline" loading={cerrar.isPending} onClick={() => cerrar.mutate(ev.id)}><Lock className="h-4 w-4" /> Cerrar</Button>
+                        <Button size="sm" variant="outline" loading={cerrar.isPending && cerrar.variables === ev.id} onClick={() => setConfirmAction({ kind: 'close', evaluation: ev })}><Lock className="h-4 w-4" /> Cerrar</Button>
                       )}
                     </div>
                   </Card>
@@ -886,6 +885,21 @@ export function EvaluacionesPage() {
         onGenerateAI={handleGenerateAI}
         isPending={create.isPending || update.isPending}
         aiPending={generate.isPending}
+      />
+      <ConfirmDialog
+        open={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (!confirmAction) return;
+          if (confirmAction.kind === 'publish') publicar.mutate(confirmAction.evaluation.id);
+          else cerrar.mutate(confirmAction.evaluation.id);
+        }}
+        title={confirmAction?.kind === 'close' ? 'Cerrar evaluación' : 'Publicar evaluación'}
+        description={confirmAction?.kind === 'close'
+          ? <>Se cerrará <strong>{confirmAction.evaluation.nombre}</strong> y no se recibirán más entregas. Las entregas y notas existentes se conservan.</>
+          : <><strong>{confirmAction?.evaluation.nombre}</strong> quedará visible para los estudiantes de la materia.</>}
+        confirmLabel={confirmAction?.kind === 'close' ? 'Cerrar evaluación' : 'Publicar'}
+        loading={publicar.isPending || cerrar.isPending}
       />
     </div>
   );

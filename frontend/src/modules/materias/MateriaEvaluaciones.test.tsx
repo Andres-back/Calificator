@@ -347,6 +347,7 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
     expect(await screen.findByRole('button', { name: 'Editar preguntas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Editar datos' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Cerrar entregas' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Cerrar entregas' })).getByRole('button', { name: 'Cerrar entregas' }));
     await waitFor(() => expect(mocks.pause).toHaveBeenCalledWith('evaluation-1'));
   });
 
@@ -363,5 +364,58 @@ describe('MateriaEvaluaciones teacher creation flow', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Abrir entregas' }));
     await waitFor(() => expect(mocks.activate).toHaveBeenCalledWith('evaluation-1'));
+  });
+});
+
+describe('146 estado legible, carga por tarjeta y confirmación', () => {
+  it('muestra el estado en español con su tono y nunca el valor técnico', async () => {
+    mocks.list.mockResolvedValue([
+      { ...evaluation, id: 'draft', nombre: 'Uno' },
+      { ...evaluation, id: 'grading', nombre: 'Dos', estado: 'en_calificacion' },
+      { ...evaluation, id: 'review', nombre: 'Tres', estado: 'pendiente_revision' },
+    ]);
+    renderPage();
+    const draft = await screen.findByText('Borrador', { selector: 'span' });
+    expect(draft.className).not.toMatch(/emerald/);
+    expect(screen.getByText('En calificación')).toBeInTheDocument();
+    expect(screen.getByText('Por revisar')).toBeInTheDocument();
+    expect(screen.queryByText(/en_calificacion|pendiente_revision/)).not.toBeInTheDocument();
+  });
+
+  it('pide confirmar antes de publicar y solo marca carga en la tarjeta publicada', async () => {
+    const user = userEvent.setup();
+    mocks.list.mockResolvedValue([
+      { ...evaluation, id: 'a', nombre: 'Taller A' },
+      { ...evaluation, id: 'b', nombre: 'Taller B' },
+    ]);
+    mocks.publish.mockReturnValue(new Promise(() => {}));
+    renderPage();
+    const cardA = await screen.findByRole('group', { name: 'Acciones principales de Taller A' });
+    const cardB = screen.getByRole('group', { name: 'Acciones principales de Taller B' });
+
+    await user.click(within(cardA).getByRole('button', { name: 'Publicar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Publicar evaluación' });
+    expect(dialog).toHaveTextContent('Taller A');
+    expect(mocks.publish).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(mocks.publish).not.toHaveBeenCalled();
+
+    await user.click(within(cardA).getByRole('button', { name: 'Publicar' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Publicar evaluación' })).getByRole('button', { name: 'Publicar' }));
+    await waitFor(() => expect(mocks.publish).toHaveBeenCalledWith('a'));
+    expect(within(cardA).getByRole('button', { name: 'Publicar' })).toHaveAttribute('aria-busy', 'true');
+    expect(within(cardB).getByRole('button', { name: 'Publicar' })).not.toHaveAttribute('aria-busy');
+    expect(within(cardB).getByRole('button', { name: 'Publicar' })).toBeEnabled();
+  });
+
+  it('pide confirmar antes de cerrar entregas y no cierra al cancelar', async () => {
+    const user = userEvent.setup();
+    mocks.list.mockResolvedValue([{ ...evaluation, estado: 'publicada', recepcion_habilitada: true }]);
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Cerrar entregas' }));
+    const dialog = screen.getByRole('dialog', { name: 'Cerrar entregas' });
+    expect(dialog).toHaveTextContent('Evaluación de ciencias');
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(mocks.pause).not.toHaveBeenCalled();
   });
 });
