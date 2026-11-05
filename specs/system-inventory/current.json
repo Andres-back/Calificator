@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "abf8f1378cff28eef259b6b01a25616db7666202661567caba5e2352437bf770",
+  "source_digest": "447ff5df58bb2230079ff23398c0ac6ca46deac4e69397ffe06808b598eb7a22",
   "surfaces": [
     {
       "actors": [
@@ -23707,6 +23707,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mosaic.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -25332,6 +25338,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mosaic.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/gradebook-export.spec.ts"
         },
         {
@@ -26742,6 +26754,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mosaic.spec.ts"
         },
         {
           "level": "e2e",
@@ -54739,6 +54757,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/grade-review-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/grade-review-mosaic.spec.ts"
         },
         {
           "level": "e2e",
