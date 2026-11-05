@@ -19,6 +19,13 @@ Entorno: Windows 11 con Python 3.11 y las dependencias de `backend/requirements*
 | Cabezas de Alembic | ✅ una sola: `202611040001` |
 | `python scripts/build_system_inventory.py --write` y `pytest tests/spec_governance` | ✅ |
 
+## Ajuste tras el primer CI
+
+`tests/integration/test_feedback_sharing_migration.py::test_upgrade_preserves_whole_existing_grade` falló en el CI con `UndefinedColumnError: redondeo_empate`.
+
+- **Causa:** la prueba migra una base temporal a `202610150001` y crea la fila sintética con el ORM actual, que escribe todas las columnas mapeadas.
+- **Corrección:** antes de crear la fila, la prueba añade como opcionales las columnas de revisiones posteriores, mediante `_add_later_nullable_columns`, que exige que sean nullable. La comprobación sobre `202610200001` (la fila no cambia) se mantiene igual, y el arreglo también sirve para futuras columnas.
+
 ## Cobertura de requisitos
 
 | Requisito | Evidencia |
