@@ -27,6 +27,8 @@ class XaliEvaluacionEntregadaRead(BaseModel):
     entrega_id: UUID
     estado_calificacion: str
     nota_confirmada: Decimal | None
+    # Spec 145: permite presentar la nota con la misma regla (empate del umbral) que el resto de vistas.
+    nota_maxima: Decimal | None = None
     puede_chatear: bool
 
 

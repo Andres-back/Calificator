@@ -137,7 +137,7 @@ for (const width of [360, 390, 768, 1280]) {
       await tile.click();
       const dialog = page.getByRole('dialog', { name: `Boletín de ${longName}` });
       await expect(dialog.getByRole('listitem')).toHaveCount(12);
-      await expect(dialog.getByText('4.67 / 5.0', { exact: true })).toBeVisible();
+      await expect(dialog.getByText('4.7 / 5.0', { exact: true })).toBeVisible();
       await expect(tile).toHaveAttribute('data-preview-latency', /^\d/);
       const latency = Number(await tile.getAttribute('data-preview-latency'));
       expect(latency).toBeLessThan(1000);

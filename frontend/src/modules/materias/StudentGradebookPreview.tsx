@@ -12,7 +12,7 @@ export function StudentGradeSummary({ cell }: { cell: FollowUpCell }) {
   const tone = cell.status === 'por_revisar' ? 'text-amber-700 dark:text-amber-200'
     : cell.status === 'calificando' ? 'text-brand-700 dark:text-brand-200' : 'text-muted';
   return <div>
-    {score != null && <p className="text-lg font-bold tabular-nums">{formatGradeScore(score)} / {formatGradeScore(cell.maximumScore)}</p>}
+    {score != null && <p className="text-lg font-bold tabular-nums">{formatGradeScore(score, cell.maximumScore)} / {formatGradeScore(cell.maximumScore)}</p>}
     <p className={`mt-0.5 text-xs leading-5 ${tone}`}>{status}</p>
   </div>;
 }

@@ -1,4 +1,5 @@
 import type { Evaluacion } from '@/types/api';
+import { formatGradeScore } from '@/modules/calificaciones/gradePresentation';
 
 export function getStudentEvaluationAction(evaluation: Evaluacion): string {
   if (evaluation.entrega_realizada) return 'Ver entrega';
@@ -11,7 +12,7 @@ export function getStudentEvaluationStatus(evaluation: Evaluacion): {
 } {
   if (evaluation.mi_nota_confirmada != null) {
     return {
-      label: `Calificada: ${Number(evaluation.mi_nota_confirmada).toFixed(1)} / ${Number(evaluation.mi_nota_maxima ?? evaluation.nota_maxima).toFixed(1)}`,
+      label: `Calificada: ${formatGradeScore(evaluation.mi_nota_confirmada, evaluation.mi_nota_maxima ?? evaluation.nota_maxima)} / ${formatGradeScore(evaluation.mi_nota_maxima ?? evaluation.nota_maxima)}`,
       tone: 'success',
     };
   }

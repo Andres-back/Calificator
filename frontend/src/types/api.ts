@@ -661,6 +661,7 @@ export interface XaliEvaluacionEntregada {
   entrega_id: string;
   estado_calificacion: string;
   nota_confirmada: number | null;
+  nota_maxima?: number | string | null;
   puede_chatear: boolean;
 }
 

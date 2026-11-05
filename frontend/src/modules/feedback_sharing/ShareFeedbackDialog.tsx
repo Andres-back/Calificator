@@ -274,7 +274,7 @@ function FeedbackDialogContent({ evaluationId, initialGradeId, initialSelectedId
   const detailView = !individual && detailRow && <section className="space-y-4 p-4 max-sm:px-[12px]" aria-label={'Retroalimentación de ' + detailRow.nombre}>
     {!initialGradeId && <Button variant="link" disabled={blocked} onClick={() => { setDetail(null); restoreFocus(); }}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Volver a la lista</Button>}
     <h3 className="break-words text-lg font-bold">{detailRow.nombre}</h3>
-    {score?.nota != null && <p className="text-xl font-bold tabular-nums">{formatGradeScore(Number(score.nota))} / {formatGradeScore(Number(score.nota_maxima))}</p>}
+    {score?.nota != null && <p className="text-xl font-bold tabular-nums">{formatGradeScore(Number(score.nota), score.nota_maxima)} / {formatGradeScore(Number(score.nota_maxima))}</p>}
     <p className="text-sm text-muted">{detailRow.preview?.elegible ? 'Lista para entregar' : detailRow.preview?.motivo ?? 'Primero revisa la retroalimentación.'}</p>
     {message ? <FeedbackMessage text={message} /> : <p className="py-3 text-base text-muted">Todavía no hay retroalimentación guardada.</p>}
     {studentLink}
