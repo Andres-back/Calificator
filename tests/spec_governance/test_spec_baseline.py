@@ -139,6 +139,7 @@ ALL_SPECS = {
     "142-exactitud-calificacion",
     "144-confirmar-reduccion-acceso",
     "146-estado-acciones-evaluaciones",
+    "147-decision-empate-backend",
 }
 OWNED_SPECS = {
     name

@@ -1,6 +1,6 @@
 # Especificación: Decisión del docente en el empate del umbral (backend)
 
-**Rama**: `codex/147-decision-empate-backend` | **Creada**: 2026-11-04 | **Estado**: Borrador | **Issue**: [#312](https://github.com/Andres-back/Calificator/issues/312)
+**Rama**: `codex/147-decision-empate-backend` | **Creada**: 2026-11-04 | **Estado**: Aprobada (spec y plan aprobados por el usuario el 2026-11-04) | **Issue**: [#312](https://github.com/Andres-back/Calificator/issues/312)
 
 **Entrada**: regla institucional definida por el docente responsable el 2026-11-04. La nota final se presenta con un decimal y la mitad sube; la única excepción es el empate exacto en el umbral de aprobación (60 % de la nota máxima; 2.95 sobre 5), que decide el docente. La [Spec 145](../145-nota-un-decimal/spec.md) unificó la presentación. Esta spec es el **PR 2a**: el sistema guarda la decisión y no deja que una nota en empate quede como final sin ella. Decisiones del usuario: guardar la decisión aparte sin reescribir la nota exacta, y dividir el backend en dos entregas.
 
@@ -43,6 +43,7 @@ Como frontend, necesito recibir la decisión junto con la calificación, para pr
 - Si se envía una decisión con una nota que no está en empate, se ignora y no se guarda.
 - Si se reabre o anula la calificación, o se piden una foto nueva o un reemplazo, la decisión se borra junto con la nota.
 - El cero automático por entrega vencida nunca es empate.
+- Si una nota **ya publicada** pasa a un empate por un cálculo (edición del desglose o nuevo reparto), vuelve a "ajustada" y deja de estar publicada hasta que el docente decida. El historial lo explica. Así ninguna nota en empate queda publicada sin decisión (SC-001).
 - Las notas guardadas antes de esta spec que estén en empate quedan sin decisión. No se publican de nuevo hasta que el docente decida, y lo ya publicado no se modifica.
 
 ## Requisitos

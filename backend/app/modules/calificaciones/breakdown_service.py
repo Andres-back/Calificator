@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modules.calificaciones import grade_rounding
 from app.core.config import settings
 from app.modules.feedback_sharing.invalidations import suspend_grade_publications
 from app.modules.calificaciones.breakdown_models import CalificacionAjuste, CalificacionComponente, CalificacionDesglose
@@ -403,9 +404,10 @@ async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expe
         db.add(CalificacionAjuste(calificacion_id=calificacion.id, desglose_anterior_id=active.id, desglose_nuevo_id=new.id, componente_clave=key, tipo="componente", valor_anterior_json=before, valor_nuevo_json=after, motivo_interno=reason, explicacion_estudiante=explanation, actor_id=actor_id))
     if global_adjustment:
         db.add(CalificacionAjuste(calificacion_id=calificacion.id, desglose_anterior_id=active.id, desglose_nuevo_id=new.id, componente_clave=None, tipo="global", valor_anterior_json={"valor": float(active.ajuste_global)}, valor_nuevo_json={"valor": float(adjustment)}, motivo_interno=str(global_adjustment["motivo_interno"]).strip(), explicacion_estudiante=str(global_adjustment["explicacion_estudiante"]).strip(), actor_id=actor_id))
-    calificacion.nota_confirmada = new.nota_final
     calificacion.revisado_por_docente = True
     calificacion.estado = (CalificacionEstado.PUBLICADA.value if calificacion.estado == CalificacionEstado.PUBLICADA.value else CalificacionEstado.AJUSTADA.value)
+    # Spec 147: la decisión del empate solo vale para la cifra sobre la que se tomó.
+    grade_rounding.apply_computed_final_grade(calificacion, active, new.nota_final)
     await suspend_grade_publications(db, calificacion.id)
     await db.commit()
     return await get_active_breakdown(db, calificacion.id)  # type: ignore[return-value]
