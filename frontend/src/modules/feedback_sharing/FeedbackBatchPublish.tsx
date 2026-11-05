@@ -85,7 +85,7 @@ export function FeedbackBatchPublish({ evaluationId, rows, selectedIds, signal, 
       <p className="font-semibold">{available(summary).length} notas para aceptar o conservar · {summary.length-available(summary).length} no disponibles</p>
       <p className="text-sm">Al confirmar autorizas las notas y los mensajes que se muestran. No se cambiarán fotos ni se borrarán los avisos del análisis original.</p>
       <ul className="max-h-[45dvh] space-y-2 overflow-y-auto overscroll-contain pr-1">{summary.map(row=><li key={row.calificacion_id??row.nombre} className="rounded-lg border border-border bg-surface p-3">
-        <p className="break-words font-semibold">{row.nombre}{row.preview?.batch_candidate && <span className="ml-2 tabular-nums">{formatGradeScore(Number(row.preview.batch_candidate.nota))}</span>}</p>
+        <p className="break-words font-semibold">{row.nombre}{row.preview?.batch_candidate && <span className="ml-2 tabular-nums">{formatGradeScore(row.preview.batch_candidate.nota, row.preview.resultado?.nota_maxima ?? row.preview.borrador_docente?.nota_maxima)}</span>}</p>
         {row.preview?.batch_candidate ? <details><summary className="min-h-11 cursor-pointer py-3 text-sm">Ver mensaje y alcance</summary><FeedbackMessage text={row.preview.batch_candidate.feedback_text}/>{row.preview.batch_candidate.avisos.map(warning=><p key={warning} className="mt-2 text-sm text-muted">{warning}</p>)}</details>:<p className="mt-1 text-sm text-amber-700 dark:text-amber-300">{row.preview?.batch_unavailable_reason??row.preview?.motivo??'Todavía no tiene una nota y retroalimentación disponibles.'}</p>}
       </li>)}</ul>
       <div className="grid gap-2 sm:flex sm:flex-wrap">

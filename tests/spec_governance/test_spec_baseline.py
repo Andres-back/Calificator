@@ -138,6 +138,7 @@ ALL_SPECS = {
     "141-revision-estudiante-clara",
     "142-exactitud-calificacion",
     "144-confirmar-reduccion-acceso",
+    "145-nota-un-decimal",
     "146-estado-acciones-evaluaciones",
     "147-decision-empate-backend",
 }

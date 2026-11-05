@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1e216b6892fd81ff34e2d8bdbd593ae5ab67af163f456c1028652707158e2f88",
+  "source_digest": "abf8f1378cff28eef259b6b01a25616db7666202661567caba5e2352437bf770",
   "surfaces": [
     {
       "actors": [
@@ -1735,6 +1735,12 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",
@@ -10990,6 +10996,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -11084,6 +11096,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -11167,6 +11185,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",
@@ -11259,6 +11283,12 @@
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",
@@ -13486,6 +13516,12 @@
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",
@@ -21648,6 +21684,12 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -21748,6 +21790,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -21836,6 +21884,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -21917,6 +21971,12 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",
@@ -32356,6 +32416,12 @@
           "level": "unit",
           "reference": "DELETE:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -34101,7 +34167,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/concordancia",
-      "source_line": 425,
+      "source_line": 426,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34138,7 +34204,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/confidence",
-      "source_line": 549,
+      "source_line": 550,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34175,7 +34241,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs/provider-comparison",
-      "source_line": 620,
+      "source_line": 621,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34212,7 +34278,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs",
-      "source_line": 616,
+      "source_line": 617,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34249,7 +34315,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/errors",
-      "source_line": 584,
+      "source_line": 585,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34286,7 +34352,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/latency",
-      "source_line": 548,
+      "source_line": 549,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34323,7 +34389,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/criterios",
-      "source_line": 246,
+      "source_line": 247,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34360,7 +34426,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes/{selected}",
-      "source_line": 482,
+      "source_line": 483,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34397,7 +34463,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes",
-      "source_line": 473,
+      "source_line": 474,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34434,7 +34500,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones",
-      "source_line": 179,
+      "source_line": 180,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34477,7 +34543,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/overview",
-      "source_line": 178,
+      "source_line": 179,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34520,7 +34586,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/preguntas",
-      "source_line": 247,
+      "source_line": 248,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -34594,7 +34660,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sintesis",
-      "source_line": 248,
+      "source_line": 249,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -38027,7 +38093,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/disponibilidad",
-      "source_line": 1032,
+      "source_line": 1033,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -38067,7 +38133,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}/indicadores",
-      "source_line": 874,
+      "source_line": 875,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -38101,7 +38167,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}",
-      "source_line": 869,
+      "source_line": 870,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -38141,7 +38207,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{id}/export",
-      "source_line": 920,
+      "source_line": 921,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -38175,7 +38241,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios",
-      "source_line": 864,
+      "source_line": 865,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -40317,6 +40383,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -40405,6 +40477,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -40482,6 +40560,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",
@@ -47710,7 +47794,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios/{id}/{action}",
-      "source_line": 906,
+      "source_line": 907,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -47750,7 +47834,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios",
-      "source_line": 894,
+      "source_line": 895,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -48776,6 +48860,12 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -48870,6 +48960,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -48947,6 +49043,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "backend/tests/integration/test_xali_teacher_visual.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",
@@ -60244,6 +60346,12 @@
           "level": "unit",
           "reference": "xali_refuerzos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
         },
         {
@@ -60345,6 +60453,12 @@
           "reference": "xali_student_resources",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_delivered_max_grade.py"
         },
         {
           "level": "unit",

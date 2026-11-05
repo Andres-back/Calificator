@@ -43,10 +43,29 @@ describe('gradePresentation', () => {
     }))).toEqual({ label: 'Sugerida', score: 0, processing: false });
   });
 
-  it('conserva los decimales significativos de la suma verificable', () => {
-    expect(formatGradeScore(4.67)).toBe('4.67');
-    expect(formatGradeScore(4.95)).toBe('4.95');
-    expect(formatGradeScore(5)).toBe('5.0');
+  // Spec 145: un decimal, la mitad sube; el empate exacto en el umbral (60 %) conserva dos decimales.
+  it.each([
+    [2.94, 5, '2.9'],
+    [2.95, 5, '2.95'],
+    [2.96, 5, '3.0'],
+    [3.45, 5, '3.5'],
+    [1.15, 5, '1.2'],
+    [4.67, 5, '4.7'],
+    [5, 5, '5.0'],
+    [0, 5, '0.0'],
+    [8.05, 10, '8.1'],
+    [5.95, 10, '5.95'],
+    [2.95, 10, '3.0'],
+    [59.95, 100, '59.95'],
+    [2.65, 4.5, '2.65'],
+    ['2.95', '5.00', '2.95'],
+  ])('muestra %s sobre %s como %s', (score, maximum, expected) => {
+    expect(formatGradeScore(score, maximum)).toBe(expected);
+  });
+
+  it('sin nota máxima aplica un decimal sin detectar empate', () => {
+    expect(formatGradeScore(2.95)).toBe('3.0');
+    expect(formatGradeScore(1.15)).toBe('1.2');
     expect(formatGradeScore(4.5)).toBe('4.5');
   });
 });

@@ -15,6 +15,7 @@ import { StudentAnswerSheet } from './StudentAnswerSheet';
 import { EvaluationContentViewer } from './components/EvaluationContentViewer';
 import { EvaluationDocumentContent } from './components/EvaluationDocumentContent';
 import { GradeBreakdown } from '@/modules/calificaciones/components/GradeBreakdown';
+import { formatGradeScore } from '@/modules/calificaciones/gradePresentation';
 import { XaliFeedbackStory } from '@/modules/calificaciones/student-feedback/XaliFeedbackStory';
 import type { SolicitudRevisionMotivo } from '@/types/api';
 
@@ -581,7 +582,7 @@ export function ResolverEvaluacionPage() {
                   </p>
                   <p className="text-sm text-muted">
                     {evaluacion?.mi_nota_confirmada != null
-                      ? `Tu nota es ${Number(evaluacion.mi_nota_confirmada).toFixed(1)} de ${Number(evaluacion.mi_nota_maxima ?? evaluacion.nota_maxima).toFixed(1)}.`
+                      ? `Tu nota es ${formatGradeScore(evaluacion.mi_nota_confirmada, evaluacion.mi_nota_maxima ?? evaluacion.nota_maxima)} de ${formatGradeScore(evaluacion.mi_nota_maxima ?? evaluacion.nota_maxima)}.`
                       : modalidad === 'mixta' && !physicalSubmitted
                         ? 'Ahora entrega la parte física adjuntando una foto o PDF.'
                         : deliveryIsGrading

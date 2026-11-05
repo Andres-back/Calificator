@@ -31,6 +31,7 @@ import { toApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/stores/auth';
 import type { ChatMessage, XaliEvaluacionEntregada, XaliStudentResource, XaliStudentResourceType } from '@/types/api';
+import { formatGradeScore } from '@/modules/calificaciones/gradePresentation';
 
 const TEACHER_SUGGESTIONS = [
   { icon: '📋', text: 'Ayúdame a explicar un tema de esta materia' },
@@ -357,7 +358,7 @@ export function XaliPage() {
             <span className="truncate font-medium">{evaluacionContextual.evaluacion_nombre}</span>
             {evaluacionContextual.nota_confirmada != null && (
               <span className="shrink-0 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
-                {Number(evaluacionContextual.nota_confirmada).toFixed(1)}
+                {formatGradeScore(evaluacionContextual.nota_confirmada, evaluacionContextual.nota_maxima)}
               </span>
             )}
           </div>

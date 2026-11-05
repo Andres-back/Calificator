@@ -59,4 +59,13 @@ describe('getStudentEvaluationStatus', () => {
       mi_nota_confirmada: 0,
     }))).toEqual({ label: 'Calificada: 0.0 / 5.0', tone: 'success' });
   });
+
+  it('145 muestra la misma cifra que el docente, sin decidir el empate', () => {
+    const graded = (nota: number) => getStudentEvaluationStatus(evaluation({
+      entrega_realizada: true, mi_entrega_estado: 'calificada', mi_calificacion_estado: 'confirmada', mi_nota_confirmada: nota,
+    })).label;
+    expect(graded(1.15)).toBe('Calificada: 1.2 / 5.0');
+    expect(graded(2.95)).toBe('Calificada: 2.95 / 5.0');
+    expect(graded(2.96)).toBe('Calificada: 3.0 / 5.0');
+  });
 });
