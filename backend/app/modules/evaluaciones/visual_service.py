@@ -243,7 +243,7 @@ async def prepare_content_edit(
         previous = await get_content_revision(db, evaluation.id, evaluation.contenido_version_id)
         if manifest is None and previous.snapshot_json.get('contenido_visual') is not None:
             manifest = VisualManifest.model_validate(previous.snapshot_json['contenido_visual'])
-    if manifest is None and document is None and getattr(evaluation, 'estructura_documento', None) is None:
+    if previous is None and manifest is None and document is None and getattr(evaluation, 'estructura_documento', None) is None:
         raise HTTPException(422, "Indica el contenido visual que quieres guardar.")
     if previous is None:
         snapshot = _snapshot(evaluation)
@@ -282,13 +282,17 @@ async def save_content_revision(db: AsyncSession, edit: ContentEdit, *, reviewed
     evaluation, previous, manifest = edit.evaluation, edit.previous, edit.manifest
     if previous is None and evaluation.contenido_version_id is not None:
         raise HTTPException(409, "La evaluación ya tiene una versión. Abre la versión actual antes de guardar.")
+    document = getattr(evaluation, 'estructura_documento', None)
+    # A score plan versions evaluations without material, whose questions have no
+    # content identity because only the visual editor assigns it.
+    text_only = previous is not None and manifest is None and document is None
     try:
-        question_ids = [UUID(question["contenido_id"]) for question in evaluation.preguntas]
+        question_ids = [UUID(question["contenido_id"]) for question in evaluation.preguntas
+                        if not text_only or question.get("contenido_id")]
     except (KeyError, ValueError, TypeError) as exc:
         raise HTTPException(422, "Cada pregunta necesita su identificador de contenido antes de guardar imágenes.") from exc
     if len(set(question_ids)) != len(question_ids) or (manifest is not None and set(question_ids) != set(manifest.pregunta_ids)):
         raise HTTPException(422, "Revisa qué material corresponde a cada pregunta antes de guardar.")
-    document = getattr(evaluation, 'estructura_documento', None)
     if document is not None:
         from app.modules.evaluaciones.document_schemas import EvaluationDocument
         from app.modules.evaluaciones.document_structure import validate_document_scope
@@ -297,7 +301,7 @@ async def save_content_revision(db: AsyncSession, edit: ContentEdit, *, reviewed
                 material_ids=[block.id for block in manifest.bloques] if manifest else [])
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
-    elif manifest is None:
+    elif manifest is None and not text_only:
         raise HTTPException(422, 'Indica el documento o material que quieres guardar.')
     resource_ids = set(manifest.recurso_ids) if manifest else set()
     if manifest is not None and manifest.original_recurso_id:
