@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "41dcd07ecdcb61ae0e1a597d83da95e0e2855110bc183e173123fc02e39783c5",
+  "source_digest": "30ab11b0c85430c9a3ecd37fd74efa2c2c1b7626c1423f3133f378a9126f03fb",
   "surfaces": [
     {
       "actors": [
@@ -50244,6 +50244,12 @@
           "test_path": "backend/tests/unit/test_score_allocation.py"
         },
         {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_score_revision_without_material.py"
+        },
+        {
           "level": "e2e",
           "reference": "cloudflare",
           "status": "direct",
@@ -50728,6 +50734,12 @@
         {
           "level": "unit",
           "reference": "open_code",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_score_revision_without_material.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_teacher_ai_credentials.py"
         },
@@ -51034,6 +51046,12 @@
           "reference": "redis",
           "status": "direct",
           "test_path": "backend/tests/unit/test_score_allocation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_score_revision_without_material.py"
         },
         {
           "level": "unit",
@@ -56454,6 +56472,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_score_allocation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_score_revision_without_material.py"
         },
         {
           "level": "unit",

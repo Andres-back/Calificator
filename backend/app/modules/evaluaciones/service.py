@@ -973,7 +973,9 @@ async def publish_evaluation(db: AsyncSession, evaluacion: Evaluacion) -> Evalua
             raise HTTPException(409, str(exc)) from exc
     if getattr(evaluacion, "contenido_version_id", None) is not None:
         revision = await get_content_revision(db, evaluacion.id, evaluacion.contenido_version_id)
-        if revision.snapshot_json.get("claves_pendientes_revision") or revision.coverage_json.get("estado") != "completa":
+        # Coverage describes visual material; a version without it has nothing to cover.
+        has_material = revision.snapshot_json.get("contenido_visual") is not None
+        if revision.snapshot_json.get("claves_pendientes_revision") or (has_material and revision.coverage_json.get("estado") != "completa"):
             raise HTTPException(409, "Revisa el material y las respuestas correctas de las preguntas modificadas antes de publicar.")
         from app.modules.evaluaciones.visual_render import resolve_visual_material
         try:
