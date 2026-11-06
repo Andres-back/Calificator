@@ -142,6 +142,7 @@ ALL_SPECS = {
     "146-estado-acciones-evaluaciones",
     "147-decision-empate-backend",
     "149-revision-mosaico",
+    "151-calificador-sin-nota",
 }
 OWNED_SPECS = {
     name

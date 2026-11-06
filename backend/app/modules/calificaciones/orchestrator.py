@@ -1214,7 +1214,8 @@ async def orchestrate_grading(
 
             if grading_a.nota_sugerida is None and grading_b.nota_sugerida is None:
                 logger.error("Todos los calificadores habilitados fallaron sin producir una nota")
-                output_error_codes = {"output_budget_exhausted", "output_incomplete", "output_refused", "output_empty"}
+                output_error_codes = {"output_budget_exhausted", "output_incomplete", "output_refused", "output_empty",
+                                      "grader_missing_score"}
                 failure_details = {
                     "orchestrator": "all_graders_failed",
                     "grader_a_failed": grading_a.error is not None,
@@ -1250,6 +1251,9 @@ async def orchestrate_grading(
                         ),
                     },
                 }
+                shape = grading_a.raw_output.get("output_shape") if isinstance(grading_a.raw_output, dict) else None
+                if shape:
+                    failure_details["grader_a_output_shape"] = shape
                 if router_grading is not None:
                     failure_details["router_grader_failed"] = router_grading.error is not None
                 return _technical_failure_result(
