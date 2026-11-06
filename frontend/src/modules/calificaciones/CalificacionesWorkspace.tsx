@@ -66,13 +66,14 @@ import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
 import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submissionCandidates';
 import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
-import { effectiveGradeScore, formatGradeScore, formatScoreDetail, gradePresentation, isGradeProcessing } from './gradePresentation';
+import { TieDecisionField } from './components/TieDecisionField';
+import { effectiveGradeScore, formatGradeScore, formatScoreDetail, gradePresentation, isGradeProcessing, tieOptions } from './gradePresentation';
 import { PreviousGradeReference } from './components/PreviousGradeReference';
 import { formatTimelineScore } from './timeline';
 import { ReviewNavigation, type ReviewSection } from './ReviewNavigation';
-import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, GradeFinalAdjustment, ReviewFilter } from '@/types/api';
+import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, GradeFinalAdjustment, ReviewFilter, TieDecision } from '@/types/api';
 
-type WorkspaceGrade = Pick<Calificacion, 'id' | 'estudiante_id' | 'nota_sugerida' | 'nota_confirmada' | 'estado' | 'resultado_json'>;
+type WorkspaceGrade = Pick<Calificacion, 'id' | 'estudiante_id' | 'nota_sugerida' | 'nota_confirmada' | 'redondeo_empate' | 'estado' | 'resultado_json'>;
 
 export function GradingLegacyRedirect() {
   const location = useLocation();
@@ -181,6 +182,7 @@ export function MobileReviewActionBar({
   componentDirty,
   advancedEditOpen,
   claimsDirty = false,
+  tiePending = false,
   confirmPending,
   publishPending,
   savePending = false,
@@ -200,6 +202,7 @@ export function MobileReviewActionBar({
   componentDirty: boolean;
   advancedEditOpen: boolean;
   claimsDirty?: boolean;
+  tiePending?: boolean;
   confirmPending: boolean;
   publishPending: boolean;
   savePending?: boolean;
@@ -266,13 +269,13 @@ export function MobileReviewActionBar({
           <Button fullWidth className="h-auto min-h-12 py-2" variant="outline" onClick={onAdjust} disabled={navigationBlocked}>
             <Pencil className="h-4 w-4" /> Establecer nota
           </Button>
-        ) : canPublish && done && !published ? (
+        ) : canPublish && done && !published && !tiePending ? (
           <Button fullWidth className="h-auto min-h-12 py-2" onClick={onPublish} loading={publishPending} disabled={navigationBlocked}>
             <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
           </Button>
         ) : (
           <div className="flex min-h-11 items-center justify-center rounded-lg bg-surface-2 px-3 text-center text-xs font-semibold text-muted">
-            {published ? 'Nota publicada' : processing ? 'Calificando' : 'Revisión guardada'}
+            {published ? 'Nota publicada' : processing ? 'Calificando' : tiePending ? 'Decide el empate para publicar' : 'Revisión guardada'}
           </div>
         )}
         <Button fullWidth className="h-auto min-h-12 min-w-0 gap-1 px-2 py-2" variant="outline" onClick={onNext} disabled={navigationBlocked}>
@@ -639,7 +642,7 @@ function PanelDetalle({
   notaMaxima: number | undefined;
   studentMap: Map<string, { nombre: string; email?: string }>;
   onConfirm: (id: string, nota: number) => void;
-  onAjustar: (id: string, nota: number, feedback?: string) => void;
+  onAjustar: (id: string, nota: number, feedback?: string, decision?: TieDecision) => void;
   onPublish: (id: string) => void;
   onRechazar: (id: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
@@ -800,6 +803,11 @@ function PanelDetalle({
   });
   const done = DONE_STATES.has(cal.estado);
   const published = cal.estado === PUBLICADA;
+  const scoreTie = effectiveGradeScore(cal) == null ? null : tieOptions(effectiveGradeScore(cal)!, notaMaxima);
+  // Spec 150: lo ya publicado no se modifica; solo se pide decidir lo que aún puede publicarse.
+  const tiePending = Boolean(scoreTie) && done && !published && !cal.redondeo_empate;
+  const [tieDecision, setTieDecision] = useState<TieDecision | null>(null);
+  const [feedbackTieOpen, setFeedbackTieOpen] = useState(false);
   const presentation = gradePresentation(cal);
   const originalNota = effectiveGradeScore(cal) ?? '';
   const originalFeedback = cal.feedback ?? '';
@@ -956,7 +964,9 @@ function PanelDetalle({
     if (isNaN(n) || n < 0) { setAdjError('Nota inválida'); return; }
     if (notaMaxima != null && n > notaMaxima) { setAdjError(`Máximo ${notaMaxima}`); return; }
     setAdjError('');
-    onAjustar(cal.id, n, adjFeedback || undefined);
+    const tie = tieOptions(n, notaMaxima);
+    if (tie && !cal.redondeo_empate) { setTieDecision(null); setFeedbackTieOpen(true); return; }
+    onAjustar(cal.id, n, adjFeedback || undefined, tie ? cal.redondeo_empate ?? undefined : undefined);
   }
 
   function openAdjustment() {
@@ -1075,7 +1085,7 @@ function PanelDetalle({
               </div>
             ) : (
               <p className={cn('font-display font-extrabold text-fg', mobileTab === 'retroalimentacion' ? 'text-2xl' : 'text-4xl')}>
-                {formatGradeScore(presentation.score, notaMaxima)}
+                {formatGradeScore(presentation.score, notaMaxima, cal.redondeo_empate)}
                 {notaMaxima != null && <span className="ml-2 text-lg font-semibold text-muted">/ {formatGradeScore(notaMaxima)}</span>}
               </p>
             )}
@@ -1088,6 +1098,11 @@ function PanelDetalle({
             {canGrade && !isGradeProcessing(cal) && cal.estado !== 'anulada' && <Button ref={editGradeButtonRef} type="button" variant="outline" className={cn('min-h-11', mobileTab !== 'retroalimentacion' && 'mt-2')} onClick={openAdjustment} disabled={editingFinalGrade || feedbackBusy || isDirty || Boolean(editingComponentId) || claimDirty || reprocessingDirty || confirmPending || publishPending}><Pencil className="h-4 w-4" aria-hidden="true" />Editar nota</Button>}
           </div>
         </div>
+
+        {tiePending && scoreTie && presentation.score != null && (canGrade ? <div className="space-y-2">
+          <TieDecisionField score={presentation.score} options={scoreTie} value={tieDecision} onChange={setTieDecision} disabled={adjustPending} />
+          <Button type="button" className="min-h-11" loading={adjustPending} disabled={!tieDecision || adjustPending} onClick={() => { if (tieDecision) onAjustar(cal.id, presentation.score!, undefined, tieDecision); }}>Guardar decisión</Button>
+        </div> : <p role="status" className="text-sm font-semibold text-amber-700 dark:text-amber-300">Esta nota está en el empate del umbral y falta la decisión del docente.</p>)}
 
         {canGrade && <PreviousGradeReference gradeId={cal.id} enabled={presentation.score == null} onOpenHistory={() => { if (mobileTab !== 'historial') changeDetailView('historial'); }} />}
 
@@ -1290,7 +1305,7 @@ function PanelDetalle({
             )}
           </div>
         )}
-        {canPublish && done && !published && (
+        {canPublish && done && !published && !tiePending && (
           <div className="hidden flex-wrap gap-2 xl:flex">
             <Button onClick={() => onPublish(cal.id)} loading={publishPending} disabled={publishPending || isDirty || editingComponentDirty || editingFinalGrade || claimDirty}>
               <CheckCircle2 className="h-4 w-4" /> Publicar al estudiante
@@ -1307,6 +1322,16 @@ function PanelDetalle({
 
 
       </div>
+      <ConfirmDialog
+        open={feedbackTieOpen}
+        onClose={() => setFeedbackTieOpen(false)}
+        onConfirm={() => { if (tieDecision) { setFeedbackTieOpen(false); onAjustar(cal.id, Number(adjNota), adjFeedback || undefined, tieDecision); } }}
+        title="Guardar la retroalimentación"
+        confirmLabel="Guardar"
+        confirmDisabled={!tieDecision}
+      >
+        {scoreTie && <TieDecisionField score={Number(adjNota)} options={scoreTie} value={tieDecision} onChange={setTieDecision} />}
+      </ConfirmDialog>
       <div hidden={mobileForm.isWriting || (mobileTab === 'retroalimentacion' && feedbackWorkspaceActive)}>
       <MobileReviewActionBar
         processing={presentation.processing}
@@ -1319,6 +1344,7 @@ function PanelDetalle({
         componentDirty={editingComponentDirty}
         advancedEditOpen={editingFinalGrade}
         claimsDirty={claimDirty}
+        tiePending={tiePending}
         confirmPending={confirmPending}
         publishPending={publishPending}
         savePending={adjustPending}
@@ -1476,6 +1502,7 @@ function ManualGradeModal({
     nota_confirmada: number;
     motivo: string;
     feedback?: string;
+    redondeo_empate?: TieDecision;
   }) => void;
 }) {
   const gradedIds = useMemo(
@@ -1486,6 +1513,8 @@ function ManualGradeModal({
   const [score, setScore] = useState(0);
   const [reason, setReason] = useState('No presentó la actividad');
   const [feedback, setFeedback] = useState('');
+  const [decision, setDecision] = useState<TieDecision | null>(null);
+  const tie = tieOptions(score, notaMaxima);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -1495,6 +1524,7 @@ function ManualGradeModal({
     const preferred = students.find((student) => student.id === preferredStudentId) ?? students.find((student) => !gradedIds.has(student.id)) ?? students[0];
     setStudentId(preferred?.id ?? '');
     setScore(0);
+    setDecision(null);
     setReason('No presentó la actividad');
     setFeedback('');
   }, [gradedIds, open, preferredStudentId, students]);
@@ -1505,12 +1535,13 @@ function ManualGradeModal({
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!studentId || score < 0 || score > notaMaxima) return;
+          if (!studentId || score < 0 || score > notaMaxima || (tie && !decision)) return;
           onSubmit({
             estudiante_id: studentId,
             nota_confirmada: score,
             motivo: reason,
             feedback: feedback.trim() || undefined,
+            ...(tie && decision ? { redondeo_empate: decision } : {}),
           });
         }}
       >
@@ -1532,7 +1563,7 @@ function ManualGradeModal({
               type="number"
               min={0}
               max={notaMaxima}
-              step="0.1"
+              step="0.01"
               value={score}
               onChange={(event) => setScore(Number(event.target.value))}
               required
@@ -1547,6 +1578,7 @@ function ManualGradeModal({
             </Select>
           </Field>
         </div>
+        {tie && <TieDecisionField score={score} options={tie} value={decision} onChange={setDecision} />}
         <Field label="Retroalimentación" hint="Opcional; será visible inmediatamente para el estudiante.">
           <Textarea
             value={feedback}
@@ -1559,7 +1591,7 @@ function ManualGradeModal({
           <Button
             type="submit"
             loading={loading}
-            disabled={!studentId || score < 0 || score > notaMaxima}
+            disabled={!studentId || score < 0 || score > notaMaxima || Boolean(tie && !decision)}
           >
             Guardar nota
           </Button>
@@ -1876,6 +1908,7 @@ function GradingCenter() {
   const requestedFilter = searchParams.get('filtro') ?? 'todas';
   const gradeFilter: ReviewFilter = ['pendientes', 'alertas', 'procesando', 'publicadas'].includes(requestedFilter) ? requestedFilter as ReviewFilter : 'todas';
   const [confirmingSingle, setConfirmingSingle] = useState<WorkspaceGrade | null>(null);
+  const [confirmDecision, setConfirmDecision] = useState<TieDecision | null>(null);
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [mobileDirty, setMobileDirty] = useState(false);
   const dirtyRef = useRef(false);
@@ -2065,18 +2098,21 @@ function GradingCenter() {
     if (selectedId) queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', selectedId] });
   }, [evalId, selectedId]);
 
+  const confirmingScore = confirmingSingle ? effectiveGradeScore(confirmingSingle) : null;
+  const confirmingTie = confirmingScore == null ? null : tieOptions(confirmingScore, notaMaxima);
+
   // Mutations
   const confirmarMut = useMutation({
-    mutationFn: (c: WorkspaceGrade) => {
+    mutationFn: ({ grade: c, decision }: { grade: WorkspaceGrade; decision?: TieDecision }) => {
       const score = effectiveGradeScore(c);
       if (score == null) throw new Error('La calificación todavía está en proceso.');
-      return confirmarNota(c.id, score);
+      return confirmarNota(c.id, score, decision);
     },
-    onSuccess: (_data, grade) => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); trackEvent('calificacion_confirmed', { evaluacion_id: evalId, calificacion_id: grade.id }); },
+    onSuccess: (_data, { grade }) => { invalidate(); toast.success('Nota confirmada'); setConfirmingSingle(null); trackEvent('calificacion_confirmed', { evaluacion_id: evalId, calificacion_id: grade.id }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
   const ajustarMut = useMutation({
-    mutationFn: (args: { id: string; nota: number; feedback?: string }) => ajustarNota(args.id, args.nota, args.feedback),
+    mutationFn: (args: { id: string; nota: number; feedback?: string; decision?: TieDecision }) => ajustarNota(args.id, args.nota, args.feedback, args.decision ? { redondeo_empate: args.decision } : undefined),
     onSuccess: (_data, args) => { invalidate(); toast.success('Nota ajustada'); trackEvent('grade_adjusted', { evaluacion_id: evalId, calificacion_id: args.id }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
@@ -2139,6 +2175,7 @@ function GradingCenter() {
       nota_confirmada: number;
       motivo: string;
       feedback?: string;
+      redondeo_empate?: TieDecision;
     }) => establecerNotaManual(evalId, payload),
     onSuccess: (calificacion) => {
       invalidate();
@@ -2459,9 +2496,9 @@ function GradingCenter() {
                     studentMap={studentMap}
                     onConfirm={(id, _nota) => {
                       const cal = detalleQuery.data?.id === id ? detalleQuery.data : cals?.find((c) => c.id === id);
-                      if (cal) { setConfirmingSingle(cal); }
+                      if (cal) { setConfirmDecision(cal.redondeo_empate ?? null); setConfirmingSingle(cal); }
                     }}
-                    onAjustar={(id, nota, feedback) => ajustarMut.mutate({ id, nota, feedback })}
+                    onAjustar={(id, nota, feedback, decision) => ajustarMut.mutate({ id, nota, feedback, decision })}
                     onPublish={(id) => publishMut.mutate(id)}
                     onRechazar={(id) => setRejectId(id)}
                     onDirtyChange={updateDirty}
@@ -2531,17 +2568,20 @@ function GradingCenter() {
       <ConfirmDialog
         open={!!confirmingSingle}
         onClose={() => setConfirmingSingle(null)}
-        onConfirm={() => confirmingSingle && confirmarMut.mutate(confirmingSingle)}
+        onConfirm={() => { if (confirmingSingle) confirmarMut.mutate({ grade: confirmingSingle, decision: confirmingTie && confirmDecision ? confirmDecision : undefined }); }}
         title="Confirmar nota"
         confirmLabel="Confirmar"
         loading={confirmarMut.isPending}
+        confirmDisabled={Boolean(confirmingTie && !confirmDecision)}
         description={
           <span>
             Vas a confirmar la nota de <strong>{confirmingSingle ? studentLabel(confirmingSingle, studentMap) : ''}</strong>
-            {confirmingSingle && effectiveGradeScore(confirmingSingle) != null && <> con <strong>{formatGradeScore(effectiveGradeScore(confirmingSingle)!, notaMaxima)}</strong></>}.
+            {confirmingSingle && effectiveGradeScore(confirmingSingle) != null && <> con <strong>{formatGradeScore(effectiveGradeScore(confirmingSingle)!, notaMaxima, confirmDecision)}</strong></>}.
           </span>
         }
-      />
+      >
+        {confirmingSingle && confirmingTie && <TieDecisionField score={effectiveGradeScore(confirmingSingle)!} options={confirmingTie} value={confirmDecision} onChange={setConfirmDecision} disabled={confirmarMut.isPending} />}
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={!!rejectId}

@@ -143,6 +143,7 @@ ALL_SPECS = {
     "147-decision-empate-backend",
     "148-nota-presentada-lecturas",
     "149-revision-mosaico",
+    "150-pregunta-empate",
     "151-calificador-sin-nota",
 }
 OWNED_SPECS = {

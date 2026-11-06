@@ -14,6 +14,29 @@ describe('GradeFinalEditor', () => {
     expect(save.mock.calls[0][0]).toMatchObject({ nota_confirmada: 4.5, actualizado_en_esperado: grade.updated_at, version_desglose_esperada: 2, observacion: '' });
     expect(save.mock.calls[0][0].operacion_id).toMatch(/^[0-9a-f-]{36}$/);
   });
+  it('en el empate no guarda sin elegir, no preselecciona y envía la decisión', async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    render(<GradeFinalEditor grade={grade} maximum={5} onCancel={vi.fn()} onSave={save} />);
+    fireEvent.change(screen.getByLabelText('Nota final'), { target: { value: '2,95' } });
+    expect(screen.getByRole('button', { name: 'Guardar nota' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: '2.9' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: '3.0' })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: '3.0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect(save.mock.calls[0][0]).toMatchObject({ nota_confirmada: 2.95, redondeo_empate: 'arriba' });
+  });
+  it('sin empate no pregunta ni envía decisión', async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    render(<GradeFinalEditor grade={grade} maximum={5} onCancel={vi.fn()} onSave={save} />);
+    fireEvent.change(screen.getByLabelText('Nota final'), { target: { value: '2,95' } });
+    fireEvent.click(screen.getByRole('radio', { name: '2.9' }));
+    fireEvent.change(screen.getByLabelText('Nota final'), { target: { value: '3,5' } });
+    expect(screen.queryByRole('radio')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect(save.mock.calls[0][0]).not.toHaveProperty('redondeo_empate');
+  });
   it('conserva cero y rechaza vacío, fuera de escala y más de dos decimales', () => {
     render(<GradeFinalEditor grade={grade} maximum={5} onCancel={vi.fn()} onSave={vi.fn()} />);
     for (const value of ['', '5,1', '-1', '4.123', 'NaN']) {

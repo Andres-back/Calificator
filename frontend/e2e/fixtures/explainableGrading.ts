@@ -22,7 +22,7 @@ function json(route: Route, body: unknown, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-type MockOptions = { breakdown?: Record<string, unknown>; permissions?: string[]; rosterSize?: number; questionCount?: number };
+type MockOptions = { gradeOverride?: Record<string, unknown>; breakdown?: Record<string, unknown>; permissions?: string[]; rosterSize?: number; questionCount?: number };
 
 export { grade, student };
 
@@ -79,7 +79,7 @@ export async function installMocks(page: Page, role: 'profesor' | 'estudiante', 
     const selectedGrade = grades.find((item) => path === `/calificaciones/${item.id}/detalle`);
     if (selectedGrade) {
       const selectedStudent = students.find((item) => item.id === selectedGrade.estudiante_id)!;
-      return json(route, { ...selectedGrade, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre,
+      return json(route, { ...selectedGrade, ...options.gradeOverride, evaluacion_nombre: evaluation.nombre, materia_nombre: materia.nombre,
         estudiante_nombre: selectedStudent.nombre, estudiante_email: selectedStudent.email, nota_maxima: 5, entrega_tipo: 'online',
         entrega_archivo_url: null, entrega_evidencia_paginas: 0, entrega_evidencia_tipo: null, entrega_respuesta_texto: 'P1: 24',
         entrega_created_at: grade.created_at, timeline: [], guia_revision: [], desglose: activeBreakdown, desglose_heredado: false, respuestas_liberadas: true });

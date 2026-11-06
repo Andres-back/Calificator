@@ -1,4 +1,6 @@
-import type { Calificacion } from '@/types/api';
+import type { Calificacion, TieDecision } from '@/types/api';
+
+export type TieOptions = Record<TieDecision, string>;
 
 const ACTIVE_PIPELINE_STATES = new Set(['queued', 'running', 'retrying', 'waiting_connector']);
 
@@ -18,17 +20,22 @@ export function formatScoreDetail(score: number): string {
 /**
  * Spec 145: nota final con un decimal, la mitad hacia arriba, en aritmética entera.
  * Excepción: el empate exacto en el umbral de aprobación (60 % de la nota máxima,
- * llevado a un decimal) conserva dos decimales, porque lo decide el docente.
+ * llevado a un decimal) conserva dos decimales hasta que el docente decida (Spec 150).
  */
-export function formatGradeScore(score: number | string, notaMaxima?: number | string | null): string {
+export function formatGradeScore(score: number | string, notaMaxima?: number | string | null, decision?: TieDecision | null): string {
   const cents = Math.round(Number(score) * 100);
-  const tenths = Math.floor((cents + 5) / 10);
+  const tie = tieOptions(score, notaMaxima);
+  if (tie) return decision ? tie[decision] : (cents / 100).toFixed(2);
+  return (Math.floor((cents + 5) / 10) / 10).toFixed(1);
+}
+
+/** Spec 150: las dos cifras entre las que decide el docente, o `null` si la nota no está en empate. */
+export function tieOptions(score: number | string, notaMaxima?: number | string | null): TieOptions | null {
   const maximum = notaMaxima == null ? NaN : Number(notaMaxima);
-  if (Number.isFinite(maximum) && maximum > 0) {
-    const thresholdTenths = Math.floor((Math.round(maximum * 100) * 6 + 50) / 100);
-    if (cents === thresholdTenths * 10 - 5) return (cents / 100).toFixed(2);
-  }
-  return (tenths / 10).toFixed(1);
+  if (!Number.isFinite(maximum) || maximum <= 0) return null;
+  const thresholdTenths = Math.floor((Math.round(maximum * 100) * 6 + 50) / 100);
+  if (Math.round(Number(score) * 100) !== thresholdTenths * 10 - 5) return null;
+  return { abajo: ((thresholdTenths - 1) / 10).toFixed(1), arriba: (thresholdTenths / 10).toFixed(1) };
 }
 
 export function isGradeProcessing(grade: Pick<Calificacion, 'estado' | 'resultado_json'>): boolean {

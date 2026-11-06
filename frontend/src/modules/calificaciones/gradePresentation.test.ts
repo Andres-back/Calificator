@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Calificacion } from '@/types/api';
-import { effectiveGradeScore, formatGradeScore, gradePresentation } from './gradePresentation';
+import { effectiveGradeScore, formatGradeScore, gradePresentation, tieOptions } from './gradePresentation';
 
 function grade(overrides: Partial<Calificacion> = {}): Calificacion {
   return {
@@ -61,6 +61,27 @@ describe('gradePresentation', () => {
     ['2.95', '5.00', '2.95'],
   ])('muestra %s sobre %s como %s', (score, maximum, expected) => {
     expect(formatGradeScore(score, maximum)).toBe(expected);
+  });
+
+  it.each([
+    [2.95, 5, '2.9', '3.0'],
+    ['2.95', '5.00', '2.9', '3.0'],
+    [5.95, 10, '5.9', '6.0'],
+    [59.95, 100, '59.9', '60.0'],
+    [2.65, 4.5, '2.6', '2.7'],
+  ])('reconoce el empate de %s sobre %s y sus dos cifras', (score, maximum, abajo, arriba) => {
+    expect(tieOptions(score, maximum)).toEqual({ abajo, arriba });
+    expect(formatGradeScore(score, maximum, 'abajo')).toBe(abajo);
+    expect(formatGradeScore(score, maximum, 'arriba')).toBe(arriba);
+  });
+
+  it.each([[2.94, 5], [2.96, 5], [3, 5], [2.95, 10], [2.95, null], [2.95, 0]])('%s sobre %s no es empate', (score, maximum) => {
+    expect(tieOptions(score, maximum)).toBeNull();
+  });
+
+  it('la decisión no cambia una nota sin empate y su ausencia conserva la cifra exacta', () => {
+    expect(formatGradeScore(3.46, 5, 'arriba')).toBe('3.5');
+    expect(formatGradeScore(2.95, 5, null)).toBe('2.95');
   });
 
   it('sin nota máxima aplica un decimal sin detectar empate', () => {

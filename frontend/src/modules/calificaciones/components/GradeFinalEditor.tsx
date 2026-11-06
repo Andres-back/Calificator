@@ -2,7 +2,9 @@ import { useId, useRef, useState } from 'react';
 import { Check, Pencil, ShieldAlert } from 'lucide-react';
 import { Button, Input, Textarea } from '@/components/ui';
 import { toApiError } from '@/lib/api';
-import type { Calificacion, GradeFinalAdjustment } from '@/types/api';
+import type { Calificacion, GradeFinalAdjustment, TieDecision } from '@/types/api';
+import { tieOptions } from '../gradePresentation';
+import { TieDecisionField } from './TieDecisionField';
 
 type GradeSnapshot = Pick<Calificacion, 'id' | 'nota_sugerida' | 'nota_confirmada' | 'estado' | 'updated_at'> & { desglose?: { version: number } | null };
 const display = (value: number) => new Intl.NumberFormat('es', { maximumFractionDigits: 2, useGrouping: false }).format(value);
@@ -18,6 +20,7 @@ export function GradeFinalEditor({ grade, maximum, onCancel, onSave }: {
   const [edited, setEdited] = useState(false);
   const [comment, setComment] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
+  const [decision, setDecision] = useState<TieDecision | null>(null);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [error, setError] = useState('');
@@ -27,14 +30,16 @@ export function GradeFinalEditor({ grade, maximum, onCancel, onSave }: {
   const valid = /^\d+(?:\.\d{1,2})?$/.test(normalized) && Number.isFinite(number) && number >= 0 && number <= maximum;
   const changed = edited && number !== (original == null ? null : Number(original));
   const published = grade.estado === 'publicada';
-  const canSave = valid && changed && (!published || acknowledged);
+  const tie = valid && changed ? tieOptions(number, maximum) : null;
+  const canSave = valid && changed && (!published || acknowledged) && (!tie || decision != null);
 
   async function save() {
     if (!canSave || savingRef.current) return;
     savingRef.current = true;
     setSaving(true); setError('');
     try {
-      const intent = JSON.stringify([number, comment.trim()]);
+      const tieDecision = tie && decision ? decision : undefined;
+      const intent = JSON.stringify([number, comment.trim(), tieDecision]);
       if (operation.current?.intent !== intent) {
         const requestId = globalThis.crypto?.randomUUID?.();
         if (!requestId) throw new Error('No pudimos preparar el guardado. Usa un navegador actualizado y vuelve a intentarlo.');
@@ -42,7 +47,7 @@ export function GradeFinalEditor({ grade, maximum, onCancel, onSave }: {
       }
       await onSave({ nota_confirmada: number, observacion: comment.trim(),
         actualizado_en_esperado: grade.updated_at, version_desglose_esperada: grade.desglose?.version ?? null,
-        operacion_id: operation.current.id });
+        operacion_id: operation.current.id, ...(tieDecision ? { redondeo_empate: tieDecision } : {}) });
     } catch (cause) {
       const parsed = toApiError(cause);
       setError(parsed.status === 409 ? 'La calificación cambió. Conservamos tu borrador: cancela para recargar y comparar antes de guardar.' : parsed.detail);
@@ -59,6 +64,7 @@ export function GradeFinalEditor({ grade, maximum, onCancel, onSave }: {
       <div className="rounded-xl border border-border bg-surface-2 p-3" aria-live="polite"><p className="text-xs text-muted">Nota actual → nueva nota</p><p className="mt-2 text-xl font-bold">{original == null ? '—' : display(Number(original))} → {valid ? display(number) : '—'} <span className="text-sm font-normal text-muted">/ {display(maximum)}</span></p></div>
     </div>
     <div><label htmlFor={`${id}-comment`} className="mb-1 block text-sm font-semibold">Comentario (opcional)</label><Textarea id={`${id}-comment`} rows={2} maxLength={2000} value={comment} disabled={saving} className="text-base" onChange={(event) => setComment(event.target.value)} placeholder="Si quieres, explica al estudiante por qué ajustaste la nota." /></div>
+    {tie && <TieDecisionField score={number} options={tie} value={decision} onChange={setDecision} disabled={saving} />}
     {published && <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"><p className="flex gap-2"><ShieldAlert className="h-5 w-5 shrink-0" aria-hidden="true" /><span>Al guardar, esta nota quedará ajustada. Deberás volver a publicar y los enlaces anteriores afectados quedarán suspendidos.</span></p><label className="flex min-h-11 cursor-pointer items-center gap-2"><input type="checkbox" checked={acknowledged} disabled={saving} onChange={(event) => setAcknowledged(event.target.checked)} className="h-5 w-5 shrink-0" />Entiendo y deseo cambiar la nota publicada.</label></div>}
     {error && <p role="alert" className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:bg-rose-500/10 dark:text-rose-100">{error}</p>}
     <div className="flex flex-col-reverse gap-2 border-t border-border pt-3 sm:flex-row sm:justify-end"><Button type="button" variant="outline" onClick={onCancel} disabled={saving} className="min-h-11">Cancelar</Button><Button type="button" onClick={() => void save()} disabled={!canSave || saving} loading={saving} className="min-h-11"><Check className="h-4 w-4" aria-hidden="true" />Guardar nota</Button></div>
