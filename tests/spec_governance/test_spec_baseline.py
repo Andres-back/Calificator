@@ -142,6 +142,7 @@ ALL_SPECS = {
     "146-estado-acciones-evaluaciones",
     "147-decision-empate-backend",
     "148-nota-presentada-lecturas",
+    "149-revision-mosaico",
 }
 OWNED_SPECS = {
     name

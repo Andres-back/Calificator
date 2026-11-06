@@ -2194,6 +2194,8 @@ function GradingCenter() {
   const splitLayout = isTeacher && Boolean(evalId && materiaId) && mode === 'revision' && !contextExpanded
     && !mobileMoreActionsOpen && !batchResult && selectedBatch.size === 0
     && !gradingFeatureFlags.teacherWorkTiming && !directEvaluation.error && !largeReviewText;
+  // Spec 149: with no student open, the roster fills the screen as a mosaic.
+  const mosaic = !selectedId && !reviewCompleted;
   const canOpenSubject = permissions.includes('subjects.read');
   const canOpenEvaluations = canOpenSubject && permissions.includes('evaluations.read');
   const currentBook = materiaId && canOpenSubject && permissions.includes('gradebook.read')
@@ -2328,7 +2330,7 @@ function GradingCenter() {
                 <span><strong className="text-amber-700 dark:text-amber-300">{counters.pendientes}</strong> por revisar</span>
                 <span><strong className="text-emerald-700 dark:text-emerald-300">{counters.publicadas}</strong> publicadas</span>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className={cn('flex flex-col gap-2', mosaic && 'sm:flex-row sm:items-center')}>
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <input
@@ -2356,7 +2358,7 @@ function GradingCenter() {
                   </p>
                 )}
                 <Select aria-label="Filtrar estudiantes por estado" value={gradeFilter}
-                  onChange={(event) => changeContext({ filtro: event.target.value })} className="min-h-11">
+                  onChange={(event) => changeContext({ filtro: event.target.value })} className={cn('min-h-11', mosaic && 'sm:w-64 sm:shrink-0')}>
                   {(['todas', 'pendientes', 'alertas', 'procesando', 'publicadas'] as const).map((filter) => (
                     <option key={filter} value={filter}>{({ todas: 'Todos los estados', pendientes: 'Por revisar', alertas: 'Con avisos', procesando: 'Calificando', publicadas: 'Publicadas' })[filter]} ({counters[filter]})</option>
                   ))}
@@ -2387,7 +2389,7 @@ function GradingCenter() {
                 No hay resultados con ese filtro.
               </div>
             ) : (
-              <div className="space-y-1 pt-3">
+              <div className={cn('pt-3', mosaic ? 'grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'space-y-1')}>
                 {reviewRows.map((row) => {
                   const selected = selectedId ? selectedId === row.calificacion_id : selectedStudentId === row.estudiante_id;
                   const summary = row.resumen_revision;
@@ -2417,7 +2419,7 @@ function GradingCenter() {
                     </div>
                   );
                 })}
-                {reviewQuery.hasNextPage && <Button variant="outline" className="w-full" loading={reviewQuery.isFetchingNextPage} onClick={() => void reviewQuery.fetchNextPage()}>Más estudiantes</Button>}
+                {reviewQuery.hasNextPage && <Button variant="outline" className="col-span-full w-full" loading={reviewQuery.isFetchingNextPage} onClick={() => void reviewQuery.fetchNextPage()}>Más estudiantes</Button>}
               </div>
             )}
           </div>
@@ -2429,7 +2431,7 @@ function GradingCenter() {
           className={`min-h-0 min-w-0 flex-1 ${
             selectedId
               ? 'fixed inset-0 z-30 flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden rounded-xl border border-border bg-surface xl:static xl:z-auto xl:h-auto xl:max-h-none'
-              : reviewCompleted ? 'flex items-center justify-center' : 'hidden xl:flex xl:items-center xl:justify-center'
+              : reviewCompleted ? 'flex items-center justify-center' : 'hidden'
           }`}
         >
           {selectedId && mode !== 'carga' ? (
