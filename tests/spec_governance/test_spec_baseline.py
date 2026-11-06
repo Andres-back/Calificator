@@ -145,6 +145,7 @@ ALL_SPECS = {
     "149-revision-mosaico",
     "150-pregunta-empate",
     "151-calificador-sin-nota",
+    "154-ci-playwright-apt",
 }
 OWNED_SPECS = {
     name
