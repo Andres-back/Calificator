@@ -1,6 +1,6 @@
 # Tareas: Un mirror lento de Ubuntu no agota la CI de frontend
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md).
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), aprobados el 2026-11-06 (`spec-approved`, `plan-approved` en #325).
 
 ## Fase 1: Pruebas primero (RED)
 

@@ -1,6 +1,6 @@
 # Especificación: Un mirror lento de Ubuntu no agota la CI de frontend
 
-**Rama**: `codex/154-ci-playwright-apt` | **Creada**: 2026-11-06 | **Estado**: Pendiente de aprobación | **Issue**: [#325](https://github.com/Andres-back/Calificator/issues/325)
+**Rama**: `codex/154-ci-playwright-apt` | **Creada**: 2026-11-06 | **Estado**: Aprobada | **Issue**: [#325](https://github.com/Andres-back/Calificator/issues/325)
 
 **Entrada**: el paso `npx playwright install --with-deps chromium webkit` agotó tres veces el tiempo de trabajos de frontend en CI. El usuario pidió corregirlo.
 
