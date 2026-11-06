@@ -19,6 +19,19 @@ TABLES = {"feedback_publications", "feedback_accesses", "feedback_chat_quotas", 
 MIGRATION = Path(__file__).resolve().parents[2] / "alembic/versions/202610200001_feedback_sharing.py"
 
 
+async def _add_later_nullable_columns(db, table_name):
+    from app.db.base import Base
+    import app.modules.calificaciones.models  # noqa: F401 - registra la tabla
+    table = Base.metadata.tables[table_name]
+    existing = set((await db.execute(text(
+        "SELECT column_name FROM information_schema.columns WHERE table_name=:t"), {"t": table_name})).scalars())
+    dialect = db.bind.dialect
+    for column in table.columns:
+        if column.name not in existing:
+            assert column.nullable, f"{table_name}.{column.name} debe ser opcional para filas históricas"
+            await db.execute(text(f'ALTER TABLE {table_name} ADD COLUMN "{column.name}" {column.type.compile(dialect)}'))
+
+
 def test_migration_is_additive_and_has_explicit_parent():
     source = MIGRATION.read_text(encoding="utf8")
     assert 'down_revision = "202610150001"' in source
@@ -99,6 +112,11 @@ async def test_upgrade_preserves_whole_existing_grade(fb_db, fb_case_factory):
         await upgrade("202610150001")
         sessions = async_sessionmaker(temporary, expire_on_commit=False)
         async with sessions() as db:
+            # The current ORM writes every mapped column. Columns added by later
+            # revisions (e.g. Spec 147 redondeo_empate) are created here as
+            # nullable so the synthetic row exists; this test only asserts what
+            # migration 202610200001 does to that row.
+            await _add_later_nullable_columns(db, "calificaciones")
             case = await fb_case_factory(db)
             grade_id = case[-1].id
             await db.commit()

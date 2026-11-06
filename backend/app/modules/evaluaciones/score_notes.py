@@ -10,6 +10,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
+from app.modules.calificaciones import grade_rounding
 from app.modules.calificaciones.breakdown_models import CalificacionAjuste, CalificacionComponente, CalificacionDesglose
 from app.modules.calificaciones.breakdown_policy import calculate_formula
 from app.modules.calificaciones.breakdown_service import get_active_breakdown
@@ -186,10 +187,14 @@ async def _apply_one(db, evaluation, grade, active, components, actor, request_i
         tipo='reparto', valor_anterior_json={'nota': _score(previous_score), 'contenido_version_id': str(previous_context)},
         valor_nuevo_json={'nota': _score(new.nota_final), 'contenido_version_id': str(evaluation.contenido_version_id), 'request_id': str(request_id)},
         motivo_interno=reason, explicacion_estudiante=reason, actor_id=actor.id))
+    pending_tie = False
     if grade.nota_confirmada is None:
         grade.nota_sugerida = new.nota_final
     else:
-        grade.nota_confirmada = new.nota_final
+        # Spec 147: una decisión de empate previa no vale para la nueva cifra.
+        pending_tie = grade_rounding.apply_computed_final_grade(grade, evaluation, new.nota_final)
+    if pending_tie:
+        reason = f'{reason} {grade_rounding.PENDING_TIE_NOTE}'
     # The teacher explicitly accepts the new weights for this delivery. The old
     # context remains in the prior breakdown, snapshot, timeline and receipt.
     grade.entrega.contenido_version_id = evaluation.contenido_version_id

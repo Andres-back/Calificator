@@ -84,6 +84,7 @@ def apply_grading_result(
 
     calificacion.nota_sugerida = grading.nota_sugerida
     calificacion.nota_confirmada = None
+    calificacion.redondeo_empate = None
     calificacion.confianza = (
         None if technical_failure else Decimal(str(grading.confianza))
     )
@@ -131,6 +132,7 @@ def prepare_queued_grading(
 
     calificacion.nota_sugerida = None
     calificacion.nota_confirmada = None
+    calificacion.redondeo_empate = None
     calificacion.confianza = None
     calificacion.feedback = None
     calificacion.resultado_json = payload

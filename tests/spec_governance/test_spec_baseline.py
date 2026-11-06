@@ -140,6 +140,7 @@ ALL_SPECS = {
     "144-confirmar-reduccion-acceso",
     "145-nota-un-decimal",
     "146-estado-acciones-evaluaciones",
+    "147-decision-empate-backend",
     "149-revision-mosaico",
 }
 OWNED_SPECS = {

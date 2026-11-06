@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.modules.calificaciones.evidence_manifest import has_preserved_original
+from app.modules.calificaciones import grade_rounding
 from app.modules.feedback_sharing.invalidations import suspend_grade_publications
 from app.modules.calificaciones.breakdown_service import answers_released, create_manual_breakdown, get_active_breakdown, prepare_final_grade_adjustment, serialize_breakdown
 from app.modules.calificaciones.models import (
@@ -187,20 +188,27 @@ async def confirmar_nota(
     payload: ConfirmarNota,
 ) -> Calificacion:
     evaluacion = await get_evaluation_for_calificacion(db, cal)
-    await confirm_grade_decision(db, cal, evaluacion, payload.nota_confirmada)
+    await confirm_grade_decision(db, cal, evaluacion, payload.nota_confirmada, decision=payload.redondeo_empate)
     await db.commit()
     await db.refresh(cal)
     return cal
 
 
-async def confirm_grade_decision(db, cal, evaluacion, score, *, actor=None):
+apply_final_grade = grade_rounding.apply_final_grade
+
+
+def _tie_detail(base: str, score, evaluacion, decision: str | None) -> str:
+    return f"{base}. {grade_rounding.decision_label(score, evaluacion.nota_maxima, decision)}" if decision else base
+
+
+async def confirm_grade_decision(db, cal, evaluacion, score, *, actor=None, decision=None):
     """One explicit academic decision; transaction ownership stays with caller."""
     from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
     await ensure_visual_grade_publishable(db, cal, evaluacion)
     validate_score_within_evaluation(
         score, evaluacion, "nota_confirmada"
     )
-    cal.nota_confirmada = score
+    resolved = apply_final_grade(cal, evaluacion, score, decision, require_decision=True)
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.CONFIRMADA.value
     if cal.entrega:
@@ -212,7 +220,7 @@ async def confirm_grade_decision(db, cal, evaluacion, score, *, actor=None):
         nota_nueva=score,
         actor_id=getattr(actor, 'id', None),
         actor_nombre=getattr(actor, 'nombre', None),
-        detalle="Confirmada por docente",
+        detalle=_tie_detail("Confirmada por docente", score, evaluacion, resolved),
     )
     await _update_salon_estudiante_estado(db, cal, "confirmado")
     await suspend_grade_publications(db, cal.id)
@@ -238,6 +246,7 @@ async def ajustar_nota(
         "nota": format(payload.nota_confirmada.normalize(), "f"),
         "observacion": observation, "feedback": payload.feedback,
         "actor": str(actor_id),
+        **({"redondeo_empate": payload.redondeo_empate} if payload.redondeo_empate else {}),
     }, sort_keys=True).encode()).hexdigest()
     if payload.operacion_id:
         for event in (cal.resultado_json or {}).get("_timeline", []):
@@ -257,18 +266,24 @@ async def ajustar_nota(
     nota_anterior = cal.nota_confirmada if cal.nota_confirmada is not None else cal.nota_sugerida
     # Legacy callers used an empty feedback field to mean "leave it unchanged".
     feedback_changed = bool(payload.feedback) and payload.feedback != cal.feedback
-    if payload.nota_confirmada == nota_anterior and not feedback_changed:
+    decision_changed = (payload.redondeo_empate is not None
+                        and payload.redondeo_empate != getattr(cal, "redondeo_empate", None))
+    if payload.nota_confirmada == nota_anterior and not feedback_changed and not decision_changed:
         return cal
     evaluacion = await get_evaluation_for_calificacion(db, cal)
     from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
     await ensure_visual_grade_publishable(db, cal, evaluacion)
     if not payload.nota_confirmada.is_finite() or not 0 <= payload.nota_confirmada <= evaluacion.nota_maxima:
         raise HTTPException(422, f"La nota debe estar entre 0 y {evaluacion.nota_maxima}.")
+    # Spec 147: el empate se valida antes de tocar el desglose.
+    grade_rounding.resolve_tie_decision(payload.nota_confirmada, evaluacion.nota_maxima,
+                                        payload.redondeo_empate, require=True)
     try:
         if active and payload.nota_confirmada != nota_anterior:
             await prepare_final_grade_adjustment(db, active=active, target=payload.nota_confirmada,
                                                  actor_id=actor_id, observation=observation)
-        cal.nota_confirmada = payload.nota_confirmada
+        resolved = apply_final_grade(cal, evaluacion, payload.nota_confirmada, payload.redondeo_empate,
+                                     require_decision=True)
         if feedback_changed:
             cal.feedback = payload.feedback
         cal.revisado_por_docente = True
@@ -278,7 +293,8 @@ async def ajustar_nota(
         _append_timeline_event(
             cal, tipo="ajustada", nota_anterior=nota_anterior, nota_nueva=payload.nota_confirmada,
             feedback=payload.feedback if feedback_changed else None, actor_id=actor_id, actor_nombre=getattr(actor, "nombre", None),
-            detalle=observation or "Nota final establecida por el docente",
+            detalle=_tie_detail(observation or "Nota final establecida por el docente",
+                                payload.nota_confirmada, evaluacion, resolved),
             operacion_id=payload.operacion_id, intencion_hash=fingerprint,
         )
         await _update_salon_estudiante_estado(db, cal, "confirmado")
@@ -309,6 +325,7 @@ async def marcar_revision_manual(
     cal.estado = CalificacionEstado.REQUIERE_REVISION.value
     cal.revisado_por_docente = False
     cal.nota_confirmada = None
+    cal.redondeo_empate = None
     result = dict(cal.resultado_json or {})
     result["revision_manual"] = {
         "motivo": motivo,
@@ -370,6 +387,9 @@ async def set_manual_grade(
     )
     grade_evaluation = await _historical_grade_evaluation(db, cal, evaluacion) if cal else evaluacion
     validate_score_within_evaluation(payload.nota_confirmada, grade_evaluation, "nota_confirmada")
+    # Spec 147: "Establecer nota" publica directamente; el empate exige decisión antes de crear nada.
+    grade_rounding.resolve_tie_decision(payload.nota_confirmada, grade_evaluation.nota_maxima,
+                                        payload.redondeo_empate, require=True)
     previous_score = None
     if cal is None:
         cal = Calificacion(
@@ -396,7 +416,8 @@ async def set_manual_grade(
         }
     )
     cal.resultado_json = result
-    cal.nota_confirmada = payload.nota_confirmada
+    resolved = apply_final_grade(cal, grade_evaluation, payload.nota_confirmada, payload.redondeo_empate,
+                                 require_decision=True)
     cal.feedback = feedback
     cal.revisado_por_docente = True
     cal.estado = CalificacionEstado.PUBLICADA.value
@@ -408,7 +429,8 @@ async def set_manual_grade(
         feedback=feedback,
         actor_id=current_user.id,
         actor_nombre=current_user.nombre,
-        detalle=f"Nota establecida directamente por el docente: {reason}",
+        detalle=_tie_detail(f"Nota establecida directamente por el docente: {reason}",
+                            payload.nota_confirmada, grade_evaluation, resolved),
     )
     await create_manual_breakdown(
         db, calificacion=cal, nota_maxima=grade_evaluation.nota_maxima,
@@ -1181,7 +1203,8 @@ async def confirmar_nota_batch(
             )
             from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
             await ensure_visual_grade_publishable(db, cal, evaluacion)
-            cal.nota_confirmada = item.nota_confirmada
+            resolved = apply_final_grade(cal, evaluacion, item.nota_confirmada, item.redondeo_empate,
+                                         require_decision=True)
             cal.revisado_por_docente = True
             cal.estado = CalificacionEstado.CONFIRMADA.value
             if cal.entrega:
@@ -1193,7 +1216,7 @@ async def confirmar_nota_batch(
                 nota_nueva=item.nota_confirmada,
                 actor_id=profesor.id,
                 actor_nombre=profesor.nombre,
-                detalle="Confirmada en lote",
+                detalle=_tie_detail("Confirmada en lote", item.nota_confirmada, evaluacion, resolved),
             )
             await _update_salon_estudiante_estado(db, cal, "confirmado")
             await suspend_grade_publications(db, cal.id)
@@ -1250,7 +1273,8 @@ async def ajustar_nota_batch(
             from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
             await ensure_visual_grade_publishable(db, cal, evaluacion)
             nota_anterior = cal.nota_confirmada or cal.nota_sugerida
-            cal.nota_confirmada = item.nota_confirmada
+            resolved = apply_final_grade(cal, evaluacion, item.nota_confirmada, item.redondeo_empate,
+                                         require_decision=True)
             if item.feedback:
                 cal.feedback = item.feedback
             cal.revisado_por_docente = True
@@ -1265,7 +1289,7 @@ async def ajustar_nota_batch(
                 feedback=item.feedback,
                 actor_id=profesor.id,
                 actor_nombre=profesor.nombre,
-                detalle="Ajustada en lote",
+                detalle=_tie_detail("Ajustada en lote", item.nota_confirmada, evaluacion, resolved),
             )
             await _update_salon_estudiante_estado(db, cal, "confirmado")
             await suspend_grade_publications(db, cal.id)
@@ -1319,6 +1343,9 @@ async def _prepare_grade_publication(
 ) -> None:
     from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
     await ensure_visual_grade_publishable(db, calificacion, evaluacion)
+    # Spec 147: ninguna nota en empate se publica sin la decisión del docente.
+    grade_rounding.ensure_tie_decided(calificacion.nota_confirmada, evaluacion.nota_maxima,
+                                      getattr(calificacion, "redondeo_empate", None))
     if settings.EXPLAINABLE_GRADING_AUTHORITY_ENABLED:
         desglose = await get_active_breakdown(db, calificacion.id)
         if desglose and (desglose.requiere_revision or calificacion.nota_confirmada != desglose.nota_final):

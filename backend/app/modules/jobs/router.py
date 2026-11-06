@@ -316,7 +316,7 @@ async def retry_job(
             await db.execute(
                 text(
                     "UPDATE calificaciones SET estado='procesando', "
-                    "nota_sugerida=NULL, nota_confirmada=NULL, confianza=NULL, "
+                    "nota_sugerida=NULL, nota_confirmada=NULL, redondeo_empate=NULL, confianza=NULL, "
                     "resultado_json=COALESCE(resultado_json, '{}'::jsonb) || "
                     "jsonb_build_object('pipeline_status','retrying') "
                     "WHERE entrega_id=CAST(:id AS uuid) "

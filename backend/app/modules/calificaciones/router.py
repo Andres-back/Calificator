@@ -432,6 +432,7 @@ async def solicitar_reemplazo_evidencia(
     calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
     calificacion.revisado_por_docente = False
     calificacion.nota_confirmada = None
+    calificacion.redondeo_empate = None
     await db.commit()
     await db.refresh(entrega)
     return _entrega_read(entrega)

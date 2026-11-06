@@ -108,6 +108,10 @@ class Calificacion(Base):
             "estado IN ('procesando','sugerida','confirmada','ajustada','requiere_revision','publicada','anulada')",
             name="ck_calificaciones_estado",
         ),
+        CheckConstraint(
+            "redondeo_empate IS NULL OR redondeo_empate IN ('abajo','arriba')",
+            name="ck_calificaciones_redondeo_empate",
+        ),
     )
 
     id: Mapped[PyUUID] = mapped_column(
@@ -122,6 +126,8 @@ class Calificacion(Base):
     profesor_id: Mapped[PyUUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     nota_sugerida: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     nota_confirmada: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
+    # Spec 147: decisión docente en el empate del umbral; la nota exacta no se reescribe.
+    redondeo_empate: Mapped[str | None] = mapped_column(String(6), nullable=True)
     confianza: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
     feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
     resultado_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)

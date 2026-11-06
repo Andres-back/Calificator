@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from app.shared.enums import EntregaTipo
+from app.modules.calificaciones.grade_rounding import TieDecision
 from app.modules.evaluaciones.schemas import EvaluacionRead
 
 
@@ -135,6 +136,7 @@ class CalificacionRead(BaseModel):
     materia_id: UUID
     nota_sugerida: Decimal | None
     nota_confirmada: Decimal | None
+    redondeo_empate: TieDecision | None = None
     confianza: Decimal | None
     feedback: str | None
     estado: str
@@ -148,6 +150,7 @@ class CalificacionRead(BaseModel):
 
 class ConfirmarNota(BaseModel):
     nota_confirmada: Decimal = Field(ge=0)
+    redondeo_empate: TieDecision | None = None
 
 
 class AjustarNota(BaseModel):
@@ -157,6 +160,7 @@ class AjustarNota(BaseModel):
     actualizado_en_esperado: datetime | None = None
     version_desglose_esperada: int | None = Field(default=None, ge=1)
     operacion_id: UUID | None = None
+    redondeo_empate: TieDecision | None = None
 
     @model_validator(mode="after")
     def complete_preconditions(self):
@@ -185,6 +189,7 @@ class CalificacionManualCreate(BaseModel):
         default="Valoración directa del docente", min_length=3, max_length=160
     )
     feedback: str | None = Field(default=None, max_length=2000)
+    redondeo_empate: TieDecision | None = None
 
 
 # ── Lote ───────────────────────────────────────────────────────────────────────
@@ -354,6 +359,7 @@ class CalificacionDetalleRead(BaseModel):
 class BatchConfirmItem(BaseModel):
     calificacion_id: UUID
     nota_confirmada: Decimal = Field(ge=0)
+    redondeo_empate: TieDecision | None = None
 
 
 class BatchConfirmRequest(BaseModel):
@@ -364,6 +370,7 @@ class BatchAjustarItem(BaseModel):
     calificacion_id: UUID
     nota_confirmada: Decimal = Field(ge=0)
     feedback: str | None = None
+    redondeo_empate: TieDecision | None = None
 
 
 class BatchAjustarRequest(BaseModel):
