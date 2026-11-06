@@ -447,6 +447,8 @@ export interface GradeBreakdownVersion {
   actor_nombre: string | null;
   created_at: string;
 }
+export type TieDecision = 'abajo' | 'arriba';
+
 export interface Calificacion {
   id: string;
   evaluacion_id: string;
@@ -454,6 +456,7 @@ export interface Calificacion {
   materia_id: string;
   nota_sugerida: number | null;
   nota_confirmada: number | null;
+  redondeo_empate?: TieDecision | null;
   confianza: number | null;
   feedback: string | null;
   estado: string;
@@ -472,6 +475,7 @@ export interface GradeFinalAdjustment {
   version_desglose_esperada: number | null;
   operacion_id: string;
   observacion?: string;
+  redondeo_empate?: TieDecision;
 }
 
 export interface CalificacionTimelineEvent {

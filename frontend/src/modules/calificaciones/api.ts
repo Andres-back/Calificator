@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import type { ReviewEvaluation, ReviewFilter, BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, GradeBreakdownData, GradeBreakdownUpdate, GradeFinalAdjustment, GradeBreakdownVersion, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
+import type { TieDecision, ReviewEvaluation, ReviewFilter, BandejaDocenteRead, BatchResult, BoletinItem, Calificacion, CalificacionDetalle, EntregaRead, GradeBreakdownData, GradeBreakdownUpdate, GradeFinalAdjustment, GradeBreakdownVersion, IncidenciaRead, ResumenAcademico, SalonSesionRead } from '@/types/api';
 
 export async function getBandejaDocente(): Promise<BandejaDocenteRead> {
   const { data } = await api.get<BandejaDocenteRead>('/calificaciones/bandeja-docente');
@@ -23,6 +23,7 @@ export async function establecerNotaManual(
     nota_confirmada: number;
     motivo: string;
     feedback?: string;
+    redondeo_empate?: TieDecision;
   },
 ): Promise<Calificacion> {
   const { data } = await api.post<Calificacion>(
@@ -32,11 +33,11 @@ export async function establecerNotaManual(
   return data;
 }
 
-export async function confirmarNota(id: string, nota: number): Promise<Calificacion> {
-  const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/confirmar`, { nota_confirmada: nota });
+export async function confirmarNota(id: string, nota: number, decision?: TieDecision): Promise<Calificacion> {
+  const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/confirmar`, { nota_confirmada: nota, ...(decision ? { redondeo_empate: decision } : {}) });
   return data;
 }
-export async function ajustarNota(id: string, nota: number, feedback?: string, options?: Omit<GradeFinalAdjustment, 'nota_confirmada'>): Promise<Calificacion> {
+export async function ajustarNota(id: string, nota: number, feedback?: string, options?: Partial<Omit<GradeFinalAdjustment, 'nota_confirmada'>>): Promise<Calificacion> {
   const { data } = await api.patch<Calificacion>(`/calificaciones/${id}/ajustar`, { nota_confirmada: nota, feedback, ...options });
   return data;
 }

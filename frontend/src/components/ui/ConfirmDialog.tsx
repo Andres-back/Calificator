@@ -16,6 +16,7 @@ export function ConfirmDialog({
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
   loading = false,
+  confirmDisabled = false,
   tone = 'primary',
   children,
 }: {
@@ -27,6 +28,7 @@ export function ConfirmDialog({
   confirmLabel?: string;
   cancelLabel?: string;
   loading?: boolean;
+  confirmDisabled?: boolean;
   tone?: 'primary' | 'danger';
   children?: ReactNode;
 }) {
@@ -38,7 +40,7 @@ export function ConfirmDialog({
           <Button variant="outline" onClick={onClose} disabled={loading}>
             {cancelLabel}
           </Button>
-          <Button variant={tone} onClick={onConfirm} loading={loading} disabled={loading}>
+          <Button variant={tone} onClick={onConfirm} loading={loading} disabled={loading || confirmDisabled}>
             {confirmLabel}
           </Button>
         </div>
