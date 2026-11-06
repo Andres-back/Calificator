@@ -9,7 +9,7 @@ import math
 import time
 
 from app.modules.calificaciones.agents import AgentResult
-from app.modules.calificaciones.execution_policy import MAX_STAGE_ATTEMPTS, TRANSIENT_ERRORS
+from app.modules.calificaciones.execution_policy import MAX_STAGE_ATTEMPTS, RETRYABLE_STAGE_ERRORS, TRANSIENT_ERRORS
 
 Operation = Callable[[], Awaitable[AgentResult]]
 Save = Callable[[dict], Awaitable[None]]
@@ -99,7 +99,7 @@ class ReviewProgress:
         code = str(entry.get("error_code") or "worker_interrupted")
         result = AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="",
                              error=code, requiere_revision_docente=True)
-        if attempts and code not in TRANSIENT_ERRORS:
+        if attempts and code not in RETRYABLE_STAGE_ERRORS:
             return result
         while attempts < MAX_STAGE_ATTEMPTS:
             attempts += 1
@@ -132,12 +132,15 @@ class ReviewProgress:
             code = code if code in TRANSIENT_ERRORS or code in {
                 "http_401", "http_403", "output_refused", "output_incomplete",
                 "output_budget_exhausted", "output_empty", "output_invalid",
+                "grader_missing_score",
             } else "provider_error"
             entry.update(status="pending", error_code=code)
+            shape = result.raw_output.get("output_shape") if isinstance(result.raw_output, dict) else None
             result = AgentResult(nota_sugerida=None, confianza=0, feedback_estudiante="",
                 error=code, modelo=result.modelo, proveedor=result.proveedor,
-                tiempo_ms=result.tiempo_ms, requiere_revision_docente=True)
+                tiempo_ms=result.tiempo_ms, requiere_revision_docente=True,
+                raw_output={"output_shape": shape} if shape else None)
             await self.persist()
-            if code not in TRANSIENT_ERRORS:
+            if code not in RETRYABLE_STAGE_ERRORS:
                 break
         return result

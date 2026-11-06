@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "614a751a412435d78953fa516c7ead47f5c91ba904a9944c3ea055ea416d5059",
+  "source_digest": "39c942cc007a593528e6ca74002cb872173400d014467730ecd872e05fb0bc0a",
   "surfaces": [
     {
       "actors": [
@@ -50150,6 +50150,12 @@
         {
           "level": "unit",
           "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_grader_missing_score.py"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
           "status": "direct",
           "test_path": "backend/tests/unit/test_image_transparency.py"
         },
@@ -50602,6 +50608,12 @@
         {
           "level": "unit",
           "reference": "open_code",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_grader_missing_score.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
         },
@@ -50920,6 +50932,12 @@
           "reference": "redis",
           "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_sharing_abuse.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_grader_missing_score.py"
         },
         {
           "level": "unit",
@@ -54523,6 +54541,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grade_rounding.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_grader_missing_score.py"
         },
         {
           "level": "unit",

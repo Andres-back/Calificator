@@ -233,6 +233,35 @@ def _prepare_multimodal_images(
         raise ValueError("No fue posible preparar el PDF para calificar") from exc
 
 
+_GRADER_OUTPUT_KEYS = frozenset({
+    "nota_sugerida", "nota_maxima", "confianza", "criterios", "componentes",
+    "feedback_estudiante", "alertas", "requiere_revision_docente",
+})
+_COMPONENT_STATES = frozenset({"correcta", "parcial", "incorrecta", "sin_respuesta", "ilegible", "no_evaluable"})
+
+
+def grader_output_shape(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Spec 151: forma de una salida sin nota, sin texto del estudiante ni del modelo."""
+    components = parsed.get("componentes")
+    components = [item for item in components if isinstance(item, dict)] if isinstance(components, list) else []
+    states: dict[str, int] = {}
+    for item in components:
+        state = item.get("estado")
+        label = state if isinstance(state, str) and state in _COMPONENT_STATES else "otro"
+        states[label] = states.get(label, 0) + 1
+    return {
+        "campos": sorted(key for key in parsed if key in _GRADER_OUTPUT_KEYS),
+        "campos_desconocidos": sum(1 for key in parsed if key not in _GRADER_OUTPUT_KEYS),
+        "nota_presente": "nota_sugerida" in parsed,
+        "componentes": len(components),
+        "componentes_con_puntaje": sum(
+            1 for item in components
+            if isinstance(item.get("puntaje"), (int, float)) and not isinstance(item.get("puntaje"), bool)
+        ),
+        "estados": states,
+    }
+
+
 def _parse_json_content(content: Any) -> dict[str, Any]:
     if isinstance(content, dict):
         return content
@@ -1254,12 +1283,13 @@ async def grader_agent(
         executed_model = str(executed.get("model") or model)
         raw_score = parsed.get("nota_sugerida")
         if raw_score is None:
-            logger.error("Grader agent %s returned no score", model)
+            shape = grader_output_shape(parsed)
+            logger.error("Grader agent %s returned no score: %s", model, shape)
             return AgentResult(
                 nota_sugerida=None, confianza=0, feedback_estudiante="",
                 proveedor=executed_provider, modelo=executed_model,
                 error="grader_missing_score", requiere_revision_docente=True,
-                tiempo_ms=ms, raw_output=parsed,
+                tiempo_ms=ms, raw_output={"output_shape": shape},
             )
 
         result = AgentResult(

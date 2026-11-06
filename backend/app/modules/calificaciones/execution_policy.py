@@ -18,6 +18,10 @@ TRANSIENT_ERRORS = frozenset({
     *(f"http_{status}" for status in (408, 425, 429, 500, 502, 503, 504)),
 })
 
+# Spec 151: el modelo respondió, pero sin nota. No es un fallo transitorio del
+# proveedor; un segundo intento puede obtenerla, siempre dentro de MAX_STAGE_ATTEMPTS.
+RETRYABLE_STAGE_ERRORS = TRANSIENT_ERRORS | {"grader_missing_score"}
+
 
 def execution_policy() -> dict:
     return {"schema_version": 1, "call_timeout_seconds": CALL_TIMEOUT_SECONDS,

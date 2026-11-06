@@ -391,6 +391,7 @@ def test_comparison_modifier_is_not_accepted_as_the_requested_comparison() -> No
 @pytest.mark.parametrize("error, safe_code", [
     ("provider_failed", "provider_error"),
     ("output_budget_exhausted", "output_budget_exhausted"),
+    ("grader_missing_score", "grader_missing_score"),
     ("private student response", "provider_error"),
 ])
 def test_both_failed_graders_return_no_score(monkeypatch, error, safe_code) -> None:
