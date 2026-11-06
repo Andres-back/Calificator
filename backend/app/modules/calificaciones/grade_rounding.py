@@ -96,5 +96,17 @@ def apply_computed_final_grade(cal, evaluacion, score) -> bool:
     return False
 
 
+def approval_rate(grades, nota_maxima) -> float:
+    """Spec 148: fracción de aprobados con la nota presentada.
+
+    ``grades`` son pares (nota, decisión). Un empate sin decidir no cuenta ni
+    como aprobado ni como reprobado hasta que el docente decida.
+    """
+    threshold = pass_threshold(nota_maxima)
+    presented = [presented_grade(Decimal(str(nota)), Decimal(str(nota_maxima)), decision) for nota, decision in grades]
+    counted = [value for value in presented if value is not None]
+    return sum(1 for value in counted if value >= threshold) / len(counted) if counted else 0
+
+
 def decision_label(nota: Decimal, nota_maxima: Decimal, decision: str) -> str:
     return f"Empate del umbral decidido por el docente: {presented_grade(nota, nota_maxima, decision)}"

@@ -4,7 +4,7 @@
 
 ## Fase 1: Pruebas primero (RED)
 
-- [X] T001 `backend/tests/unit/test_grader_missing_score.py`: forma sin texto privado, motivo y forma en `grader_agent`, reintento único, tope de dos intentos, sin nota inventada y otros errores sin reintento. RED: no existía `grader_output_shape`. (FR-001, FR-002, FR-003, FR-004, FR-005)
+- [X] T001 Prueba de regresión en `backend/tests/unit/test_grader_missing_score.py`: forma sin texto privado, motivo y forma en `grader_agent`, reintento único, tope de dos intentos, sin nota inventada y otros errores sin reintento. RED: no existía `grader_output_shape`. (FR-001, FR-002, FR-003, FR-004, FR-005)
 - [X] T002 Ampliar `test_both_failed_graders_return_no_score` con `grader_missing_score`. (FR-002)
 
 ## Fase 2: Corrección (GREEN)

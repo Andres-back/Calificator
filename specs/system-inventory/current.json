@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "2a139a45568ccad6644fe65ecaa841eb77f93de5021001d26ce0373dd7116a19",
+  "source_digest": "39c942cc007a593528e6ca74002cb872173400d014467730ecd872e05fb0bc0a",
   "surfaces": [
     {
       "actors": [
@@ -23474,6 +23474,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_tasks_grading.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_tie_decision_reads.py"
         },
         {
           "level": "unit",
@@ -54702,6 +54708,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_tie_decision_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_vision_extractor.py"
         },
         {
@@ -56388,6 +56400,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_tasks_grading.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_tie_decision_reads.py"
         },
         {
           "level": "unit",

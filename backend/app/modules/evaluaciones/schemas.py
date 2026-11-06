@@ -130,6 +130,7 @@ class EvaluacionRead(BaseModel):
     entrega_realizada: bool = False
     mi_nota_confirmada: Decimal | None = None
     mi_nota_maxima: Decimal | None = None
+    mi_redondeo_empate: Literal["abajo", "arriba"] | None = None
     mi_calificacion_estado: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
