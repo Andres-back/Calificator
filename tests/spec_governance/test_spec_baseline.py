@@ -146,6 +146,7 @@ ALL_SPECS = {
     "150-pregunta-empate",
     "151-calificador-sin-nota",
     "154-ci-playwright-apt",
+    "153-reparto-sin-bloqueo",
 }
 OWNED_SPECS = {
     name
