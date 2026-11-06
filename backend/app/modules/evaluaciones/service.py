@@ -321,6 +321,7 @@ async def _student_progress_by_evaluation(
             "intentos_realizados": attempt_counts.get(evaluacion.id, 0),
             "entrega_realizada": delivered,
             "mi_nota_confirmada": grade.nota_confirmada if grade else None,
+            "mi_redondeo_empate": grade.redondeo_empate if grade else None,
             "mi_nota_maxima": Decimal(str(versions[graded_revision]['nota_maxima'])) if graded_revision in versions else evaluacion.nota_maxima,
             "mi_calificacion_estado": (
                 CalificacionEstado.PROCESANDO.value

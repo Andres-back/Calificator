@@ -38,6 +38,22 @@ def generate_report_pdf(data: dict[str, Any], title: str) -> bytes:
     return bytes(pdf.output())
 
 
+def boletin_grade_text(row: dict[str, Any]) -> str:
+    """Spec 148: nota presentada con un decimal; el empate sin decisión se marca."""
+    from decimal import Decimal
+    from app.modules.calificaciones.grade_rounding import presented_grade
+
+    raw = row.get("nota_confirmada") or row.get("nota_sugerida")
+    if raw is None or raw == "":
+        return "-"
+    if row.get("nota_maxima") is None:
+        return str(raw)  # filas sin escala: se conserva el texto exacto anterior
+    nota, maxima = Decimal(str(raw)), Decimal(str(row["nota_maxima"]))
+    decision = row.get("redondeo_empate") if row.get("nota_confirmada") is not None else None
+    presented = presented_grade(nota, maxima, decision)
+    return f"{nota.quantize(Decimal('0.01'))} (por decidir)" if presented is None else str(presented)
+
+
 def generate_boletin_pdf(
     nombre_estudiante: str,
     materia_name: str,
@@ -62,7 +78,7 @@ def generate_boletin_pdf(
     pdf.set_font("Helvetica", size=9)
     for row in calificaciones:
         nombre = str(row.get("nombre", ""))[:45]
-        nota = str(row.get("nota_confirmada") or row.get("nota_sugerida") or "-")
+        nota = boletin_grade_text(row)
         estado = str(row.get("estado", ""))
         pdf.cell(90, 7, nombre, border=1)
         pdf.cell(35, 7, nota, border=1, align="C")

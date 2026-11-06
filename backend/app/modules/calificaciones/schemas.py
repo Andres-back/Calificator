@@ -271,6 +271,7 @@ class BoletinItem(BaseModel):
     nota_maxima: Decimal
     estado: str
     feedback: str | None
+    redondeo_empate: TieDecision | None = None
 
     model_config = {"from_attributes": True}
 
