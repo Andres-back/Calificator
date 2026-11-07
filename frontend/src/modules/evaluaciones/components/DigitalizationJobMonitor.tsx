@@ -33,6 +33,7 @@ interface JobRead {
     preguntas_count?: number;
     clave_completa?: boolean;
     claves_pendientes?: number[];
+    lectura_hojas?: { leidas?: number; total?: number };
   };
   timings_ms?: Record<string, number>;
   terminal_reason?: string | null;
@@ -73,6 +74,12 @@ function stageLabel(stage?: string) {
     completed: 'Borrador completado',
   };
   return stage ? labels[stage] ?? 'Procesando el documento' : 'Procesando el documento';
+}
+
+function pagesLabel(read: number, total: number) {
+  return total === 1
+    ? (read ? 'Hoja leída' : 'Leyendo la hoja')
+    : `Hojas leídas: ${Math.min(read, total)} de ${total}`;
 }
 
 function sortJobs(jobs: PendingDigitalizationJob[]) {
@@ -141,6 +148,8 @@ export function DigitalizationJobMonitor() {
               timingsMs: state.data.timings_ms,
               terminalReason: state.data.terminal_reason ?? undefined,
               stage: state.data.stage ?? undefined,
+              pagesRead: state.data.resultado_json?.lectura_hojas?.leidas,
+              pagesTotal: state.data.resultado_json?.lectura_hojas?.total,
             });
             continue;
           }
@@ -298,7 +307,9 @@ export function DigitalizationJobMonitor() {
               <p className="mt-1 font-semibold text-brand-700 dark:text-brand-300">
                 {visibleJob.status === 'retrying'
                   ? 'Reintentando de forma segura'
-                  : stageLabel(visibleJob.stage)}
+                  : visibleJob.stage === 'reading' && visibleJob.pagesTotal
+                    ? pagesLabel(visibleJob.pagesRead ?? 0, visibleJob.pagesTotal)
+                    : stageLabel(visibleJob.stage)}
               </p>
             </div>
           ) : success ? (

@@ -7,6 +7,7 @@ import math
 import unicodedata
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from io import BytesIO
+from collections.abc import Awaitable, Callable
 from typing import Any
 from uuid import UUID
 from zipfile import BadZipFile, ZipFile
@@ -31,6 +32,14 @@ from app.services.storage_service import validate_mime
 from app.services.vision_service import interpret_image
 
 logger = get_logger(__name__)
+PageProgress = Callable[[int, int], Awaitable[None]]
+
+
+def _pdf_page_count(content: bytes) -> int:
+    import fitz
+
+    with fitz.open(stream=content, filetype="pdf") as document:
+        return len(document)
 
 DIGITALIZATION_STRUCTURE_TASK = "digitalizacion.estructura"
 
@@ -438,8 +447,11 @@ async def _extract_scanned_pdf(
     name: str,
     user_id: UUID | None = None,
     ai_config: dict[str, Any] | None = None,
+    on_page_done: PageProgress | None = None,
 ) -> tuple[str, list[str]]:
     client, vision_model = await _digitalization_vision_client(user_id, ai_config)
+    if on_page_done is not None:
+        client._tracking["_on_page_done"] = on_page_done
     context = AgentContext(
         evaluacion_nombre=name,
         nota_maxima=5.0,
@@ -487,10 +499,11 @@ async def extract_evaluation_text(
     filename: str,
     user_id: UUID | None = None,
     ai_config: dict[str, Any] | None = None,
+    on_page_done: PageProgress | None = None,
 ) -> tuple[str, list[str]]:
     """Extrae texto y devuelve advertencias no bloqueantes para revisión docente."""
     from app.modules.evaluaciones.reading_completeness import (
-        LITERAL_READING_PROMPT, complete_readings, render_pdf_page,
+        LITERAL_READING_PROMPT, complete_readings, fill_missing_pages, render_pdf_page,
     )
 
     async def read_again(page: bytes, page_mime: str, number: int) -> tuple[str, list[str]]:
@@ -501,15 +514,22 @@ async def extract_evaluation_text(
         text = extraer_texto_pdf(content).strip()
         if text:
             return text, []
-        text, warnings = await _extract_scanned_pdf(content, filename, user_id, ai_config)
+        text, warnings = await _extract_scanned_pdf(content, filename, user_id, ai_config, on_page_done)
 
         async def load_pdf_page(number: int) -> tuple[bytes, str] | None:
             return render_pdf_page(content, number)
+
+        async def read_lost_page(page: bytes, page_mime: str, number: int) -> tuple[str, list[str]]:
+            return await _extract_image_text(page, page_mime, f"Hoja {number}", user_id, ai_config)
+        text, warnings = await fill_missing_pages(text, warnings, total=_pdf_page_count(content),
+                                                  load_page=load_pdf_page, read_page=read_lost_page)
         return await complete_readings(text, warnings, load_page=load_pdf_page, read_page=read_again)
     if mime == DOCX_MIME:
         return extraer_texto_docx(content).strip(), []
     if mime.startswith("image/"):
         text, warnings = await _extract_image_text(content, mime, filename, user_id, ai_config)
+        if on_page_done is not None:
+            await on_page_done(1, 1)
 
         async def load_photo(number: int) -> tuple[bytes, str] | None:
             return (content, mime) if number == 1 else None

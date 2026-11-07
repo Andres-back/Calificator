@@ -32,9 +32,11 @@ Como profesor, quiero saber qué hoja no se pudo leer, para repetirla sin empeza
 **Prueba independiente**: simular que la hoja 2 agota su tiempo y comprobar el aviso y el reintento solo de esa hoja.
 
 **Aceptación**:
-1. **Dada** una hoja que agota su tiempo, **cuando** termina la digitalización, **entonces** el borrador indica qué hoja falta y ofrece "Volver a leer la hoja 2".
-2. **Dado** ese reintento, **cuando** termina, **entonces** se añaden sus preguntas sin repetir las de las otras hojas ni perder los cambios del profesor.
-3. **Dada** una digitalización en curso, **cuando** el profesor la mira, **entonces** ve el avance por hoja, por ejemplo "Leyendo hoja 2 de 3".
+1. **Dada** una hoja que no se pudo leer, por ejemplo porque agotó su tiempo, **cuando** termina la lectura del documento, **entonces** esa hoja se vuelve a leer sola, una vez, dentro del mismo trabajo, y sus preguntas quedan en su lugar.
+2. **Dado** que esa segunda lectura también falla, **cuando** se crea el borrador, **entonces** el aviso nombra la hoja, por ejemplo "No pudimos leer la hoja 2", en lugar de "Faltan páginas".
+3. **Dada** una digitalización en curso, **cuando** el profesor la mira, **entonces** ve el avance por hoja, por ejemplo "Hojas leídas: 1 de 3".
+
+Ajuste del 2026-11-07 (PR 2): la relectura es automática dentro del trabajo. Un botón para que el profesor relea una hoja desde un borrador ya guardado exigiría mezclar preguntas nuevas con sus ediciones, y queda fuera de este alcance.
 
 ### Historia 3 - Del borrador a publicar, paso a paso (Prioridad: P1)
 
@@ -74,8 +76,8 @@ Como profesor, quiero confirmar las respuestas correctas propuestas y decidir en
 - **FR-001**: Una lectura reemplazada por un marcador DEBE volver a leerse una sola vez pidiendo el texto literal.
 - **FR-002**: Si sigue incompleta, el borrador DEBE indicar la hoja y ofrecer corregir la lectura.
 - **FR-003**: Una hoja con la lectura completa NO DEBE generar llamadas adicionales.
-- **FR-004**: Una hoja que no se pudo leer DEBE identificarse en el borrador y poder volver a leerse sola.
-- **FR-005**: El avance DEBE mostrar la hoja en curso y el total.
+- **FR-004**: Una hoja que no se pudo leer DEBE volver a leerse sola, una vez, y, si sigue fallando, identificarse en el borrador.
+- **FR-005**: El avance DEBE mostrar las hojas leídas y el total.
 - **FR-006**: "Revisar" DEBE abrir el borrador digitalizado.
 - **FR-007**: El borrador DEBE mostrar los pendientes para publicar y un acceso a cada uno.
 - **FR-008**: "Publicar y empezar a calificar" DEBE usar las reglas actuales de publicación.
@@ -93,6 +95,6 @@ Como profesor, quiero confirmar las respuestas correctas propuestas y decidir en
 ## Criterios de éxito
 
 - **SC-001**: Con las 3 evaluaciones anonimizadas del experimento, ninguna lectura queda reemplazada por un marcador sin aviso.
-- **SC-002**: Una hoja perdida siempre aparece identificada y se puede volver a leer sola.
+- **SC-002**: Una hoja perdida se vuelve a leer sola y, si sigue fallando, aparece identificada.
 - **SC-003**: Desde "Revisar" hasta publicar, un profesor completa el recorrido a 360 px sin salir del borrador.
 - **SC-004**: Una pregunta libre recibe el puntaje con una respuesta pertinente y no lo recibe en blanco, en pruebas sintéticas sin llamadas reales.

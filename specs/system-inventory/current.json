@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "506a521e5f8f2d63bc5f95b35253033675d3fe18f7d196414604af114ab49256",
+  "source_digest": "3044dd71685fe8e6cc07f5164bcb977e02f000239d3be92635002d3defa7fb64",
   "surfaces": [
     {
       "actors": [
@@ -38851,7 +38851,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "GET:/jobs/{jobId}",
-      "source_line": 116,
+      "source_line": 123,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
       "states": [],
       "tests": [
@@ -48178,7 +48178,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "POST:/jobs/{jobId}",
-      "source_line": 227,
+      "source_line": 236,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
       "states": [],
       "tests": [
@@ -50885,6 +50885,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_reading_completeness.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
         },
         {
@@ -51587,7 +51593,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.digitalize_evaluation",
-      "source_line": 533,
+      "source_line": 551,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",
@@ -52375,7 +52381,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_digitalization_jobs",
-      "source_line": 596,
+      "source_line": 614,
       "source_path": "backend/app/workers/tasks_digitalization.py",
       "states": [
         "cancelled",

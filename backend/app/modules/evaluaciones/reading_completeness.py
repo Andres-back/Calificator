@@ -93,10 +93,10 @@ def join_pages(pages: list[tuple[int, str]]) -> str:
 
 
 def _with_header(original: str, reread: str, number: int) -> str:
-    if not _PAGE_HEADER.match(original.lstrip()) or _PAGE_HEADER.search(reread):
-        return reread.strip() + ("\n" if original.endswith("\n") else "")
-    header = f"=== PÁGINA {number} ==="
-    return header + "\n" + reread.strip() + ("\n" if original.endswith("\n") else "")
+    """A page read on its own comes back as page 1: keep the page's real number."""
+    content = _PAGE_HEADER.sub("", reread).strip()
+    header = f"=== PÁGINA {number} ===\n" if _PAGE_HEADER.match(original.lstrip()) else ""
+    return header + content + ("\n" if original.endswith("\n") else "")
 
 
 async def complete_readings(text: str, warnings: list[str], *, load_page: PageLoader,
@@ -125,6 +125,50 @@ async def complete_readings(text: str, warnings: list[str], *, load_page: PageLo
             result_warnings.append(
                 f"La lectura de la hoja {number} quedó incompleta. Revísala o pégala en el borrador antes de publicar.")
     return join_pages(completed), result_warnings
+
+
+_GENERIC_PAGE_WARNINGS = {
+    "La lectura de esta página tardó demasiado; puede reintentarse.",
+    "Página no extraída automáticamente.",
+    "Faltan páginas; revisión docente obligatoria.",
+}
+
+
+def missing_pages(text: str, total: int) -> list[int]:
+    """Pages of the file whose header never came back from the reader."""
+    present = {int(match.group(1)) for match in _PAGE_HEADER.finditer(text)}
+    return [number for number in range(1, total + 1) if number not in present] if present else []
+
+
+async def fill_missing_pages(text: str, warnings: list[str], *, total: int, load_page: PageLoader,
+                             read_page: PageReader) -> tuple[str, list[str]]:
+    """Read each lost page on its own, once, and name the pages that still fail."""
+    missing = missing_pages(text, total)
+    if not missing:
+        return text, warnings
+    result_warnings = [warning for warning in warnings if warning not in _GENERIC_PAGE_WARNINGS]
+    pages = dict(split_pages(text))
+    for number in missing:
+        reread, extra = "", []
+        try:
+            page = await load_page(number)
+            if page is not None:
+                reread, extra = await read_page(page[0], page[1], number)
+        except (HTTPException, ValueError, OSError) as exc:
+            logger.warning("digitalization.missing_page_reread_failed", extra={"page": number, "error": type(exc).__name__})
+            reread = ""
+        if reread.strip():
+            pages[number] = _with_header("=== PÁGINA 0 ===\n", reread, number)
+            result_warnings += [*extra, f"Se volvió a leer la hoja {number}, que no se había podido leer."]
+        else:
+            result_warnings.append(f"No pudimos leer la hoja {number}. Revisa que la foto sea nítida y vuelve a "
+                                   "digitalizar esa hoja para añadir sus preguntas.")
+    joined = ""
+    for _number, body in sorted(pages.items()):
+        if joined and not joined.endswith("\n"):
+            joined += "\n"
+        joined += body
+    return (joined if text.endswith("\n") else joined.rstrip("\n")), result_warnings
 
 
 def render_pdf_page(content: bytes, number: int, *, max_side: int = 2200) -> tuple[bytes, str] | None:

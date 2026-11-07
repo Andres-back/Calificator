@@ -156,6 +156,23 @@ describe('DigitalizationJobMonitor', () => {
   });
 
 
+  it('156 shows how many sheets were read while reading', async () => {
+    queueJob();
+    mocks.get.mockResolvedValue({ data: { id: 'job-1', estado: 'running', progreso: 25, stage: 'reading',
+      resultado_json: { lectura_hojas: { leidas: 1, total: 3 } }, error: null } });
+    renderMonitor();
+    expect(await screen.findByText('Hojas leídas: 1 de 3')).toBeInTheDocument();
+    await waitFor(() => expect(readPendingDigitalizations()[0]).toMatchObject({ pagesRead: 1, pagesTotal: 3 }));
+  });
+
+  it('156 keeps the stage label when the page count is not known', async () => {
+    queueJob();
+    mocks.get.mockResolvedValue({ data: { id: 'job-1', estado: 'running', progreso: 15, stage: 'reading',
+      resultado_json: {}, error: null } });
+    renderMonitor();
+    expect(await screen.findByText('Leyendo el documento')).toBeInTheDocument();
+  });
+
   it('explains that a slow provider request remains active instead of being cancelled', async () => {
     queueJob();
     const [stored] = readPendingDigitalizations();
