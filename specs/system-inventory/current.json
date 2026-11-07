@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "3044dd71685fe8e6cc07f5164bcb977e02f000239d3be92635002d3defa7fb64",
+  "source_digest": "f7b158e14fec5d19b46c0e8ba02dfa38ad24f6cbd49270bd12f53228d5892eff",
   "surfaces": [
     {
       "actors": [
@@ -1021,6 +1021,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -5128,6 +5134,12 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
         },
         {
@@ -5511,6 +5523,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/contenido-visual/capacidades",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/contenido-visual/capacidades",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
         },
         {
@@ -5823,6 +5841,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -8036,6 +8060,12 @@
           "level": "e2e",
           "reference": "GET:/jobs/{job_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{job_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -8219,6 +8249,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -8453,6 +8489,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -8460,6 +8502,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -8606,6 +8654,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -8840,6 +8894,12 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -8847,6 +8907,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -12138,6 +12204,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -12937,6 +13009,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -13171,6 +13249,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -13178,6 +13262,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -16900,6 +16990,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -20682,6 +20778,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -20916,6 +21018,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -20923,6 +21031,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -23695,6 +23809,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -24686,6 +24806,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -25717,6 +25843,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/ResolverEvaluacionPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
         },
         {
           "level": "unit",
@@ -28403,6 +28535,12 @@
           "level": "unit",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/resourcePresentationModel.test.ts"
         },
         {
@@ -28872,6 +29010,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/EvaluationCopyDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
         },
         {
           "level": "unit",
@@ -31884,6 +32028,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -36125,6 +36275,12 @@
           "level": "unit",
           "reference": "GET:/dba",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/dba",
+          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
         },
         {
@@ -36907,6 +37063,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -37650,6 +37812,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -38575,6 +38743,12 @@
           "level": "e2e",
           "reference": "GET:/jobs/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -38666,6 +38840,12 @@
           "reference": "GET:/jobs/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -38783,6 +38963,12 @@
           "level": "e2e",
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -38872,6 +39058,12 @@
           "reference": "GET:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -39018,6 +39210,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -39257,6 +39455,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -39264,6 +39468,12 @@
           "reference": "GET:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -39683,6 +39893,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -39917,6 +40133,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -39924,6 +40146,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -41943,6 +42171,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -42598,6 +42832,12 @@
           "level": "e2e",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -42832,6 +43072,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -42839,6 +43085,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -47349,6 +47601,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -48178,7 +48436,7 @@
       "kind": "frontend_call",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "POST:/jobs/{jobId}",
-      "source_line": 236,
+      "source_line": 238,
       "source_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx",
       "states": [],
       "tests": [
@@ -48199,6 +48457,12 @@
           "reference": "POST:/jobs/{jobId}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ollama_cloud_provider.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/jobs/{jobId}",
+          "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
         },
         {
           "level": "e2e",
@@ -48486,6 +48750,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -48720,6 +48990,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -48727,6 +49003,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -55700,6 +55982,12 @@
           "level": "e2e",
           "reference": "entregas",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "entregas",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
@@ -55761,6 +56049,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -56765,6 +57059,12 @@
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -57048,6 +57348,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationPrintPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",
@@ -58879,6 +59185,12 @@
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -59113,6 +59425,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/EvaluationCriteriaEditor.test.tsx"
         },
         {
@@ -59120,6 +59438,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/GenerationWizard.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/PublishChecklist.test.tsx"
         },
         {
           "level": "unit",

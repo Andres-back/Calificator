@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { MateriaEvaluaciones } from './MateriaEvaluaciones';
 import { useAuth } from '@/stores/auth';
 import type { Evaluacion, MateriaConEstudiantes } from '@/types/api';
@@ -37,13 +37,19 @@ vi.mock('@/modules/evaluaciones/components/GenerationWizard', () => ({
   GenerationWizard: ({
     open,
     initialMateriaId,
+    initialEvaluation,
+    onPublished,
   }: {
     open: boolean;
     initialMateriaId: string;
+    initialEvaluation?: Evaluacion | null;
+    onPublished?: (evaluation: Evaluacion) => void;
   }) =>
     open ? (
       <div role="dialog" aria-label="Asistente de evaluación">
         Materia fijada: {initialMateriaId}
+        {initialEvaluation && <p>Editando: {initialEvaluation.nombre}</p>}
+        {initialEvaluation && onPublished && <button type="button" onClick={() => onPublished({ ...initialEvaluation, estado: 'publicada' })}>Simular publicación</button>}
       </div>
     ) : null,
 }));
@@ -103,7 +109,12 @@ const evaluation: Evaluacion = {
   updated_at: '2026-01-01T00:00:00Z',
 };
 
-function renderPage() {
+function LocationProbe() {
+  const location = useLocation();
+  return <p data-testid="location">{location.pathname + location.search}</p>;
+}
+
+function renderPage(initialEntry = '/app/materias/materia-1/evaluaciones') {
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -113,8 +124,9 @@ function renderPage() {
 
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <MateriaEvaluaciones />
+        <LocationProbe />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -417,5 +429,34 @@ describe('146 estado legible, carga por tarjeta y confirmación', () => {
     expect(dialog).toHaveTextContent('Evaluación de ciencias');
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
     expect(mocks.pause).not.toHaveBeenCalled();
+  });
+
+  it('156 "Revisar" del monitor abre el borrador digitalizado y limpia el enlace', async () => {
+    const digitalized = { ...evaluation, id: 'digital-1', nombre: 'Taller digitalizado', tipo_origen: 'externa_digitalizada', modalidad: 'fisica' as const };
+    mocks.list.mockResolvedValue([evaluation, digitalized]);
+    renderPage('/app/materias/materia-1/evaluaciones?revisar=digital-1');
+    const wizard = await screen.findByRole('dialog', { name: 'Asistente de evaluación' });
+    expect(wizard).toHaveTextContent('Editando: Taller digitalizado');
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(/^\/app\/materias\/materia-1\/evaluaciones$/));
+  });
+
+  it('156 un borrador que no está en la materia deja la lista como antes', async () => {
+    mocks.list.mockResolvedValue([evaluation]);
+    renderPage('/app/materias/materia-1/evaluaciones?revisar=otra-materia');
+    expect(await screen.findByRole('group', { name: 'Acciones principales de Evaluación de ciencias' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(/^\/app\/materias\/materia-1\/evaluaciones$/));
+    expect(screen.queryByRole('dialog', { name: 'Asistente de evaluación' })).not.toBeInTheDocument();
+  });
+
+  it('156 al publicar desde el borrador lleva a calificar por foto', async () => {
+    const user = userEvent.setup();
+    const digitalized = { ...evaluation, id: 'digital-1', nombre: 'Taller digitalizado', tipo_origen: 'externa_digitalizada', modalidad: 'fisica' as const };
+    mocks.list.mockResolvedValue([digitalized]);
+    renderPage('/app/materias/materia-1/evaluaciones?revisar=digital-1');
+    const wizard = await screen.findByRole('dialog', { name: 'Asistente de evaluación' });
+    await user.click(within(wizard).getByRole('button', { name: 'Simular publicación' }));
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('evaluacion=digital-1'));
+    expect(screen.getByTestId('location')).toHaveTextContent('modo=carga');
+    expect(screen.queryByRole('dialog', { name: 'Asistente de evaluación' })).not.toBeInTheDocument();
   });
 });

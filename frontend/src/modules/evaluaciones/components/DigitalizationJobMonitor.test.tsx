@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import {
   addPendingDigitalization,
   readPendingDigitalizations,
@@ -37,6 +37,11 @@ function queueJob() {
     materiaId: 'materia-1',
     nombre: 'Taller de decimales',
   });
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return <p data-testid="location">{location.pathname + location.search}</p>;
 }
 
 function renderMonitor() {
@@ -163,6 +168,38 @@ describe('DigitalizationJobMonitor', () => {
     renderMonitor();
     expect(await screen.findByText('Hojas leídas: 1 de 3')).toBeInTheDocument();
     await waitFor(() => expect(readPendingDigitalizations()[0]).toMatchObject({ pagesRead: 1, pagesTotal: 3 }));
+  });
+
+  it('156 "Revisar borrador" opens that draft, not only the subject list', async () => {
+    queueJob();
+    mocks.get.mockResolvedValue({ data: { id: 'job-1', estado: 'success', progreso: 100,
+      resultado_json: { evaluacion_id: 'evaluation-7', preguntas_count: 3 }, error: null } });
+    render(
+      <MemoryRouter initialEntries={['/app/inicio']}>
+        <Routes>
+          <Route path="*" element={<><DigitalizationJobMonitor /><LocationProbe /></>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar borrador' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/app/materias/materia-1/evaluaciones?revisar=evaluation-7');
+    expect(readPendingDigitalizations()).toHaveLength(0);
+  });
+
+  it('156 without a saved draft id "Revisar" keeps opening the subject list', async () => {
+    queueJob();
+    const [stored] = readPendingDigitalizations();
+    window.localStorage.setItem('xcalificator.pending-digitalizations.v1', JSON.stringify([{ ...stored, status: 'success', progress: 100 }]));
+    mocks.get.mockResolvedValue({ data: null });
+    render(
+      <MemoryRouter initialEntries={['/app/inicio']}>
+        <Routes>
+          <Route path="*" element={<><DigitalizationJobMonitor /><LocationProbe /></>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar borrador' }));
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/app\/materias\/materia-1\/evaluaciones$/);
   });
 
   it('156 keeps the stage label when the page count is not known', async () => {
