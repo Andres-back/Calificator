@@ -65,6 +65,36 @@ Las pruebas del aviso por hoja, del worker y del monitor se escribieron junto co
 - La pérdida real de la hoja 2 del experimento inicial no se repitió: la recuperación se comprobó forzando la pérdida.
 - Si la relectura también falla, el borrador nombra la hoja, pero el profesor no puede releerla desde ese borrador: debe digitalizar de nuevo esa hoja.
 
+## PR 3: del borrador a publicar
+
+Solo frontend: no cambia ninguna regla del servidor ni hace llamadas reales a la IA. Las pruebas usan datos sintéticos.
+
+### Pruebas primero (RED)
+
+| Prueba | Resultado antes del cambio |
+| --- | --- |
+| `vitest` de `DigitalizationJobMonitor`, `MateriaEvaluaciones` y `PublishChecklist` | ❌ 8 fallas: "Revisar" iba a la lista, la página no abría el borrador ni limpiaba el enlace, y no existía la lista "Para publicar" |
+
+El E2E se escribió junto con el código: no se registró una ejecución en rojo.
+
+### Después de la corrección (GREEN)
+
+| Comando | Resultado |
+| --- | --- |
+| `vitest src/modules/evaluaciones src/modules/materias` | ✅ 54 archivos, 413 pruebas |
+| `tsc --noEmit` y `eslint` de los archivos cambiados | ✅ sin errores |
+| `playwright` en Chromium: `digitalized-draft-publish.spec.ts` y `evaluation-score-editing.spec.ts` | ✅ 3 |
+| `build_system_inventory.py --write`, `--check` y `pytest tests/spec_governance` | ✅ inventario vigente (687 superficies) y 67 pruebas |
+
+El E2E va a 360 px desde el aviso "Revisar borrador" hasta el borrador, completa la respuesta de la pregunta 2 desde la lista, publica y llega a calificar por foto. Comprueba que se guarda antes de publicar y que no hay desplazamiento horizontal.
+
+### Límites
+
+- La lista se calcula en el navegador con las mismas comprobaciones del editor. Si el servidor rechaza la publicación por otra regla, por ejemplo la falta de criterios, se muestra su motivo en la lista.
+- El aviso de una hoja no bloquea la publicación: el profesor decide si la hoja está bien.
+- "Revisar" abre el borrador solo si está en la lista de esa materia y el profesor puede editarlo. Si no, se ve la lista como antes.
+- Si el guardado funciona y la publicación falla, los cambios quedan guardados y el borrador sigue abierto.
+
 ## PR 4: respuestas correctas y respuesta libre
 
 Sin llamadas reales a modelos: el calificador y el verificador se probaron con un modelo simulado.

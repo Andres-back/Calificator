@@ -36,10 +36,21 @@
 
 - [X] T012 Validar con el modelo real la evaluación de 2 hojas y la relectura forzada de la hoja 2; ejecutar pruebas, inventario y gobernanza, y registrar en `quickstart.md`. (FR-004, FR-005, FR-013)
 
-## PR 3 y PR 4: Historias 3 y 4
+## PR 3: Historia 3, del borrador a publicar, paso a paso
 
-Sus tareas se añaden en cada PR:
-- **PR 3:** "Revisar" abre el borrador, con la lista de pendientes y "Publicar y empezar a calificar". (FR-006, FR-007, FR-008)
+### Pruebas primero (RED)
+
+- [X] T013 Pruebas de `DigitalizationJobMonitor`: "Revisar borrador" lleva a `?revisar=<id>` del borrador y, sin id guardado, a la lista como antes; pruebas de `MateriaEvaluaciones`: abre ese borrador una vez, limpia el enlace, no abre nada si no está en la materia y, al publicar, lleva a calificar por foto. RED: 4 fallas. (FR-006, FR-008)
+- [X] T014 Pruebas de la lista "Para publicar" en `PublishChecklist.test.tsx`: aviso de la hoja, pregunta sin respuesta con su botón, suma de puntos, guardar antes de publicar, publicar sin guardar si no hay cambios, motivo del servidor si no deja publicar y sin lista fuera de un borrador digitalizado. RED: 4 fallas. (FR-007, FR-008)
+
+### Corrección (GREEN)
+
+- [X] T015 "Revisar" envía el id del borrador y la página de la materia abre su editor solo si la evaluación está en su lista y el docente puede editarla. (FR-006)
+- [X] T016 `PublishChecklist` y `publishReadiness.ts` en el paso de revisión: avisos que nombran una hoja, preguntas por completar con un botón a cada una, suma de puntos y "Publicar y empezar a calificar", que guarda primero lo pendiente y usa el endpoint actual de publicar. (FR-007, FR-008)
+
+### Validación
+
+- [X] T017 E2E a 360 px en Chromium, `digitalized-draft-publish.spec.ts`, desde el aviso de digitalización hasta publicar; ejecutar Vitest, `tsc`, `eslint`, inventario y gobernanza, y registrar en `quickstart.md`. (FR-006, FR-007, FR-008, FR-013)
 
 ## PR 4: Historia 4, respuestas correctas y respuesta libre
 
@@ -61,4 +72,4 @@ Sus tareas se añaden en cada PR:
 
 ## Dependencias
 
-T001 y T002 → T003 → T004 → T005. PR 2: T006, T007 y T008 → T009 y T010 → T011 → T012. PR 4: T030, T031 y T032 → T033 → T034 y T035 → T036.
+T001 y T002 → T003 → T004 → T005. PR 2: T006, T007 y T008 → T009 y T010 → T011 → T012. PR 3: T013 y T014 → T015 y T016 → T017. PR 4: T030, T031 y T032 → T033 → T034 y T035 → T036.

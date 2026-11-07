@@ -17,7 +17,7 @@
 | frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/calificaciones/gradingJobs.ts:183` |
 | frontend_call | `GET:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:123` |
 | frontend_call | `POST:/jobs/{id}/cancelar` | ambiguous | covered | `frontend/src/modules/evaluaciones/printApi.ts:27` |
-| frontend_call | `POST:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:236` |
+| frontend_call | `POST:/jobs/{jobId}` | ambiguous | covered | `frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx:238` |
 | integration | `celery` | system | covered | `backend/app/workers/tasks_ai_config.py:1` |
 | integration | `groq` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | integration | `openai` | system | covered | `backend/app/services/ai_capability_registry.py:1` |

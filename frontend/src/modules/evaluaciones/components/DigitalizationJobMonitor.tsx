@@ -227,7 +227,9 @@ export function DigitalizationJobMonitor() {
   const dismiss = () => removePendingDigitalization(visibleJob.jobId);
   const review = () => {
     dismiss();
-    navigate('/app/materias/' + visibleJob.materiaId + '/evaluaciones');
+    // Spec 156: the subject page opens this draft once and then clears the parameter.
+    const draft = visibleJob.evaluationId ? '?revisar=' + encodeURIComponent(visibleJob.evaluationId) : '';
+    navigate('/app/materias/' + visibleJob.materiaId + '/evaluaciones' + draft);
   };
   const retry = async () => {
     if (retryingJob) return;

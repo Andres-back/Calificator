@@ -3,7 +3,7 @@ import { EvaluationCopyDialog } from '@/modules/evaluaciones/EvaluationCopyDialo
 import { EvaluationScoreDialog } from '@/modules/evaluaciones/components/EvaluationScoreDialog';
 import { EvaluationDocumentRecovery } from '@/modules/evaluaciones/EvaluationDocumentRecovery';
 import { getVisualCapabilities } from '@/modules/evaluaciones/visualApi';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -122,6 +122,7 @@ export function MateriaEvaluaciones() {
   const [confirmAction, setConfirmAction] = useState<{ kind: 'publish' | 'pause'; evaluation: Evaluacion } | null>(null);
   const [form, setForm] = useState<EvaluationForm>(emptyForm);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!canCreateEvaluation || searchParams.get('digitalizar') !== '1') return;
@@ -137,6 +138,22 @@ export function MateriaEvaluaciones() {
     enabled: Boolean(materia.id),
     refetchOnWindowFocus: true,
   });
+
+  // Spec 156: "Revisar" in the digitalization monitor opens that draft once.
+  // Only an evaluation already listed for this subject opens; otherwise the list stays as before.
+  const reviewDraftId = searchParams.get('revisar');
+  useEffect(() => {
+    if (!reviewDraftId || evaluationsQuery.isFetching) return;
+    if (!evaluationsQuery.data && !evaluationsQuery.isError) return;
+    const draft = evaluationsQuery.data?.find(item => item.id === reviewDraftId);
+    if (draft && canUpdateEvaluation && user) {
+      setContentEditingEval(draft);
+      setWizardOpen(true);
+    }
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('revisar');
+    setSearchParams(nextParams, { replace: true });
+  }, [canUpdateEvaluation, evaluationsQuery.data, evaluationsQuery.isError, evaluationsQuery.isFetching, reviewDraftId, searchParams, setSearchParams, user]);
 
   const refresh = () =>
     queryClient.invalidateQueries({
@@ -445,6 +462,21 @@ export function MateriaEvaluaciones() {
           initialMateriaId={materia.id}
           initialEvaluation={contentEditingEval}
           onRepartition={canUpdateEvaluation && canViewEvaluation ? setScoringEval : undefined}
+          onPublished={canPublishEvaluation ? (published) => {
+            refresh();
+            setWizardOpen(false);
+            setContentEditingEval(null);
+            // Spec 156: "Publicar y empezar a calificar" ends in grading, when the teacher can grade.
+            const reviewRoute = buildReviewHref({ evaluationId: published.id, materiaId: materia.id, permissions: user?.permissions });
+            const modality = published.modalidad ?? 'fisica';
+            if (canGradeEvaluation && (modality === 'fisica' || modality === 'mixta')) {
+              toast.success('Evaluación publicada. Ya puedes calificar por foto.');
+              navigate(`${reviewRoute}&modo=carga`);
+            } else if (canGradeEvaluation || canReviewGrades) {
+              toast.success('Evaluación publicada. Aquí verás las entregas para calificar.');
+              navigate(reviewRoute);
+            } else toast.success('Evaluación publicada');
+          } : undefined}
           onCompleted={() => {
             refresh();
             toast.success(contentEditingEval ? 'Preguntas actualizadas' : 'Evaluación creada como borrador');
