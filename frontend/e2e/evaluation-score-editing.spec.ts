@@ -47,8 +47,10 @@ test('155 pregunta nueva: escribir 0,5, ajustar y guardar a 360px', async ({ pag
   expect(saved).toHaveLength(0);
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
   await dialog.getByLabel('Respuesta esperada', { exact: false }).fill('Respuesta sintética');
+  // At 360px the writing mode starts one frame after focus and hides the footer actions.
   const finishWriting = dialog.getByRole('button', { name: 'Listo', exact: true });
-  if (await finishWriting.isVisible()) await finishWriting.click();
+  await expect(finishWriting).toBeVisible();
+  await finishWriting.click();
   await dialog.getByRole('button', { name: 'Guardar cambios' }).click();
   await expect.poll(() => saved.length).toBe(1);
   const scores = (saved[0].preguntas as { puntaje: number | string }[]).map(item => Number(item.puntaje));
