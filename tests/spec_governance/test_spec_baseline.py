@@ -148,6 +148,7 @@ ALL_SPECS = {
     "154-ci-playwright-apt",
     "153-reparto-sin-bloqueo",
     "155-puntaje-editable",
+    "156-digitalizacion-clara",
 }
 OWNED_SPECS = {
     name

@@ -489,15 +489,31 @@ async def extract_evaluation_text(
     ai_config: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
     """Extrae texto y devuelve advertencias no bloqueantes para revisión docente."""
+    from app.modules.evaluaciones.reading_completeness import (
+        LITERAL_READING_PROMPT, complete_readings, render_pdf_page,
+    )
+
+    async def read_again(page: bytes, page_mime: str, number: int) -> tuple[str, list[str]]:
+        return await _extract_image_text(page, page_mime, f"Hoja {number}", user_id, ai_config,
+                                         prompt_override=DIGITALIZATION_VISION_PROMPT + LITERAL_READING_PROMPT)
+
     if mime == "application/pdf":
         text = extraer_texto_pdf(content).strip()
         if text:
             return text, []
-        return await _extract_scanned_pdf(content, filename, user_id, ai_config)
+        text, warnings = await _extract_scanned_pdf(content, filename, user_id, ai_config)
+
+        async def load_pdf_page(number: int) -> tuple[bytes, str] | None:
+            return render_pdf_page(content, number)
+        return await complete_readings(text, warnings, load_page=load_pdf_page, read_page=read_again)
     if mime == DOCX_MIME:
         return extraer_texto_docx(content).strip(), []
     if mime.startswith("image/"):
-        return await _extract_image_text(content, mime, filename, user_id, ai_config)
+        text, warnings = await _extract_image_text(content, mime, filename, user_id, ai_config)
+
+        async def load_photo(number: int) -> tuple[bytes, str] | None:
+            return (content, mime) if number == 1 else None
+        return await complete_readings(text, warnings, load_page=load_photo, read_page=read_again)
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=f"Tipo de archivo no soportado: {mime}",

@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b0693e268ee28f48465727d9e077726bcbeb6471063ab43714b54bd66a865038",
+  "source_digest": "506a521e5f8f2d63bc5f95b35253033675d3fe18f7d196414604af114ab49256",
   "surfaces": [
     {
       "actors": [
@@ -23522,6 +23522,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_rate_limit.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_reading_completeness.py"
         },
         {
           "level": "unit",
@@ -56664,6 +56670,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_photo_grading_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_reading_completeness.py"
         },
         {
           "level": "unit",
