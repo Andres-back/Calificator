@@ -772,3 +772,63 @@ describe('GenerationWizard', () => {
     });
   }, 10_000);
 });
+
+describe('156 respuesta libre en preguntas abiertas', () => {
+  const pending: Evaluacion = {
+    ...evaluation,
+    tipo_origen: 'externa_digitalizada',
+    respuestas_esperadas: [
+      { numero: 1, respuesta: 'B', origen: 'resolucion_independiente', explicacion: 'B es la opción correcta.', confianza: 0.9 },
+      { numero: 2, respuesta: '', origen: 'pendiente' },
+      { numero: 3, respuesta: 'Respuesta tres' },
+    ],
+  };
+
+  async function openQuestionTwo() {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), pending);
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Ir a la pregunta' }), '1');
+    return user;
+  }
+
+  it('pregunta si tiene respuesta esperada o es libre y lleva al campo', async () => {
+    const user = await openQuestionTwo();
+    expect(screen.getByText('¿Tiene una respuesta esperada o es de respuesta libre?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Escribir la respuesta esperada' }));
+    expect(screen.getByLabelText(/Respuesta esperada/)).toHaveFocus();
+  });
+
+  it('marca la respuesta libre, la muestra sin editar y la guarda con su marca', async () => {
+    const user = await openQuestionTwo();
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Respuesta libre' }));
+    expect(screen.queryByText('¿Tiene una respuesta esperada o es de respuesta libre?')).not.toBeInTheDocument();
+    expect(screen.getByText('Cualquier respuesta válida')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Respuesta esperada/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+    expect(mocks.update.mock.calls[0][1].respuestas_esperadas[1]).toMatchObject({
+      numero: 2, respuesta: 'Cualquier respuesta válida', respuesta_libre: true, origen: 'confirmacion_docente',
+    });
+    expect(mocks.update.mock.calls[0][1].respuestas_esperadas[2]).not.toHaveProperty('respuesta_libre');
+  });
+
+  it('se puede quitar la respuesta libre y vuelve a pedir una decisión', async () => {
+    const user = await openQuestionTwo();
+    await user.click(screen.getByRole('button', { name: 'Respuesta libre' }));
+    await user.click(screen.getByRole('button', { name: 'Quitar respuesta libre' }));
+    expect(screen.getByText('¿Tiene una respuesta esperada o es de respuesta libre?')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Respuesta esperada/)).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+  });
+
+  it('una respuesta objetiva propuesta se confirma con un toque', async () => {
+    const user = userEvent.setup();
+    renderWizard(vi.fn(), pending);
+    expect(await screen.findByText('B es la opción correcta.')).toBeInTheDocument();
+    expect(screen.queryByText('¿Tiene una respuesta esperada o es de respuesta libre?')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Confirmar esta respuesta' }));
+    expect(screen.queryByRole('button', { name: 'Confirmar esta respuesta' })).not.toBeInTheDocument();
+    expect(screen.getByText('Respuesta confirmada o editada por el docente.')).toBeInTheDocument();
+  });
+});

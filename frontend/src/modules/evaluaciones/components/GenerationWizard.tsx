@@ -40,6 +40,7 @@ import {
   renumberQuestions, selectedQuestionTypes, totalQuestionCount, validateQuestion,
   updateWizardTopic, updateQuestionVisual, reconcileVisualQuestions, validatePreparation, validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type QuestionType, type WizardState,
   loadVisualEditDraft, discardVisualEditDraft,
+  FREE_ANSWER_TEXT, freeAnswerPatch, isFreeAnswer, needsAnswerDecision,
 } from './generationWizardModel';
 
 function ScoreInput({ value, readOnly, label, onChange }: { value: number; readOnly: boolean; label: string; onChange: (value: number) => void }) {
@@ -77,6 +78,7 @@ function QuestionCard({
   score: ScoreControl;
 }) {
   const [adjustError, setAdjustError] = useState<string | null>(null);
+  const answerField = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { setAdjustError(null); }, [score.total, question.puntaje]);
   const confirmAnswer = (respuestaEsperada: string): Partial<EditableQuestion> => ({
     respuestaEsperada,
@@ -126,6 +128,7 @@ function QuestionCard({
                         ? (question.opciones.length >= 3 ? question.opciones : ['', '', '', ''])
                         : [],
                     respuestaEsperada: '',
+                    respuestaLibre: false,
                   });
                 }}
                 className="focus-ring min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-fg"
@@ -213,13 +216,32 @@ function QuestionCard({
             </div>
           )}
 
-          {(question.tipo === 'abierta' || question.tipo === 'completar') && (
-            <Field label="Respuesta esperada" required>
-              <Textarea value={question.respuestaEsperada} onChange={(event) => onChange(confirmAnswer(event.target.value))} className="min-h-20 text-base" />
-            </Field>
+          {isFreeAnswer(question) ? (
+            <div role="note" className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+              <p className="font-bold">Respuesta libre</p>
+              <p className="text-base">{FREE_ANSWER_TEXT}</p>
+              <p>Recibe el puntaje completo si responde a la pregunta. Si queda en blanco, no tiene relación o no se puede leer, se revisa como siempre.</p>
+              <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => onChange(freeAnswerPatch(false))}>Quitar respuesta libre</Button>
+            </div>
+          ) : (question.tipo === 'abierta' || question.tipo === 'completar') && (
+            <>
+              {needsAnswerDecision(question) && (
+                <div role="group" aria-label={`Respuesta de la pregunta ${index + 1}`} className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm leading-6 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                  <p className="font-bold">¿Tiene una respuesta esperada o es de respuesta libre?</p>
+                  <p>Elige una antes de publicar. No usamos como clave lo que escribió el estudiante.</p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button type="button" variant="outline" className="min-h-11" onClick={() => answerField.current?.focus()}>Escribir la respuesta esperada</Button>
+                    <Button type="button" variant="outline" className="min-h-11" onClick={() => onChange(freeAnswerPatch(true))}>Respuesta libre</Button>
+                  </div>
+                </div>
+              )}
+              <Field label="Respuesta esperada" required>
+                <Textarea ref={answerField} value={question.respuestaEsperada} onChange={(event) => onChange(confirmAnswer(event.target.value))} className="min-h-20 text-base" />
+              </Field>
+            </>
           )}
 
-          {!question.respuestaEsperada.trim() ? (
+          {needsAnswerDecision(question) ? null : !question.respuestaEsperada.trim() ? (
             <div role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm leading-6 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
               <p className="font-bold">Respuesta correcta por confirmar</p>
               <p>No usamos como clave lo que escribió o marcó el estudiante. Completa esta respuesta antes de publicar.</p>
@@ -228,6 +250,9 @@ function QuestionCard({
             <div role="note" className="writing-secondary rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
               <p className="font-bold">Por qué se propone esta respuesta</p>
               <p>{question.answerExplanation}</p>
+              {(question.tipo === 'opcion_multiple' || question.tipo === 'verdadero_falso') && question.answerOrigin !== 'confirmacion_docente' && (
+                <Button type="button" variant="outline" className="mt-2 min-h-11 w-full sm:w-auto" onClick={() => onChange(confirmAnswer(question.respuestaEsperada))}>Confirmar esta respuesta</Button>
+              )}
             </div>
           ) : null}
 

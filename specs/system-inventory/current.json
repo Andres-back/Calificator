@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "f7b158e14fec5d19b46c0e8ba02dfa38ad24f6cbd49270bd12f53228d5892eff",
+  "source_digest": "38d6180133726bb419631530c4176ed3fefb45523800187a725dab95369a9732",
   "surfaces": [
     {
       "actors": [
@@ -1045,6 +1045,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -5535,6 +5541,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/contenido-visual/capacidades",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/contenido-visual/capacidades",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
@@ -5865,6 +5877,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -8273,6 +8291,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -8673,6 +8697,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -12228,6 +12258,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -13028,6 +13064,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -17019,6 +17061,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -20802,6 +20850,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -23833,6 +23887,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -25501,6 +25561,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -28349,6 +28415,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -28824,6 +28896,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -32052,6 +32130,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -37087,6 +37171,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -37836,6 +37926,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -39239,6 +39335,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -39912,6 +40014,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -42195,6 +42303,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -42851,6 +42965,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -47625,6 +47745,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-preview.spec.ts"
         },
         {
@@ -48769,6 +48895,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -55110,6 +55242,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_free_answer.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_grade_direct_adjustment.py"
         },
         {
@@ -55983,6 +56121,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "frontend/e2e/digitalized-draft-publish.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -56921,6 +57065,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_free_answer.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_material_classroom_assignment.py"
         },
         {
@@ -57078,6 +57228,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",
@@ -59204,6 +59360,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-document-structure.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-free-answer.spec.ts"
         },
         {
           "level": "e2e",

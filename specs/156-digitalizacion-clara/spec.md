@@ -64,6 +64,8 @@ Como profesor, quiero confirmar las respuestas correctas propuestas y decidir en
 4. **Dada** una entrega con respuesta libre, **cuando** se califica, **entonces** recibe el puntaje completo si responde a la pregunta de forma pertinente. Decisión del 2026-11-07: puntaje completo, no parcial. Si está en blanco, no tiene relación o es ilegible, sigue las reglas actuales de revisión.
 5. **Dada** una pregunta no marcada como libre, **cuando** se publica, **entonces** sigue exigiendo una respuesta esperada concreta. La respuesta libre nunca se aplica sola.
 
+Ajuste del 2026-11-07 (PR 4): la respuesta libre solo existe en preguntas abiertas. En "completar" se espera una palabra o un dato concreto, así que la marca se ignora allí. Además, una respuesta objetiva propuesta se puede confirmar con el botón "Confirmar esta respuesta" o cambiar en la lista de opciones.
+
 ### Casos límite
 
 - Un texto corto que de verdad es solo un título no debe tratarse como lectura incompleta: el aviso aparece solo con un marcador o cuando una pregunta menciona un texto ausente.

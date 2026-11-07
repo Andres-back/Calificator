@@ -94,3 +94,30 @@ El E2E va a 360 px desde el aviso "Revisar borrador" hasta el borrador, completa
 - El aviso de una hoja no bloquea la publicación: el profesor decide si la hoja está bien.
 - "Revisar" abre el borrador solo si está en la lista de esa materia y el profesor puede editarlo. Si no, se ve la lista como antes.
 - Si el guardado funciona y la publicación falla, los cambios quedan guardados y el borrador sigue abierto.
+
+## PR 4: respuestas correctas y respuesta libre
+
+Sin llamadas reales a modelos: el calificador y el verificador se probaron con un modelo simulado.
+
+### Pruebas primero (RED)
+
+| Prueba | Resultado antes del cambio |
+| --- | --- |
+| `pytest tests/unit/test_free_answer.py` | ❌ error de colección: `FREE_ANSWER_TEXT` no existía; con la clave ya corregida, 7 fallas (regla del calificador, verificador, comparación literal, digitalización y vista del estudiante) |
+| `vitest` de `generationWizardModel.test.ts` y `GenerationWizard.test.tsx` | ❌ 8 fallas |
+
+### Después de la corrección (GREEN)
+
+| Comando | Resultado |
+| --- | --- |
+| `pytest test_free_answer` y suites de clave, publicación, contexto de calificación, validación objetiva y mapa | ✅ 81 |
+| `pytest tests/unit` completo | 2091 aprobadas y 13 fallidas; son las mismas 13 de Windows del PR 1 |
+| `vitest src/modules/evaluaciones`, `tsc` y `eslint` de los archivos cambiados | ✅ 249, sin errores |
+| `playwright` de respuesta libre y de puntaje a 360 px, Chromium | ✅ 3 |
+| `build_system_inventory.py --write`, `--check` y `pytest tests/spec_governance` | ✅ inventario vigente y 67 pruebas |
+
+### Límites
+
+- La regla "puntaje completo si responde de forma pertinente" se comprobó en el texto que recibe el modelo, no con un modelo real. Probarla con hojas reales necesita tu autorización y un tope de costo.
+- Si el profesor escribe a mano "Cualquier respuesta válida" sin tocar "Respuesta libre", se trata como una respuesta esperada normal: la regla solo se aplica con la marca.
+- Marcar una pregunta como libre en una evaluación con entregas sigue las protecciones actuales; no se recalifica nada ya calificado.

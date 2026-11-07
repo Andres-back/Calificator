@@ -15,6 +15,7 @@ from app.modules.analytics.usage_logger import log_ai_usage
 from app.modules.calificaciones.breakdown_policy import build_component_scaffold, sanitize_component_payload
 from app.modules.calificaciones.feedback_usefulness import is_generic_feedback
 from app.modules.calificaciones.output_budget import grading_output_budget
+from app.modules.evaluaciones.blueprint_service import FREE_ANSWER_TEXT, free_answer_numbers
 from app.modules.calificaciones.execution_policy import (
     BOUNDED_STAGES, CALL_TIMEOUT_SECONDS, grading_call_window, provider_error_code,
 )
@@ -1092,7 +1093,26 @@ def render_grader_prompt(ctx: AgentContext) -> str:
             ensure_ascii=False,
         ),
         student_response=ctx.student_response_text,
-    ) + document_prompt_context(ctx) + describe_evaluation_material(ctx.evaluation_visuals, ctx.blueprint)
+    ) + free_answer_prompt_rule(ctx.blueprint) + document_prompt_context(ctx) + describe_evaluation_material(ctx.evaluation_visuals, ctx.blueprint)
+
+
+def free_answer_prompt_rule(blueprint: dict | None) -> str:
+    """Regla para las preguntas abiertas que el docente marcó como respuesta libre (Spec 156)."""
+    numbers = free_answer_numbers(blueprint or {})
+    if not numbers:
+        return ""
+    ordered = sorted(numbers, key=lambda value: (not value.isdigit(), int(value) if value.isdigit() else 0, value))
+    return (
+        "\n\n## Preguntas de respuesta libre\n"
+        f"Preguntas: {', '.join(ordered)}.\n"
+        "El docente decidió que estas preguntas abiertas no tienen una respuesta modelo. "
+        f"No compares la respuesta del estudiante con \"{FREE_ANSWER_TEXT}\" ni exijas un contenido concreto.\n"
+        "- Si la respuesta responde a la pregunta de forma pertinente, otorga el puntaje completo de esa pregunta "
+        "con estado \"correcta\". No otorgues puntaje parcial por estilo, extensión u opinión distinta.\n"
+        "- Si está en blanco, no tiene relación con la pregunta o es ilegible, aplica las reglas habituales "
+        "(sin_respuesta, incorrecta, ilegible o no_evaluable).\n"
+        "- Esta regla solo aplica a las preguntas listadas; las demás siguen las reglas obligatorias."
+    )
 
 
 def document_prompt_context(ctx: AgentContext | None) -> str:
@@ -1432,6 +1452,7 @@ async def verification_agent(
     )
     started = time.monotonic()
     try:
+        prompt += free_answer_prompt_rule(ctx.blueprint)
         prompt += document_prompt_context(ctx)
         prompt += describe_evaluation_material(ctx.evaluation_visuals, ctx.blueprint)
         if ctx.requires_visual_material and not client_supports_vision(client, model):

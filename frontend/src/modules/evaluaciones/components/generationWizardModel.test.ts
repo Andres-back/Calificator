@@ -29,6 +29,9 @@ import {
   WIZARD_TTL_MS,
   WIZARD_VERSION,
   wizardStorageKey,
+  FREE_ANSWER_TEXT,
+  freeAnswerPatch,
+  needsAnswerDecision,
   type EditableQuestion,
 } from './generationWizardModel';
 
@@ -372,5 +375,58 @@ describe('generation wizard model', () => {
       dba_ids: ['dba-1'],
       niveles: { Alto: 'Justifica cada paso con claridad.' },
     });
+  });
+});
+
+describe('156 respuesta libre', () => {
+  const open = (overrides: Partial<EditableQuestion> = {}) => validQuestion({ tipo: 'abierta', opciones: [], respuestaEsperada: '', ...overrides });
+
+  it('asks only for open questions without an answer or a free-answer mark', () => {
+    expect(needsAnswerDecision(open())).toBe(true);
+    expect(needsAnswerDecision(open({ respuestaEsperada: 'La fotosíntesis' }))).toBe(false);
+    expect(needsAnswerDecision(open(freeAnswerPatch(true)))).toBe(false);
+    expect(needsAnswerDecision(validQuestion({ tipo: 'completar', opciones: [], respuestaEsperada: '' }))).toBe(false);
+    expect(needsAnswerDecision(validQuestion({ respuestaEsperada: '' }))).toBe(false);
+  });
+
+  it('sets and undoes the mark explicitly', () => {
+    const marked = open(freeAnswerPatch(true));
+    expect(marked).toMatchObject({ respuestaLibre: true, respuestaEsperada: FREE_ANSWER_TEXT, answerOrigin: 'confirmacion_docente' });
+    expect(validateQuestion(marked)).toBeNull();
+    const undone = { ...marked, ...freeAnswerPatch(false) };
+    expect(undone).toMatchObject({ respuestaLibre: false, respuestaEsperada: '', answerOrigin: 'pendiente' });
+    expect(validateQuestion(undone)).toMatch(/respuesta esperada/i);
+  });
+
+  it('sends the mark only for open questions', () => {
+    const payload = questionsToUpdatePayload([
+      open({ ...freeAnswerPatch(true), numero: 1 }),
+      validQuestion({ numero: 2, tipo: 'completar', opciones: [], respuestaEsperada: 'sol', respuestaLibre: true }),
+      validQuestion({ numero: 3 }),
+    ]);
+    expect(payload.respuestas_esperadas[0]).toMatchObject({ numero: 1, respuesta: FREE_ANSWER_TEXT, respuesta_libre: true, origen: 'confirmacion_docente' });
+    expect(payload.respuestas_esperadas[1]).not.toHaveProperty('respuesta_libre');
+    expect(payload.respuestas_esperadas[2]).not.toHaveProperty('respuesta_libre');
+  });
+
+  it('reads the mark back only from an explicit true on an open question', () => {
+    const evaluation = {
+      id: 'evaluation-1', modalidad: 'fisica',
+      preguntas: [
+        { numero: 1, tipo: 'abierta', enunciado: '¿Qué te gustó?', puntaje: 2 },
+        { numero: 2, tipo: 'abierta', enunciado: '¿Por qué llueve?', puntaje: 2 },
+        { numero: 3, tipo: 'completar', enunciado: 'El sol es una ____', puntaje: 1 },
+      ],
+      respuestas_esperadas: [
+        { numero: 1, respuesta: FREE_ANSWER_TEXT, respuesta_libre: true },
+        { numero: 2, respuesta: '', respuesta_libre: 'true' },
+        { numero: 3, respuesta: 'estrella', respuesta_libre: true },
+      ],
+    } as unknown as Evaluacion;
+    const questions = evaluationToEditableQuestions(evaluation);
+    expect(questions[0]).toMatchObject({ respuestaLibre: true, respuestaEsperada: FREE_ANSWER_TEXT });
+    expect(questions[1].respuestaLibre).toBeFalsy();
+    expect(questions[2].respuestaLibre).toBeFalsy();
+    expect(questionsToUpdatePayload(questions).respuestas_esperadas[0]).toMatchObject({ respuesta_libre: true });
   });
 });
