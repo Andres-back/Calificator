@@ -265,7 +265,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Allow restoring cached Ubuntu packages
+        run: sudo chown "$USER" /var/cache/apt/archives
+
+      - name: Restore Ubuntu packages for Playwright
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives/*.deb
+          key: playwright-apt-ubuntu-22.04-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: playwright-apt-ubuntu-22.04-
+
       - name: Install Playwright Chromium and WebKit
+        timeout-minutes: 5
         run: npx playwright install --with-deps chromium webkit
 
       - name: Run general end-to-end tests
@@ -309,7 +320,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Allow restoring cached Ubuntu packages
+        run: sudo chown "$USER" /var/cache/apt/archives
+
+      - name: Restore Ubuntu packages for Playwright
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives/*.deb
+          key: playwright-apt-ubuntu-22.04-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: playwright-apt-ubuntu-22.04-
+
       - name: Install Playwright Chromium and WebKit
+        timeout-minutes: 5
         run: npx playwright install --with-deps chromium webkit
 
       - name: Run contextual teacher flow regressions
