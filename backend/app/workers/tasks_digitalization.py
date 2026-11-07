@@ -48,6 +48,21 @@ def _is_transient_error(exc: Exception) -> bool:
     ))
 
 
+def _reading_progress(job_id: UUID, result: dict):
+    """Publish "N of M pages read" on its own session; pages finish concurrently."""
+    lock = asyncio.Lock()
+
+    async def notify(done: int, total: int) -> None:
+        pages = {"leidas": done, "total": total}
+        async with lock:
+            async with AsyncSessionLocal() as progress_db:
+                await jobs_service.update_job_progress(progress_db, job_id, progreso=15 + int(30 * done / max(1, total)),
+                    resultado_json={"stage": "reading", "lectura_hojas": pages, "claim_token": result.get("claim_token")})
+                await progress_db.commit()
+        result["lectura_hojas"] = pages
+    return notify
+
+
 async def _extract_once(
     *,
     result: dict,
@@ -56,6 +71,7 @@ async def _extract_once(
     filename: str,
     user_id: UUID,
     ai_config: dict | None,
+    job_id: UUID | None = None,
 ) -> tuple[str, list[str], bool]:
     cached = result.get("normalized_extraction")
     if isinstance(cached, dict) and isinstance(cached.get("text"), str):
@@ -71,6 +87,7 @@ async def _extract_once(
         filename,
         user_id,
         ai_config=ai_config,
+        on_page_done=_reading_progress(job_id, result) if job_id is not None else None,
     )
     result["normalized_extraction"] = {
         "text": extracted_text,
@@ -134,7 +151,7 @@ async def _digitalize_visual_owned(*, db, user, job_id, materia_id, private_path
     else:
         mime = detect_digitalization_mime(content, filename) if content else ''
         extracted_text, extraction_warnings, _ = await _extract_once(result=result, content=content or b'',
-            mime=mime, filename=filename, user_id=user.id, ai_config=ai_config)
+            mime=mime, filename=filename, user_id=user.id, ai_config=ai_config, job_id=job_id)
         await persist_result({'normalized_extraction': result['normalized_extraction']})
     if document_mode:
         inventory = build_document_inventory(_strip_student_answer_annotations(extracted_text))
@@ -338,6 +355,7 @@ async def _digitalize_async(
                 filename=filename or nombre,
                 user_id=user_id,
                 ai_config=job_ai_config,
+                job_id=job_id,
             )
             timings_ms["extraction"] = int((time.monotonic() - extraction_started) * 1000)
             result["strategy"]["extraction_reused"] = reused_extraction

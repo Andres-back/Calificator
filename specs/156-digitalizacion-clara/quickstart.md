@@ -34,3 +34,33 @@ Llamadas reales en total para este PR: 20 del experimento, 3, 5 y 1. Costo aprox
 
 - El modelo no siempre falla igual: la misma hoja salió completa en una corrida y resumida en otra. La relectura cubre el fallo cuando ocurre, pero no se midió su frecuencia.
 - El umbral de 40 palabras de prosa puede no detectar una lectura muy corta que se resumió. En ese caso, el borrador queda como antes.
+
+## PR 2: hojas pendientes y avance por hoja
+
+### Pruebas primero (RED)
+
+| Prueba | Resultado antes del cambio |
+| --- | --- |
+| Pruebas nuevas de hojas faltantes y numeración en `test_reading_completeness.py` | ❌ 5 fallas, incluida la regresión "PÁGINA 1" del PR 1 |
+
+Las pruebas del aviso por hoja, del worker y del monitor se escribieron junto con su código: no se registró una ejecución en rojo.
+
+### Después de la corrección (GREEN)
+
+| Comando | Resultado |
+| --- | --- |
+| `pytest` de lectura completa, digitalización, cola, worker visual y extractor de visión | ✅ 134 |
+| `vitest src/modules/evaluaciones`, `tsc` y `eslint` de los archivos cambiados | ✅ 241, sin errores |
+| `build_system_inventory.py --write` y `pytest tests/spec_governance` | ✅ inventario vigente y 67 pruebas |
+
+### Con el modelo real
+
+| Prueba | Resultado |
+| --- | --- |
+| Evaluación del clima, 2 hojas, 3 llamadas | ✅ esta vez no se perdió ninguna hoja; avance "1 de 2" y "2 de 2"; 58,7 s |
+| Hoja 2 perdida a propósito, solo la hoja 1 devuelta en la primera lectura; 1 llamada | ✅ la hoja 2 se relee sola en 25,4 s, queda numerada como hoja 2 con su lectura y las preguntas 11 a 20; los avisos genéricos se reemplazan por "Se volvió a leer la hoja 2" |
+
+### Límites
+
+- La pérdida real de la hoja 2 del experimento inicial no se repitió: la recuperación se comprobó forzando la pérdida.
+- Si la relectura también falla, el borrador nombra la hoja, pero el profesor no puede releerla desde ese borrador: debe digitalizar de nuevo esa hoja.

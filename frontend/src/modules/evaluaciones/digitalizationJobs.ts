@@ -27,6 +27,8 @@ export interface PendingDigitalizationJob {
   timingsMs?: Record<string, number>;
   terminalReason?: string;
   stage?: string;
+  pagesRead?: number;
+  pagesTotal?: number;
 }
 
 type NewDigitalizationJob = Pick<
@@ -93,6 +95,8 @@ export function readPendingDigitalizations(): PendingDigitalizationJob[] {
           ? item.terminalReason
           : undefined,
         stage: typeof item.stage === 'string' ? item.stage : undefined,
+        pagesRead: typeof item.pagesRead === 'number' ? item.pagesRead : undefined,
+        pagesTotal: typeof item.pagesTotal === 'number' ? item.pagesTotal : undefined,
       }));
   } catch {
     return [];

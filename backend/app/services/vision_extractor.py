@@ -1004,9 +1004,21 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
         preparation_ms = int((time.monotonic() - preparation_started) * 1000)
         self._total_pages = len(prepared)
         semaphore = asyncio.Semaphore(max(1, settings.VISION_MAX_CONCURRENCY))
+        on_page_done = self.tracking.get("_on_page_done")
+        pages_done = 0
+
         async def run(item: tuple[int, bytes, str, bool]) -> VisionPageResult:
+            nonlocal pages_done
             async with semaphore:
-                return await self._one(item, len(prepared), blueprint or {}, purpose)
+                page_result = await self._one(item, len(prepared), blueprint or {}, purpose)
+            pages_done += 1
+            if callable(on_page_done):
+                try:
+                    # Progress only: a failed notification never changes the extraction.
+                    await on_page_done(pages_done, len(prepared))
+                except Exception:  # noqa: BLE001
+                    logger.warning("vision.page_progress_failed")
+            return page_result
         tasks = [asyncio.create_task(run(item)) for item in prepared]
         try:
             _, pending = await asyncio.wait(tasks, timeout=max(1, settings.VISION_TOTAL_TIMEOUT_SECONDS))
