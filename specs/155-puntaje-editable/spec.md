@@ -1,6 +1,6 @@
 # Especificación: El docente puede escribir el puntaje de una pregunta al revisar
 
-**Rama**: `codex/155-puntaje-editable` | **Creada**: 2026-11-06 | **Estado**: Pendiente de aprobación | **Issue**: [#327](https://github.com/Andres-back/Calificator/issues/327)
+**Rama**: `codex/155-puntaje-editable` | **Creada**: 2026-11-06 | **Estado**: Aprobada | **Issue**: [#327](https://github.com/Andres-back/Calificator/issues/327)
 
 **Entrada**: al agregar una pregunta a una evaluación digitalizada no se podía cambiar su puntaje: en celular no aparecía el teclado. El usuario pidió un flujo fácil para docentes con poca experiencia técnica, sin afectar notas ni resultados actuales.
 

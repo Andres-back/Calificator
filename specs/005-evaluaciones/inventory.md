@@ -68,8 +68,8 @@
 | frontend_call | `GET:/evaluaciones/{evaluationId}/recursos/{resourceId}` | estudiante | covered | `frontend/src/modules/evaluaciones/api.ts:92` |
 | frontend_call | `GET:/evaluaciones/{evaluationId}/revision` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:15` |
 | frontend_call | `GET:/evaluaciones/{id}/recuperacion-documental` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:10` |
-| frontend_call | `GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:26` |
-| frontend_call | `GET:/evaluaciones/{id}/reparto` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:14` |
+| frontend_call | `GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:27` |
+| frontend_call | `GET:/evaluaciones/{id}/reparto` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:15` |
 | frontend_call | `GET:/evaluaciones/{id}/ultima-copia` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:15` |
 | frontend_call | `GET:/evaluaciones/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:88` |
 | frontend_call | `GET:/jobs/{id}` | ambiguous | covered | `frontend/src/modules/evaluaciones/visualApi.ts:33` |
@@ -90,11 +90,11 @@
 | frontend_call | `POST:/evaluaciones/{id}/copiar` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:19` |
 | frontend_call | `POST:/evaluaciones/{id}/pausar-recepcion` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:143` |
 | frontend_call | `POST:/evaluaciones/{id}/publicar` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:131` |
-| frontend_call | `POST:/evaluaciones/{id}/reparto/notas/aplicar` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:23` |
-| frontend_call | `POST:/evaluaciones/{id}/reparto/notas/previsualizar` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:20` |
+| frontend_call | `POST:/evaluaciones/{id}/reparto/notas/aplicar` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:24` |
+| frontend_call | `POST:/evaluaciones/{id}/reparto/notas/previsualizar` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:21` |
 | frontend_call | `POST:/evaluaciones` | ambiguous | covered | `frontend/src/modules/evaluaciones/api.ts:105` |
 | frontend_call | `POST:/jobs/{id}/cancelar` | ambiguous | covered | `frontend/src/modules/evaluaciones/visualApi.ts:34` |
-| frontend_call | `PUT:/evaluaciones/{id}/reparto` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:17` |
+| frontend_call | `PUT:/evaluaciones/{id}/reparto` | admin, profesor | covered | `frontend/src/modules/evaluaciones/scoreApi.ts:18` |
 | job | `tasks.copy_evaluation` | system | covered | `backend/app/modules/evaluaciones/copy_worker.py:50` |
 | job | `tasks.recover_evaluation_copies` | system | covered | `backend/app/modules/evaluaciones/copy_worker.py:68` |
 | table | `evaluacion_blueprints` | system | covered | `backend/app/modules/evaluaciones/models.py:144` |

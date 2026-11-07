@@ -17,8 +17,10 @@ const mocks = vi.hoisted(() => ({
   listDba: vi.fn(),
   createDba: vi.fn(),
   sendMessage: vi.fn(),
+  readScore: vi.fn(),
 }));
 
+vi.mock('../scoreApi', () => ({ readScoreDefinition: mocks.readScore }));
 vi.mock('../api', () => ({
   generarBorradorEvaluacion: mocks.generate,
   getEvaluacion: mocks.get,
@@ -171,8 +173,87 @@ it('137 remite al reparto común sin cerrar ni perder cambios de contenido pendi
   expect(mocks.update).not.toHaveBeenCalled();
 });
 
+describe('155 puntaje al revisar', () => {
+  const open = () => renderWizard(vi.fn(), evaluation, materia, true, vi.fn());
+  const field = () => screen.getByLabelText('Puntaje de la pregunta 1');
+
+  it('sin entregas se escribe con coma, con teclado decimal y sin guardar', async () => {
+    mocks.readScore.mockResolvedValue({ tiene_entregas: false });
+    open();
+    await waitFor(() => expect(field()).not.toHaveAttribute('readonly'));
+    expect(field()).toHaveAttribute('inputmode', 'decimal');
+    fireEvent.change(field(), { target: { value: '0,5' } });
+    expect(field()).toHaveValue('0,5');
+    expect(screen.getByText(/Suma de puntos: 3,5 de 5/)).toBeInTheDocument();
+    expect(screen.getByText(/Faltan 1,5/)).toBeInTheDocument();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('un valor inválido se explica', async () => {
+    mocks.readScore.mockResolvedValue({ tiene_entregas: false });
+    open();
+    await waitFor(() => expect(field()).not.toHaveAttribute('readonly'));
+    fireEvent.change(field(), { target: { value: 'abc' } });
+    expect(field()).toHaveValue('abc');
+    expect(screen.getAllByText(/el puntaje debe ser mayor que cero/).length).toBeGreaterThan(0);
+  });
+
+  it('ajustar conserva la pregunta abierta y deja la suma exacta sin guardar', async () => {
+    mocks.readScore.mockResolvedValue({ tiene_entregas: false });
+    const user = userEvent.setup();
+    open();
+    await waitFor(() => expect(field()).not.toHaveAttribute('readonly'));
+    fireEvent.change(field(), { target: { value: '3' } });
+    await user.click(screen.getByRole('button', { name: 'Ajustar las demás' }));
+    expect(field()).toHaveValue('3');
+    expect(screen.getByText(/Suma de puntos: 5 de 5/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ajustar las demás' })).not.toBeInTheDocument();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('explica cuando no se puede ajustar y no cambia nada', async () => {
+    mocks.readScore.mockResolvedValue({ tiene_entregas: false });
+    const user = userEvent.setup();
+    open();
+    await waitFor(() => expect(field()).not.toHaveAttribute('readonly'));
+    fireEvent.change(field(), { target: { value: '6' } });
+    await user.click(screen.getByRole('button', { name: 'Ajustar las demás' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('no quedan puntos');
+    expect(screen.getByText(/Suma de puntos: 9 de 5/)).toBeInTheDocument();
+  });
+
+  it('con entregas sigue protegido, sin ajuste y lo explica', async () => {
+    mocks.readScore.mockResolvedValue({ tiene_entregas: true });
+    open();
+    expect(await screen.findByText(/Ya tiene entregas/)).toBeInTheDocument();
+    expect(field()).toHaveAttribute('readonly');
+    expect(screen.queryByRole('button', { name: 'Ajustar las demás' })).not.toBeInTheDocument();
+  });
+
+  it('mientras comprueba sigue protegido', async () => {
+    mocks.readScore.mockReturnValue(new Promise(() => undefined));
+    open();
+    expect(await screen.findByText(/Comprobando si tiene entregas/)).toBeInTheDocument();
+    expect(field()).toHaveAttribute('readonly');
+  });
+
+  it('si la comprobación falla sigue protegido', async () => {
+    mocks.readScore.mockRejectedValue(new Error('sin red'));
+    open();
+    expect(await screen.findByText(/No pudimos comprobar si tiene entregas/)).toBeInTheDocument();
+    expect(field()).toHaveAttribute('readonly');
+  });
+
+  it('una evaluación que aún no se ha guardado no consulta entregas', async () => {
+    renderWizard(vi.fn(), evaluation);
+    await waitFor(() => expect(field()).not.toHaveAttribute('readonly'));
+    expect(mocks.readScore).not.toHaveBeenCalled();
+  });
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.readScore.mockResolvedValue({ tiene_entregas: true });
   vi.mocked(getVisualCapabilities).mockResolvedValue({ editor: false, generacion: false, importacion: false, max_bytes: 20971520 });
   mocks.listDba.mockResolvedValue([{
     id: 'dba-1',

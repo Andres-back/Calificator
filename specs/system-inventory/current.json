@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "30ab11b0c85430c9a3ecd37fd74efa2c2c1b7626c1423f3133f378a9126f03fb",
+  "source_digest": "fcab210240d9ccd9c78239e7437e97687d890079af1d8cae4343908b9b33294e",
   "surfaces": [
     {
       "actors": [
@@ -1051,6 +1051,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -5511,6 +5517,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/contenido-visual/capacidades",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/contenido-visual/capacidades",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
@@ -5841,6 +5853,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -8231,6 +8249,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -8607,6 +8631,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -12138,6 +12168,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -12926,6 +12962,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -16893,6 +16935,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -20664,6 +20712,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -23665,6 +23719,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/evidence-edit.spec.ts"
         },
         {
@@ -24673,6 +24733,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreEditing.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/sectionScoring.test.ts"
         },
         {
@@ -25315,6 +25381,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -28151,6 +28223,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -28614,6 +28692,12 @@
           "reference": "/app/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -31824,6 +31908,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -36841,6 +36931,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -37311,7 +37407,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{id}/reparto/notas/operaciones/{requestId}",
-      "source_line": 26,
+      "source_line": 27,
       "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
       "states": [],
       "tests": [
@@ -37357,7 +37453,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "GET:/evaluaciones/{id}/reparto",
-      "source_line": 14,
+      "source_line": 15,
       "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
       "states": [],
       "tests": [
@@ -37578,6 +37674,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -38945,6 +39047,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -39594,6 +39702,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -41853,6 +41967,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -42497,6 +42617,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -47009,7 +47135,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/reparto/notas/aplicar",
-      "source_line": 23,
+      "source_line": 24,
       "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
       "states": [],
       "tests": [
@@ -47055,7 +47181,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "POST:/evaluaciones/{id}/reparto/notas/previsualizar",
-      "source_line": 20,
+      "source_line": 21,
       "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
       "states": [],
       "tests": [
@@ -47242,6 +47368,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -48373,6 +48505,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -49964,7 +50102,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PUT:/evaluaciones/{id}/reparto",
-      "source_line": 17,
+      "source_line": 18,
       "source_path": "frontend/src/modules/evaluaciones/scoreApi.ts",
       "states": [],
       "tests": [
@@ -50247,6 +50385,12 @@
           "level": "unit",
           "reference": "cloudflare",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_score_plan_deliveries.py"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_score_revision_without_material.py"
         },
         {
@@ -50260,6 +50404,12 @@
           "reference": "cloudflare",
           "status": "domain",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -50296,6 +50446,12 @@
           "reference": "cloudflare",
           "status": "domain",
           "test_path": "frontend/src/modules/evaluaciones/components/scoreAllocation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "cloudflare",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreEditing.test.ts"
         }
       ]
     },
@@ -50735,6 +50891,12 @@
           "level": "unit",
           "reference": "open_code",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_score_plan_deliveries.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_score_revision_without_material.py"
         },
         {
@@ -50772,6 +50934,12 @@
           "reference": "open_code",
           "status": "domain",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -50832,6 +51000,12 @@
           "reference": "open_code",
           "status": "domain",
           "test_path": "frontend/src/modules/evaluaciones/components/scoreAllocation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreEditing.test.ts"
         },
         {
           "level": "unit",
@@ -51051,6 +51225,12 @@
           "level": "unit",
           "reference": "redis",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_score_plan_deliveries.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_score_revision_without_material.py"
         },
         {
@@ -51064,6 +51244,12 @@
           "reference": "redis",
           "status": "domain",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -51088,6 +51274,12 @@
           "reference": "redis",
           "status": "direct",
           "test_path": "frontend/src/modules/evaluaciones/components/scoreAllocation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "domain",
+          "test_path": "frontend/src/modules/evaluaciones/components/scoreEditing.test.ts"
         }
       ]
     },
@@ -54768,6 +54960,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_score_plan_deliveries.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_student_review_request.py"
         },
         {
@@ -55460,6 +55658,12 @@
           "level": "unit",
           "reference": "entregas",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_score_plan_deliveries.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_tasks_grading.py"
         },
         {
@@ -55479,6 +55683,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -56477,6 +56687,12 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_score_plan_deliveries.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_score_revision_without_material.py"
         },
         {
@@ -56556,6 +56772,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",
@@ -58664,6 +58886,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/e2e/evaluation-score-allocation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/evaluation-score-editing.spec.ts"
         },
         {
           "level": "e2e",

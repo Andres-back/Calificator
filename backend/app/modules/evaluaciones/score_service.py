@@ -91,7 +91,13 @@ def _read_plan(evaluation):
 
 
 async def read_score_plan(db, evaluation_id, actor):
-    return _read_plan(await _authorize(db, evaluation_id, actor, 'evaluations.read'))
+    plan = _read_plan(await _authorize(db, evaluation_id, actor, 'evaluations.read'))
+    # Tells the content editor whether a direct score edit could affect grades.
+    used = await db.scalar(text("""SELECT EXISTS (
+        SELECT 1 FROM entregas WHERE evaluacion_id=CAST(CAST(:id AS text) AS uuid))
+        OR EXISTS (SELECT 1 FROM calificaciones WHERE evaluacion_id=CAST(CAST(:id AS text) AS uuid))"""),
+        {'id': str(evaluation_id)})
+    return {**plan, 'tiene_entregas': bool(used)}
 
 
 async def _locked_scope(db, evaluation_id):
