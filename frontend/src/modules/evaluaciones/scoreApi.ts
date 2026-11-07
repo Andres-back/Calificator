@@ -4,6 +4,7 @@ import type { ScorePlan, ScoreQuestion } from './components/scoreAllocation';
 export interface ScoreDefinition {
   plan: ScorePlan; nota_maxima: string; preguntas: ScoreQuestion[]; updated_at: string;
   contenido_version_id: string | null; definition_fingerprint: string;
+  tiene_entregas?: boolean;
 }
 export interface ScoreProposalRow { calificacion_id: string; nombre: string; elegible: boolean; nota_actual: string | null; nota_propuesta: string | null; fingerprint: string | null; motivo: string | null }
 export interface ScorePreview { definition_fingerprint: string; resultados: ScoreProposalRow[]; siguiente_cursor: string | null; aviso: string }

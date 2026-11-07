@@ -27,6 +27,9 @@ import { EvaluationDocumentOutline } from './EvaluationDocumentOutline';
 import { SectionScoringEditor } from './SectionScoringEditor';
 import { createQuestionDocument, documentOrder, moveDocumentNode, pendingDocumentReview } from './documentModel';
 import { getVisualCapabilities } from '../visualApi';
+import { readScoreDefinition } from '../scoreApi';
+import { formatAllocationScore } from './scoreAllocation';
+import { adjustOtherScores, parseScoreInput, scoreSummary } from './scoreEditing';
 import { PasosGuia } from './PasosGuia';
 import {
   createBlankQuestion, createEmptyWizardState, discardWizardDraft, duplicateQuestion, getWizardStorage,
@@ -37,8 +40,26 @@ import {
   loadVisualEditDraft, discardVisualEditDraft,
 } from './generationWizardModel';
 
+function ScoreInput({ value, readOnly, label, onChange }: { value: number; readOnly: boolean; label: string; onChange: (value: number) => void }) {
+  // Keeps what is being typed: "0," is not a number yet, and a number field would discard it.
+  const [text, setText] = useState(String(value));
+  useEffect(() => { setText(current => parseScoreInput(current) === value ? current : String(value)); }, [value]);
+  return <Input type="text" inputMode="decimal" autoComplete="off" value={text} readOnly={readOnly} aria-label={label} className="min-h-12 w-full text-base"
+    onChange={(event) => { setText(event.target.value); onChange(parseScoreInput(event.target.value)); }} />;
+}
+
+interface ScoreControl {
+  locked: boolean;
+  notice: string | null;
+  total: number;
+  maximum: number;
+  difference: number;
+  matches: boolean;
+  onAdjust: (() => string | null) | null;
+}
+
 function QuestionCard({
-  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove, visualEditor, displayLabel, onRepartition,
+  question, index, total, evaluationModality, onChange, onDelete, onDuplicate, onMove, visualEditor, displayLabel, onRepartition, score,
 }: {
   question: EditableQuestion;
   index: number;
@@ -51,7 +72,10 @@ function QuestionCard({
   visualEditor?: ReactNode;
   displayLabel?: string;
   onRepartition?: () => void;
+  score: ScoreControl;
 }) {
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+  useEffect(() => { setAdjustError(null); }, [score.total, question.puntaje]);
   const confirmAnswer = (respuestaEsperada: string): Partial<EditableQuestion> => ({
     respuestaEsperada,
     answerOrigin: respuestaEsperada ? 'confirmacion_docente' : 'pendiente',
@@ -109,9 +133,18 @@ function QuestionCard({
               </select>
             </Field>
             <Field label="Puntaje" required>
-              <Input type="number" min={0.0001} step={0.0001} value={question.puntaje} readOnly={Boolean(onRepartition)} onChange={(event) => onChange({ puntaje: Number(event.target.value) })} className="min-h-12 w-full text-base" aria-label={`Puntaje de la pregunta ${index + 1}`} />
+              <ScoreInput value={question.puntaje} readOnly={score.locked} label={`Puntaje de la pregunta ${index + 1}`} onChange={(puntaje) => onChange({ puntaje })} />
               {onRepartition && <Button type="button" variant="outline" onClick={onRepartition}>Repartir puntos</Button>}
             </Field>
+          </div>
+          <div role="status" className={cn('space-y-2 rounded-lg border p-3 text-sm leading-6', score.matches ? 'border-border' : 'border-amber-300 bg-amber-50 text-amber-950 dark:bg-amber-500/10 dark:text-amber-100')}>
+            <p>
+              <strong>Suma de puntos: {formatAllocationScore(score.total)} de {formatAllocationScore(score.maximum)}.</strong>{' '}
+              {score.matches ? 'Coincide con la nota máxima.' : `${score.difference > 0 ? 'Sobran' : 'Faltan'} ${formatAllocationScore(Math.abs(score.difference))}.`}
+            </p>
+            {score.notice && <p>{score.notice}</p>}
+            {!score.matches && score.onAdjust && <Button type="button" variant="outline" className="min-h-11" onClick={() => setAdjustError(score.onAdjust?.() ?? null)}>Ajustar las demás</Button>}
+            {adjustError && <p role="alert">{adjustError}</p>}
           </div>
           {visualEditor}
 
@@ -325,6 +358,19 @@ export function GenerationWizard({
   const fixedContext = Boolean(initialMateriaId || initialEvaluation);
   const visualCapabilities = useQuery({ queryKey: ['evaluation-visual-capabilities'], queryFn: getVisualCapabilities,
     enabled: open && state.step === 5, staleTime: 30_000, retry: false });
+  // Direct edits stay locked until the server confirms no grade could be affected.
+  const scoresGuarded = Boolean(initialEvaluation && onRepartition);
+  const scoreDefinition = useQuery({ queryKey: ['evaluation-score-definition', initialEvaluation?.id],
+    queryFn: ({ signal }) => readScoreDefinition(initialEvaluation!.id, signal),
+    enabled: open && state.step === 5 && scoresGuarded, staleTime: 0, gcTime: 0, retry: false });
+  const sectionScoring = Boolean(state.estructuraDocumento?.puntuacion_secciones);
+  const scoresLocked = scoresGuarded && (sectionScoring || scoreDefinition.data?.tiene_entregas !== false);
+  const summary = scoreSummary(state.questions.map(question => question.puntaje), state.notaMaxima);
+  const scoreNotice = !scoresLocked ? null
+    : sectionScoring ? 'Esta evaluación reparte sus puntos por secciones. Cámbialos en ese reparto.'
+      : scoreDefinition.isError ? 'No pudimos comprobar si tiene entregas, así que el puntaje sigue protegido. Cierra y vuelve a abrir la evaluación.'
+        : !scoreDefinition.data ? 'Comprobando si tiene entregas…'
+          : `Ya tiene entregas: el puntaje se cambia con «Repartir puntos» para proteger las notas.${summary.matches ? '' : ' Para añadir preguntas, crea una copia con «Usar en otra materia».'}`;
 
   const dba = useQuery({
     queryKey: queryKeys.materias.dbaCombined(state.materiaId),
@@ -820,6 +866,14 @@ export function GenerationWizard({
                                 discardVisualEditDraft(getWizardStorage(), userId, initialEvaluation.id);
                                 onClose(); onRepartition(initialEvaluation);
                               } : undefined}
+                              score={{ locked: scoresLocked, notice: scoreNotice, maximum: state.notaMaxima, ...summary,
+                                onAdjust: scoresLocked || sectionScoring ? null : () => {
+                                  if (state.questions.length < 2) return `Es la única pregunta: debe valer ${formatAllocationScore(state.notaMaxima)}.`;
+                                  const adjusted = adjustOtherScores(state.questions.map(item => item.puntaje), index, state.notaMaxima);
+                                  if (!adjusted) return 'Con este valor no quedan puntos para las demás preguntas. Bájalo e inténtalo de nuevo.';
+                                  patch({ questions: state.questions.map((item, position) => ({ ...item, puntaje: adjusted[position] })) });
+                                  return null;
+                                } }}
                               displayLabel={state.estructuraDocumento?.nodos.find(node => node.pregunta_id === question.contenidoId)?.etiqueta_original ?? undefined}
                               evaluationModality={state.modalidad}
                               visualEditor={visualCapabilities.data?.editor && state.generatedEvaluationId ? <div className="min-w-0 space-y-3">
