@@ -281,6 +281,8 @@ export interface Evaluacion {
         rag_estado?: 'recuperado' | 'sin_resultados' | 'no_disponible';
         advertencias?: string[];
       };
+      /** Digitalization warnings, for example a sheet that could not be read (Spec 156). */
+      advertencias?: string[];
     };
   } | null;
   mi_entrega_id?: string | null;

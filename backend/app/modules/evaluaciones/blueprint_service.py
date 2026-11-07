@@ -25,10 +25,59 @@ def _normalized_answer(value: Any) -> str:
     return " ".join(text.casefold().split())
 
 
+FREE_ANSWER_TEXT = "Cualquier respuesta válida"
+FREE_ANSWER_QUESTION_TYPES = frozenset({"abierta"})
+
+
+def _question_number(question: Any, index: int) -> str:
+    return str(question.get("numero", index) if isinstance(question, dict) else index)
+
+
+def free_answer_numbers(blueprint: dict[str, Any]) -> set[str]:
+    """Preguntas abiertas que el docente marcó como respuesta libre.
+
+    La marca solo cuenta si es explícita (`respuesta_libre: true`) y la pregunta es abierta.
+    """
+    open_numbers = {
+        _question_number(question, index)
+        for index, question in enumerate(blueprint.get("preguntas") or [], start=1)
+        if isinstance(question, dict)
+        and str(question.get("tipo") or "").strip().lower() in FREE_ANSWER_QUESTION_TYPES
+    }
+    return {
+        str(item.get("numero", index))
+        for index, item in enumerate(blueprint.get("respuestas_esperadas") or [], start=1)
+        if isinstance(item, dict)
+        and item.get("respuesta_libre") is True
+        and str(item.get("numero", index)) in open_numbers
+    }
+
+
+def normalize_free_answers(questions: Any, answers: Any) -> Any:
+    """Conserva la marca solo en preguntas abiertas y fija su texto visible."""
+    if not isinstance(answers, list):
+        return answers
+    free = free_answer_numbers({"preguntas": questions or [], "respuestas_esperadas": answers})
+    normalized: list[Any] = []
+    for index, item in enumerate(answers, start=1):
+        if not isinstance(item, dict) or "respuesta_libre" not in item:
+            normalized.append(item)
+            continue
+        entry = dict(item)
+        if str(entry.get("numero", index)) in free:
+            entry["respuesta_libre"] = True
+            entry["respuesta"] = FREE_ANSWER_TEXT
+        else:
+            entry.pop("respuesta_libre", None)
+        normalized.append(entry)
+    return normalized
+
+
 def grading_answer_key_status(blueprint: dict[str, Any]) -> tuple[bool, list[int | str]]:
     """Indica si cada pregunta tiene una respuesta especifica y utilizable."""
     questions = blueprint.get("preguntas") or []
     answers = blueprint.get("respuestas_esperadas") or []
+    free = free_answer_numbers(blueprint)
     answers_by_number: dict[str, Any] = {}
     for index, item in enumerate(answers, start=1):
         if isinstance(item, dict):
@@ -48,6 +97,8 @@ def grading_answer_key_status(blueprint: dict[str, Any]) -> tuple[bool, list[int
     missing: list[int | str] = []
     for index, question in enumerate(questions, start=1):
         number = question.get("numero", index) if isinstance(question, dict) else index
+        if str(number) in free:
+            continue  # Respuesta libre explícita del docente: la clave está completa.
         normalized = _normalized_answer(answers_by_number.get(str(number)))
         if not normalized or any(marker in normalized for marker in _INCOMPLETE_ANSWER_MARKERS):
             missing.append(number)

@@ -42,6 +42,7 @@ from app.modules.calificaciones.feedback_refinement import refine_feedback_if_ne
 from app.modules.calificaciones.execution_policy import execution_policy
 from app.modules.calificaciones.recovery import ReviewProgress, context_fingerprint
 from app.modules.calificaciones.grading_visuals import EvaluationVisualInput, visual_provenance
+from app.modules.evaluaciones.blueprint_service import free_answer_numbers
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
     question_numbers_by_section,
@@ -493,8 +494,11 @@ def build_objective_validation(
         and not answer.get("respuesta_parcial")
         and answer.get("legible", True) is not False
     }
+    free_answers = free_answer_numbers(blueprint)
     validation: list[dict] = []
     for number, question in questions.items():
+        if number in free_answers:
+            continue  # Respuesta libre: la valora el calificador por pertinencia, nunca por texto literal.
         question_type = str(question.get("tipo") or "").lower()
         if exclude_safe_types and (
             question_type in {"opcion_multiple", "verdadero_falso"}

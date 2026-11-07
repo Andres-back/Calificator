@@ -42,6 +42,8 @@ export interface EditableQuestion {
   enunciado: string;
   opciones: string[];
   respuestaEsperada: string;
+  /** Marca explícita del docente: pregunta abierta de respuesta libre (Spec 156). */
+  respuestaLibre?: boolean;
   answerOrigin?: string;
   answerExplanation?: string;
   answerConfidence?: number;
@@ -438,6 +440,7 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
       : tipo === 'verdadero_falso'
         ? ['Verdadero', 'Falso']
         : [];
+    const free = tipo === 'abierta' && rawAnswer.respuesta_libre === true;
     return {
       clientId: `${evaluation.id}-${index}-${Date.now()}`,
       contenidoId: typeof question.contenido_id === 'string' ? question.contenido_id : undefined,
@@ -445,11 +448,12 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
       tipo,
       enunciado: String(question.enunciado ?? ''),
       opciones: options,
-      respuestaEsperada: canonicalEditableAnswer(
+      respuestaEsperada: free ? FREE_ANSWER_TEXT : canonicalEditableAnswer(
         rawAnswer.respuesta ?? rawAnswer.texto ?? rawAnswer.respuesta_correcta,
         tipo,
         options,
       ),
+      ...(free ? { respuestaLibre: true } : {}),
       answerOrigin: rawAnswer.origen ? String(rawAnswer.origen) : undefined,
       answerExplanation: rawAnswer.explicacion ? String(rawAnswer.explicacion) : undefined,
       answerConfidence: typeof rawAnswer.confianza === 'number' ? rawAnswer.confianza : undefined,
@@ -475,6 +479,24 @@ export function evaluationToEditableQuestions(evaluation: Evaluacion): EditableQ
   });
 }
 
+export const FREE_ANSWER_TEXT = 'Cualquier respuesta válida';
+
+/** Solo una pregunta abierta puede ser de respuesta libre, y solo por decisión del docente. */
+export function isFreeAnswer(question: Pick<EditableQuestion, 'tipo' | 'respuestaLibre'>) {
+  return question.tipo === 'abierta' && question.respuestaLibre === true;
+}
+
+/** Pregunta abierta todavía sin decidir: ni respuesta esperada ni respuesta libre. */
+export function needsAnswerDecision(question: EditableQuestion) {
+  return question.tipo === 'abierta' && !isFreeAnswer(question) && !question.respuestaEsperada.trim();
+}
+
+export function freeAnswerPatch(enabled: boolean): Partial<EditableQuestion> {
+  return enabled
+    ? { respuestaLibre: true, respuestaEsperada: FREE_ANSWER_TEXT, answerOrigin: 'confirmacion_docente', answerConfidence: 1, answerExplanation: undefined }
+    : { respuestaLibre: false, respuestaEsperada: '', answerOrigin: 'pendiente', answerConfidence: 0, answerExplanation: undefined };
+}
+
 export function validateQuestion(question: EditableQuestion, index = 0): string | null {
   const label = `Pregunta ${index + 1}`;
   if (!question.enunciado.trim()) return `${label}: el enunciado es obligatorio.`;
@@ -496,6 +518,7 @@ export function validateQuestion(question: EditableQuestion, index = 0): string 
   }
   if (
     (question.tipo === 'abierta' || question.tipo === 'completar')
+    && !isFreeAnswer(question)
     && !question.respuestaEsperada.trim()
   ) {
     return `${label}: escribe la respuesta esperada.`;
@@ -665,7 +688,14 @@ export function questionsToUpdatePayload(questions: EditableQuestion[]) {
       justificacion_alineacion: question.justificacionAlineacion,
       fuente_contexto_ids: question.fuenteContextoIds ?? [],
     })),
-    respuestas_esperadas: questions.map((question) => ({
+    respuestas_esperadas: questions.map((question) => (isFreeAnswer(question) ? {
+      numero: question.numero,
+      respuesta: FREE_ANSWER_TEXT,
+      respuesta_libre: true,
+      origen: 'confirmacion_docente',
+      confianza: 1,
+      dba_ids: question.dbaIds,
+    } : {
       numero: question.numero,
       respuesta: question.respuestaEsperada.trim(),
       origen: question.answerOrigin ?? (question.respuestaEsperada.trim() ? 'confirmacion_docente' : 'pendiente'),

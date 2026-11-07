@@ -14,6 +14,7 @@ from app.modules.evaluaciones.blueprint_service import (
     build_blueprint_payload,
     grading_answer_key_status,
     normalize_dba_records,
+    normalize_free_answers,
 )
 from app.modules.evaluaciones.modality_service import (
     normalize_question_modalities,
@@ -77,6 +78,7 @@ _STUDENT_FORBIDDEN_KEYS = {
     "respuesta",
     "respuestacorrecta",
     "respuestaesperada",
+    "respuestalibre",
     "solucion",
     "soluciones",
     "valorcorrecto",
@@ -773,6 +775,12 @@ async def update_evaluation(
         )
         rebuild_blueprint = True
 
+    if {"preguntas", "respuestas_esperadas"}.intersection(data):
+        # Respuesta libre: solo la marca explícita en una pregunta abierta (Spec 156).
+        evaluacion.respuestas_esperadas = normalize_free_answers(
+            evaluacion.preguntas, evaluacion.respuestas_esperadas,
+        )
+
     if rebuild_blueprint:
         if criteria_only:
             await _update_blueprint_criteria(db, evaluacion, dba_ids, dba_personalizado_ids, retained_custom_ids)
@@ -1167,6 +1175,7 @@ async def validate_structure(
         )
         evaluacion.preguntas = payload.preguntas
     if payload.respuestas_esperadas is not None:
+        payload.respuestas_esperadas = normalize_free_answers(evaluacion.preguntas, payload.respuestas_esperadas)
         evaluacion.respuestas_esperadas = payload.respuestas_esperadas
 
     dba_ids = [UUID(value) for value in evaluacion.dba_ids]

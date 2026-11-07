@@ -13,7 +13,7 @@ import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { listDbaCombinado } from '@/modules/materias/dbaApi';
 import { sendMessage } from '@/modules/xali/api';
 import type { DBAUnifiedItem, Evaluacion, EvaluacionModalidad, EvaluationDocumentStructure, Materia } from '@/types/api';
-import { extraerReferenciaEvaluacion, generarBorradorEvaluacion, getEvaluacion, updateEvaluacion, type EvaluacionGenerarRequest } from '../api';
+import { extraerReferenciaEvaluacion, generarBorradorEvaluacion, getEvaluacion, publicarEvaluacion, updateEvaluacion, type EvaluacionGenerarRequest } from '../api';
 import { EvaluationPreparation } from './EvaluationPreparation';
 import { TYPE_COPY } from './generationWizardOptions';
 import { RubricEditor } from './RubricEditor';
@@ -31,6 +31,8 @@ import { readScoreDefinition } from '../scoreApi';
 import { formatAllocationScore } from './scoreAllocation';
 import { adjustOtherScores, parseScoreInput, scoreSummary } from './scoreEditing';
 import { PasosGuia } from './PasosGuia';
+import { PublishChecklist } from './PublishChecklist';
+import { pendingQuestionIndexes, sheetWarnings, showsPublishChecklist } from './publishReadiness';
 import {
   createBlankQuestion, createEmptyWizardState, discardWizardDraft, duplicateQuestion, getWizardStorage,
   evaluationToEditableQuestions, evaluationToWizardState, loadWizardDraft, MAX_QUESTIONS,
@@ -38,6 +40,7 @@ import {
   renumberQuestions, selectedQuestionTypes, totalQuestionCount, validateQuestion,
   updateWizardTopic, updateQuestionVisual, reconcileVisualQuestions, validatePreparation, validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type QuestionType, type WizardState,
   loadVisualEditDraft, discardVisualEditDraft,
+  FREE_ANSWER_TEXT, freeAnswerPatch, isFreeAnswer, needsAnswerDecision,
 } from './generationWizardModel';
 
 function ScoreInput({ value, readOnly, label, onChange }: { value: number; readOnly: boolean; label: string; onChange: (value: number) => void }) {
@@ -75,6 +78,7 @@ function QuestionCard({
   score: ScoreControl;
 }) {
   const [adjustError, setAdjustError] = useState<string | null>(null);
+  const answerField = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { setAdjustError(null); }, [score.total, question.puntaje]);
   const confirmAnswer = (respuestaEsperada: string): Partial<EditableQuestion> => ({
     respuestaEsperada,
@@ -124,6 +128,7 @@ function QuestionCard({
                         ? (question.opciones.length >= 3 ? question.opciones : ['', '', '', ''])
                         : [],
                     respuestaEsperada: '',
+                    respuestaLibre: false,
                   });
                 }}
                 className="focus-ring min-h-12 w-full rounded-lg border border-border bg-surface px-4 text-base text-fg"
@@ -211,13 +216,32 @@ function QuestionCard({
             </div>
           )}
 
-          {(question.tipo === 'abierta' || question.tipo === 'completar') && (
-            <Field label="Respuesta esperada" required>
-              <Textarea value={question.respuestaEsperada} onChange={(event) => onChange(confirmAnswer(event.target.value))} className="min-h-20 text-base" />
-            </Field>
+          {isFreeAnswer(question) ? (
+            <div role="note" className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+              <p className="font-bold">Respuesta libre</p>
+              <p className="text-base">{FREE_ANSWER_TEXT}</p>
+              <p>Recibe el puntaje completo si responde a la pregunta. Si queda en blanco, no tiene relación o no se puede leer, se revisa como siempre.</p>
+              <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => onChange(freeAnswerPatch(false))}>Quitar respuesta libre</Button>
+            </div>
+          ) : (question.tipo === 'abierta' || question.tipo === 'completar') && (
+            <>
+              {needsAnswerDecision(question) && (
+                <div role="group" aria-label={`Respuesta de la pregunta ${index + 1}`} className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm leading-6 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                  <p className="font-bold">¿Tiene una respuesta esperada o es de respuesta libre?</p>
+                  <p>Elige una antes de publicar. No usamos como clave lo que escribió el estudiante.</p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button type="button" variant="outline" className="min-h-11" onClick={() => answerField.current?.focus()}>Escribir la respuesta esperada</Button>
+                    <Button type="button" variant="outline" className="min-h-11" onClick={() => onChange(freeAnswerPatch(true))}>Respuesta libre</Button>
+                  </div>
+                </div>
+              )}
+              <Field label="Respuesta esperada" required>
+                <Textarea ref={answerField} value={question.respuestaEsperada} onChange={(event) => onChange(confirmAnswer(event.target.value))} className="min-h-20 text-base" />
+              </Field>
+            </>
           )}
 
-          {!question.respuestaEsperada.trim() ? (
+          {needsAnswerDecision(question) ? null : !question.respuestaEsperada.trim() ? (
             <div role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm leading-6 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
               <p className="font-bold">Respuesta correcta por confirmar</p>
               <p>No usamos como clave lo que escribió o marcó el estudiante. Completa esta respuesta antes de publicar.</p>
@@ -226,6 +250,9 @@ function QuestionCard({
             <div role="note" className="writing-secondary rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
               <p className="font-bold">Por qué se propone esta respuesta</p>
               <p>{question.answerExplanation}</p>
+              {(question.tipo === 'opcion_multiple' || question.tipo === 'verdadero_falso') && question.answerOrigin !== 'confirmacion_docente' && (
+                <Button type="button" variant="outline" className="mt-2 min-h-11 w-full sm:w-auto" onClick={() => onChange(confirmAnswer(question.respuestaEsperada))}>Confirmar esta respuesta</Button>
+              )}
             </div>
           ) : null}
 
@@ -309,7 +336,7 @@ function XaliPanel({
 }
 
 export function GenerationWizard({
-  open, onClose, userId, materias, initialMateriaId = '', initialEvaluation = null, onCompleted, onRepartition,
+  open, onClose, userId, materias, initialMateriaId = '', initialEvaluation = null, onCompleted, onRepartition, onPublished,
 }: {
   open: boolean;
   onClose: () => void;
@@ -319,6 +346,8 @@ export function GenerationWizard({
   initialEvaluation?: Evaluacion | null;
   onCompleted: (evaluation: Evaluacion) => void;
   onRepartition?: (evaluation: Evaluacion) => void;
+  /** Spec 156: when given, a digitalized draft shows what is left and can be published from here. */
+  onPublished?: (evaluation: Evaluacion) => void;
 }) {
   const availableMaterias = useMemo(() => materias ?? [], [materias]);
   const [state, setState] = useState<WizardState>(() => createEmptyWizardState(initialMateriaId));
@@ -456,6 +485,31 @@ export function GenerationWizard({
     onSettled: () => { confirmLock.current = false; },
   });
 
+  // Spec 156: saves pending edits first and then uses the existing publish endpoint and its rules.
+  const [publishPrompt, setPublishPrompt] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const publishDraft = useMutation({
+    mutationFn: async ({ id, snapshot }: { userId: string; id: string; snapshot: WizardState }) => {
+      if (editorBaseline.current !== JSON.stringify(evaluationPayload(snapshot))) {
+        const saved = await updateEvaluacion(id, savePayload(snapshot));
+        // The edits are saved even if publishing is refused: the next save must start from this version.
+        savedEvaluation.current = saved;
+        initialSavedState.current = { ...snapshot, generatedUpdatedAt: saved.updated_at };
+        editorBaseline.current = JSON.stringify(evaluationPayload(snapshot));
+        patch({ generatedUpdatedAt: saved.updated_at, contenidoVersionId: saved.contenido_version_id ?? snapshot.contenidoVersionId });
+      }
+      return publicarEvaluacion(id);
+    },
+    onSuccess: (published, context) => {
+      if (activeContext.current.userId !== context.userId || activeContext.current.id !== context.id) return;
+      if (initialEvaluation) discardVisualEditDraft(getWizardStorage(), userId, initialEvaluation.id);
+      setPublishError(null);
+      onPublished?.(published);
+    },
+    onError: (error) => setPublishError(toApiError(error).detail),
+    onSettled: () => setPublishPrompt(false),
+  });
+
   useEffect(() => {
     if (!open) { initializedKey.current = null; setCriteriaEditing(null); return; }
     const materiaId = initialMateriaId || availableMaterias[0]?.id || '';
@@ -469,6 +523,7 @@ export function GenerationWizard({
     setGenerationError(null);
     setRestoreError(null);
     setSaveError(null);
+    setPublishError(null);
     setPersonalizationOpen(false);
     setGradingOptionsOpen(false);
     setHelpOpen(false);
@@ -681,17 +736,30 @@ export function GenerationWizard({
     if (error) { toast.error(error); return; }
     setSaveError(null);
     confirmLock.current = true;
-    const currentPayload = evaluationPayload(state);
+    confirm.mutate({ userId, id: state.generatedEvaluationId, payload: savePayload(state) });
+  }
+
+  function savePayload(current: WizardState) {
+    const currentPayload = evaluationPayload(current);
     const initialPayload = initialSavedState.current ? evaluationPayload(initialSavedState.current) : null;
     const payload = initialEvaluation && initialPayload
       ? Object.fromEntries(Object.entries(currentPayload).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(initialPayload[key as keyof typeof initialPayload])))
       : currentPayload;
-    confirm.mutate({
-      userId,
-      id: state.generatedEvaluationId,
-      payload: { ...payload, expected_updated_at: savedEvaluation.current?.updated_at,
-        ...(savedEvaluation.current?.contenido_version_id ? { expected_content_version_id: savedEvaluation.current.contenido_version_id } : {}) },
-    });
+    return { ...payload, expected_updated_at: savedEvaluation.current?.updated_at,
+      ...(savedEvaluation.current?.contenido_version_id ? { expected_content_version_id: savedEvaluation.current.contenido_version_id } : {}) };
+  }
+
+  function publishFromChecklist() {
+    if (publishDraft.isPending || confirm.isPending || !state.generatedEvaluationId || restoreGenerated.isPending || restoreError || !savedEvaluation.current) return;
+    setPublishError(null);
+    publishDraft.mutate({ userId, id: state.generatedEvaluationId, snapshot: state });
+  }
+
+  function goToReading() {
+    const reading = contentRef.current?.querySelector<HTMLTextAreaElement>('[aria-label="Lectura o texto de apoyo"]');
+    const details = reading?.closest('details');
+    if (details) details.open = true;
+    window.requestAnimationFrame(() => reading?.scrollIntoView({ block: 'center' }));
   }
 
   function evaluationPayload(current: WizardState) {
@@ -748,7 +816,9 @@ export function GenerationWizard({
   const validation = state.step === 5 ? validateStep(state, 5) : validatePreparation(state);
   const questionErrors = state.questions.filter((question, index) => validateQuestion(question, index)).length;
   const editingQuestions = state.step === 5 && Boolean(state.generatedEvaluationId);
-  const busy = generate.isPending || confirm.isPending || extractReference.isPending || restoreGenerated.isPending;
+  const busy = generate.isPending || confirm.isPending || extractReference.isPending || restoreGenerated.isPending || publishDraft.isPending;
+  const publishChecklist = state.step === 5 && Boolean(onPublished) && showsPublishChecklist(initialEvaluation) && Boolean(state.generatedEvaluationId);
+  const pendingQuestions = publishChecklist ? pendingQuestionIndexes(state.questions) : [];
 
   return (
     <>
@@ -808,6 +878,11 @@ export function GenerationWizard({
                   {state.step === 5 && (
                     <section aria-labelledby="wizard-step-title" className="space-y-4">
                         {generationWarnings.length > 0 && <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-500/10 dark:text-amber-100">{generationWarnings.join(' ')}</div>}
+                        {publishChecklist && <PublishChecklist warnings={sheetWarnings(initialEvaluation)} pendingQuestions={pendingQuestions}
+                          score={{ ...summary, maximum: state.notaMaxima }} otherIssue={pendingQuestions.length ? null : validation}
+                          publishing={publishDraft.isPending} disabled={busy || Boolean(restoreError)} error={publishError}
+                          onGoToQuestion={selectQuestion} onGoToReading={state.estructuraDocumento ? null : goToReading}
+                          onReviewOther={revealReviewErrors} onPublish={() => setPublishPrompt(true)} />}
                         <div className="writing-secondary flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                           <h3 id="wizard-step-title" className="text-base font-bold">Revisa y edita la evaluación</h3>
                           <div className="flex flex-wrap items-center gap-2">
@@ -959,6 +1034,9 @@ export function GenerationWizard({
       <ConfirmDialog open={closePrompt} onClose={() => setClosePrompt(false)} onConfirm={() => { setClosePrompt(false); resetDraft(true); }}
         title="¿Salir sin guardar los cambios?" description="Los cambios de esta edición se descartarán. Puedes seguir editando y guardarlos antes de salir."
         confirmLabel="Descartar y salir" cancelLabel="Seguir editando" tone="danger" />
+      <ConfirmDialog open={publishPrompt} onClose={() => { if (!publishDraft.isPending) setPublishPrompt(false); }} onConfirm={publishFromChecklist}
+        title="Publicar evaluación" description={<><strong>{state.nombre}</strong> quedará visible para los estudiantes de la materia. Si hay cambios sin guardar, se guardan primero.</>}
+        confirmLabel="Publicar" loading={publishDraft.isPending} />
       <ConfirmDialog open={Boolean(deleteQuestionId)} onClose={() => setDeleteQuestionId(null)} onConfirm={() => removeQuestion(deleteQuestionId!)}
         title="¿Retirar esta pregunta de la edición?" description="Se retirará de esta versión y de su sección. Las entregas y calificaciones anteriores conservarán la versión que usaron."
         confirmLabel="Retirar pregunta" tone="danger" />
