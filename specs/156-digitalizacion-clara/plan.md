@@ -14,7 +14,12 @@
 
 Cuatro PR pequeños, en este orden:
 
-1. **Lectura completa (Historia 1).** `incomplete_reading_markers(text)` es una función pura que detecta `(lectura)`, `[texto]`, `...` en lugar de párrafos, o preguntas que citan un texto ausente. Si encuentra uno, se hace un único reintento de esa hoja con un complemento del prompt que pide el texto literal. Si persiste, queda un aviso con la hoja.
+1. **Lectura completa (Historia 1).** `reading_completeness.py` detecta en cada hoja:
+   - marcadores como `(lectura)`, `[texto]` o `...`;
+   - resúmenes entre paréntesis;
+   - preguntas que citan un texto cuando ninguna hoja tiene un tramo de prosa de 40 palabras o más.
+
+   Si encuentra uno, hace un único reintento de esa hoja con un complemento del prompt que pide el texto literal y deja vacío `texto_extraido`, porque el límite de 3072 tokens con la hoja duplicada empuja al modelo a resumir. Si persiste, queda un aviso con la hoja.
 2. **Hojas pendientes (Historia 2).** Las hojas fallidas se guardan con su número en el resultado del trabajo. El borrador muestra "Volver a leer la hoja N", que reutiliza el original guardado y la misma operación de digitalización sobre una sola hoja. El avance pasa a ser por hoja.
 3. **Revisar y publicar (Historia 3).** "Revisar" abre el borrador por `evaluacion_id`. El borrador gana una lista de pendientes calculada en el frontend: lectura con aviso, claves pendientes, suma de puntos y hojas pendientes. "Publicar y empezar a calificar" llama al endpoint actual.
 4. **Respuesta libre (Historia 4).** Las respuestas esperadas aceptan `respuesta_libre: true`, con el texto fijo "Cualquier respuesta válida". `grading_answer_key_status` lo cuenta como completo solo con esa marca. El prompt del calificador añade una regla para esas preguntas: la respuesta se valora por pertinencia y no se compara con una respuesta modelo. El editor muestra la pregunta con dos opciones.

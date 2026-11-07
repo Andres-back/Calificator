@@ -1,6 +1,6 @@
 # Especificación: Digitalizar desde foto con la lectura completa, una revisión clara y publicar para calificar
 
-**Rama**: `codex/156-digitalizacion-clara` | **Creada**: 2026-11-07 | **Estado**: Pendiente de aprobación | **Issue**: [#329](https://github.com/Andres-back/Calificator/issues/329)
+**Rama**: `codex/156-digitalizacion-clara` | **Creada**: 2026-11-07 | **Estado**: Aprobada | **Issue**: [#329](https://github.com/Andres-back/Calificator/issues/329)
 
 **Entrada**: el usuario pidió que la digitalización desde foto sea rápida y clara. Al terminar, el profesor debe poder ajustar las respuestas correctas y publicar para empezar a calificar. En las preguntas abiertas, el sistema pregunta al profesor; si una es de respuesta libre, se acepta cualquier respuesta válida, pero solo en las preguntas que él elija.
 
@@ -57,7 +57,7 @@ Como profesor, quiero confirmar las respuestas correctas propuestas y decidir en
 1. **Dadas** preguntas de opción múltiple o de verdadero y falso, **cuando** reviso, **entonces** veo la respuesta propuesta y la confirmo o la cambio con un toque.
 2. **Dada** una pregunta abierta sin respuesta confiable, **cuando** reviso, **entonces** el sistema pregunta: "¿Tiene una respuesta esperada o es de respuesta libre?".
 3. **Dada** una pregunta marcada como respuesta libre, **cuando** se publica, **entonces** cuenta como respuesta completa y se muestra "Cualquier respuesta válida".
-4. **Dada** una entrega con respuesta libre, **cuando** se califica, **entonces** recibe el puntaje si responde a la pregunta de forma pertinente. Si está en blanco, no tiene relación o es ilegible, sigue las reglas actuales de revisión.
+4. **Dada** una entrega con respuesta libre, **cuando** se califica, **entonces** recibe el puntaje completo si responde a la pregunta de forma pertinente. Decisión del 2026-11-07: puntaje completo, no parcial. Si está en blanco, no tiene relación o es ilegible, sigue las reglas actuales de revisión.
 5. **Dada** una pregunta no marcada como libre, **cuando** se publica, **entonces** sigue exigiendo una respuesta esperada concreta. La respuesta libre nunca se aplica sola.
 
 ### Casos límite
