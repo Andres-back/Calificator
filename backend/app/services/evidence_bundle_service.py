@@ -29,6 +29,7 @@ class EvidenceBundle:
     evidence_type: str
     metadata: dict[str, Any]
     source_fingerprint: str = ""
+    warnings: tuple[str, ...] = ()
 
 
 def _limits() -> tuple[int, int, int, int]:
@@ -73,6 +74,12 @@ def _normalize_photo(content: bytes, rotation: int) -> Image.Image:
     return ImageEnhance.Sharpness(image).enhance(1.1)
 
 
+def _prepared_photo(content: bytes) -> Image.Image:
+    """La hoja ya recortada y girada por el escáner: se usa tal como la revisó el docente."""
+    with Image.open(BytesIO(content)) as source:
+        return source.convert("RGB")
+
+
 def _safe_pdf_page_count(content: bytes, max_pages: int) -> int:
     try:
         import fitz
@@ -95,10 +102,12 @@ def _photos_to_bundle(
     rotations: list[int],
     *,
     max_total_bytes: int,
+    prepared: list[bytes | None] | None = None,
 ) -> tuple[bytes, str, str]:
+    prepared = prepared or [None] * len(photos)
     images = [
-        _normalize_photo(content, rotation)
-        for (content, _filename), rotation in zip(photos, rotations, strict=True)
+        _prepared_photo(ready) if ready is not None else _normalize_photo(content, rotation)
+        for (content, _filename), rotation, ready in zip(photos, rotations, prepared, strict=True)
     ]
     try:
         output = BytesIO()
@@ -135,6 +144,7 @@ async def build_evidence_bundle(
     total_bytes_limit: int | None = None,
     image_bytes_limit: int | None = None,
     file_count_limit: int | None = None,
+    scan_recipes: list | None = None,
 ) -> EvidenceBundle:
     """Valida todos los archivos antes de producir una evidencia persistible."""
     files = list(uploads) if isinstance(uploads, (list, tuple)) else [uploads]
@@ -214,10 +224,17 @@ async def build_evidence_bundle(
         )
 
     photos = [(content, filename) for content, filename, _mime in loaded]
+    prepared: list[bytes | None] | None = None
+    warnings: tuple[str, ...] = ()
+    if scan_recipes is not None:
+        # Spec 157: only digitalization passes recipes; grading never does.
+        from app.services.evidence_digitalization_scan import prepare_scanned_photos
+        prepared, warnings = await prepare_scanned_photos(loaded, scan_recipes)
     bundled_content, bundled_filename, bundled_mime = _photos_to_bundle(
         photos,
         normalized_rotations,
         max_total_bytes=max_total_bytes,
+        prepared=prepared,
     )
     metadata = {
         "tipo": "fotos" if len(photos) > 1 else "foto",
@@ -231,6 +248,9 @@ async def build_evidence_bundle(
             for index, (_content, filename) in enumerate(photos, start=1)
         ],
     }
+    if prepared is not None:
+        for item, ready in zip(metadata["archivos"], prepared, strict=True):
+            item["preparada"] = ready is not None
     return EvidenceBundle(
         content=bundled_content,
         filename=bundled_filename,
@@ -239,4 +259,5 @@ async def build_evidence_bundle(
         evidence_type=metadata["tipo"],
         metadata=metadata,
         source_fingerprint=source_fingerprint,
+        warnings=warnings,
     )

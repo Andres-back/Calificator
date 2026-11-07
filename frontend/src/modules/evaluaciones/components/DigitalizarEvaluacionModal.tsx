@@ -5,11 +5,13 @@ import { FileText, Upload } from 'lucide-react';
 import { Button, Field, Input, Modal, Select, Textarea } from '@/components/ui';
 import { MultiPageEvidencePicker } from '@/components/evidence/MultiPageEvidencePicker';
 import { evidenceRotations, hasUnusableEvidence, type EvidencePage } from '@/components/evidence/evidencePayload';
+import { scanPagesReviewed, withoutEvidenceScan } from '@/components/evidence/scanSubmission';
 import { api, toApiError } from '@/lib/api';
 import { addPendingDigitalization } from '@/modules/evaluaciones/digitalizationJobs';
+import { digitalizationRecipes, useDigitalizationScanCapability } from '@/modules/evaluaciones/digitalizationScan';
 import { DocumentProcessingAnimation } from './DocumentProcessingAnimation';
 
-interface DigitalizationQueued { job_id: string; estado: 'queued' | 'retrying'; materia_id: string; nombre: string }
+interface DigitalizationQueued { job_id: string; estado: 'queued' | 'retrying'; materia_id: string; nombre: string; avisos?: string[] }
 interface Props { open: boolean; onClose: () => void; materiaId: string; onCompleted: () => void }
 const MAX_BYTES = 20 * 1024 * 1024;
 const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -23,6 +25,11 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
   const [notaMaxima, setNotaMaxima] = useState('5');
   const [modalidad, setModalidad] = useState<'fisica' | 'online' | 'mixta'>('fisica');
   const [queued, setQueued] = useState<DigitalizationQueued | null>(null);
+  // Spec 157: the scan mode is fixed when the first photo is added.
+  const [scanLocked, setScanLocked] = useState<boolean | null>(null);
+  const scanAvailable = useDigitalizationScanCapability(open);
+  const scanEnabled = pages.length ? scanLocked === true : scanAvailable;
+  const usingScan = mode === 'photos' && scanEnabled && pages.length > 0;
   const fileRef = useRef<HTMLInputElement>(null);
   const scope = useRef(0);
   const mounted = useRef(true);
@@ -51,7 +58,7 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
   useEffect(() => {
     scope.current += 1;
     submitLock.current = false;
-    setPages([]); setFile(null); setQueued(null); setMode('photos');
+    setPages([]); setFile(null); setQueued(null); setMode('photos'); setScanLocked(null);
     setNombre(''); setDescripcion(''); setNotaMaxima('5'); setModalidad('fisica');
     resetMutation();
   }, [open, materiaId, resetMutation]);
@@ -86,10 +93,21 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
     if (descripcion.trim()) form.append('descripcion', descripcion.trim());
     files.forEach(selected => form.append('file', selected));
     if (mode === 'photos') form.append('rotaciones', JSON.stringify(evidenceRotations(pages)));
+    if (usingScan) {
+      try {
+        const recipes = digitalizationRecipes(pages);
+        if (recipes.some(Boolean)) form.append('recetas', JSON.stringify(recipes));
+      } catch (error) {
+        submitLock.current = false;
+        toast.error(error instanceof Error ? error.message : 'Revisa las hojas antes de enviarlas.');
+        return;
+      }
+    }
     digitalizar.mutate({ form, context: scope.current });
   };
   const canSubmit = nombre.trim().length >= 2 && Number(notaMaxima) > 0
-    && (mode === 'document' ? Boolean(file) : pages.length > 0 && !hasUnusableEvidence(pages));
+    && (mode === 'document' ? Boolean(file) : pages.length > 0 && !hasUnusableEvidence(pages)
+      && (!usingScan || scanPagesReviewed(pages)));
 
   return <Modal open={open} onClose={close} title="Digitalizar evaluación" className="max-w-3xl">
     {!queued ? <div className="min-w-0 space-y-5">
@@ -102,10 +120,19 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
         <Button variant={mode === 'photos' ? 'primary' : 'outline'} disabled={digitalizar.isPending} aria-pressed={mode === 'photos'} onClick={() => setMode('photos')}>Fotos</Button>
         <Button variant={mode === 'document' ? 'primary' : 'outline'} disabled={digitalizar.isPending} aria-pressed={mode === 'document'} onClick={() => setMode('document')}>PDF o Word</Button>
       </div>
-      {mode === 'photos' ? <MultiPageEvidencePicker pages={pages} onChange={selected => {
+      {mode === 'photos' ? <div className="min-w-0 space-y-3"><MultiPageEvidencePicker pages={pages} onChange={selected => {
+        if (!pages.length && selected.length) setScanLocked(scanAvailable);
         setPages(selected); if (selected[0]) titleFromFile(selected[0].file);
       }} contextKey={materiaId + ':' + scope.current} disabled={digitalizar.isPending} allowPdf={false}
-        maxTotalBytes={MAX_BYTES} maxImageBytes={MAX_BYTES} />
+        maxTotalBytes={MAX_BYTES} maxImageBytes={MAX_BYTES} scanEnabled={scanEnabled} />
+        {usingScan && <div className="space-y-2 rounded-xl border border-border p-3">
+          {!scanPagesReviewed(pages) && <p role="status" className="text-sm text-muted">Revisa cada hoja o elige usar su foto original antes de digitalizar.</p>}
+          <Button variant="outline" className="min-h-11" disabled={digitalizar.isPending} onClick={() => {
+            setScanLocked(false); setPages(withoutEvidenceScan(pages));
+          }}>Usar las fotos originales</Button>
+          <p className="text-xs leading-5 text-muted">Las hojas preparadas se leen recortadas y derechas. Si una no se puede preparar, usamos su foto original y te avisamos.</p>
+        </div>}
+      </div>
         : <div className="space-y-3">
           <Button variant="outline" className="min-h-16 w-full" disabled={digitalizar.isPending} onClick={() => fileRef.current?.click()}>
             <Upload className="h-5 w-5" /> {file ? 'Cambiar documento' : 'Seleccionar PDF o Word'}
@@ -140,6 +167,9 @@ function DigitalizarEvaluacionModal({ open, onClose, materiaId, onCompleted }: P
       <DocumentProcessingAnimation />
       <h3 className="mt-2 font-display text-xl font-bold">Estamos trabajando en tu documento</h3>
       <p className="mt-2 max-w-md text-sm leading-6 text-muted">Estamos leyendo todas las hojas de <strong>{queued.nombre}</strong>. Puedes continuar navegando; te avisaremos cuando el borrador esté listo.</p>
+      {queued.avisos?.length ? <ul role="status" className="mt-3 max-w-md space-y-1 text-sm text-amber-700 dark:text-amber-300">
+        {queued.avisos.map(aviso => <li key={aviso}>{aviso}</li>)}
+      </ul> : null}
       <Button className="mt-6 min-w-48" onClick={close}>Continuar navegando</Button>
     </div>}
   </Modal>;

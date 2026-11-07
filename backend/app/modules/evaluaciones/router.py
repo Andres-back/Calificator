@@ -37,6 +37,8 @@ from app.services.storage_service import (
     save_private_upload,
 )
 from app.services.evidence_bundle_service import build_evidence_bundle
+from app.services.evidence_digitalization_scan import parse_scan_recipes
+from app.modules.calificaciones.evidence_scan_admission import capability as scan_capability, require_scan_enabled
 from app.shared.enums import EvaluacionModalidad, JobEstado, JobTipo, UserRole
 from app.workers.tasks_digitalization import digitalize_evaluation
 
@@ -116,6 +118,13 @@ async def extract_generation_reference(
     }
 
 
+@router.get("/evaluaciones/externa/capacidad-escaneo")
+async def digitalization_scan_capability(current_user: User = Depends(get_current_user)) -> dict:
+    """Spec 157: si el docente puede preparar las fotos que digitaliza (sin ayuda de esquinas)."""
+    require_permission_now(current_user, "evaluations.create")
+    return {**scan_capability(current_user), "corner_assistance_enabled": False}
+
+
 @router.post(
     "/evaluaciones/externa/digitalizar-con-archivo",
     status_code=status.HTTP_202_ACCEPTED,
@@ -128,6 +137,7 @@ async def digitalize_from_file(
     modalidad: EvaluacionModalidad = Form(default=EvaluacionModalidad.FISICA),
     file: list[UploadFile] = File(...),
     rotaciones: str | None = Form(default=None),
+    recetas: str | None = Form(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     _: None = Depends(
@@ -151,7 +161,17 @@ async def digitalize_from_file(
         if rotations is not None and (not isinstance(rotations, list) or len(rotations) != len(files)
                 or any(type(value) is not int or value not in {0, 90, 180, 270} for value in rotations)):
             raise ValueError('Revisa el giro de las hojas antes de enviarlas.')
+        recipes = parse_scan_recipes(recetas, len(files))
+        if recipes is not None and all(recipe is None for recipe in recipes):
+            recipes = None
+        if recipes is not None:
+            # Spec 157: the same access rule as grading, decided per teacher.
+            require_scan_enabled(current_user)
+            if any(recipe is not None and recipe.rotation != (rotations[index] if rotations else 0)
+                   for index, recipe in enumerate(recipes)):
+                raise ValueError('Revisa el giro de las hojas preparadas antes de enviarlas.')
         metadata = None
+        warnings: tuple[str, ...] = ()
         if len(files) == 1:
             content = await read_upload_limited(files[0], 20 * 1024 * 1024)
             filename = files[0].filename or 'evaluacion'
@@ -160,10 +180,14 @@ async def digitalize_from_file(
                 await files[0].seek(0)
             elif rotations and any(rotations):
                 raise ValueError('El giro de hojas solo se aplica a fotografías.')
+            elif recipes is not None:
+                raise ValueError('La preparación de hojas solo se aplica a fotografías.')
         if len(files) > 1 or mime.startswith('image/'):
             bundle = await build_evidence_bundle(files, rotations=rotations,
-                total_bytes_limit=20 * 1024 * 1024, image_bytes_limit=20 * 1024 * 1024, file_count_limit=10)
+                total_bytes_limit=20 * 1024 * 1024, image_bytes_limit=20 * 1024 * 1024, file_count_limit=10,
+                scan_recipes=recipes)
             content, mime, filename, metadata = bundle.content, bundle.mime, bundle.filename, bundle.metadata
+            warnings = tuple(getattr(bundle, 'warnings', ()))
         file_key = await save_private_upload(
             content,
             mime,
@@ -240,6 +264,7 @@ async def digitalize_from_file(
         "estado": response_state,
         "materia_id": materia_id,
         "nombre": nombre,
+        "avisos": list(warnings),
     }
 
 @router.post(

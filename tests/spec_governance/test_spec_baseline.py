@@ -149,6 +149,7 @@ ALL_SPECS = {
     "153-reparto-sin-bloqueo",
     "155-puntaje-editable",
     "156-digitalizacion-clara",
+    "157-escaner-digitalizar",
 }
 OWNED_SPECS = {
     name
