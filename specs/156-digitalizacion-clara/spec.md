@@ -49,6 +49,8 @@ Como profesor, quiero ver qué me falta para publicar y hacerlo sin buscar, para
 2. **Dado** el borrador, **cuando** lo abro, **entonces** veo cada pendiente con un botón que lleva a la pregunta correspondiente.
 3. **Dado** que no quedan pendientes, **cuando** toco "Publicar y empezar a calificar", **entonces** la evaluación queda publicada con las reglas actuales de publicación.
 
+Ajuste del 2026-11-07 (PR 3): el aviso de una hoja, por ejemplo una lectura incompleta, aparece en la lista con su botón, pero no impide publicar, porque el servidor tampoco lo exige y el profesor puede decidir que la hoja está bien. Bloquean el botón las preguntas que el editor rechaza, como una sin respuesta correcta, y una suma de puntos distinta de la nota máxima. Al publicar, el profesor pasa a calificar por foto, o a las entregas si la evaluación es en línea.
+
 ### Historia 4 - Respuestas correctas y respuesta libre (Prioridad: P1)
 
 Como profesor, quiero confirmar las respuestas correctas propuestas y decidir en cada pregunta abierta si tiene una respuesta esperada o es de respuesta libre.
