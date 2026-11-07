@@ -40,8 +40,25 @@
 
 Sus tareas se añaden en cada PR:
 - **PR 3:** "Revisar" abre el borrador, con la lista de pendientes y "Publicar y empezar a calificar". (FR-006, FR-007, FR-008)
-- **PR 4:** respuestas propuestas, pregunta por las abiertas y respuesta libre con su regla de calificación. (FR-009, FR-010, FR-011, FR-012)
+
+## PR 4: Historia 4, respuestas correctas y respuesta libre
+
+### Pruebas primero (RED)
+
+- [X] T030 Pruebas en `backend/tests/unit/test_free_answer.py`: clave completa solo con `respuesta_libre: true` en una pregunta abierta; sin la marca sigue faltando; la marca se ignora en opción múltiple, verdadero o falso y completar; publicar una evaluación digitalizada con respuesta libre; la marca llega al mapa de calificación, a la copia de versión y al guardado; la digitalización nunca la pone sola; el estudiante no la recibe. RED: error de importación y luego 7 fallas. (FR-010, FR-011, FR-013)
+- [X] T031 Pruebas del calificador con modelo simulado, sin llamadas reales: la regla aparece solo para las preguntas marcadas, también al dividir por pregunta y en el verificador; la validación objetiva no la compara letra por letra; la nota con clave completa no se marca para revisión. (FR-012)
+- [X] T032 Pruebas de Vitest del modelo y del editor: la pregunta "¿Tiene una respuesta esperada o es de respuesta libre?", marcar y quitar la respuesta libre, validación, `respuesta_libre` en lo que se guarda y confirmar con un toque una respuesta objetiva propuesta. RED: 8 fallas. (FR-009, FR-010, FR-011)
+
+### Corrección (GREEN)
+
+- [X] T033 `free_answer_numbers` y `normalize_free_answers` en `blueprint_service.py`; `grading_answer_key_status` cuenta la marca; el guardado conserva la marca solo en preguntas abiertas con el texto "Cualquier respuesta válida"; `respuestalibre` entra en las claves ocultas al estudiante. (FR-011, FR-013)
+- [X] T034 Regla de respuesta libre en el calificador y el verificador (`agents.py`): puntaje completo si responde de forma pertinente; en blanco, sin relación o ilegible siguen las reglas actuales. `build_objective_validation` omite esas preguntas. (FR-012)
+- [X] T035 Editor: pregunta con dos botones, "Escribir la respuesta esperada" y "Respuesta libre"; vista fija "Cualquier respuesta válida" con "Quitar respuesta libre"; botón "Confirmar esta respuesta" para opción múltiple y verdadero o falso. (FR-009, FR-010, FR-011)
+
+### Validación
+
+- [X] T036 E2E a 360 px en `frontend/e2e/evaluation-free-answer.spec.ts`: marcar una pregunta abierta como libre y guardar. Ejecutar pruebas, inventario y gobernanza, y registrar en `quickstart.md`. (FR-010, FR-011, FR-013)
 
 ## Dependencias
 
-T001 y T002 → T003 → T004 → T005. PR 2: T006, T007 y T008 → T009 y T010 → T011 → T012.
+T001 y T002 → T003 → T004 → T005. PR 2: T006, T007 y T008 → T009 y T010 → T011 → T012. PR 4: T030, T031 y T032 → T033 → T034 y T035 → T036.
