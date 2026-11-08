@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1c38fcc8baac1158ef822322dcdc67036cee87d59e45a07b649f7153fef84abf",
+  "source_digest": "4232a3237ef0fe50fd45db59c0c5c083843be8cdd6db5f05e8395fe85045653f",
   "surfaces": [
     {
       "actors": [
@@ -51808,6 +51808,12 @@
           "reference": "redis",
           "status": "direct",
           "test_path": "backend/tests/unit/conftest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "redis",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_celery_redis_compat.py"
         },
         {
           "level": "unit",
