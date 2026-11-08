@@ -91,8 +91,8 @@ async def test_concurrent_devices_create_only_one_access_with_different_requests
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('kind', ['disabled', 'expired', 'suspended', 'evidence', 'multiple'])
-async def test_guard_never_creates_around_closed_incompatible_or_multiple_links(fb_db, fb_case, kind):
+@pytest.mark.parametrize('kind', ['disabled', 'expired', 'suspended', 'multiple'])
+async def test_guard_never_creates_around_closed_or_multiple_links(fb_db, fb_case, kind):
     access, _, _ = await issue(fb_db, fb_case)
     if kind == 'disabled':
         access.state = 'disabled'
@@ -105,9 +105,25 @@ async def test_guard_never_creates_around_closed_incompatible_or_multiple_links(
         await issue(fb_db, fb_case)
     before = await count_accesses(fb_db, fb_case[-1].id)
     with pytest.raises(HTTPException) as exc:
-        await issue(fb_db, fb_case, only=True, evidence=kind == 'evidence')
+        await issue(fb_db, fb_case, only=True)
     assert exc.value.status_code == 409
     assert await count_accesses(fb_db, fb_case[-1].id) == before
+
+
+@pytest.mark.asyncio
+async def test_reusing_a_live_link_without_photo_attaches_it_and_keeps_it_open(fb_db, fb_case):
+    access, token, _ = await issue(fb_db, fb_case)
+    publication = await fb_db.get(FeedbackPublication, access.publication_id)
+    publication.evidence_enabled = False
+    fingerprint, expires_at = publication.content_fingerprint, access.expires_at
+    await fb_db.flush()
+    reused, new_token, _ = await issue(fb_db, fb_case, only=True, days=10)
+    assert reused.id == access.id and new_token is None
+    assert publication.evidence_enabled is True
+    assert publication.content_fingerprint == fingerprint and access.expires_at == expires_at
+    assert await count_accesses(fb_db, fb_case[-1].id) == 1
+    context = await guard_token(fb_db, token)
+    assert context.publication.id == publication.id
 
 
 @pytest.mark.asyncio

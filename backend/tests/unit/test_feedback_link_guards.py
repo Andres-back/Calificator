@@ -10,7 +10,7 @@ import pytest
 
 from app.modules.feedback_sharing import service
 from app.modules.feedback_sharing.projection import digest
-from app.modules.feedback_sharing.schemas import AccessCreate, ReactivateInput
+from app.modules.feedback_sharing.schemas import AccessCreate, ReactivateInput, RenewInput
 
 
 def inputs():
@@ -94,7 +94,7 @@ async def test_reused_request_receipt_rejects_different_options(guarded, change)
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('kind', ['disabled', 'revoked', 'expired', 'suspended', 'evidence', 'multiple'])
+@pytest.mark.parametrize('kind', ['disabled', 'revoked', 'expired', 'suspended', 'multiple'])
 async def test_reentry_never_creates_around_an_existing_conflict(guarded, kind):
     db, _, _, access, publication, now = guarded
     if kind == 'disabled':
@@ -105,8 +105,6 @@ async def test_reentry_never_creates_around_an_existing_conflict(guarded, kind):
         access.expires_at = now
     elif kind == 'suspended':
         service.guard_access.side_effect = HTTPException(404, 'Unavailable')
-    elif kind == 'evidence':
-        publication.evidence_enabled = True
     elif kind == 'multiple':
         second = NS(**{**vars(access), 'id': uuid4()})
         db.scalars.return_value = NS(all=lambda: [access, second])
@@ -115,6 +113,27 @@ async def test_reentry_never_creates_around_an_existing_conflict(guarded, kind):
     assert exc.value.status_code == 409
     service.new_publication.assert_not_awaited()
     assert not access.operations_json
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('already_enabled', [False, True])
+async def test_reentry_attaches_the_photo_instead_of_failing(guarded, already_enabled):
+    db, actor, source, access, publication, _ = guarded
+    publication.evidence_enabled = already_enabled
+    expires = access.expires_at
+    result, token = await create(guarded, uuid4())
+    assert result is access and token is None
+    assert publication.evidence_enabled is True and access.expires_at == expires
+    assert service.audit_control.await_count == (0 if already_enabled else 1)
+    service.new_publication.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_replacing_a_link_attaches_the_photo(guarded):
+    db, actor, _, access, publication, _ = guarded
+    payload = RenewInput(expected_version=1, request_id=uuid4(), confirmar_reemplazo=True)
+    await service.manage_access(db, actor, access.id, 'renew', payload)
+    assert publication.evidence_enabled is True
 
 
 @pytest.mark.asyncio

@@ -100,6 +100,7 @@ class BatchPublishInput(Input):
 
 class AccessCopiesInput(Input):
     access_ids: list[UUID] = Field(min_length=1, max_length=100)
+    adjuntar_evidencia: StrictBool = False
 
     @field_validator('access_ids')
     @classmethod

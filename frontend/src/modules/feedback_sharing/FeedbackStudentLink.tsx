@@ -86,7 +86,7 @@ export function FeedbackStudentLink({ evaluationId, gradeId, evaluationName, stu
     const active = fresh.filter(access => access.calificacion_id === gradeId && access.estado === 'active'
       && Date.parse(access.expires_at) > Date.now() && access.copy_available !== false);
     if (!active.some(access => access.id === chosen.id) || (active.length > 1 && selectedAccessId !== chosen.id)) throw new Error('Access changed');
-    const results = await copyFeedbackAccesses(evaluationId, [chosen.id], signal);
+    const results = await copyFeedbackAccesses(evaluationId, [chosen.id], signal, true);
     const result = results.length === 1 && results[0].id === chosen.id ? results[0] : undefined;
     if (!current() || !result?.url || (result.calificacion_id && result.calificacion_id !== gradeId)) throw new Error('Unavailable');
     return result;
@@ -96,6 +96,8 @@ export function FeedbackStudentLink({ evaluationId, gradeId, evaluationName, stu
     // WhatsApp/native use their prevalidated message synchronously, preserving
     // the browser gesture. Copy revalidates again and has a manual fallback.
     const message = buildIndividualFeedbackMessage({ studentName, evaluationName, url: availability.url });
+    // Best effort: failing to attach the photo must not block the delivery.
+    if (channel !== 'copy' && chosen) void copyFeedbackAccesses(evaluationId, [chosen.id], signal, true).catch(() => undefined);
     if (channel === 'whatsapp') { window.open(buildWhatsAppShareUrl(message), '_blank', 'noopener,noreferrer'); return; }
     if (channel === 'native') { const result = await shareFeedbackMessage(message, navigator); if (current() && result.status === 'error') setNotice('No pudimos abrir Compartir. Puedes copiar el mensaje.'); return; }
     copyFocus.current = trigger ?? null;

@@ -152,6 +152,7 @@ ALL_SPECS = {
     "157-escaner-digitalizar",
     "158-webkit-estable",
     "159-editar-hojas-pdf",
+    "160-retroalimentacion-orientadora",
 }
 OWNED_SPECS = {
     name

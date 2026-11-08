@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "6e6e81cf8e1f7c9cf0386e2a400070bda72450e3e34ade84540b27235b2fc12c",
+  "source_digest": "1c38fcc8baac1158ef822322dcdc67036cee87d59e45a07b649f7153fef84abf",
   "surfaces": [
     {
       "actors": [
@@ -10229,6 +10229,12 @@
           "reference": "GET:/public/devolucion",
           "status": "direct",
           "test_path": "frontend/e2e/feedback-delivery.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/public/devolucion",
+          "status": "direct",
+          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackPage.test.tsx"
         },
         {
           "level": "unit",
@@ -23602,6 +23608,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_motifs.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_feedback_photo_always.py"
         },
         {
           "level": "unit",

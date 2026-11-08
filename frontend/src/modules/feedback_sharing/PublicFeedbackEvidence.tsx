@@ -18,8 +18,9 @@ export function PublicFeedbackEvidence({ client, onUnavailable }: { client: Publ
       objectUrl = URL.createObjectURL(result.blob); setUrl(objectUrl); setPages(result.pages);
     }).catch(reason => {
       if (controller.signal.aborted) return;
+      // A missing file must not hide the grade: the page rechecks the link itself.
+      setFailed(true);
       if (reason instanceof FeedbackAccessError && reason.status === 404) onUnavailable();
-      else setFailed(true);
     });
     return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
   }, [client, page, open, retry, onUnavailable]);

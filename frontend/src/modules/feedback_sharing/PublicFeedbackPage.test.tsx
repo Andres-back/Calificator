@@ -23,6 +23,32 @@ describe('consulta individual sin panel docente', () => {
     expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
   });
 
+  it('160 si falta el archivo de la foto conserva la nota y la retroalimentación', async () => {
+    history.replaceState(null, '', `/devolucion#${token}`);
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: string) => url.includes('/evidencia/')
+      ? new Response('{}', { status: 404 }) : new Response(JSON.stringify({ ...payload(), evidencia_disponible: true }))));
+    render(<PublicFeedbackPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver foto de tu entrega' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos abrir la foto');
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url) === '/api/public/devolucion').length).toBeGreaterThan(1));
+    expect(screen.getByRole('heading', { name: 'Estudiante de prueba' })).toBeInTheDocument();
+    expect(screen.getByText(/En la pregunta 2 describiste las nubes/)).toBeInTheDocument();
+    expect(screen.queryByText(/Este enlace no está disponible/)).toBeNull();
+  });
+
+  it('160 si el enlace se cerró de verdad, el 404 de la foto lo confirma y se oculta todo', async () => {
+    history.replaceState(null, '', `/devolucion#${token}`);
+    let closed = false;
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('/evidencia/')) { closed = true; return new Response('{}', { status: 404 }); }
+      return closed ? new Response('{}', { status: 404 }) : new Response(JSON.stringify({ ...payload(), evidencia_disponible: true }));
+    }));
+    render(<PublicFeedbackPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver foto de tu entrega' }));
+    expect(await screen.findByText(/Este enlace no está disponible/)).toBeInTheDocument();
+    expect(screen.queryByText(/En la pregunta 2 describiste las nubes/)).toBeNull();
+  });
+
   it('sin token muestra ayuda y no envía solicitudes', () => {
     history.replaceState(null, '', '/devolucion');
     const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher);

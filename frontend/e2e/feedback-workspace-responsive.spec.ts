@@ -25,7 +25,7 @@ async function install(page: Page, total = 40, mixed = false) {
       if (route.request().method() === 'GET') return route.fulfill({ json: { resultados: [...accesses.values()], next_cursor: null } });
       const body = route.request().postDataJSON();
       calls.push({ ids: body.selecciones.map((item: { calificacion_id: string }) => item.calificacion_id), request: body.request_id });
-      expect(body.duracion_dias).toBe(3); expect(body.evidencia).toBe(false); expect(body.selecciones.length).toBeLessThanOrEqual(100);
+      expect(body.duracion_dias).toBe(3); expect(body.evidencia).toBe(true); expect(body.selecciones.length).toBeLessThanOrEqual(100);
       const resultados = body.selecciones.map((item: { calificacion_id: string }) => {
         if (mixed && calls.length === 1 && item.calificacion_id === 'c2') return { calificacion_id: item.calificacion_id, error: 'No pudimos generar este enlace. Reintenta.' };
         const index = Number(item.calificacion_id.slice(1));

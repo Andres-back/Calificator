@@ -299,7 +299,7 @@ describe('retroalimentaciones por evaluación', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Confirmar y generar 1 enlace' }));
     expect(await screen.findByRole('button', { name: embedded ? 'Copiar enlace' : 'Copiar enlace de Ana Pérez' })).toBeEnabled();
     expect(teacherApi.approveFeedbackReview).toHaveBeenCalledWith('e1', expect.objectContaining({ scope: 'summary', feedback_text: result.retroalimentacion }), expect.any(AbortSignal));
-    expect(teacherApi.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ selecciones: [{ calificacion_id: 'g1', fingerprint: ready.fingerprint }], duracion_dias: 3, evidencia: false }), expect.any(AbortSignal));
+    expect(teacherApi.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ selecciones: [{ calificacion_id: 'g1', fingerprint: ready.fingerprint }], duracion_dias: 3, evidencia: true }), expect.any(AbortSignal));
     if (!embedded) fireEvent.click(screen.getByRole('button', { name: 'Volver a estudiantes' }));
     if (!embedded) expect(await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' })).toBeChecked();
     expect(await screen.findByText('Enlace disponible')).toBeInTheDocument();
@@ -359,7 +359,7 @@ describe('retroalimentaciones por evaluación', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver retroalimentación de Ana Pérez' }));
     expect(screen.getByText(result.retroalimentacion)).toBeInTheDocument();
   });
-  it('crea solo seleccionados con tres días y evidencia desactivada', async () => {
+  it('crea solo seleccionados con tres días y la foto adjunta', async () => {
     vi.mocked(teacherApi.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'access', estado: 'active', version: 1, expires_at: '2099-01-04T00:00:00Z', url: 'https://example.test/devolucion#' + 'a'.repeat(43), credential_available: true }]);
     render(<ShareFeedbackDialog evaluationId="e1" initialSelectedIds={[]} onClose={() => {}} onReview={() => {}} />);
     await screen.findByRole('checkbox', { name: 'Seleccionar Ana Pérez' });
@@ -368,7 +368,7 @@ describe('retroalimentaciones por evaluación', () => {
     expect(teacherApi.issueFeedbackAccesses).not.toHaveBeenCalled();
     fireEvent.click(await screen.findByRole('button', { name: 'Generar 1 enlace' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar y generar 1 enlace' }));
-    await waitFor(() => expect(teacherApi.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 3, evidencia: false, selecciones: [{ calificacion_id: 'g1', fingerprint: 'f'.repeat(64) }] }), expect.any(AbortSignal)));
+    await waitFor(() => expect(teacherApi.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 3, evidencia: true, selecciones: [{ calificacion_id: 'g1', fingerprint: 'f'.repeat(64) }] }), expect.any(AbortSignal)));
     expect(await screen.findByRole('button', { name: 'Copiar enlace de Ana Pérez' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /copiar todos/i })).toBeNull();
   });

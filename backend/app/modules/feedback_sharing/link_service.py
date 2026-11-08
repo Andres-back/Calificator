@@ -6,10 +6,10 @@ from app.core.config import settings
 from app.modules.feedback_sharing.access_policy import authorize_evaluation, db_now, guard_access
 from app.modules.feedback_sharing.credentials import open_credential
 from app.modules.feedback_sharing.models import FeedbackAccess, FeedbackPublication
-from app.modules.feedback_sharing.service import _lock_managed_access, audit_control
+from app.modules.feedback_sharing.service import _lock_managed_access, attach_evidence, audit_control
 
 
-async def copy_accesses(db, actor, evaluation_id, access_ids):
+async def copy_accesses(db, actor, evaluation_id, access_ids, *, adjuntar_evidencia=False):
     await authorize_evaluation(db, actor, evaluation_id)
     # Do not disclose whether an ID from another evaluation exists.
     allowed = list((await db.execute(select(FeedbackAccess.id, FeedbackAccess.calificacion_id)
@@ -38,6 +38,9 @@ async def copy_accesses(db, actor, evaluation_id, access_ids):
                         'error':'Este enlace antiguo no guardó una copia recuperable. Si no lo conservas, puedes reemplazarlo de forma explícita.'}
                     continue
                 token = open_credential(access.credential_encrypted, access.credential_digest)
+                # Solo un gesto del docente: abrir una pantalla también recupera enlaces.
+                if adjuntar_evidencia:
+                    await attach_evidence(db, access, publication, actor)
                 results[access_id] = {'id':str(access.id), 'calificacion_id':str(access.calificacion_id),
                     'estudiante':publication.payload_json['estudiante'], 'expires_at':access.expires_at.isoformat(),
                     'url':f"{settings.PUBLIC_APP_URL.rstrip('/')}/devolucion#{token}"}

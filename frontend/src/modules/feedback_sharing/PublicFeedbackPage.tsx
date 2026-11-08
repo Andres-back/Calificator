@@ -34,6 +34,7 @@ function FeedbackSession({ token }: { token: string }) {
   const [reload, setReload] = useState(0);
   const [closed, setClosed] = useState(false);
   const close = useCallback(() => { setResult(null); setClosed(true); }, []);
+  const recheck = useCallback(() => setReload(value => value + 1), []);
   useEffect(() => {
     if (closed) return;
     let active = true;
@@ -86,7 +87,7 @@ function FeedbackSession({ token }: { token: string }) {
       <p className="text-4xl font-bold">{showNumber(data.nota)} <span className="text-lg font-normal text-muted">/ {showNumber(data.nota_maxima)}</span></p>
       <p className="text-sm leading-6">{data.explicacion}</p>
     </section>
-    {result.evidencia_disponible && <PublicFeedbackEvidence client={client} onUnavailable={close} />}
+    {result.evidencia_disponible && <PublicFeedbackEvidence client={client} onUnavailable={recheck} />}
     <section aria-labelledby="shared-feedback" className="space-y-3 rounded-2xl border border-border bg-surface p-5">
       <h2 id="shared-feedback" className="font-bold">Qué lograste y cómo seguir</h2>
       <FeedbackMessage text={data.retroalimentacion} />

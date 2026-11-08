@@ -55,7 +55,7 @@ async def read_feedback(credential: str = Depends(read_credential), db: AsyncSes
     context = await guard_token(db, credential)
     quota = await quota_snapshot(db, context)
     context = await guard_token(db, credential)
-    return {"resultado": context.publication.payload_json, "expires_at": context.access.expires_at, "server_now": await db_now(db), "cupo": quota, "evidencia_disponible": bool(context.publication.evidence_enabled and context.source.delivery), 'conversation_scope': conversation_scope(context)}
+    return {"resultado": context.publication.payload_json, "expires_at": context.access.expires_at, "server_now": await db_now(db), "cupo": quota, "evidencia_disponible": bool(context.publication.evidence_enabled and context.source.delivery and context.source.delivery.archivo_url), 'conversation_scope': conversation_scope(context)}
 
 
 @router.get("/evidencia/{page}")
