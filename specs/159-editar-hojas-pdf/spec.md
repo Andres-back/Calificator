@@ -1,6 +1,6 @@
 # Especificación: Editar hojas también en entregas antiguas guardadas como PDF
 
-**Rama**: `codex/159-editar-hojas-pdf` | **Creada**: 2026-11-08 | **Estado**: Pendiente de aprobación | **Issue**: [#337](https://github.com/Andres-back/Calificator/issues/337)
+**Rama**: `codex/159-editar-hojas-pdf` | **Creada**: 2026-11-08 | **Estado**: Aprobada | **Issue**: [#337](https://github.com/Andres-back/Calificator/issues/337)
 
 **Entrada**: el usuario reportó "el de editar hojas no funciona", con el aviso "No podemos editar las hojas de esta evidencia".
 
