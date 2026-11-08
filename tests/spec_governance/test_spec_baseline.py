@@ -153,6 +153,7 @@ ALL_SPECS = {
     "158-webkit-estable",
     "159-editar-hojas-pdf",
     "160-retroalimentacion-orientadora",
+    "161-fijar-kombu",
 }
 OWNED_SPECS = {
     name
