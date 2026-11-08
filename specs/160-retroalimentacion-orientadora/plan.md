@@ -18,6 +18,8 @@ Dos PR pequeños.
 - `new_publication` guarda siempre `evidence_enabled=True`. El campo `evidencia` de la API se sigue aceptando y se ignora, para no romper pestañas abiertas durante el despliegue.
 - Al reutilizar un enlace, se activa la foto de su publicación en vez de responder 409. `evidence_enabled` no forma parte de la huella.
 - Se quita la casilla y se cambia el texto de la confirmación.
+- La copia del docente pide activar la foto con `adjuntar_evidencia`. La recuperación automática al abrir el panel usa la misma ruta sin ese campo, y no cambia nada. Reemplazar el enlace también activa la foto.
+- `evidencia_disponible` exige que la entrega tenga archivo. Un 404 de la foto ya no cierra la página: vuelve a consultar el enlace y solo se cierra si de verdad está cerrado. Antes esto casi no ocurría porque la foto venía apagada.
 
 **PR 2, mensaje orientador**
 - `build_formative_feedback`: "Pregunta N: {orientación} Por qué: {explicación}".
@@ -36,8 +38,10 @@ Descartado:
 
 | PR | Archivo | Cambio |
 | --- | --- | --- |
-| 1 | `backend/app/modules/feedback_sharing/service.py` | foto siempre activa, reutilización sin 409 |
-| 1 | `frontend/src/modules/feedback_sharing/FeedbackSharePanel.tsx`, `FeedbackAccessList.tsx` | sin casilla, texto nuevo |
+| 1 | `backend/app/modules/feedback_sharing/service.py`, `link_service.py`, `schemas.py`, `router.py` | foto siempre activa, reutilización sin 409, copia con gesto |
+| 1 | `backend/app/modules/feedback_sharing/public_router.py` | foto ofrecida solo si hay archivo |
+| 1 | `frontend/src/modules/feedback_sharing/FeedbackSharePanel.tsx`, `FeedbackAccessList.tsx`, `FeedbackLinkActions.tsx`, `FeedbackStudentLink.tsx`, `api.ts` | sin casilla, texto nuevo, gesto que activa la foto |
+| 1 | `frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.tsx`, `PublicFeedbackPage.tsx` | la foto que falla no oculta la nota |
 | 2 | `backend/app/modules/calificaciones/breakdown_policy.py` | la acción primero |
 | 2 | `backend/app/modules/calificaciones/agents.py`, `feedback_refinement.py` | reglas de redacción |
 | 2 | `backend/app/modules/evaluaciones/score_notes.py` | sin frase de reparto al estudiante |

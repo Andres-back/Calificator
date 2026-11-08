@@ -62,7 +62,7 @@ export function FeedbackLinkActions({evaluationId,accesses,selectedIds,signal,va
     lock.current=true;setBusy(true);onBusy?.(true);setOutputScope(scope);setManual('');setErrors([]);setMessage('');
     try {
       const results:FeedbackCopiedAccess[]=[];
-      for(let offset=0;offset<items.length;offset+=100){results.push(...await copyFeedbackAccesses(evaluationId,items.slice(offset,offset+100).map(item=>item.id),signal));if(!current())return;}
+      for(let offset=0;offset<items.length;offset+=100){results.push(...await copyFeedbackAccesses(evaluationId,items.slice(offset,offset+100).map(item=>item.id),signal,true));if(!current())return;}
       const links=results.filter(item=>item.url && item.estudiante && !item.code && !item.error);
       if(results.length!==items.length || items.some(item=>results.filter(result=>result.id===item.id).length!==1)) throw new Error('Incomplete copy');
       setErrors(results.filter(item=>item.error||item.code).map(item=>({text:`${accesses.find(access=>access.id===item.id)?.estudiante??'Enlace'}: ${item.error??copyErrorMessage(item.code)}`,code:item.code})));
@@ -97,7 +97,7 @@ export function FeedbackLinkActions({evaluationId,accesses,selectedIds,signal,va
       for(let offset=0;offset<eligible.length;offset+=100){
         const batch=eligible.slice(offset,offset+100);
         let results:FeedbackCopiedAccess[];
-        try {results=await copyFeedbackAccesses(evaluationId,batch.map(item=>item.id),signal);}
+        try {results=await copyFeedbackAccesses(evaluationId,batch.map(item=>item.id),signal,true);}
         catch {
           if(!current())return;
           failures.push(...batch.map(item=>({code:'recovery_error',text:`${item.estudiante}: ${copyErrorMessage()}`})));
@@ -134,7 +134,7 @@ export function FeedbackLinkActions({evaluationId,accesses,selectedIds,signal,va
   const choices=[...multipleGroups.map(group=>({gradeId:group.gradeId,name:group.name})),...(outputCurrent?manageTargets:[])]
     .filter((target,index,all)=>all.findIndex(other=>other.gradeId===target.gradeId)===index);
   return <section className={compact||selectionOnly?'min-w-0 max-w-full space-y-2':'min-w-0 space-y-3 rounded-xl border border-border p-3'} aria-label={compact?'Copia individual':'Copiar enlaces guardados'}>
-    {!compact && <><h3 className={selectionOnly?'sr-only':'font-bold'}>Copiar enlaces</h3><p className={selectionOnly?'sr-only':'text-sm text-muted'}>Lista privada para el docente. Copiar no cambia la vigencia ni las preguntas disponibles.</p></>}
+    {!compact && <><h3 className={selectionOnly?'sr-only':'font-bold'}>Copiar enlaces</h3><p className={selectionOnly?'sr-only':'text-sm text-muted'}>Lista privada para el docente. Copiar no cambia la vigencia ni las preguntas disponibles, y deja disponible la foto de su propia entrega.</p></>}
     <div className="grid gap-2 sm:flex sm:flex-wrap">{direct?<>
       {(!individual||directTargets.length===1)&&(!selectionOnly||directTargets.length>0)&&<Button variant="outline" className="h-auto min-h-11 max-w-full whitespace-normal px-[12px] py-2 [overflow-wrap:normal]" aria-label={individual?`Copiar enlace de ${directTargets[0]?.name}`:undefined} disabled={disabled||busy||!directTargets.length} onClick={()=>void copyDirect()}>{individual?'Copiar enlace':`Copiar lista de ${directTargets.length}`}</Button>}
       {choices.map(target=><Button key={target.gradeId} variant="outline" className="h-auto min-h-11 py-2" aria-label={`Elegir enlace de ${target.name}`} disabled={disabled||busy||!onManage} onClick={()=>onManage?.(target.gradeId)}>Elegir enlace</Button>)}

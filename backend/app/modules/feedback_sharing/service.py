@@ -145,18 +145,27 @@ async def approve_delivery_review(db, actor, evaluation_id, payload):
     return projection
 
 
-async def new_publication(db, source, actor, evidence: bool):
+async def new_publication(db, source, actor):
+    # Spec 160: el estudiante siempre ve su propia entrega; la casilla ya no existe.
     revision = (await db.scalar(select(func.max(FeedbackPublication.revision)).where(FeedbackPublication.calificacion_id == source.grade.id)) or 0) + 1
     publication = FeedbackPublication(
         calificacion_id=source.grade.id, estudiante_id=source.grade.estudiante_id,
         evaluacion_id=source.grade.evaluacion_id, materia_id=source.grade.materia_id,
         authorized_by=actor.id, breakdown_id=source.breakdown.id if source.breakdown else None,
         revision=revision, content_fingerprint=source.projection.fingerprint,
-        payload_json=source.projection.payload, evidence_enabled=evidence,
+        payload_json=source.projection.payload, evidence_enabled=True,
     )
     db.add(publication)
     await db.flush()
     return publication
+
+
+async def attach_evidence(db, access, publication, actor):
+    """Activa la foto de un enlace vigente; no toca huella, vigencia ni credencial."""
+    if publication.evidence_enabled:
+        return
+    publication.evidence_enabled = True
+    await audit_control(db, 'evidence_attached', access.id, actor.id, {'revision': publication.revision})
 
 
 async def create_access(db, actor, evaluation_id: UUID, grade_id: UUID, fingerprint: str, request_id: UUID, days: int, evidence: bool, *, solo_si_falta: bool = False):
@@ -202,13 +211,12 @@ async def create_access(db, actor, evaluation_id: UUID, grade_id: UUID, fingerpr
         if len(available) != 1:
             raise HTTPException(409, 'Revisa los enlaces existentes antes de generar otro. No se creó un enlace adicional.')
         access, publication = available[0]
-        if publication.evidence_enabled != evidence:
-            raise HTTPException(409, 'El enlace existente comparte otras opciones. Revísalo antes de generar otro.')
+        await attach_evidence(db, access, publication, actor)
         # Duration only applies to missing links; reuse never moves expiry.
         access.operations_json = {**(access.operations_json or {}), receipt_key: creation}
         await db.flush()
         return access, None
-    publication = await new_publication(db, source, actor, evidence)
+    publication = await new_publication(db, source, actor)
     token = secrets.token_urlsafe(32)
     now = await db_now(db)
     access = FeedbackAccess(publication_id=publication.id, calificacion_id=grade_id, created_by=actor.id, creation_request_id=request_id, credential_digest=credential_digest(token), credential_encrypted=seal_credential(token), expires_at=now + timedelta(days=days), created_at=now, updated_at=now, operations_json={"creation": creation})
@@ -276,6 +284,7 @@ async def manage_access(db, actor, access_id, action, payload):
         access.credential_encrypted = seal_credential(token)
         access.credential_generation += 1
         metadata["generation"] = access.credential_generation
+        await attach_evidence(db, access, publication, actor)
         event = "renewed"
     else:
         if payload.mantener_vencimiento and (
@@ -289,7 +298,7 @@ async def manage_access(db, actor, access_id, action, payload):
             raise HTTPException(409, "El resultado cambió. Actualiza la vista previa antes de reactivar.")
         # Cada autorización tiene snapshot propio. Nunca sustituir el contenido
         # de una revisión histórica ni permitir que un trabajo previo la use.
-        replacement = await new_publication(db, source, actor, payload.evidencia)
+        replacement = await new_publication(db, source, actor)
         publication.state = "suspended"
         publication.suspended_at = now
         access.publication_id = replacement.id

@@ -27,7 +27,7 @@ export function FeedbackAccessList({ evaluationId, accesses, previews, signal, v
     try {
       const result = await changeFeedbackAccess(access, action, { expected_version: access.version, request_id: requestId,
         ...(action === 'renovar' ? { confirmar_reemplazo: true } : {}),
-        ...(action === 'reactivar' ? { duracion_dias: days, fingerprint: preview!.fingerprint, evidencia: false,
+        ...(action === 'reactivar' ? { duracion_dias: days, fingerprint: preview!.fingerprint, evidencia: true,
           ...(access.estado === 'suspended' && Date.parse(access.expires_at) > Date.now() ? { mantener_vencimiento: true } : {}) } : {}),
       }, signal);
       if (!valid()) return;
@@ -53,7 +53,7 @@ export function FeedbackAccessList({ evaluationId, accesses, previews, signal, v
     </li>)}</ul>
     {pending && <div className="space-y-3 rounded-xl border border-amber-400 p-4">
       <p className="font-bold">{pending.access.estudiante}</p>
-      <p className="text-sm">{pending.action === 'desactivar' ? 'Se cerrará el acceso a esta retroalimentación. La nota y las evidencias no cambian.' : pending.action === 'renovar' ? 'El enlace anterior dejará de funcionar. Recibirás uno nuevo. Esto no amplía su duración ni reactiva un acceso cerrado.' : pending.access.estado === 'suspended' && Date.parse(pending.access.expires_at) > Date.now() ? 'Volverás a compartir la nota y el mensaje revisados con el mismo enlace y vencimiento. Las fotos permanecerán ocultas y las preguntas disponibles no se reinician.' : 'Autorizas de nuevo la nota y la retroalimentación que acabas de revisar. Se abrirá una nueva vigencia, sin reiniciar las preguntas usadas en los últimos diez minutos. La evidencia seguirá oculta.'}</p>
+      <p className="text-sm">{pending.action === 'desactivar' ? 'Se cerrará el acceso a esta retroalimentación. La nota y las evidencias no cambian.' : pending.action === 'renovar' ? 'El enlace anterior dejará de funcionar. Recibirás uno nuevo, con la foto de su propia entrega. Esto no amplía su duración ni reactiva un acceso cerrado.' : pending.access.estado === 'suspended' && Date.parse(pending.access.expires_at) > Date.now() ? 'Volverás a compartir la nota y el mensaje revisados con el mismo enlace y vencimiento. El estudiante podrá ver la foto de su propia entrega y las preguntas disponibles no se reinician.' : 'Autorizas de nuevo la nota y la retroalimentación que acabas de revisar. Se abrirá una nueva vigencia, sin reiniciar las preguntas usadas en los últimos diez minutos. El estudiante podrá ver la foto de su propia entrega.'}</p>
       {pending.action === 'reactivar' && !(pending.access.estado === 'suspended' && Date.parse(pending.access.expires_at) > Date.now()) && <label className="block text-sm">Duración<select aria-label="Duración de reactivación" className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3" value={days} onChange={event => setDays(Number(event.target.value))}>{Array.from({ length: 30 }, (_, index) => index + 1).map(value => <option key={value} value={value}>{value} días</option>)}</select></label>}
       <div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => setPending(null)}>Cancelar cambio</Button><Button loading={busy} onClick={() => void execute()}>Confirmar cambio</Button></div>
     </div>}

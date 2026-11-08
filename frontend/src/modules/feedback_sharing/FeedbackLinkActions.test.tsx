@@ -30,7 +30,7 @@ describe('Spec139 copia directa individual y de la selección', () => {
     fireEvent.click(button);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(individualMessage));
     expect(api.listFeedbackAccesses).toHaveBeenCalledTimes(1);
-    expect(api.copyFeedbackAccesses).toHaveBeenCalledWith('e1', ['a1'], expect.any(AbortSignal));
+    expect(api.copyFeedbackAccesses).toHaveBeenCalledWith('e1', ['a1'], expect.any(AbortSignal), true);
     expect(screen.getByRole('status')).toHaveTextContent('Enlace copiado');
     expect(screen.queryByText(/enviado|visto/i)).not.toBeInTheDocument();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe('Spec139 copia directa individual y de la selección', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copiar lista de 2' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(`Ana Pérez: ${url}\nLuis Sintético: ${url}_second`));
     expect(api.listFeedbackAccesses).toHaveBeenCalledTimes(1);
-    expect(api.copyFeedbackAccesses).toHaveBeenCalledExactlyOnceWith('e1', ['a1', 'a2'], expect.any(AbortSignal));
+    expect(api.copyFeedbackAccesses).toHaveBeenCalledExactlyOnceWith('e1', ['a1', 'a2'], expect.any(AbortSignal), true);
     expect(screen.getByText(/^Lista privada para el docente/)).toBeInTheDocument();
     expect(writeText.mock.calls[0][0]).not.toContain('Fuera de selección');
   });
@@ -210,7 +210,7 @@ describe('copia de enlaces guardados',()=>{
     render(<FeedbackLinkActions evaluationId="e1" accesses={[...accesses,expired]} selectedIds={['g1','g2']} signal={new AbortController().signal} valid={()=>true}/>);
     fireEvent.click(screen.getByRole('button',{name:'Copiar enlaces seleccionados'}));
     expect(await screen.findByRole('alert')).toHaveTextContent('Luis: El enlace está vencido.');
-    expect(api.copyFeedbackAccesses).toHaveBeenCalledWith('e1',['a1','a2'],expect.any(AbortSignal));
+    expect(api.copyFeedbackAccesses).toHaveBeenCalledWith('e1',['a1','a2'],expect.any(AbortSignal),true);
     expect(await screen.findByRole('status')).toHaveTextContent('1 de 2 enlaces copiados');
   });
 });

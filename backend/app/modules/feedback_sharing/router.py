@@ -113,7 +113,7 @@ async def read_publish_batch(evaluation_id: UUID, request_id: UUID, actor: User 
 @router.post('/evaluaciones/{evaluation_id}/devoluciones/accesos/copiar')
 async def copy_links(evaluation_id: UUID, payload: AccessCopiesInput, actor: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     from app.modules.feedback_sharing.link_service import copy_accesses
-    result = await copy_accesses(db, actor, evaluation_id, payload.access_ids)
+    result = await copy_accesses(db, actor, evaluation_id, payload.access_ids, adjuntar_evidencia=payload.adjuntar_evidencia)
     await db.commit()
     return result
 

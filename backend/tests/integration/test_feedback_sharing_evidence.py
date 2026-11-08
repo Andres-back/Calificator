@@ -14,7 +14,7 @@ from app.modules.feedback_sharing.schemas import ReactivateInput
 
 
 @pytest.mark.asyncio
-async def test_evidence_is_opt_in_and_private_then_blocked_after_close(fb_db, fb_case, monkeypatch, tmp_path):
+async def test_evidence_is_always_attached_and_private_then_blocked_after_close(fb_db, fb_case, monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "FEEDBACK_SHARING_ENABLED", True)
     monkeypatch.setattr(settings, "UPLOADS_DIR", str(tmp_path))
     monkeypatch.setattr(settings, "UPLOAD_DIR", None)
@@ -26,11 +26,8 @@ async def test_evidence_is_opt_in_and_private_then_blocked_after_close(fb_db, fb
     await fb_db.flush()
     grade.entrega_id = delivery.id
     projection = await preview_grade(fb_db, teacher, evaluation.id, grade.id)
-    hidden, hidden_token = await create_access(fb_db, teacher, evaluation.id, grade.id, projection.fingerprint, uuid4(), 3, False)
-    with pytest.raises(HTTPException) as exc:
-        await read_evidence(1, hidden_token, fb_db)
-    assert exc.value.status_code == 404
-    visible, token = await create_access(fb_db, teacher, evaluation.id, grade.id, projection.fingerprint, uuid4(), 3, True)
+    # Una pestaña abierta antes del despliegue todavía puede enviar False.
+    visible, token = await create_access(fb_db, teacher, evaluation.id, grade.id, projection.fingerprint, uuid4(), 3, False)
     result = await read_evidence(1, token, fb_db)
     assert result.media_type == "image/png" and result.body.startswith(b"\x89PNG")
     assert result.headers["cache-control"] == "private, no-store"

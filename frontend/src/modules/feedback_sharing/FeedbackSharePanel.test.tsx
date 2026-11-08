@@ -93,7 +93,6 @@ describe('129 mismo panel de compartir y copia', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
     expect(screen.getByText('Listo para generar')).toBeInTheDocument();
     expect(screen.queryByText(pending.motivo)).toBeNull();
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' }));
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar y crear 1 enlace' }));
     expect(api.publishFeedbackBatch).not.toHaveBeenCalled();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
@@ -136,13 +135,12 @@ describe('129 mismo panel de compartir y copia', () => {
     await screen.findByRole('button', { name: 'Copiar enlace de Luis' });
     await openAdvancedOptions();
     fireEvent.change(screen.getByRole('combobox', { name: 'Duración del enlace' }), { target: { value: '7' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' }));
     fireEvent.click(screen.getByRole('button', { name: 'Revisar y compartir retroalimentación de Ana' }));
     fireEvent.click(screen.getByRole('button', { name: 'Aprobar retroalimentación' }));
     await screen.findByRole('button', { name: 'Generar 2 enlaces' });
     await openAdvancedOptions();
     expect(screen.getByRole('combobox', { name: 'Duración del enlace' })).toHaveValue('7');
-    expect(screen.getByRole('checkbox', { name: 'Permitir ver las fotos de su propia entrega' })).toBeChecked();
+    expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.getByRole('button', { name: 'Copiar enlace de Luis' })).toBeEnabled();
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
     expect(api.changeFeedbackAccess).not.toHaveBeenCalled();
@@ -221,11 +219,38 @@ describe('129 mismo panel de compartir y copia', () => {
     expect(api.issueFeedbackAccesses).not.toHaveBeenCalled();
   });
 
+  it('160 la foto va sin casilla y queda indicada antes de confirmar', async () => {
+    show();
+    await openAdvancedOptions();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(screen.getByText(/nota, mensaje y la foto de su propia entrega/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Generar 1 enlace' }));
+    expect(screen.getByRole('region', { name: 'Confirmar entrega' })).toHaveTextContent('con la foto de su propia entrega si la tiene');
+  });
+
+  it('160 abrir recupera el enlace sin activar la foto; copiar y WhatsApp sí la activan', async () => {
+    const open = vi.fn(); vi.stubGlobal('open', open);
+    vi.mocked(api.listFeedbackAccesses).mockResolvedValue([access]);
+    vi.mocked(api.copyFeedbackAccesses).mockResolvedValue([{ id: 'a1', calificacion_id: 'g1', estudiante: 'Ana', url }]);
+    show();
+    const copy = await screen.findByRole('button', { name: 'Copiar enlace de Ana' });
+    expect(api.copyFeedbackAccesses).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(api.copyFeedbackAccesses).mock.calls[0][3]).toBeFalsy();
+    fireEvent.click(copy);
+    await waitFor(() => expect(api.copyFeedbackAccesses).toHaveBeenLastCalledWith('e1', ['a1'], expect.any(AbortSignal), true));
+    await waitFor(() => expect(copy).toBeEnabled());
+    vi.mocked(api.copyFeedbackAccesses).mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'WhatsApp' }));
+    expect(api.copyFeedbackAccesses).toHaveBeenCalledExactlyOnceWith('e1', ['a1'], expect.any(AbortSignal), true);
+    expect(open).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
+  });
+
   it('abre sin emitir, confirma solo faltantes y copia con un gesto posterior', async () => {
     vi.mocked(api.issueFeedbackAccesses).mockResolvedValue([{ calificacion_id: 'g1', id: 'a1', url, credential_available: true }]);
     show();
     await confirmGeneration();
-    expect(api.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 3, evidencia: false, selecciones: [expect.objectContaining({ calificacion_id: 'g1' })] }), expect.any(AbortSignal));
+    expect(api.issueFeedbackAccesses).toHaveBeenCalledWith('e1', expect.objectContaining({ duracion_dias: 3, evidencia: true, selecciones: [expect.objectContaining({ calificacion_id: 'g1' })] }), expect.any(AbortSignal));
     const copy = await screen.findByRole('button', { name: 'Copiar lista de 1' });
     expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
     fireEvent.click(copy);

@@ -4,7 +4,7 @@ import { PublicFeedbackEvidence } from './PublicFeedbackEvidence';
 import { FeedbackAccessError, type PublicFeedbackClient } from './publicApi';
 
 afterEach(() => vi.unstubAllGlobals());
-describe('evidencia individual opcional', () => {
+describe('foto de la entrega en la devolución', () => {
   it('consulta solo al abrir, usa blob privado y libera URL al cerrar', async () => {
     const create = vi.fn().mockReturnValue('blob:private-test'); const revoke = vi.fn();
     vi.stubGlobal('URL', class extends URL { static createObjectURL = create; static revokeObjectURL = revoke; });
@@ -18,12 +18,13 @@ describe('evidencia individual opcional', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ocultar foto de tu entrega' }));
     await waitFor(() => expect(revoke).toHaveBeenCalledWith('blob:private-test'));
   });
-  it('el cierre de acceso no deja la imagen anterior en pantalla', async () => {
+  it('un 404 avisa sin imagen y pide comprobar el enlace', async () => {
     const closed = vi.fn();
     const client = { evidence: vi.fn().mockRejectedValue(new FeedbackAccessError(404)) } as unknown as PublicFeedbackClient;
     render(<PublicFeedbackEvidence client={client} onUnavailable={closed} />);
     fireEvent.click(screen.getByRole('button', { name: 'Ver foto de tu entrega' }));
     await waitFor(() => expect(closed).toHaveBeenCalledOnce());
     expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent('Tu nota y retroalimentación siguen disponibles');
   });
 });

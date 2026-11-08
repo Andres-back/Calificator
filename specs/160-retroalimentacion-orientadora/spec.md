@@ -1,6 +1,6 @@
 # Especificación: Retroalimentación orientada al siguiente paso y foto siempre adjunta
 
-**Rama**: `codex/160-retroalimentacion-orientadora` | **Creada**: 2026-11-08 | **Estado**: Pendiente de aprobación | **Issue**: [#340](https://github.com/Andres-back/Calificator/issues/340)
+**Rama**: `codex/160-retroalimentacion-orientadora` | **Creada**: 2026-11-08 | **Estado**: Aprobada | **Issue**: [#340](https://github.com/Andres-back/Calificator/issues/340)
 
 **Entrada**: el usuario pidió que la retroalimentación sea orientadora, que no se fije tanto en el error sino en cómo solucionarlo, y que "la imagen de la evaluacion siempre va adjunta".
 
@@ -29,8 +29,9 @@ Consultas de solo lectura en producción, el 2026-11-08:
 Como estudiante, quiero ver la foto de mi evaluación junto a mi retroalimentación, para entender a qué se refiere cada comentario.
 
 **Aceptación**:
-1. **Dada** una entrega con foto o PDF, **cuando** el docente genera, reactiva o vuelve a copiar el enlace, **entonces** el estudiante ve su evidencia, sin que el docente marque nada.
+1. **Dada** una entrega con foto o PDF, **cuando** el docente genera, reactiva, reemplaza o vuelve a copiar el enlace, **entonces** el estudiante ve su evidencia, sin que el docente marque nada.
 2. **Dada** una entrega sin archivo, **cuando** se genera el enlace, **entonces** se genera igual y no aparece ninguna imagen ni error.
+4. **Dada** una foto que no se puede abrir, **cuando** el estudiante la pide, **entonces** sigue viendo su nota y su mensaje.
 3. **Dada** la pantalla de compartir, **cuando** el docente la abre, **entonces** ya no ve la casilla de fotos y se le indica que el estudiante verá su propia entrega.
 
 ### Historia 2 - Primero qué hacer (Prioridad: P1)
@@ -55,7 +56,8 @@ Como estudiante, quiero explicaciones sin términos internos del sistema ni la r
 
 - La nota, el puntaje y la revisión docente no cambian.
 - Los mensajes y explicaciones ya guardados no se reescriben, y los enlaces vigentes no se invalidan.
-- Un enlace vigente sin foto la obtiene solo cuando el docente lo reactiva o lo vuelve a copiar.
+- Un enlace vigente sin foto la obtiene cuando el docente lo reactiva, lo reemplaza, lo copia o lo envía por WhatsApp o Compartir. Abrir una pantalla no se la activa, aunque esa pantalla recupere el enlace.
+- Un enlace cerrado sigue ocultándolo todo, también si el cierre se descubre al pedir la foto.
 
 ## Requisitos
 
@@ -70,6 +72,8 @@ Como estudiante, quiero explicaciones sin términos internos del sistema ni la r
 - **FR-007**: El reparto de puntos NO DEBE añadir su frase a la explicación del estudiante.
 - **FR-008**: Un mensaje con el aviso interno "Retroalimentación provisional" NO DEBE llegar al estudiante en enlaces nuevos.
 - **FR-009**: El cambio NO DEBE alterar notas, puntajes ni mensajes guardados, ni invalidar enlaces vigentes.
+- **FR-010**: La opción de ver la foto DEBE aparecer solo si la entrega tiene archivo, y una foto que no se puede abrir NO DEBE ocultar la nota ni el mensaje de un enlace vigente.
+- **FR-011**: Abrir una pantalla docente NO DEBE activar la foto de un enlace vigente; solo una acción del docente sobre ese enlace.
 
 ## Criterios de éxito
 

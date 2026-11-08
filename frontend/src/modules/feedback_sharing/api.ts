@@ -86,7 +86,8 @@ export async function readFeedbackBatch(id: string, requestId: string, signal?: 
   const {data}=await api.get<FeedbackBatchResult>(path(id)+'/lotes/'+encodeURIComponent(requestId),{signal});
   return data;
 }
-export async function copyFeedbackAccesses(id: string, accessIds: string[], signal?: AbortSignal) {
-  const {data}=await api.post<{resultados:FeedbackCopiedAccess[]}>(path(id)+'/accesos/copiar',{access_ids:accessIds},{signal});
+/** attachEvidence solo en un gesto del docente; abrir una pantalla también recupera enlaces. */
+export async function copyFeedbackAccesses(id: string, accessIds: string[], signal?: AbortSignal, attachEvidence = false) {
+  const {data}=await api.post<{resultados:FeedbackCopiedAccess[]}>(path(id)+'/accesos/copiar',{access_ids:accessIds,...(attachEvidence?{adjuntar_evidencia:true}:{})},{signal});
   return data.resultados;
 }

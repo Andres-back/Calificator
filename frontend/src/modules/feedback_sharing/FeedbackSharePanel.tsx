@@ -51,7 +51,6 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reviewDirty, setReviewDirty] = useState(false);
   const [days, setDays] = useState(3);
-  const [evidence, setEvidence] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [manual, setManual] = useState('');
@@ -107,9 +106,9 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
         const priorApproval = readApproval(sessionStorage, actorId, evaluationId);
         approval.current = priorApproval; setApprovalRecovery(Boolean(priorApproval));
         manifest.current = previous; setRecovery(Boolean(previous));
-        if (priorApproval) { setDays(priorApproval.days); setEvidence(priorApproval.evidence); watchRecovery(actorId); }
+        if (priorApproval) { setDays(priorApproval.days); watchRecovery(actorId); }
         if (previous) {
-          setDays(previous.days); setEvidence(previous.evidence); watchRecovery(actorId);
+          setDays(previous.days); watchRecovery(actorId);
           setOutcomes(Object.fromEntries(previous.parts.flatMap(part => part.selections.map(item => [item.calificacion_id, part.confirmed ? 'confirmed' : 'uncertain']))));
         }
         const ids = priorApproval?.targetIds ?? (previous ? previous.parts.flatMap(part => part.selections.map(item => item.calificacion_id)) : targets.flatMap(row => row.calificacion_id ? [row.calificacion_id] : []));
@@ -157,11 +156,11 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
     }
     if (!requestSignal.aborted && current()) setPrepared(previous => [...previous.filter(item => !recovered.some(next => next.gradeId === item.gradeId)), ...recovered]);
   }
-  async function issue(source = items, intentDays = days, intentEvidence = evidence) {
+  async function issue(source = items, intentDays = days) {
     if (!current() || lock.current) return;
     lock.current = true; setBusy(true); setError(''); setNotice(''); setManual('');
     try {
-      const op = manifest.current ?? createManifest(actorId, evaluationId, source.filter(item => item.kind === 'missing').map(item => ({ calificacion_id: item.id, fingerprint: item.preview!.fingerprint! })), intentDays, intentEvidence);
+      const op = manifest.current ?? createManifest(actorId, evaluationId, source.filter(item => item.kind === 'missing').map(item => ({ calificacion_id: item.id, fingerprint: item.preview!.fingerprint! })), intentDays, true);
       if (!op.parts.length) return;
       if (op.expiresAt <= Date.now()) {
         clearManifest(sessionStorage, actorId, evaluationId); manifest.current = null;
@@ -214,7 +213,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       const candidates = items.filter(item => item.preview && (item.preview.elegible || (item.kind === 'pending' && !item.accesses.length && item.preview.batch_candidate)))
         .map(item => item.preview!);
       if (!approval.current) {
-        const op = await createApproval(actorId, evaluationId, items.map(item => item.id), candidates, days, evidence);
+        const op = await createApproval(actorId, evaluationId, items.map(item => item.id), candidates, days, true);
         if (!current()) return;
         storeApproval(sessionStorage, op); approval.current = op; watchRecovery(actorId);
       }
@@ -252,7 +251,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
         setProgress('Creando únicamente los enlaces autorizados que faltan…');
         // Hand off synchronously to the existing durable issuance lock/receipt.
         lock.current = false;
-        await issue(allowed, op.days, op.evidence);
+        await issue(allowed, op.days);
       } else {
         clearApproval(sessionStorage, actorId, evaluationId); approval.current = null; setApprovalRecovery(false);
         setNotice('Aprobación comprobada. Los enlaces existentes conservan su estado; no se creó ni reactivó otro.');
@@ -269,7 +268,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
       const fresh: Prepared[] = [];
       for (let offset = 0; offset < links.length; offset += 100) {
         const batch = links.slice(offset, offset + 100);
-        const results = await copyFeedbackAccesses(evaluationId, batch.map(link => link.accessId), abort.current.signal);
+        const results = await copyFeedbackAccesses(evaluationId, batch.map(link => link.accessId), abort.current.signal, true);
         if (!current()) return;
         if (results.length !== batch.length || batch.some(link => results.filter(result => result.id === link.accessId).length !== 1)) throw new Error('Incomplete copy');
         for (const result of results) {
@@ -289,6 +288,8 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
     } catch { if (current()) setError('No pudimos recuperar estos enlaces. Reintenta.'); }
     finally { lock.current = false; if (current()) setBusy(false); }
   }
+  // Best effort: failing to attach the photo must not block the delivery.
+  function attachPhoto(link: Prepared) { void copyFeedbackAccesses(evaluationId, [link.accessId], abort.current.signal, true).catch(() => undefined); }
   function messageFor(link: Prepared) { return buildIndividualFeedbackMessage({ studentName: link.name, evaluationName: items.find(item => item.id === link.gradeId)?.preview?.resultado?.evaluacion || 'esta evaluación', url: link.url }); }
   async function chooseAccess(item: ShareRow, accessId: string) {
     if (!current() || busy || !item.accesses.some(access => access.id === accessId && access.estado === 'active' && access.copy_available !== false)) return;
@@ -352,13 +353,12 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
         {newLinkCount > 0 && !manifest.current && !confirming && <details className="rounded-xl border border-border p-3"><summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">Opciones avanzadas</summary><fieldset className="space-y-3" disabled={busy || approvalRecovery}>
           <legend className="px-1 font-semibold">{newLinkCount === 1 ? 'Opciones del enlace nuevo' : `Opciones de los ${newLinkCount} enlaces nuevos`}</legend>
           <label className="block text-sm">Duración del enlace<select aria-label="Duración del enlace" value={days} onChange={event => setDays(Number(event.target.value))} className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-base">{Array.from({ length: 30 }, (_, index) => index + 1).map(value => <option key={value} value={value}>{value} {value === 1 ? 'día' : 'días'}</option>)}</select></label>
-          <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="h-5 w-5 shrink-0" checked={evidence} onChange={event => setEvidence(event.target.checked)} />Permitir ver las fotos de su propia entrega</label>
-          <p className="text-sm text-muted">Al crear autorizas compartir nota y mensaje. Los enlaces activos conservan su vigencia y todos mantienen cinco preguntas a Xali cada diez minutos.</p>
+          <p className="text-sm text-muted">Al crear autorizas compartir nota, mensaje y la foto de su propia entrega. Los enlaces activos conservan su vigencia y todos mantienen cinco preguntas a Xali cada diez minutos.</p>
         </fieldset></details>}
         {confirming && <section aria-label="Confirmar entrega" className="space-y-3">
           <h4 className="font-bold">Esto recibirá cada estudiante</h4>
           <p className="text-sm">Vas a generar {newLinkCount} {newLinkCount === 1 ? 'enlace' : 'enlaces'}; {prepared.length} ya disponibles se conservan. {items.length - newLinkCount - prepared.length > 0 ? `${items.length - newLinkCount - prepared.length} necesitan revisión.` : ''}</p>
-          <p className="text-sm leading-6">Aceptarás las notas y los mensajes mostrados, conservando tus ajustes. Enlaces nuevos: {days} {days === 1 ? 'día' : 'días'}, {evidence ? 'con su propia evidencia' : 'sin fotografías'}; los existentes no se renuevan.</p>
+          <p className="text-sm leading-6">Aceptarás las notas y los mensajes mostrados, conservando tus ajustes. Enlaces nuevos: {days} {days === 1 ? 'día' : 'días'}, con la foto de su propia entrega si la tiene; los existentes no se renuevan.</p>
           <ul className="space-y-3">{[...approvable, ...missing].map(item => <li key={item.id} className="rounded-xl border border-border bg-surface p-3"><p className="font-semibold">{item.name} <span className="ml-2 tabular-nums">{formatGradeScore(Number(item.preview?.batch_candidate?.nota ?? item.preview?.resultado?.nota ?? item.preview?.borrador_docente?.nota), item.preview?.resultado?.nota_maxima ?? item.preview?.borrador_docente?.nota_maxima)}</span></p><FeedbackMessage text={item.preview?.batch_candidate?.feedback_text ?? item.preview?.resultado?.retroalimentacion ?? ''} />{item.preview?.batch_candidate?.avisos.map(warning => <p key={warning} className="mt-2 text-sm text-muted">{warning}</p>)}</li>)}</ul>
         </section>}
         {!confirming && <ul className="space-y-2" aria-label="Destinatarios y enlaces">{items.map(item => {
@@ -373,7 +373,7 @@ export function FeedbackSharePanel({ actorId, evaluationId, rows, knownRows, sig
             {item.kind === 'pending' && item.preview?.revision_docente && !manifest.current && <p className="mt-2 text-sm leading-6">{canApprove && !item.accesses.length && item.preview.batch_candidate ? 'Puedes aprobar esta nota y su mensaje con el botón inferior. Los puntajes pendientes no se compartirán.' : 'La nota ya está confirmada. Puedes revisar el mensaje y aprobar solo nota y retroalimentación, sin entregar los puntajes pendientes.'}</p>}
             {item.accesses.filter(access => access.estado === 'active').length > 1 && <label className="mt-2 block text-sm">Elige su enlace<select aria-label={'Elegir enlace de ' + item.name} value={item.activeId ?? ''} disabled={busy} onChange={event => void chooseAccess(item, event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3"><option value="">Seleccionar enlace</option>{item.accesses.filter(access => access.estado === 'active').map(access => <option key={access.id} value={access.id}>{access.id.slice(0, 8)} · vence {new Date(access.expires_at).toLocaleString('es-CO')}</option>)}</select></label>}
             <div className="mt-2 flex flex-wrap gap-2">{ready && <Button variant="outline" aria-label={'Copiar enlace de ' + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => void copy([ready])}>Copiar enlace</Button>}
-              {ready && <><Button variant="outline" disabled={busy} onClick={() => window.open(buildWhatsAppShareUrl(messageFor(ready)), '_blank', 'noopener,noreferrer')}>WhatsApp</Button>{typeof navigator.share === 'function' && <Button variant="outline" disabled={busy} onClick={() => { void shareFeedbackMessage(messageFor(ready), navigator); }}>Compartir</Button>}</>}
+              {ready && <><Button variant="outline" disabled={busy} onClick={() => { attachPhoto(ready); window.open(buildWhatsAppShareUrl(messageFor(ready)), '_blank', 'noopener,noreferrer'); }}>WhatsApp</Button>{typeof navigator.share === 'function' && <Button variant="outline" disabled={busy} onClick={() => { attachPhoto(ready); void shareFeedbackMessage(messageFor(ready), navigator); }}>Compartir</Button>}</>}
               {item.kind === 'pending' && (item.preview?.revision_docente || (canApprove && item.preview?.mensaje_editable)) && !manifest.current && !approvalRecovery
                 ? <Button variant="outline" data-review-feedback={item.id} aria-label={(canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje de ' : 'Revisar y compartir retroalimentación de ') + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => { if (current()) { setError(''); setNotice(''); setReviewingId(item.id); } }}>{canApprove && item.preview?.batch_candidate && !item.accesses.length ? 'Editar mensaje' : 'Revisar y compartir'}</Button>
                 : (item.kind === 'closed' || item.kind === 'pending' || (item.kind === 'existing' && !ready) || (manifest.current && !ready) || item.accesses.length > 1) && <Button variant="link" data-manage-feedback={item.id} aria-label={'Revisar enlace de ' + item.name} className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-left" disabled={busy} onClick={() => onManage(item.id)}>Revisar caso</Button>}</div>

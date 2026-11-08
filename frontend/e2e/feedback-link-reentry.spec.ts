@@ -133,7 +133,7 @@ function backend(seed: Access[] = []) {
         const body = request.postDataJSON() as IssueInput;
         issueRequests.push(body);
         if (!actor.permissions.includes('grading.publish')) return json({ detail: 'Sin permiso para generar.' }, 403);
-        expect(body).toMatchObject({ duracion_dias: 3, evidencia: false, solo_si_falta: true,
+        expect(body).toMatchObject({ duracion_dias: 3, evidencia: true, solo_si_falta: true,
           selecciones: [{ calificacion_id: 'c1', fingerprint }] });
         expect(body.request_id).toMatch(/^[a-f\d-]{36}$/i);
         let results = operationResults.get(body.request_id);

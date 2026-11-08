@@ -60,7 +60,7 @@ async function install(page: Page, initiallyApproved = false, composed = false, 
     if (path.endsWith('/devoluciones/accesos')) {
       if (route.request().method() === 'GET') return json({ resultados: issued ? [access] : [], next_cursor: null });
       expect(approved).toBe(true);
-      expect(route.request().postDataJSON()).toMatchObject({ duracion_dias: 3, evidencia: false, selecciones: [{ calificacion_id: 'c1', fingerprint: 'f'.repeat(64) }] });
+      expect(route.request().postDataJSON()).toMatchObject({ duracion_dias: 3, evidencia: true, selecciones: [{ calificacion_id: 'c1', fingerprint: 'f'.repeat(64) }] });
       issued = true; operations.push('issue');
       return json({ resultados: [{ ...access, url: link, credential_available: true }] });
     }
