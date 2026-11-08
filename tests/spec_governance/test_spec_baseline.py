@@ -151,6 +151,7 @@ ALL_SPECS = {
     "156-digitalizacion-clara",
     "157-escaner-digitalizar",
     "158-webkit-estable",
+    "159-editar-hojas-pdf",
 }
 OWNED_SPECS = {
     name
