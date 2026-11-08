@@ -101,17 +101,80 @@ async def test_crop_is_bound_to_original_dimensions_and_retains_source(owner):
     assert error.value.status_code == 422
 
 
+def pdf_bytes(*colors):
+    import fitz
+
+    document = fitz.open()
+    for color in colors:
+        page = document.new_page(width=200, height=300)
+        page.draw_rect(page.rect, color=color, fill=color)
+    try:
+        return document.tobytes()
+    finally:
+        document.close()
+
+
 @pytest.mark.asyncio
-async def test_legacy_single_image_can_be_promoted_but_pdf_is_not_original(owner, tmp_path):
+async def test_legacy_single_image_can_be_promoted(owner, tmp_path):
     image = tmp_path / "source.png"
     image.write_bytes(image_bytes("white"))
     delivery = SimpleNamespace(id=owner.delivery_id, archivo_url="/uploads/source.png")
     base = await read_editing_evidence(delivery)
     assert len(base.pages) == 1
     assert (await base.pages[0].source()).content == image.read_bytes()
+
+
+@pytest.mark.asyncio
+async def test_legacy_pdf_offers_one_stable_editable_sheet_per_page(owner, tmp_path):
     pdf = tmp_path / "legacy.pdf"
-    pdf.write_bytes(b"%PDF-1.7")
-    delivery.archivo_url = "/uploads/legacy.pdf"
-    with pytest.raises(HTTPException) as error:
-        await read_editing_evidence(delivery)
-    assert error.value.status_code == 409
+    pdf.write_bytes(pdf_bytes((1, 0, 0), (0, 0, 1)))
+    before = pdf.read_bytes()
+    delivery = SimpleNamespace(id=owner.delivery_id, archivo_url="/uploads/legacy.pdf")
+    base = await read_editing_evidence(delivery)
+    again = await read_editing_evidence(delivery)
+    assert len(base.pages) == 2
+    assert [page.ref for page in base.pages] == [page.ref for page in again.pages]
+    assert base.fingerprint == again.fingerprint
+    first, second = [await page.source() for page in base.pages]
+    assert first.mime == second.mime == "image/jpeg"
+    assert first.height > first.width
+    red = Image.open(BytesIO(first.content)).convert("RGB").getpixel((first.width // 2, first.height // 2))
+    blue = Image.open(BytesIO(second.content)).convert("RGB").getpixel((second.width // 2, second.height // 2))
+    assert red[0] > 200 and red[2] < 60
+    assert blue[2] > 200 and blue[0] < 60
+    assert pdf.read_bytes() == before
+    pdf.write_bytes(pdf_bytes((0, 1, 0)))
+    changed = await read_editing_evidence(delivery)
+    assert changed.fingerprint != base.fingerprint
+
+
+@pytest.mark.asyncio
+async def test_legacy_pdf_sheet_can_be_rotated_and_saved_with_a_new_photo(owner, tmp_path):
+    (tmp_path / "legacy.pdf").write_bytes(pdf_bytes((1, 0, 0), (0, 0, 1)))
+    delivery = SimpleNamespace(id=owner.delivery_id, archivo_url="/uploads/legacy.pdf")
+    base = await read_editing_evidence(delivery)
+    request_id = uuid4()
+    raw = edit(base, [
+        {"referencia": str(base.pages[1].ref), "rotacion": 90},
+        {"archivo_indice": 0},
+    ])
+    sub, sources, reused = await resolve_edited_pages(raw, [UploadFile(BytesIO(image_bytes("blue")))], base, request_id)
+    assert [page.rotation for page in sub.pages] == [90, 0]
+    assert reused == {}
+    ctx = ScanAdmissionContext(request_id, owner.actor_id, owner.delivery_id, owner.evaluacion_id, owner.estudiante_id, owner.materia_id)
+    manifest = await persist_scan_sources(ctx, sub, sources, reused=reused)
+    assert len(manifest.pages) == 2
+    assert await read_verified_asset(manifest.pages[0].source) == (await base.pages[1].source()).content
+
+
+@pytest.mark.asyncio
+async def test_damaged_empty_or_long_legacy_pdf_keeps_the_current_notice(owner, tmp_path, monkeypatch):
+    delivery = SimpleNamespace(id=owner.delivery_id, archivo_url="/uploads/legacy.pdf")
+    pdf = tmp_path / "legacy.pdf"
+    monkeypatch.setattr(settings, "MAX_EVIDENCE_FILES", 2)
+    for content in (b"%PDF-1.7", pdf_bytes((1, 0, 0), (0, 1, 0), (0, 0, 1))):
+        pdf.write_bytes(content)
+        with pytest.raises(HTTPException) as error:
+            await read_editing_evidence(delivery)
+        assert error.value.status_code == 409
+        assert "No podemos editar las hojas" in error.value.detail

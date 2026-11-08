@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
+from io import BytesIO
 from pathlib import Path
 from typing import Annotated
 from uuid import UUID, uuid5
@@ -76,12 +77,40 @@ class EditingEvidence:
     pages: tuple[StoredPage, ...]
 
 
-def _bounded_legacy_image(path: Path, limit: int) -> SourceImage:
+def _render_legacy_pdf(data: bytes, page_limit: int) -> tuple[SourceImage, ...]:
+    """Each page of a historical PDF becomes an editable sheet (Spec 159).
+
+    The stored PDF is only read: nothing is written until the teacher saves.
+    """
+    import fitz
+    from PIL import Image
+
+    try:
+        document = fitz.open(stream=data, filetype="pdf")
+    except Exception as exc:  # PyMuPDF raises several private error types.
+        raise EvidenceManifestError("El PDF de esta entrega está dañado.") from exc
+    with document:
+        if not 1 <= len(document) <= page_limit:
+            raise EvidenceManifestError("El PDF de esta entrega no tiene hojas editables.")
+        sheets = []
+        for page in document:
+            zoom = min(150 / 72, 2200 / max(page.rect.width, page.rect.height))
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+            stream = BytesIO()
+            Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples).save(stream, format="JPEG", quality=92)
+            sheets.append(inspect_scan_source(stream.getvalue()))
+        return tuple(sheets)
+
+
+def _bounded_legacy_sources(path: Path, limit: int, page_limit: int) -> tuple[str, tuple[SourceImage, ...]]:
     with path.open("rb") as stream:
         data = stream.read(limit + 1)
-    if len(data) > limit or data.startswith(b"%PDF-"):
+    if len(data) > limit:
         raise EvidenceManifestError("Esta entrega no conserva fotos originales editables.")
-    return inspect_scan_source(data)
+    digest = sha256(data).hexdigest()
+    if data.startswith(b"%PDF-"):
+        return digest, _render_legacy_pdf(data, page_limit)
+    return digest, (inspect_scan_source(data),)
 
 
 async def read_editing_evidence(delivery) -> EditingEvidence:
@@ -92,12 +121,23 @@ async def read_editing_evidence(delivery) -> EditingEvidence:
         if manifest is not None:
             fingerprint = sha256(f"evidence-edit:{delivery.id}:{manifest.version_id}:{manifest.fingerprint}".encode()).hexdigest()
             return EditingEvidence(fingerprint, tuple(StoredPage(page.page_id, page) for page in manifest.pages))
-        # A historical single image has a recoverable source. A PDF may
-        # already flatten several photos; do not mislabel a rendering as original.
-        _, file_limit, total_limit = scan_limits()
-        source = await run_in_threadpool(_bounded_legacy_image, resolve_upload_path(delivery.archivo_url), min(file_limit, total_limit))
-        fingerprint = sha256(f"evidence-edit:{delivery.id}:legacy:{source.sha256}".encode()).hexdigest()
-        return EditingEvidence(fingerprint, (StoredPage(uuid5(delivery.id, fingerprint), None, source),))
+        # A historical single image is its own source. A historical PDF has no
+        # preserved photos: each page is rendered as an editable sheet and is
+        # never presented as an original (original_disponible stays false).
+        page_limit, file_limit, total_limit = scan_limits()
+        path = resolve_upload_path(delivery.archivo_url)
+        is_pdf = path.suffix.lower() == ".pdf"
+        digest, sources = await run_in_threadpool(
+            _bounded_legacy_sources, path, total_limit if is_pdf else min(file_limit, total_limit), page_limit,
+        )
+        if len(sources) == 1 and not is_pdf:
+            fingerprint = sha256(f"evidence-edit:{delivery.id}:legacy:{sources[0].sha256}".encode()).hexdigest()
+            return EditingEvidence(fingerprint, (StoredPage(uuid5(delivery.id, fingerprint), None, sources[0]),))
+        fingerprint = sha256(f"evidence-edit:{delivery.id}:legacy-pdf:{digest}".encode()).hexdigest()
+        return EditingEvidence(fingerprint, tuple(
+            StoredPage(uuid5(delivery.id, f"{fingerprint}:{number}"), None, source)
+            for number, source in enumerate(sources, 1)
+        ))
     except (OSError, ValueError, EvidenceManifestError) as exc:
         raise HTTPException(409, "No podemos editar las hojas de esta evidencia. Puedes consultarla o reemplazar la entrega completa.") from exc
 
