@@ -1,6 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const localPort = Number(process.env.PLAYWRIGHT_TEST_PORT || 4175);
+// WebKit on CI runners occasionally crashes while opening a page
+// ("WebKit encountered an internal error"). Only WebKit projects get one retry,
+// only on CI; the job summary lists every test that needed it (Spec 158).
+const webkitRetries = process.env.CI ? 1 : 0;
+const withWebkitRetries = <T extends { name?: string }>(project: T) =>
+  project.name?.startsWith('webkit') ? { ...project, retries: webkitRetries } : project;
 
 export default defineConfig({
   testDir: './e2e',
@@ -10,7 +16,7 @@ export default defineConfig({
     timeout: 10_000,
   },
   retries: 0,
-  projects: [
+  projects: ([
     { name: 'webkit-grade-direct', testMatch: ['**/grade-direct-review.spec.ts', '**/regrading-score-context.spec.ts'], use: { ...devices['Desktop Safari'] } },
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'webkit-evidence-scan', testMatch: '**/evidence-scan.spec.ts', use: { ...devices['Desktop Safari'] } },
@@ -23,7 +29,7 @@ export default defineConfig({
     { name: 'webkit-feedback', testMatch: ['**/feedback-chat-history.spec.ts', '**/feedback-delivery.spec.ts'], grep: /126/, use: { ...devices['Desktop Safari'] } },
     // WebKit covers this mobile increment without doubling unrelated legacy suites.
     { name: 'webkit', testMatch: ['**/p2-responsive.spec.ts', '**/evaluation-ai-wizard.spec.ts', '**/camera-capture.spec.ts', '**/evaluation-preview.spec.ts', '**/admin-icons.spec.ts', '**/xali-teacher-visual.spec.ts', '**/materia-queue-mobile.spec.ts', '**/resources-responsive.spec.ts', '**/admin-compatible-api.spec.ts', '**/feedback-delivery.spec.ts', '**/feedback-delivery-batch.spec.ts', '**/motif-library.spec.ts', '**/motif-editors.spec.ts'], grep: /inicio docente móvil|boletín docente en mosaico|096.*(?:360|390)px|097|102|103|104|105|106|116|120|122|123|125|preview y descargas|lista global tiene visualización/, use: { ...devices['Desktop Safari'] } },
-  ],
+  ]).map(withWebkitRetries),
   use: {
     baseURL: `http://127.0.0.1:${localPort}`,
     trace: 'retain-on-failure',

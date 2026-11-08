@@ -150,6 +150,7 @@ ALL_SPECS = {
     "155-puntaje-editable",
     "156-digitalizacion-clara",
     "157-escaner-digitalizar",
+    "158-webkit-estable",
 }
 OWNED_SPECS = {
     name
