@@ -281,7 +281,13 @@ jobs:
 
       - name: Run general end-to-end tests
         timeout-minutes: 35
-        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results.json
+
+      - name: List flaky end-to-end tests
+        if: always()
+        run: node scripts/report-flaky.mjs playwright-results.json
 
       - name: Upload general E2E diagnostics on failure
         if: failure()

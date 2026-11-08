@@ -348,7 +348,8 @@
     border-radius: 9999px;
     filter: blur(42px);
     opacity: 0.28;
-    animation: atmosphere-drift 18s ease-in-out infinite;
+    /* Static on purpose: an endless drift inside the masked atmosphere, under the
+       blurred header, repainted the whole page every frame (≈3 fps in WebKit). */
   }
 
   .app-atmosphere-orb-primary {
@@ -365,7 +366,6 @@
     height: 9rem;
     width: 9rem;
     background: rgb(139 92 246 / 0.25);
-    animation-delay: -8s;
   }
 
   .teacher-page-header::after,
@@ -429,10 +429,6 @@
   }
 }
 
-@keyframes atmosphere-drift {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(0.96); }
-  50% { transform: translate3d(0, 10px, 0) scale(1.04); }
-}
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
     scroll-behavior: auto;

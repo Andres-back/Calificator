@@ -10,10 +10,23 @@
 - `evaluation-ai-wizard.spec.ts:452` espera `data-writing="true"`. El modo de escritura se activa con `focusin` en un `requestAnimationFrame`, así que un foco perdido o tardío lo deja en `false`.
 - `feedback-workspace-responsive.spec.ts:163` pulsa Enter en una secuencia de botones; si un Enter llega antes de que el paso anterior termine, el siguiente botón no aparece.
 
+## Causa común encontrada
+
+Los rastros de la CI mostraron que en estas pruebas no había ningún botón trabado: cada acción en WebKit tardaba unos 3 s y la prueba agotaba sus 30 s. Medido en local con WebKit:
+
+| Situación | Tiempo por cuadro |
+| --- | --- |
+| Página con el fondo animado, sin diálogo | ≈ 340-420 ms |
+| Diálogo abierto con el fondo animado | ≈ 480 ms |
+| Fondo oculto | ≈ 44 ms |
+| Animaciones del fondo en pausa | 16 ms |
+
+Los dos círculos decorativos del fondo (`.app-atmosphere-orb`) se movían sin fin dentro de un contenedor con `mask-image` y bajo cabeceras con `backdrop-filter`. WebKit repintaba toda la página en cada cuadro. Es una causa de la aplicación, no de las pruebas, y también gasta batería en los teléfonos de los docentes. Por FR-004 se corrige en la aplicación: los círculos quedan quietos, con el mismo aspecto. Su movimiento era de 10 px cada 18 s.
+
 ## Decisión
 
 1. **Repetición solo para WebKit en CI.** Cada proyecto WebKit recibe `retries: process.env.CI ? 1 : 0`. Playwright marca esas pruebas como "flaky" y el resumen del trabajo las lista, así que no se ocultan. Una prueba que falla dos veces sigue rompiendo el trabajo.
-2. **Cada prueba concreta se corrige por su causa.** Por ejemplo, esperar a que el diálogo termine su animación, a que el campo tenga el foco o a que aparezca el paso anterior antes de pulsar el siguiente. Si la causa está en la aplicación, se corrige ahí con su prueba.
+2. **Cada prueba concreta se corrige por su causa.** La causa común es el fondo animado (ver arriba). Por ejemplo, esperar a que el diálogo termine su animación, a que el campo tenga el foco o a que aparezca el paso anterior antes de pulsar el siguiente. Si la causa está en la aplicación, se corrige ahí con su prueba.
 3. **Validación.** Cada prueba corregida se repite 20 veces en WebKit (`--repeat-each=20`), en local si está disponible o en CI.
 
 Descartado:
@@ -25,7 +38,9 @@ Descartado:
 
 | Archivo | Cambio |
 | --- | --- |
+| `frontend/src/index.css` | los círculos del fondo dejan de animarse |
 | `frontend/playwright.config.ts` | `retries` de los proyectos WebKit en CI |
+| `frontend/scripts/report-flaky.mjs` | lista de pruebas repetidas en el resumen del trabajo |
 | `.github/workflows/ci.yml` | resumen de pruebas inestables, si el reportero actual no lo muestra |
 | Las cuatro pruebas de la tabla y, si hace falta, su componente | espera de la condición real |
 | `tests/spec_governance/` | prueba de la regla de repetición |
