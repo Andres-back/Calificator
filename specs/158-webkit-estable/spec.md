@@ -1,6 +1,6 @@
 # Especificación: Las pruebas de WebKit dejan de obligar a relanzar la CI
 
-**Rama**: `codex/158-webkit-estable` | **Creada**: 2026-11-07 | **Estado**: Pendiente de aprobación | **Issue**: [#336](https://github.com/Andres-back/Calificator/issues/336)
+**Rama**: `codex/158-webkit-estable` | **Creada**: 2026-11-07 | **Estado**: Aprobada | **Issue**: [#336](https://github.com/Andres-back/Calificator/issues/336)
 
 **Entrada**: el usuario pidió "arregla las pruebas inestables de webkit".
 
