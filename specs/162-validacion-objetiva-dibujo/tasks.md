@@ -1,6 +1,6 @@
 # Tareas: La nota del dibujo no impide reconocer la opción marcada
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md).
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), aprobados el 2026-11-10 (`spec-approved`, `plan-approved` en #344).
 
 ### Pruebas primero (RED)
 

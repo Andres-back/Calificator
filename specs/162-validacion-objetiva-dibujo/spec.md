@@ -1,6 +1,6 @@
 # Especificación: La nota del dibujo no impide reconocer la opción marcada
 
-**Rama**: `codex/162-validacion-objetiva-dibujo` | **Creada**: 2026-11-10 | **Estado**: Pendiente de aprobación | **Issue**: [#344](https://github.com/Andres-back/Calificator/issues/344)
+**Rama**: `codex/162-validacion-objetiva-dibujo` | **Creada**: 2026-11-10 | **Estado**: Aprobada | **Issue**: [#344](https://github.com/Andres-back/Calificator/issues/344)
 
 **Entrada**: una docente informó que algunas evaluaciones subidas por foto se calificaron mal, y pidió revisar y corregir el calificador.
 
