@@ -26,7 +26,7 @@ Se exportaron las comparaciones guardadas de las 155 calificaciones de los últi
 
 Las 12 sin registrar son dos marcas, o la letra sola de una opción de verdadero o falso. La letra sola la resuelve el código con las opciones de la pregunta, pero el dato guardado no las trae, así que aquí no se pudo repetir.
 
-De las 831, el desglose guardado tiene 692 correctas por los calificadores, 113 pendientes, 14 incorrectas, 4 sin evaluar, y el resto corregidas por su docente.
+De las 831, el desglose guardado tiene 692 correctas por los calificadores, 113 pendientes, 14 incorrectas, 4 sin evaluar y 1 corregida por su docente. Las 7 restantes no tienen un componente con ese número.
 
 ## Después de desplegar
 
