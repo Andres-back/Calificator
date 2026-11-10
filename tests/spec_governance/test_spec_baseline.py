@@ -154,6 +154,7 @@ ALL_SPECS = {
     "159-editar-hojas-pdf",
     "160-retroalimentacion-orientadora",
     "161-fijar-kombu",
+    "162-validacion-objetiva-dibujo",
 }
 OWNED_SPECS = {
     name

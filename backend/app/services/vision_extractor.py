@@ -317,10 +317,13 @@ def _merge(pages: list[VisionPageResult]) -> list[ExtractedAnswer]:
     return merged
 
 
+VISUAL_NOTE_PREFIX = "[Dibujo observado:"
+
+
 def _answer_with_visual_description(answer: ExtractedAnswer) -> str | None:
     parts = [answer.answer.strip() if answer.answer else ""]
     if answer.visual_description:
-        parts.append(f"[Dibujo observado: {answer.visual_description}]")
+        parts.append(f"{VISUAL_NOTE_PREFIX} {answer.visual_description}]")
     return "\n".join(part for part in parts if part) or None
 
 

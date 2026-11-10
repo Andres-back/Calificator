@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "4232a3237ef0fe50fd45db59c0c5c083843be8cdd6db5f05e8395fe85045653f",
+  "source_digest": "6e99af0b3a9075eb84d92d5f41181c96aede55a9c2e21362319dc79a6549ccfe",
   "surfaces": [
     {
       "actors": [
@@ -55525,6 +55525,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_objective_accuracy_comparison.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_objective_drawing_note.py"
         },
         {
           "level": "unit",

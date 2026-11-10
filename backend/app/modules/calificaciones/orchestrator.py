@@ -52,6 +52,7 @@ from app.modules.rag.context_builder import (
     format_question_context_as_text,
 )
 from app.services.ai_model_discovery import model_supports_vision
+from app.services.vision_extractor import VISUAL_NOTE_PREFIX
 
 logger = get_logger(__name__)
 
@@ -311,11 +312,24 @@ def _open_answer_matches(question: Any, expected: Any, detected: Any) -> bool:
     )
 
 
+def _read_answer(value: Any) -> str:
+    """La respuesta leída, sin la nota del dibujo que la lectura le añade."""
+    return str(value or "").split(VISUAL_NOTE_PREFIX, 1)[0].strip()
+
+
 def _truth_value(value: Any) -> bool | None:
-    normalized = _normalize_answer(value)
-    if normalized.startswith(("verdadero", "true", "si", "es igual")):
+    words = _normalize_answer(_read_answer(value)).split()
+    # Dos marcas, o un texto como «sin marca» o «no se observa», no son una respuesta.
+    if {"verdadero", "true"} & set(words) and {"falso", "false"} & set(words):
+        return None
+    if len(words) > 1 and len(words[0]) == 1 and words[1] in {"verdadero", "true", "falso", "false"}:
+        words = words[1:]  # «A) Verdadero»
+    if not words:
+        return None
+    text = " ".join(words)
+    if words[0] in {"verdadero", "true"} or text in {"si", "v"} or text.startswith(("si es igual", "es igual")):
         return True
-    if normalized.startswith(("falso", "false", "no", "no es igual")):
+    if words[0] in {"falso", "false"} or text in {"no", "f"} or text.startswith("no es igual"):
         return False
     return None
 
@@ -511,26 +525,32 @@ def build_objective_validation(
             continue
         expected_answer = expected[number]
         detected_answer = detected[number]
+        read_answer = _read_answer(detected_answer)
+        if not read_answer:
+            continue  # Solo hay dibujo o no hay lectura: lo valoran los calificadores.
         if question_type == "abierta":
             correct = _open_answer_matches(
                 question.get("enunciado") or question.get("pregunta"),
                 expected_answer,
-                detected_answer,
+                read_answer,
             )
             if not correct:
                 continue
         elif question_type == "verdadero_falso":
             expected_truth = _truth_value(expected_answer)
-            detected_truth = _truth_value(detected_answer)
-            correct = (
-                expected_truth is not None
-                and detected_truth is not None
-                and expected_truth == detected_truth
-            )
+            detected_truth = _truth_value(read_answer)
+            options = question.get("opciones")
+            letter = _normalize_answer(read_answer)
+            if detected_truth is None and letter in {"a", "b"} and isinstance(options, list) and len(options) == 2:
+                # «A» sola: vale el orden impreso de las dos opciones.
+                detected_truth = _truth_value(options["ab".index(letter)])
+            if expected_truth is None or detected_truth is None:
+                continue  # Una lectura que no se entiende no es una respuesta incorrecta.
+            correct = expected_truth == detected_truth
         elif question_type == "opcion_multiple":
-            correct = _choice_matches(expected_answer, detected_answer)
+            correct = _choice_matches(expected_answer, read_answer)
         else:
-            correct = _normalize_answer(expected_answer) == _normalize_answer(detected_answer)
+            correct = _normalize_answer(expected_answer) == _normalize_answer(read_answer)
             if not correct:
                 continue
         validation.append({
