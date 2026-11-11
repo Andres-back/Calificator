@@ -1,6 +1,6 @@
 # Especificación: El asistente deja ver por qué falló al generar o guardar
 
-**Rama**: `codex/170-errores-asistente` | **Creada**: 2026-11-11 | **Estado**: Implementada; falta que el usuario registre `spec-approved` y `plan-approved` | **Issue**: [#359](https://github.com/Andres-back/Calificator/issues/359)
+**Rama**: `codex/170-errores-asistente` | **Creada**: 2026-11-11 | **Estado**: Aprobada e implementada | **Issue**: [#359](https://github.com/Andres-back/Calificator/issues/359)
 
 **Entrada**: la auditoría funcional del 2026-11-10 pulsó «Generar evaluación» con el proveedor de IA caído. El aviso apareció arriba del formulario, fuera de la vista, y pareció que el botón no hacía nada. Además, al guardar, el asistente muestra «revisa tu conexión» ante cualquier rechazo, aunque el backend explique el motivo.
 
