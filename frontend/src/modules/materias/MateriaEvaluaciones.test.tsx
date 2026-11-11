@@ -460,3 +460,56 @@ describe('146 estado legible, carga por tarjeta y confirmación', () => {
     expect(screen.queryByRole('dialog', { name: 'Asistente de evaluación' })).not.toBeInTheDocument();
   });
 });
+
+describe('166 «Editar datos» envía la versión que el docente abrió', () => {
+  const versioned = { ...evaluation, contenido_version_id: 'version-1', updated_at: '2026-11-10T05:17:46.263063' };
+
+  async function openEditData() {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Editar datos' }));
+    return { user, dialog: screen.getByRole('dialog', { name: 'Editar datos de la evaluación' }) };
+  }
+
+  it('incluye la fecha y la versión de contenido de una evaluación con reparto, impresión o copia', async () => {
+    mocks.list.mockResolvedValue([versioned]);
+    mocks.update.mockResolvedValue(versioned);
+    const { user, dialog } = await openEditData();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar cambios' }));
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('evaluation-1', expect.objectContaining({
+      nombre: 'Evaluación de ciencias',
+      expected_updated_at: '2026-11-10T05:17:46.263063',
+      expected_content_version_id: 'version-1',
+    })));
+  });
+
+  it('sin versión de contenido envía solo la fecha de actualización', async () => {
+    mocks.list.mockResolvedValue([evaluation]);
+    mocks.update.mockResolvedValue(evaluation);
+    const { user, dialog } = await openEditData();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar cambios' }));
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    const payload = mocks.update.mock.calls[0][1];
+    expect(payload.expected_updated_at).toBe('2026-01-01T00:00:00Z');
+    expect(payload).not.toHaveProperty('expected_content_version_id');
+  });
+
+  it('un rechazo deja el formulario abierto con lo escrito', async () => {
+    mocks.list.mockResolvedValue([versioned]);
+    mocks.update.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { detail: 'La evaluación cambió.' } } });
+    const { user, dialog } = await openEditData();
+    const name = within(dialog).getByDisplayValue('Evaluación de ciencias');
+    await user.clear(name);
+    await user.type(name, 'Evaluación corregida');
+
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar cambios' }));
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('dialog', { name: 'Editar datos de la evaluación' })).toBeInTheDocument();
+    expect(within(dialog).getByDisplayValue('Evaluación corregida')).toBeInTheDocument();
+  });
+});
