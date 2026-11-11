@@ -155,6 +155,7 @@ ALL_SPECS = {
     "160-retroalimentacion-orientadora",
     "161-fijar-kombu",
     "162-validacion-objetiva-dibujo",
+    "163-claude-console-ready",
 }
 OWNED_SPECS = {
     name

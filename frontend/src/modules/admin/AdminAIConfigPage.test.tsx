@@ -179,6 +179,18 @@ beforeEach(() => {
 });
 
 describe('AdminAIConfigPage', () => {
+  it('offers Claude Console and blocks its setup when the administrator has an unsaved draft', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('button', { name: 'Proveedores y claves' }));
+    expect(screen.getByRole('heading', { name: 'Claude Console · Sonnet 5.5' })).toBeVisible();
+    expect(screen.getByLabelText('Clave de Claude Console')).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Funciones' }));
+    await user.click(await screen.findByLabelText('Permitir API del docente'));
+    await user.click(screen.getByRole('button', { name: 'Proveedores y claves' }));
+    expect(screen.getByLabelText('Clave de Claude Console')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Guardar clave y usar Sonnet 5.5' })).toBeDisabled();
+  });
   it('keeps a publication error visible with a repair action and preserves the draft', async () => {
     adminApi.validateAIControlCenter.mockResolvedValue({ valid: false, errors: [{ field: 'features.0.fallback_model', message: 'El respaldo anterior necesita comprobarse.' }], warnings: [] });
     const user = userEvent.setup();

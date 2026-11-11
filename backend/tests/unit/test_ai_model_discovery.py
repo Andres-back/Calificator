@@ -8,6 +8,7 @@ from app.services.ai_model_discovery import (
     model_supports_vision,
     normalize_model_payload,
     persist_discovered_models,
+    discover_compatible_models,
 )
 
 
@@ -49,6 +50,72 @@ def test_normalize_model_payload_deduplicates_and_infers_capabilities() -> None:
     assert models[0].capabilities == ("embedding",)
     assert models[1].capabilities == ("text", "vision")
     assert models[2].capabilities == ("text", "vision")
+
+
+@pytest.mark.parametrize("vision_supported", [True, False])
+def test_native_capabilities_respect_supported_and_input_context(vision_supported):
+    models = normalize_model_payload("api_direct", {"data": [{
+        "id": "configured-model", "type": "model", "max_input_tokens": 1000000,
+        "capabilities": {"thinking": {"supported": True}, "image_input": {"supported": vision_supported}},
+    }]}, infer_names=False)
+
+    assert models[0].capabilities == (("text", "vision") if vision_supported else ("text",))
+    assert models[0].max_context_tokens == 1000000
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("base_url", "cursor_field"),
+    [("https://api.anthropic.com/v1", "after_id"), ("https://gateway.example/v1", "after")],
+)
+async def test_catalog_uses_origin_cursor_and_preserves_generic_gateways(monkeypatch, base_url, cursor_field):
+    from unittest.mock import AsyncMock
+    import app.services.ai_api_connections as connections
+    import app.services.ai_credentials_service as credentials
+
+    monkeypatch.setattr(connections, "validate_api_base_url", lambda url, **_: url)
+    monkeypatch.setattr(credentials, "resolve_api_credential", AsyncMock(return_value="synthetic"))
+    cursors = []
+
+    def handler(request):
+        assert ("after" if cursor_field == "after_id" else "after_id") not in request.url.params
+        cursor = request.url.params.get(cursor_field)
+        cursors.append(cursor)
+        assert cursor in {None, "first"}
+        item = {"id": "first" if cursor is None else "second", "type": "model"}
+        return httpx.Response(200, json={
+            "data": [item], "has_more": cursor is None, "last_id": item["id"],
+        })
+
+    models = await discover_compatible_models(None, {
+        "id": "api_direct", "base_url": base_url, "credential_revision": "synthetic",
+    }, transport=httpx.MockTransport(handler))
+
+    assert [model["model_id"] for model in models] == ["first", "second"]
+    assert cursors == [None, "first"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("status", "expected_detail"),
+    [(401, "clave"), (403, "permisos"), (404, "ruta o el modelo"), (429, "cuota"), (503, "temporalmente")],
+)
+async def test_compatible_catalog_errors_are_safe_and_distinguishable(monkeypatch, status, expected_detail):
+    from unittest.mock import AsyncMock
+    import app.services.ai_api_connections as connections
+    import app.services.ai_credentials_service as credentials
+
+    monkeypatch.setattr(connections, "validate_api_base_url", lambda url, **_: url)
+    monkeypatch.setattr(credentials, "resolve_api_credential", AsyncMock(return_value="synthetic-secret"))
+
+    with pytest.raises(AIModelDiscoveryError) as error:
+        await discover_compatible_models(None, {
+            "id": "api_direct", "base_url": "https://api.anthropic.com/v1", "credential_revision": "synthetic",
+        }, transport=httpx.MockTransport(lambda _: httpx.Response(status, json={"error": "upstream-body synthetic-secret"})))
+
+    assert expected_detail in str(error.value)
+    assert "No se cambió la lista" in str(error.value)
+    assert "synthetic-secret" not in str(error.value) and "upstream-body" not in str(error.value)
 
 
 @pytest.mark.asyncio

@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "6e99af0b3a9075eb84d92d5f41181c96aede55a9c2e21362319dc79a6549ccfe",
+  "source_digest": "ac185a108ebc7bf0c9bbf363eb4e661bd779a2a98aa942a3a796b0e37aae56ea",
   "surfaces": [
     {
       "actors": [
@@ -24526,6 +24526,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/ClaudeConsoleSetup.test.tsx"
         },
         {
           "level": "unit",
@@ -51594,6 +51600,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminAIConfigPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "frontend/src/modules/admin/ai/sections/ClaudeConsoleSetup.test.tsx"
         },
         {
           "level": "unit",
