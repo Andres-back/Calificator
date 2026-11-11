@@ -670,6 +670,8 @@ function PanelDetalle({
   const [editingSnapshot, setEditingSnapshot] = useState<GradeBreakdownData | null>(null);
   const [editingComponentDirty, setEditingComponentDirty] = useState(false);
   const [breakdownSaveError, setBreakdownSaveError] = useState('');
+  // Spec 167: «Recargar versión vigente» solo ayuda ante un conflicto de versiones (409).
+  const [breakdownSaveConflict, setBreakdownSaveConflict] = useState(false);
   const [pendingEditorAction, setPendingEditorAction] = useState<string | 'close' | null>(null);
   const [editingFinalGrade, setEditingFinalGrade] = useState(false);
   const [finalGradeSnapshot, setFinalGradeSnapshot] = useState<CalificacionDetalle | null>(null);
@@ -761,9 +763,10 @@ function PanelDetalle({
         cambios_componentes: [change],
       });
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       onSaved();
       setBreakdownSaveError('');
+      setBreakdownSaveConflict(false);
       setEditingComponentDirty(false);
       setEditingComponentId(null);
       setEditingSnapshot(null);
@@ -771,16 +774,21 @@ function PanelDetalle({
       void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
       void queryClient.invalidateQueries({ queryKey: ['evaluation-review', cal.evaluacion_id] });
       void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
-      toast.success('Puntaje actualizado y nota recalculada.');
+      const unscored = data.componentes.filter((component) => component.puntos_obtenidos == null).length;
+      toast.success(unscored
+        ? `Puntaje guardado. ${unscored === 1 ? 'Falta 1 pregunta' : `Faltan ${unscored} preguntas`} por revisar; la nota sigue sin confirmar.`
+        : 'Puntaje actualizado y nota recalculada.');
       variables.afterSave?.();
     },
     onError: (error) => {
       const parsed = toApiError(error);
       if (parsed.status === 409) {
         setBreakdownSaveError('La calificación cambió en otra revisión.');
+        setBreakdownSaveConflict(true);
         toast.error('La calificación cambió en otra revisión. Conservamos tu borrador para que puedas compararlo.');
         return;
       }
+      setBreakdownSaveConflict(false);
       setBreakdownSaveError(parsed.detail);
       toast.error(parsed.detail);
     },
@@ -1007,7 +1015,7 @@ function PanelDetalle({
           saveError={breakdownSaveError}
           onDirtyChange={setEditingComponentDirty}
           onCancel={requestComponentClose}
-          onReload={() => setPendingEditorAction('close')}
+          onReload={breakdownSaveConflict ? () => setPendingEditorAction('close') : undefined}
           onSave={(change) => breakdownMutation.mutate({ change })}
           onSaveAndNextQuestion={(change) => {
             const next = activeBreakdown.componentes[activeBreakdown.componentes.findIndex((item) => item.id === component.id) + 1];
