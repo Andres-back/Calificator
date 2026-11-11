@@ -1,6 +1,6 @@
 # Especificación: La prueba del aviso de evaluación asignada no depende de la velocidad del runner
 
-**Rama**: `codex/169-prueba-aviso-asignada` | **Creada**: 2026-11-11 | **Estado**: Implementada como hotfix; falta que el usuario registre `spec-approved` | **Issue**: [#357](https://github.com/Andres-back/Calificator/issues/357)
+**Rama**: `codex/169-prueba-aviso-asignada` | **Creada**: 2026-11-11 | **Estado**: Aprobada (hotfix) e implementada | **Issue**: [#357](https://github.com/Andres-back/Calificator/issues/357)
 
 **Entrada**: la prueba de Vitest «warns clearly when editing an already assigned evaluation without filling the screen» falló en la CI de `main` el 2026-11-10 y en el primer intento de los PR #352 y #354 el 2026-11-11. Ninguno de esos cambios toca el aviso. Al fallar, los trabajos E2E del frontend se omiten y el PR queda en rojo.
 
