@@ -1,6 +1,6 @@
 # Tareas: Guardar al reabrir una evaluación generada sin rúbrica
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), hotfix de #349. El usuario ordenó reparar los hallazgos de la auditoría el 2026-11-11; la etiqueta `spec-approved` la registra él.
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), hotfix de #349. Aprobados por el usuario el 2026-11-11 (`spec-approved` y `plan-approved` en #349).
 
 ## Fase 1: Pruebas primero (RED)
 

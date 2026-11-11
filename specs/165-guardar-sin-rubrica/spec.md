@@ -1,6 +1,6 @@
 # Especificación: Guardar al reabrir una evaluación generada sin rúbrica
 
-**Rama**: `codex/165-guardar-sin-rubrica` | **Creada**: 2026-11-11 | **Estado**: Implementada como hotfix; falta que el usuario registre `spec-approved` | **Issue**: [#349](https://github.com/Andres-back/Calificator/issues/349)
+**Rama**: `codex/165-guardar-sin-rubrica` | **Creada**: 2026-11-11 | **Estado**: Aprobada (hotfix) e implementada | **Issue**: [#349](https://github.com/Andres-back/Calificator/issues/349)
 
 **Entrada**: la auditoría funcional del 2026-11-10 generó una evaluación con IA sin rúbrica, la guardó y la reabrió con «Editar preguntas». El botón «Guardar cambios» quedó deshabilitado con el aviso «Criterio 1: el peso debe ser mayor que cero», en un borrador y en una evaluación ya asignada.
 

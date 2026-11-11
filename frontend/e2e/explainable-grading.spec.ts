@@ -535,6 +535,49 @@ test('un conflicto 409 no sobrescribe la revisión vigente', async ({ page }) =>
 });
 
 
+async function openQuestionEditor(page: Page) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installMocks(page, 'profesor');
+  await page.goto('/login');
+  await page.getByLabel(/Correo/i).fill(teacher.email);
+  await page.locator('input[type="password"]').fill('Password123!');
+  await page.getByRole('button', { name: /Iniciar sesi.n/i }).click();
+  await page.goto('/app/calificaciones/workspace/e1');
+  await page.getByText('Estudiante Prueba', { exact: true }).click();
+  await page.getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+  await page.getByRole('button', { name: 'Ajustar puntaje y explicación' }).click();
+  await page.getByLabel(/Puntos/).fill('0.75');
+  await page.getByLabel('Motivo interno del cambio').fill('Revisión docente de la respuesta');
+  await page.getByLabel('Explicación para el estudiante').fill('La respuesta fue revisada con la evidencia entregada.');
+}
+
+test('167 un rechazo que no es conflicto muestra su motivo y no ofrece recargar', async ({ page }) => {
+  await openQuestionEditor(page);
+  await page.route('**/api/calificaciones/c1/desglose', (route) => json(route, {
+    detail: 'El puntaje de la pregunta 1 debe estar entre 0 y 1.',
+  }, 422));
+  await page.getByRole('button', { name: 'Guardar y recalcular' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: 'El puntaje de la pregunta 1 debe estar entre 0 y 1.' })).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: /cambió en otra revisión/i })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Recargar versión vigente' })).toHaveCount(0);
+  await expect(page.getByLabel(/Puntos/)).toHaveValue('0.75');
+});
+
+test('167 con otra pregunta pendiente guarda el avance y avisa cuántas faltan', async ({ page }) => {
+  await openQuestionEditor(page);
+  await page.route('**/api/calificaciones/c1/desglose', (route) => json(route, {
+    ...breakdown, version: 2, requiere_revision: true,
+    componentes: [
+      { ...breakdown.componentes[0], puntos_obtenidos: 0.75, estado: 'parcial' },
+      { ...breakdown.componentes[0], id: 'q2', clave: 'pregunta:2', numero: '2', titulo: 'Segunda pregunta', puntos_obtenidos: null, estado: 'revision_pendiente', requiere_revision: true },
+    ],
+  }));
+  await page.getByRole('button', { name: 'Guardar y recalcular' }).click();
+  await expect(page.getByText('Puntaje guardado. Falta 1 pregunta por revisar; la nota sigue sin confirmar.')).toBeVisible();
+  await expect(page.getByText('Puntaje actualizado y nota recalculada.')).toHaveCount(0);
+});
+
+
 test('guardar el último ajuste termina la lista sin confirmar ni publicar', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await installMocks(page, 'profesor');
