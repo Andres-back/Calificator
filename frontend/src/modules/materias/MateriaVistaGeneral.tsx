@@ -54,6 +54,8 @@ export function MateriaVistaGeneral() {
   return <StudentOverview materiaId={materia.id} />;
 }
 
+const rosterActionClass = 'min-h-11 whitespace-normal text-left leading-tight';
+
 function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
   const [importOpen, setImportOpen] = useState(false);
   const [existingOpen, setExistingOpen] = useState(false);
@@ -143,19 +145,19 @@ function TeacherOverview({ materia }: { materia: MateriaConEstudiantes }) {
         </details>
 
         <Card className="order-1 p-4 sm:p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+          <div className="mb-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
               <p className="inline-flex items-center gap-2 font-display font-bold">
                 <Users className="h-5 w-5 text-brand-500" /> Estudiantes
               </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
               <Badge tone="neutral">{materia.estudiantes.length}</Badge>
-              {canRegister && <Button size="sm" className="min-h-11" variant="outline" disabled={!materia.estudiantes.length} onClick={() => setDeliveryOpen(true)}><KeyRound className="h-4 w-4" /> Entregar accesos</Button>}
-              {canRegister && <><Button size="sm" className="min-h-11" variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4" /> Ya registrados</Button>
-              <Button size="sm" className="min-h-11" variant="outline" onClick={() => setManualOpen(true)}><UserPlus className="h-4 w-4" /> Registrar manualmente</Button>
-              <Button size="sm" className="min-h-11" onClick={() => setImportOpen(true)}><Camera className="h-4 w-4" /> Importar foto</Button></>}
             </div>
+            {canRegister && <div role="group" aria-label="Acciones de estudiantes" className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              <Button size="sm" className={rosterActionClass} onClick={() => setImportOpen(true)}><Camera className="h-4 w-4 shrink-0" /> Importar foto</Button>
+              <Button size="sm" className={rosterActionClass} variant="outline" onClick={() => setManualOpen(true)}><UserPlus className="h-4 w-4 shrink-0" /> Registrar manualmente</Button>
+              <Button size="sm" className={rosterActionClass} variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4 shrink-0" /> Ya registrados</Button>
+              <Button size="sm" className={rosterActionClass} variant="outline" disabled={!materia.estudiantes.length} onClick={() => setDeliveryOpen(true)}><KeyRound className="h-4 w-4 shrink-0" /> Entregar accesos</Button>
+            </div>}
           </div>
           {materia.estudiantes.length === 0 ? (
             <EmptyState
