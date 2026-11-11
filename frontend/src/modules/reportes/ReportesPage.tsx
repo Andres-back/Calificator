@@ -20,19 +20,6 @@ export function ReportesPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Reportes" eyebrow="Seguimiento docente" subtitle="Compara resultados confirmados e identifica dónde enfocar el acompañamiento." />
-      
-      {/* Feature Image Banner */}
-      <div className="relative overflow-hidden rounded-xl border border-border bg-surface">
-        <div className="flex items-center gap-4 p-4">
-          <span className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
-            <EducationalIcon name="reports" className="h-[4.5rem] w-[4.5rem]" />
-          </span>
-          <div>
-            <p className="font-display font-bold">Reportes y estadísticas</p>
-            <p className="mt-1 text-sm text-muted">Visualiza el rendimiento de tus materias y estudiantes con gráficas detalladas.</p>
-          </div>
-        </div>
-      </div>
 
       <QueryState
         isLoading={isLoading}
