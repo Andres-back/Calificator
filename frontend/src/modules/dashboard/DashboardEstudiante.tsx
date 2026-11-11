@@ -80,7 +80,7 @@ export function DashboardEstudiante() {
         <img
           src="/branding/xali-hello.webp"
           alt=""
-          className="pointer-events-none absolute -bottom-4 -right-4 z-10 h-32 w-32 object-contain opacity-55 sm:h-40 sm:w-40 lg:hidden"
+          className="pointer-events-none absolute -bottom-4 -right-4 z-10 hidden h-40 w-40 object-contain opacity-55 sm:block lg:hidden"
         />
         <div className="relative z-10 grid items-center gap-8 lg:grid-cols-[1fr_17rem]">
           <div className="min-w-0 flex-1 sm:pr-24 lg:pr-0">
