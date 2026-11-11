@@ -19,7 +19,16 @@ Entorno: Windows 11 y Python 3.13 para las pruebas de gobernanza. El corte real 
 
 ## Comprobación en GitHub Actions
 
-Pendiente de registrar: se hace en el PR con una prueba de Vitest rota a propósito y se retira después. Ver la sección «Corte comprobado» más abajo cuando esté.
+En el PR #365 se subió una prueba de Vitest rota a propósito (`frontend/src/zzCorteCi.test.ts`, commit `6b8715d`) y se retiró en el commit siguiente. Ejecución 43053160753:
+
+| Qué se miró | Resultado |
+| --- | --- |
+| Duración de la ejecución | 3 min 25 s (15:55:27 a 15:58:52 UTC). Las ejecuciones completas de ese día pasaron de 20 minutos |
+| Trabajo «Frontend quality and build» | paso «Run unit tests» en `failure`; el trabajo termina como `cancelled` |
+| Backend y contenedores | `cancelled` a los 3 minutos, sin terminar |
+| Fragmentos E2E y regresiones contextuales | `cancelled` sin arrancar |
+| Compuertas «Frontend E2E» y «Frontend quality, build and E2E» | `failure`: el PR no queda en verde |
+| Lectura del fallo | `gh run view <ejecución> --job <trabajo> --log` muestra la prueba rota y su aserción. `gh run view --log-failed` no devuelve nada, porque el trabajo figura como cancelado |
 
 ## Cobertura de requisitos
 
@@ -36,4 +45,6 @@ Pendiente de registrar: se hace en el PR con una prueba de Vitest rota a propós
 ## Observaciones
 
 - Una ejecución muestra ahora solo el primer fallo de cada conjunto.
-- Los cortes de Playwright no se probaron en GitHub Actions; la opción `--max-failures=1` es estándar y la cubre la prueba de gobernanza.
+- El trabajo que falla aparece como «cancelado», no como «fallido»: para encontrar el motivo hay que abrir ese trabajo y buscar el paso marcado en rojo.
+- En la comprobación, Vitest informó «1 failed | 1534 passed»: la prueba rota estaba en el último archivo, así que `--bail=1` no llegó a ahorrar pruebas. El ahorro vino de cancelar los demás trabajos.
+- Los cortes de `pytest -x` y de Playwright no se probaron en GitHub Actions; son opciones estándar y las cubre la prueba de gobernanza. Tampoco se provocó una instalación lenta de navegadores para ver que no cancela.
