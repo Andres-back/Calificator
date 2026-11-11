@@ -172,14 +172,17 @@ test('106 criterios mantiene cabecera y acciones dentro del editor', async ({ pa
     await page.getByRole('button', { name: 'Editar criterios', exact: true }).click();
     const editor = page.getByRole('dialog', { name: 'Editar recurso', exact: true });
     await expect(editor.locator('[data-resource-field="criterios"]')).toBeFocused();
-    const dialogBounds = (await editor.boundingBox())!;
-    expect((await editor.getByRole('heading', { name: 'Editar recurso', exact: true }).boundingBox())!.y).toBeGreaterThanOrEqual(dialogBounds.y);
-    for (const name of ['Guardar cambios', 'Cancelar']) {
-      const button = editor.getByRole('button', { name, exact: true });
-      const bounds = (await button.boundingBox())!;
-      expect(bounds.y + bounds.height).toBeLessThanOrEqual(dialogBounds.y + dialogBounds.height + 0.001);
-      await touch(button);
-    }
+    // Spec 173: el editor entra desplazado y escalado. Cada lectura de posición es una
+    // llamada aparte, así que se repite la medición hasta comparar una posición ya quieta.
+    await expect(async () => {
+      const dialogBounds = (await editor.boundingBox())!;
+      expect((await editor.getByRole('heading', { name: 'Editar recurso', exact: true }).boundingBox())!.y).toBeGreaterThanOrEqual(dialogBounds.y);
+      for (const name of ['Guardar cambios', 'Cancelar']) {
+        const bounds = (await editor.getByRole('button', { name, exact: true }).boundingBox())!;
+        expect(bounds.y + bounds.height).toBeLessThanOrEqual(dialogBounds.y + dialogBounds.height + 0.001);
+      }
+    }).toPass();
+    for (const name of ['Guardar cambios', 'Cancelar']) await touch(editor.getByRole('button', { name, exact: true }));
     await editor.getByRole('button', { name: 'Cancelar', exact: true }).click();
     await expect(editor).not.toBeVisible();
   }

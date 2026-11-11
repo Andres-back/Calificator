@@ -157,6 +157,7 @@ ALL_SPECS = {
     "162-validacion-objetiva-dibujo",
     "163-claude-console-ready",
     "168-organizacion-visual",
+    "173-e2e-editor-criterios",
 }
 OWNED_SPECS = {
     name
