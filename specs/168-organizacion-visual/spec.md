@@ -1,6 +1,6 @@
 # Especificación: Acciones dentro de su contenedor y encabezados consistentes
 
-**Rama**: `codex/168-organizacion-visual` | **Creada**: 2026-11-11 | **Estado**: Borrador | **Issue**: [#353](https://github.com/Andres-back/Calificator/issues/353)
+**Rama**: `codex/168-organizacion-visual` | **Creada**: 2026-11-11 | **Estado**: Aprobada | **Issue**: [#353](https://github.com/Andres-back/Calificator/issues/353)
 
 **Entrada**: el usuario pidió dejar el frontend organizado en todas las vistas, sin elementos amontonados ni descuidados.
 

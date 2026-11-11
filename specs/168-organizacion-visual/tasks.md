@@ -1,6 +1,6 @@
 # Tareas: Acciones dentro de su contenedor y encabezados consistentes
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md). Las tareas de los PRs 2 a 4 se añaden en cada uno.
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), aprobados el 2026-11-11 (`spec-approved`, `plan-approved` en #353). Las tareas de los PRs 2 a 4 se añaden en cada uno.
 
 ## PR 1 - Materias
 
