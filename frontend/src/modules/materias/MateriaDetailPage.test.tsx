@@ -101,6 +101,17 @@ describe('MateriaDetailPage for students', () => {
     expect(screen.getByText('Información de la materia').closest('details')).not.toHaveAttribute('open');
     expect(screen.getByRole('heading', { name: 'Ciencias' })).toBeVisible();
   });
+  it('168 reúne las acciones de la materia dentro de su encabezado', async () => {
+    materiaApi.getMateriaEstudiantes.mockResolvedValue({ ...materia, estudiantes: [] });
+    useAuth.setState({ user: { id: 'profesor-1', nombre: 'Docente', email: 'p@example.test', rol: 'profesor', estado: 'activo', permissions: ['subjects.read', 'subjects.update'] } });
+    renderDetail();
+    const header = (await screen.findByRole('heading', { name: 'Ciencias' })).closest('section');
+    const actions = screen.getByRole('group', { name: 'Acciones de Ciencias' });
+    expect(header).toContainElement(actions);
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Editar materia' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Eliminar de mis materias' }));
+    expect(actions).toHaveClass('grid', 'grid-cols-2');
+  });
   it('keeps secondary subject information folded while navigation stays available', async () => {
     materiaApi.getMateria.mockResolvedValue(materia);
     renderDetail();
