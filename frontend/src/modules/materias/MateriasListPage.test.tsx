@@ -184,6 +184,19 @@ describe('MateriasListPage guided creation', () => {
 });
 
 
+describe('MateriasListPage card organization', () => {
+  it('168 muestra las acciones de cada materia dentro de su tarjeta', async () => {
+    mocks.list.mockResolvedValue([createdMateria]);
+    renderPage();
+    const link = await screen.findByRole('link', { name: /Matemáticas/ });
+    const actions = screen.getByRole('group', { name: 'Acciones de Matemáticas' });
+    const card = link.closest('.card');
+    expect(card).toContainElement(actions);
+    expect(link).not.toContainElement(actions);
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Editar materia' }));
+  });
+});
+
 describe('MateriasListPage student enrollment', () => {
   it('allows joining from Mis materias without leaving the page', async () => {
     const user = userEvent.setup();
