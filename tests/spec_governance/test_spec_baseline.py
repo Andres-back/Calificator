@@ -157,6 +157,7 @@ ALL_SPECS = {
     "162-validacion-objetiva-dibujo",
     "163-claude-console-ready",
     "168-organizacion-visual",
+    "167-corregir-con-pendientes",
     "166-editar-datos-version",
 }
 OWNED_SPECS = {

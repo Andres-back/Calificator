@@ -1,6 +1,6 @@
 # Especificación: «Editar datos» funciona después de repartir puntos, imprimir o copiar
 
-**Rama**: `codex/166-editar-datos-version` | **Creada**: 2026-11-11 | **Estado**: Implementada como hotfix; falta que el usuario registre `spec-approved` | **Issue**: [#350](https://github.com/Andres-back/Calificator/issues/350)
+**Rama**: `codex/166-editar-datos-version` | **Creada**: 2026-11-11 | **Estado**: Aprobada (hotfix) e implementada | **Issue**: [#350](https://github.com/Andres-back/Calificator/issues/350)
 
 **Entrada**: la auditoría funcional del 2026-11-10 guardó el reparto de puntos de una evaluación y después abrió «Editar datos» en la materia. Guardar, incluso sin cambiar nada, respondió «La evaluación cambió. Conservamos tu edición; vuelve a abrir la versión actual antes de guardar». Volver a abrirla no lo resolvió.
 

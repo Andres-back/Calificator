@@ -1,6 +1,6 @@
 # Tareas: «Editar datos» funciona después de repartir puntos, imprimir o copiar
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), hotfix de #350. El usuario ordenó reparar los hallazgos de la auditoría el 2026-11-11; la etiqueta `spec-approved` la registra él.
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), hotfix de #350. Aprobados por el usuario el 2026-11-11 (`spec-approved` y `plan-approved` en #350).
 
 ## Fase 1: Pruebas primero (RED)
 

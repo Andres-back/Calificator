@@ -370,9 +370,14 @@ async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expe
     audit_rows: list[tuple[str, dict, dict, str, str]] = []
     for old in active.componentes:
         change = change_map.get(str(old.id))
+        # Spec 167: solo se valida la pregunta que cambia. Una pregunta pendiente que el
+        # docente no tocó conserva su estado y sigue sin puntaje.
         points = Decimal(str(change["puntos_obtenidos"])) if change else old.puntos_obtenidos
-        if points is None or points < 0 or points > old.puntos_maximos:
-            raise HTTPException(status_code=409, detail=f"Puntaje inválido para {old.clave}.")
+        if change and (points < 0 or points > old.puntos_maximos):
+            raise HTTPException(
+                status_code=422,
+                detail=f"El puntaje de la pregunta {old.numero or old.clave} debe estar entre 0 y {old.puntos_maximos.normalize():f}.",
+            )
         state = str(change.get("estado")) if change else old.estado
         explanation_student = str(change.get("explicacion_estudiante") or "").strip() if change else old.explicacion_estudiante
         if change and (not str(change.get("motivo_interno") or "").strip() or not explanation_student):
@@ -405,9 +410,15 @@ async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expe
     if global_adjustment:
         db.add(CalificacionAjuste(calificacion_id=calificacion.id, desglose_anterior_id=active.id, desglose_nuevo_id=new.id, componente_clave=None, tipo="global", valor_anterior_json={"valor": float(active.ajuste_global)}, valor_nuevo_json={"valor": float(adjustment)}, motivo_interno=str(global_adjustment["motivo_interno"]).strip(), explicacion_estudiante=str(global_adjustment["explicacion_estudiante"]).strip(), actor_id=actor_id))
     calificacion.revisado_por_docente = True
-    calificacion.estado = (CalificacionEstado.PUBLICADA.value if calificacion.estado == CalificacionEstado.PUBLICADA.value else CalificacionEstado.AJUSTADA.value)
-    # Spec 147: la decisión del empate solo vale para la cifra sobre la que se tomó.
-    grade_rounding.apply_computed_final_grade(calificacion, active, new.nota_final)
+    unscored = any(item["puntos_obtenidos"] is None for item in new_components)
+    if unscored and calificacion.estado != CalificacionEstado.PUBLICADA.value:
+        # Spec 167: con preguntas sin puntaje el avance se guarda, pero la nota no se
+        # confirma: calculate_formula las suma como cero y esa cifra no es una nota.
+        calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
+    else:
+        calificacion.estado = (CalificacionEstado.PUBLICADA.value if calificacion.estado == CalificacionEstado.PUBLICADA.value else CalificacionEstado.AJUSTADA.value)
+        # Spec 147: la decisión del empate solo vale para la cifra sobre la que se tomó.
+        grade_rounding.apply_computed_final_grade(calificacion, active, new.nota_final)
     await suspend_grade_publications(db, calificacion.id)
     await db.commit()
     return await get_active_breakdown(db, calificacion.id)  # type: ignore[return-value]
