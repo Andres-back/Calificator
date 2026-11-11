@@ -62,6 +62,12 @@ def _capabilities(model_id: str, item: dict[str, Any], *, infer_name: bool = Tru
     declared = item.get("capabilities") or item.get("capability") or []
     if isinstance(declared, str):
         declared = [declared]
+    elif isinstance(declared, dict):
+        declared = [
+            name for name, capability in declared.items()
+            if capability is True
+            or isinstance(capability, dict) and capability.get("supported") is True
+        ]
     values = {str(value).strip().lower() for value in declared if value}
     modalities = item.get("modalities") or item.get("architecture", {}).get("input_modalities") or []
     if isinstance(modalities, str):
@@ -120,7 +126,7 @@ def normalize_model_payload(provider: str, payload: Any, *, infer_names: bool = 
             capabilities = tuple(value for value in capabilities if value == "image")
         if not capabilities and not include_unknown:
             continue
-        context = item.get("context_window") or item.get("max_context_tokens")
+        context = item.get("context_window") or item.get("max_context_tokens") or item.get("max_input_tokens")
         normalized[model_id] = DiscoveredModel(
             model_id=model_id,
             label=str(item.get("display_name") or item.get("label") or item.get("name") or model_id),
@@ -257,7 +263,10 @@ async def discover_compatible_models(db: AsyncSession, provider: dict[str, Any],
     """Fetch a whole compatible catalog or keep the previous draft untouched."""
     import asyncio
     from urllib.parse import urljoin, urlsplit
-    from app.services.ai_api_connections import APIConnectionError, public_api_transport, validate_api_base_url
+    from app.services.ai_api_connections import (
+        APIConnectionError, compatible_api_failure_detail,
+        public_api_transport, validate_api_base_url,
+    )
     from app.services.ai_credentials_service import resolve_api_credential
 
     base = await asyncio.to_thread(validate_api_base_url, str(provider.get("base_url") or ""))
@@ -309,9 +318,16 @@ async def discover_compatible_models(db: AsyncSession, provider: dict[str, Any],
                     cursor = following or (payload.get("last_id") if isinstance(payload, dict) else None)
                     if not cursor:
                         raise AIModelDiscoveryError("Falta la siguiente página del catálogo; se conserva la lista anterior.")
-                    params = {"after": str(cursor)}
+                    cursor_field = (
+                        "after_id"
+                        if urlsplit(base).hostname == "api.anthropic.com"
+                        else "after"
+                    )
+                    params = {cursor_field: str(cursor)}
             raise AIModelDiscoveryError("El catálogo supera el límite de páginas; se conserva la lista anterior.")
     except (httpx.HTTPError, ValueError) as exc:
         if isinstance(exc, (AIModelDiscoveryError, APIConnectionError)):
             raise
-        raise AIModelDiscoveryError("No fue posible consultar el catálogo. Revisa acceso y disponibilidad; no se cambió la lista.") from exc
+        raise AIModelDiscoveryError(
+            compatible_api_failure_detail(exc) + " No se cambió la lista de modelos."
+        ) from exc

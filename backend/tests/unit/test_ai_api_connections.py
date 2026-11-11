@@ -67,12 +67,18 @@ def test_probe_is_bound_to_destination_model_profile_capabilities_and_credential
 
 
 def test_rebinding_is_rejected_before_tcp_connection(monkeypatch):
+    import socket
     from app.services.ai_api_connections import _PublicNetworkBackend
 
     delegate = AsyncMock()
-    monkeypatch.setattr(
-        "socket.getaddrinfo", lambda *args: [(2, 1, 6, "", ("127.0.0.1", 443))]
-    )
+    original_lookup = socket.getaddrinfo
+
+    def lookup(host, *args, **kwargs):
+        if host == "api.example":
+            return [(2, 1, 6, "", ("127.0.0.1", 443))]
+        return original_lookup(host, *args, **kwargs)
+
+    monkeypatch.setattr(socket, "getaddrinfo", lookup)
     with pytest.raises(APIConnectionError):
         asyncio.run(_PublicNetworkBackend(delegate).connect_tcp("api.example", 443))
     delegate.connect_tcp.assert_not_called()
@@ -214,12 +220,15 @@ def test_complete_catalog_pagination_without_retiring_on_partial_data(monkeypatc
     requests = []
 
     def handle(request):
-        requests.append(request.url.params.get("after"))
-        if len(requests) == 1:
+        cursor = request.url.params.get("after")
+        requests.append(cursor)
+        assert "after_id" not in request.url.params
+        if cursor is None:
             return httpx.Response(
                 200,
                 json={"data": [{"id": "first"}], "has_more": True, "last_id": "first"},
             )
+        assert cursor == "first"
         return httpx.Response(
             200, json={"data": [{"id": "second"}], "has_more": False, "total": 2}
         )
@@ -249,6 +258,127 @@ def test_complete_catalog_pagination_without_retiring_on_partial_data(monkeypatc
                 ),
             )
         )
+
+
+@pytest.fixture
+def configured_probe(monkeypatch):
+    from types import SimpleNamespace
+    import app.services.ai_api_connections as connections
+    import app.services.ai_credentials_service as credentials
+
+    monkeypatch.setattr(connections, "validate_api_base_url", lambda url, **_: url)
+    monkeypatch.setattr(
+        credentials, "resolve_api_credential", AsyncMock(return_value="synthetic-secret")
+    )
+    monkeypatch.setattr("secrets.randbelow", lambda _: 0)
+    db = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), rollback=AsyncMock())
+
+    def run(handler, *, protocol="messages", vision=False):
+        monkeypatch.setattr(
+            connections, "public_api_transport", lambda: httpx.MockTransport(handler)
+        )
+        result = asyncio.run(connections.probe_compatible_model(
+            db,
+            provider={
+                "id": "api_test", "base_url": "https://api.example/v1",
+                "credential_revision": "synthetic-revision",
+            },
+            model={
+                "provider_id": "api_test", "model_id": "configured-model",
+                "capabilities": ["text", "vision"] if vision else ["text"],
+                "runtime_profile": {"protocol": protocol},
+            },
+            actor_id="synthetic-actor",
+        ))
+        return result, db
+
+    return run
+
+
+@pytest.mark.parametrize(
+    ("protocol", "expected_budget"),
+    [("messages", 4096), ("responses", 512), ("chat_completions", 512)],
+)
+def test_probe_keeps_vision_and_allows_messages_thinking(configured_probe, protocol, expected_budget):
+    import json
+
+    def handler(request):
+        body = json.loads(request.content)
+        assert body["max_output_tokens" if protocol == "responses" else "max_tokens"] == expected_budget
+        assert "temperature" not in body and "thinking" not in body
+        content = body["input" if protocol == "responses" else "messages"][0]["content"]
+        assert len(content) == 2
+        if protocol == "messages":
+            assert request.url.path == "/v1/messages"
+            assert request.headers["x-api-key"] == "synthetic-secret"
+            assert content[1]["type"] == "image"
+            assert content[1]["source"]["media_type"] == "image/png"
+            payload = {"stop_reason": "end_turn", "content": [{"type": "thinking", "thinking": "synthetic"}, {"type": "text", "text": '{"numero":"100"}'}]}
+        elif protocol == "responses":
+            assert content[1]["type"] == "input_image"
+            payload = {"status": "completed", "output": [{"type": "message", "content": [{"type": "output_text", "text": '{"numero":"100"}'}]}]}
+        else:
+            assert content[1]["type"] == "image_url"
+            payload = {"choices": [{"finish_reason": "stop", "message": {"content": '{"numero":"100"}'}}]}
+        return httpx.Response(200, json=payload)
+
+    result, db = configured_probe(handler, protocol=protocol, vision=True)
+
+    assert result["status"] == "ok"
+    assert result["model"]["verification_id"]
+    db.execute.assert_awaited_once()
+    db.commit.assert_awaited_once()
+    db.rollback.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_detail"),
+    [(400, "formato"), (401, "clave"), (403, "permisos"), (404, "ruta o el modelo"), (429, "cuota"), (503, "temporalmente")],
+)
+def test_probe_http_failures_are_actionable_and_do_not_create_proof(configured_probe, status, expected_detail):
+    result, db = configured_probe(lambda _: httpx.Response(
+        status, json={"error": "upstream-body synthetic-secret https://private.example"}
+    ))
+
+    assert result["status"] == "error" and result["http_code"] == status
+    assert expected_detail in result["detail"]
+    assert "synthetic-secret" not in str(result) and "upstream-body" not in str(result)
+    assert "private.example" not in str(result)
+    db.execute.assert_not_awaited()
+    db.commit.assert_not_awaited()
+    db.rollback.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected_detail"),
+    [
+        ({"stop_reason": "max_tokens", "content": [{"type": "thinking", "thinking": "synthetic-secret"}]}, "límite de salida"),
+        ({"stop_reason": "tool_use", "content": []}, "incompleta"),
+        ({"stop_reason": "end_turn", "content": []}, "sin una respuesta"),
+        ({"stop_reason": "end_turn", "content": [{"type": "text", "text": "synthetic-secret not-json"}]}, "JSON esperado"),
+    ],
+)
+def test_probe_rejects_incomplete_or_invalid_200_without_leaking_body(configured_probe, payload, expected_detail):
+    result, db = configured_probe(lambda _: httpx.Response(200, json=payload))
+
+    assert result["status"] == "error" and result["http_code"] is None
+    assert expected_detail in result["detail"]
+    assert "synthetic-secret" not in str(result)
+    db.execute.assert_not_awaited()
+    db.commit.assert_not_awaited()
+    db.rollback.assert_awaited_once()
+
+
+def test_probe_timeout_is_distinct_and_does_not_leak_transport_error(configured_probe):
+    def handler(request):
+        raise httpx.ReadTimeout("synthetic-secret", request=request)
+
+    result, db = configured_probe(handler)
+
+    assert result["status"] == "error" and "no respondió a tiempo" in result["detail"]
+    assert "synthetic-secret" not in str(result)
+    db.execute.assert_not_awaited()
+    db.commit.assert_not_awaited()
 
 
 def test_grader_preserves_image_and_independent_fallback_key_and_history(monkeypatch):

@@ -23,6 +23,42 @@ class APIConnectionError(ValueError):
         self.field = field
 
 
+def compatible_api_failure_detail(exc: Exception) -> str:
+    """Describe failures without returning upstream bodies, URLs or credentials."""
+    from app.services.ai_api_transport import APIOutputError
+
+    if isinstance(exc, APIConnectionError):
+        return str(exc)
+    if isinstance(exc, APIOutputError):
+        return {
+            "output_budget_exhausted": "El modelo agotó el límite de salida antes de completar la prueba. Revisa su presupuesto de pensamiento y salida.",
+            "output_incomplete": "El modelo devolvió una respuesta incompleta; no se pudo validar la prueba.",
+            "output_refused": "El modelo rechazó la prueba técnica; no se pudo validar su respuesta.",
+            "output_empty": "El modelo terminó sin una respuesta de texto para validar la prueba.",
+            "protocol_not_supported": "El formato de respuesta no es compatible. Revisa el protocolo del modelo.",
+        }[exc.code]
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        detail = {
+            400: "La API rechazó la solicitud. Revisa el formato, las opciones del modelo y el saldo disponible.",
+            401: "La API rechazó la clave. Revisa que sea una clave de API válida y vigente.",
+            403: "La clave no tiene acceso a esta API o modelo. Revisa sus permisos y el espacio de trabajo.",
+            404: "No se encontró la ruta o el modelo. Revisa la URL base, el formato y el identificador del modelo.",
+            429: "La API alcanzó un límite de solicitudes o cuota. Revisa los límites antes de reintentar.",
+        }.get(status)
+        if detail:
+            return detail
+        if status >= 500:
+            return "El proveedor no está disponible temporalmente. Intenta de nuevo más tarde."
+    if isinstance(exc, httpx.TimeoutException):
+        return "La API no respondió a tiempo. Intenta de nuevo cuando esté disponible."
+    if isinstance(exc, httpx.HTTPError):
+        return "No fue posible conectar con la API. Revisa su disponibilidad y vuelve a intentar."
+    if isinstance(exc, json.JSONDecodeError):
+        return "La API no devolvió el JSON esperado. Revisa el formato del modelo."
+    return "El modelo no completó la prueba. Revisa clave, modelo, formato y disponibilidad."
+
+
 def _public_address(value: str) -> bool:
     address = ipaddress.ip_address(value)
     return address.is_global and not address.is_multicast and not address.is_reserved
@@ -335,7 +371,8 @@ async def probe_compatible_model(
             },
             key,
             messages,
-            max_tokens=512,
+            # Messages models can spend this shared budget on automatic thinking.
+            max_tokens=4096 if profile["protocol"] == "messages" else 512,
             json_mode=True,
             timeout=120,
         )
@@ -389,9 +426,8 @@ async def probe_compatible_model(
             "http_code": exc.response.status_code
             if isinstance(exc, httpx.HTTPStatusError)
             else None,
-            "detail": str(exc)
-            if isinstance(exc, APIConnectionError)
-            else "El modelo no completó la prueba. Revisa clave, modelo, formato y disponibilidad; no se cambió la ruta publicada.",
+            "detail": compatible_api_failure_detail(exc)
+            + " No se cambió la ruta publicada.",
         }
 
 

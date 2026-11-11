@@ -12,6 +12,7 @@ import { useAIMutations } from './ai/hooks/useAIMutations';
 import { OverviewSection } from './ai/sections/OverviewSection';
 import { ProvidersSection } from './ai/sections/ProvidersSection';
 import { CompatibleAPISection } from './ai/sections/CompatibleAPISection';
+import { ClaudeConsoleSetup } from './ai/sections/ClaudeConsoleSetup';
 import { FunctionsSection } from './ai/sections/FunctionsSection';
 import { ToolsSection } from './ai/sections/ToolsSection';
 import { ConfigConsistencyCard } from './ai/sections/ConsistencySection';
@@ -37,6 +38,7 @@ export function AdminAIConfigPage() {
   const [validationErrors, setValidationErrors] = useState<Array<{ field: string; message: string }>>([]);
   const [preparingModel, setPreparingModel] = useState<ModelPreparationSelection | null>(null);
   const [modelProbeBusy, setModelProbeBusy] = useState(false);
+  const [claudeSetupBusy, setClaudeSetupBusy] = useState(false);
 
   const settingsQuery = useQuery({
     queryKey: ['admin-ai-settings'],
@@ -260,17 +262,17 @@ export function AdminAIConfigPage() {
         subtitle="Conecta credenciales, define modelos y decide qué proveedor atiende cada capacidad de la plataforma."
         breadcrumbs={[{ label: 'Inicio', to: '/app' }, { label: 'Configuración de IA' }]}
         primaryAction={
-          <Button loading={saveMutation.isPending || validating} loadingLabel={validating ? 'Validando…' : 'Guardando…'} disabled={(!hasUnsavedChanges && !toolsChanged) || saveMutation.isPending || validating} onClick={() => void requestSave()}>
+          <Button loading={saveMutation.isPending || validating} loadingLabel={validating ? 'Validando…' : 'Guardando…'} disabled={claudeSetupBusy || (!hasUnsavedChanges && !toolsChanged) || saveMutation.isPending || validating} onClick={() => void requestSave()}>
             Guardar cambios
           </Button>
         }
       />
 
       <Card className="flex flex-wrap items-center gap-3 p-4">
-        <Button size="sm" variant="outline" loading={restoreMutation.isPending} onClick={() => setRestoreDialogOpen(true)}>
+        <Button size="sm" variant="outline" disabled={claudeSetupBusy} loading={restoreMutation.isPending} onClick={() => setRestoreDialogOpen(true)}>
           Restaurar versión anterior
         </Button>
-        <Button size="sm" variant="outline" loading={clearCacheMutation.isPending} onClick={() => clearCacheMutation.mutate()}>
+        <Button size="sm" variant="outline" disabled={claudeSetupBusy} loading={clearCacheMutation.isPending} onClick={() => clearCacheMutation.mutate()}>
           Limpiar caché
         </Button>
         {(hasUnsavedChanges || toolsChanged) && <Badge tone="warning">Cambios sin guardar</Badge>}
@@ -283,7 +285,7 @@ export function AdminAIConfigPage() {
           ['providers', 'Proveedores y claves', Server],
           ['usage', 'Uso y auditoría', BarChart3],
         ] as const).map(([id, label, Icon]) => (
-          <Button key={id} type="button" variant={activeSection === id ? 'primary' : 'ghost'} className="min-h-12 justify-start" onClick={() => setActiveSection(id)} aria-current={activeSection === id ? 'page' : undefined}>
+          <Button key={id} type="button" disabled={claudeSetupBusy} variant={activeSection === id ? 'primary' : 'ghost'} className="min-h-12 justify-start" onClick={() => setActiveSection(id)} aria-current={activeSection === id ? 'page' : undefined}>
             <Icon className="h-4 w-4" aria-hidden="true" />{label}
           </Button>
         ))}
@@ -335,6 +337,22 @@ export function AdminAIConfigPage() {
           />}
 
           {activeSection === 'providers' && <div className="space-y-6">
+          <ClaudeConsoleSetup
+            providers={draftProviders}
+            models={draftModels}
+            features={draftFeatures}
+            tools={draftTools}
+            expectedVersion={expectedVersion}
+            disabled={hasUnsavedChanges || toolsChanged}
+            onBusyChange={setClaudeSetupBusy}
+            onSaved={() => {
+              void settingsQuery.refetch();
+              void controlCenterQuery.refetch();
+              void configHashQuery.refetch();
+              void auditQuery.refetch();
+            }}
+          />
+          <fieldset disabled={claudeSetupBusy} className="min-w-0 space-y-6">
           <CompatibleAPISection providers={draftProviders} models={draftModels} onProvider={prepareProvider} onModels={prepareModels} />
           <AICredentialsPanel config={settingsQuery.data.global_config} onModelsRefreshed={mergeCredentialModels} />
           <ProvidersSection
@@ -366,6 +384,7 @@ export function AdminAIConfigPage() {
             refreshingProvider={refreshingProvider}
           />
           <details className="rounded-xl border border-border bg-surface p-4"><summary className="cursor-pointer font-semibold"><KeyRound className="mr-2 inline h-4 w-4" />Catálogo avanzado de modelos</summary><div className="mt-4 grid gap-2 md:grid-cols-2">{draftModels.map((model) => <label key={`${model.provider_id}:${model.model_id}`} className="flex min-h-12 items-center justify-between gap-3 rounded-lg bg-surface-2 px-3 py-2 text-sm"><span><strong className="block">{model.label}</strong><span className="text-xs text-muted">{model.provider_id} · {model.capabilities.join(', ')}</span></span><input type="checkbox" checked={model.active} onChange={(event) => updateModel(model.provider_id, model.model_id, { active: event.currentTarget.checked })} className="h-4 w-4 accent-brand-600" /></label>)}</div></details>
+          </fieldset>
           </div>}
 
           {activeSection === 'usage' && <div className="space-y-6">
