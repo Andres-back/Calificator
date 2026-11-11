@@ -4,6 +4,7 @@ import {
   updateQuestionVisual, reconcileVisualQuestions, loadVisualEditDraft,
   createEmptyWizardState,
   createBlankQuestion,
+  criteriaWithoutRubric,
   discardWizardDraft,
   evaluationToEditableQuestions,
   evaluationToWizardState,
@@ -428,5 +429,35 @@ describe('156 respuesta libre', () => {
     expect(questions[1].respuestaLibre).toBeFalsy();
     expect(questions[2].respuestaLibre).toBeFalsy();
     expect(questionsToUpdatePayload(questions).respuestas_esperadas[0]).toMatchObject({ respuesta_libre: true });
+  });
+});
+
+describe('165 evaluación generada sin rúbrica', () => {
+  // Así guardaba el asistente los criterios de una evaluación sin rúbrica: con peso cero.
+  const zeroWeight = { nombre: 'Comprensión', descripcion: 'Comprende el texto.', peso_porcentaje: 0, niveles: {}, dba_ids: [] };
+  const base = {
+    id: 'exam', materia_id: 'subject', nombre: 'Prueba', modalidad: 'online', nota_maxima: 5, estado: 'borrador',
+    preguntas: [{ numero: 1, tipo: 'abierta', enunciado: '¿Qué pasó en el cuento?', puntaje: 5 }],
+    respuestas_esperadas: [{ numero: 1, respuesta: 'El zorro escapó' }],
+  };
+  const evaluationWith = (criterios: unknown[]) => ({ ...base, criterios }) as unknown as Evaluacion;
+
+  it('se abre con la rúbrica apagada y sin error de validación aunque los criterios traigan peso cero', () => {
+    const state = evaluationToWizardState(evaluationWith([zeroWeight]));
+    expect(state.useRubric).toBe(false);
+    expect(validateStep(state, 5)).toBeNull();
+  });
+
+  it('conserva la rúbrica encendida si hay un peso mayor que cero o niveles', () => {
+    expect(evaluationToWizardState(evaluationWith([{ ...zeroWeight, peso_porcentaje: 100 }])).useRubric).toBe(true);
+    expect(evaluationToWizardState(evaluationWith([{ ...zeroWeight, niveles: { Alto: 'Explica con precisión.' } }])).useRubric).toBe(true);
+    expect(evaluationToWizardState(evaluationWith([{ nombre: 'Comprensión', descripcion: 'Comprende el texto.' }])).useRubric).toBe(false);
+  });
+
+  it('sin rúbrica no envía pesos ni puntajes por criterio y conserva lo demás', () => {
+    const cleaned = criteriaWithoutRubric(normalizeRubricCriteria([
+      { nombre: ' Comprensión ', descripcion: 'Comprende el texto.', dba_ids: ['dba-1'], puntaje_maximo: 0 },
+    ]));
+    expect(cleaned).toEqual([{ nombre: 'Comprensión', descripcion: 'Comprende el texto.', niveles: {}, dba_ids: ['dba-1'] }]);
   });
 });
