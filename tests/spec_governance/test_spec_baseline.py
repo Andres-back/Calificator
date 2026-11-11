@@ -156,6 +156,7 @@ ALL_SPECS = {
     "161-fijar-kombu",
     "162-validacion-objetiva-dibujo",
     "163-claude-console-ready",
+    "166-editar-datos-version",
 }
 OWNED_SPECS = {
     name
