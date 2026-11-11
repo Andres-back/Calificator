@@ -136,16 +136,18 @@ export function MateriaDetailPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          'relative flex items-start gap-3 overflow-hidden',
+          'relative overflow-hidden',
           canManageMateria
-            ? 'teacher-page-header rounded-xl border border-indigo-100 bg-surface p-2.5 dark:border-indigo-500/20 sm:p-4'
+            ? 'teacher-page-header rounded-xl border border-indigo-100 bg-surface p-3 dark:border-indigo-500/20 sm:p-4'
             : 'border-b border-border pb-4',
         )}
       >
-        <div className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-2 sm:h-12 sm:w-12">
+        <div className="relative z-10 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-surface-2 sm:h-12 sm:w-12">
           <EducationalIcon name={getSubjectEducationalIcon(materia.area)} className="h-9 w-9 sm:h-11 sm:w-11" />
         </div>
-        <div className="relative z-10 min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <h1 className="break-words font-display text-xl font-extrabold tracking-tight sm:text-2xl">{materia.nombre}</h1>
           {canManageMateria && materia.grado && <p className="text-sm text-muted">Grado {materia.grado}</p>}
           {materia.estado !== 'activa' && <Badge tone="warning" className="mt-1 capitalize">{materia.estado}</Badge>}
@@ -163,8 +165,10 @@ export function MateriaDetailPage() {
           {materia.descripcion && <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{materia.descripcion}</p>}
           </details>
         </div>
+        </div>
+        {canManageMateria && <MateriaManagement key={materia.id} materia={materia} className="lg:shrink-0" actionsClassName="grid grid-cols-2 gap-2 lg:flex lg:flex-nowrap" />}
+        </div>
       </motion.section>
-      {canManageMateria && <MateriaManagement key={materia.id} materia={materia} />}
       {materia.estado === 'archivada' && <p role="status" className="rounded-lg border border-border bg-surface p-3 text-sm">Materia archivada. Puedes consultar su historial y exportar notas. Restáurala para admitir actividades o entregas nuevas.</p>}
 
       {/* Tab navigation */}
