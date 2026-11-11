@@ -249,7 +249,7 @@ export function MateriasListPage() {
       />
 
       {isStudent && !!data?.length && (
-        <Card className="relative overflow-hidden border-brand-100 bg-gradient-to-r from-white via-brand-50/70 to-sky-50 p-5 dark:border-brand-500/20 dark:from-slate-950 dark:via-brand-950/40 dark:to-sky-950/30 sm:p-6">
+        <Card data-student-welcome className="relative hidden overflow-hidden border-brand-100 bg-gradient-to-r from-white via-brand-50/70 to-sky-50 p-5 dark:border-brand-500/20 dark:from-slate-950 dark:via-brand-950/40 dark:to-sky-950/30 sm:block sm:p-6">
           <div className="relative z-10 max-w-2xl pr-20 sm:pr-28">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-300">Tus cursos inscritos</p>
             <p className="mt-2 font-display text-xl font-extrabold text-fg">Todo listo para continuar</p>
@@ -260,7 +260,7 @@ export function MateriasListPage() {
           <img
             src="/branding/xali-studying.webp"
             alt=""
-            className="absolute -bottom-3 right-2 h-24 w-24 object-contain sm:right-6 sm:h-28 sm:w-28"
+            className="absolute -bottom-3 right-6 h-28 w-28 object-contain mix-blend-multiply dark:mix-blend-normal"
           />
         </Card>
       )}

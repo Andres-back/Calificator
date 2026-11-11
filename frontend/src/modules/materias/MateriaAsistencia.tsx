@@ -128,6 +128,8 @@ function SummaryItem({
   );
 }
 
+const attendanceActionClass = 'min-h-11 whitespace-normal text-left leading-tight';
+
 export function MateriaAsistencia() {
   const { materia } = useMateriaContext();
   const user = useAuth((state) => state.user);
@@ -214,22 +216,24 @@ export function MateriaAsistencia() {
 
   return (
     <>
-      <div className='mb-6 flex flex-wrap justify-end gap-2'>
-        <Button type="button" variant="outline" onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4" /> Agregar registrados</Button>
-        <Button type="button" onClick={() => setImportOpen(true)}><Camera className="h-4 w-4" /> Importar lista</Button>
-        <a
-          href='#reporte-asistencia'
-          className='focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-fg transition-colors hover:bg-surface-2'
-        >
-          <FileBarChart2 className='h-4 w-4' aria-hidden='true' />
-          Crear reporte de asistencia
-        </a>
-      </div>
     <div className="space-y-6">
       <Card className="border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/25 dark:bg-brand-500/10">
-        <div className="flex items-center gap-3">
-          <UserCheck className="h-6 w-6 shrink-0 text-brand-700 dark:text-brand-200" aria-hidden="true" />
-          <h2 className="font-display text-xl font-extrabold">Tomar asistencia</h2>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <UserCheck className="h-6 w-6 shrink-0 text-brand-700 dark:text-brand-200" aria-hidden="true" />
+            <h2 className="font-display text-xl font-extrabold">Tomar asistencia</h2>
+          </div>
+          <div role="group" aria-label="Acciones de asistencia" className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <Button type="button" size="sm" className={attendanceActionClass} onClick={() => setImportOpen(true)}><Camera className="h-4 w-4 shrink-0" /> Importar lista</Button>
+            <Button type="button" size="sm" variant="outline" className={attendanceActionClass} onClick={() => setExistingOpen(true)}><UserPlus className="h-4 w-4 shrink-0" /> Agregar registrados</Button>
+            <a
+              href='#reporte-asistencia'
+              className='focus-ring col-span-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 text-sm font-semibold text-fg transition-colors hover:bg-surface-2'
+            >
+              <FileBarChart2 className='h-4 w-4 shrink-0' aria-hidden='true' />
+              Crear reporte de asistencia
+            </a>
+          </div>
         </div>
         <details className="mt-1">
           <summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-brand-700 dark:text-brand-200">Cómo tomar asistencia</summary>
