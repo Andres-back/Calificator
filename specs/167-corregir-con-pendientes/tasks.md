@@ -1,6 +1,6 @@
 # Tareas: Corregir una pregunta aunque otras sigan pendientes
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), de #351. El usuario ordenó reparar los hallazgos de la auditoría el 2026-11-11; las etiquetas `spec-approved` y `plan-approved` las registra él.
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), de #351. Aprobados por el usuario el 2026-11-11 (`spec-approved` y `plan-approved` en #351).
 
 ## Fase 1: Pruebas primero (RED)
 
