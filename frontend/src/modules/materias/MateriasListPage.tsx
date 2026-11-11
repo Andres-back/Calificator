@@ -334,26 +334,28 @@ export function MateriasListPage() {
             return (
               <motion.div
                 key={materia.id}
+                className="h-full"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Link
-                  to={
-                    actionGuide && materia.estado !== 'archivada'
-                      ? actionGuide.destination(materia.id)
-                      : routes.materia(materia.id)
-                  }
+                <Card
+                  interactive
+                  className={cn(
+                    'group flex h-full flex-col overflow-hidden',
+                    isStudent
+                      ? 'relative border-brand-100 bg-gradient-to-br from-surface via-surface to-brand-50/55 shadow-card hover:-translate-y-1 hover:border-brand-300 hover:shadow-card-hover dark:to-brand-950/30'
+                      : 'border-l-4',
+                    !isStudent && tone.border,
+                  )}
                 >
-                  <Card
-                    interactive
-                    className={cn(
-                      'group h-full p-5',
-                      isStudent
-                        ? 'relative overflow-hidden border-brand-100 bg-gradient-to-br from-surface via-surface to-brand-50/55 shadow-card hover:-translate-y-1 hover:border-brand-300 hover:shadow-card-hover dark:to-brand-950/30 sm:p-6'
-                        : 'border-l-4',
-                      !isStudent && tone.border,
-                    )}
+                  <Link
+                    className={cn('focus-ring block flex-1 rounded-[inherit] p-5', isStudent && 'sm:p-6')}
+                    to={
+                      actionGuide && materia.estado !== 'archivada'
+                        ? actionGuide.destination(materia.id)
+                        : routes.materia(materia.id)
+                    }
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-border dark:bg-white/10">
@@ -411,9 +413,13 @@ export function MateriasListPage() {
                         </div>
                       )}
                     </div>
-                  </Card>
-                </Link>
-                <div className="mt-2"><MateriaManagement materia={materia} /></div>
+                  </Link>
+                  <MateriaManagement
+                    materia={materia}
+                    className="border-t border-border bg-surface-2/50 p-2"
+                    actionsClassName="grid grid-cols-2 gap-2"
+                  />
+                </Card>
               </motion.div>
             );
           })}

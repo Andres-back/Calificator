@@ -87,6 +87,16 @@ describe('MateriaVistaGeneral teacher journey', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Imprimir seleccionados' })).toBeVisible());
     expect(mocks.resetTemporaryPassword).toHaveBeenCalledOnce();
   });
+  it('168 agrupa las acciones de estudiantes en una cuadrícula bajo el título', async () => {
+    mocks.listEvaluaciones.mockResolvedValue([]);
+    renderOverview();
+    const actions = screen.getByRole('group', { name: 'Acciones de estudiantes' });
+    for (const name of ['Importar foto', 'Registrar manualmente', 'Ya registrados', 'Entregar accesos']) {
+      expect(actions).toContainElement(screen.getByRole('button', { name }));
+    }
+    expect(actions).toHaveClass('grid', 'grid-cols-2');
+    expect(actions).not.toContainElement(screen.getByText('Estudiantes'));
+  });
   it('hides registration and renewal without the effective permission', async () => {
     mocks.listEvaluaciones.mockResolvedValue([]);
     useAuth.setState({ user: { id: 'profesor-1', permissions: [] } as never });

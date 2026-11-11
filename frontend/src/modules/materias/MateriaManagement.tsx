@@ -6,11 +6,12 @@ import { Button, ConfirmDialog, Field, Input, Modal, Textarea } from '@/componen
 import { useMobileFormViewport } from '@/hooks/useMobileFormViewport';
 import { toApiError } from '@/lib/api';
 import { queryClient } from '@/lib/queryClient';
+import { cn } from '@/lib/cn';
 import { useAuth } from '@/stores/auth';
 import type { Materia } from '@/types/api';
 import { updateMateria } from './api';
 
-export function MateriaManagement({ materia }: { materia: Materia }) {
+export function MateriaManagement({ materia, className, actionsClassName }: { materia: Materia; className?: string; actionsClassName?: string }) {
   const actor = useAuth(state => state.user);
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -35,10 +36,11 @@ export function MateriaManagement({ materia }: { materia: Materia }) {
     onError: cause => setError(toApiError(cause).detail),
   });
   if (!permitted) return null;
-  return <div className="min-w-0 space-y-2">
-    <div className="flex flex-wrap gap-2">
-      <Button variant="outline" className="min-h-11" onClick={() => { setForm({ nombre: materia.nombre, area: materia.area ?? '', grado: materia.grado ?? '', descripcion: materia.descripcion ?? '' }); setError(''); setEditing(true); }}><Pencil className="h-4 w-4" />Editar materia</Button>
-      <Button variant="outline" className="min-h-11" onClick={() => { setError(''); setConfirm(true); }}>{archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}{archived ? 'Restaurar materia' : 'Eliminar de mis materias'}</Button>
+  const actionClass = 'min-h-11 whitespace-normal text-left leading-tight';
+  return <div className={cn('min-w-0', className)}>
+    <div role="group" aria-label={`Acciones de ${materia.nombre}`} className={cn('flex flex-wrap gap-2', actionsClassName)}>
+      <Button variant="outline" size="sm" className={actionClass} onClick={() => { setForm({ nombre: materia.nombre, area: materia.area ?? '', grado: materia.grado ?? '', descripcion: materia.descripcion ?? '' }); setError(''); setEditing(true); }}><Pencil className="h-4 w-4" />Editar materia</Button>
+      <Button variant="outline" size="sm" className={actionClass} onClick={() => { setError(''); setConfirm(true); }}>{archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}{archived ? 'Restaurar materia' : 'Eliminar de mis materias'}</Button>
     </div>
     <Modal open={editing} onClose={() => { if (!mutation.isPending) setEditing(false); }} title="Editar materia" description="Solo cambia la información de la materia. Conservaremos estudiantes, evaluaciones y notas." mobileViewport={mobile.viewport} mobileWriting={mobile.isWriting} closeOnBackdrop={!mutation.isPending} closeOnEscape={!mutation.isPending}>
       <form ref={formRef} className="flex min-h-0 flex-col gap-3" onSubmit={event => { event.preventDefault(); if (permitted && !mutation.isPending) mutation.mutate(false); }}>
