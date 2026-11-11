@@ -117,3 +117,103 @@ def test_global_adjustment_is_separate_explained_and_versioned():
     assert updated.procedencia_json["ajuste_global_detalle"]["valor"] == 0.25
     assert updated.procedencia_json["ajuste_global_detalle"]["explicacion_estudiante"] == "Se reconoció un procedimiento válido adicional."
     assert db.adjustments[0].tipo == "global"
+
+
+# --- Spec 167: corregir una pregunta aunque otras sigan pendientes -----------------
+
+def _component(number, points, state="correcta"):
+    pending = points is None
+    return CalificacionComponente(
+        id=uuid4(), desglose_id=uuid4(), clave=f"pregunta:{number}", orden=number - 1, tipo="pregunta",
+        numero=str(number), titulo=f"Pregunta {number}", respuesta_estudiante="respuesta", respuesta_referencia="clave",
+        puntos_obtenidos=points, puntos_maximos=Decimal("1"), estado="revision_pendiente" if pending else state,
+        explicacion_verificable="Sin valoración verificable." if pending else "Valorada.",
+        explicacion_estudiante="Revisa esta respuesta con tu docente." if pending else "Valorada.",
+        origen="consenso_ia", requiere_revision=pending, evidencia_json={}, valoraciones_json=[],
+    )
+
+
+def _breakdown_with(components):
+    active = CalificacionDesglose(
+        id=uuid4(), calificacion_id=uuid4(), version=1, origen="automatico", activo=True,
+        cobertura_estado="incompleta", puntos_obtenidos=0, puntos_posibles=len(components), nota_maxima=5,
+        nota_base=0, ajuste_global=0, nota_antes_redondeo=0, regla_redondeo="half_up",
+        decimales=2, nota_final=0, requiere_revision=True, bloqueos_json=[], procedencia_json={},
+    )
+    active.componentes = components
+    return active
+
+
+def _pending_grade(active):
+    return SimpleNamespace(id=active.calificacion_id, nota_sugerida=None, nota_confirmada=None,
+                           redondeo_empate=None, revisado_por_docente=False, estado="requiere_revision")
+
+
+def _teacher_change(component, points, state="correcta"):
+    return {"componente_id": component.id, "puntos_obtenidos": Decimal(points), "estado": state,
+            "motivo_interno": "Revisión docente de la respuesta.", "explicacion_estudiante": "Tu respuesta fue revisada."}
+
+
+def test_167_a_pending_question_is_saved_while_another_stays_pending():
+    components = [_component(1, Decimal("1")), _component(2, None), _component(3, None)]
+    active = _breakdown_with(components)
+    cal = _pending_grade(active)
+    updated = asyncio.run(update_breakdown(
+        FakeDB(active), calificacion=cal, expected_version=1,
+        changes=[_teacher_change(components[1], "1")], global_adjustment=None, actor_id=uuid4(),
+    ))
+    by_key = {item.clave: item for item in updated.componentes}
+    assert updated.version == 2
+    assert by_key["pregunta:2"].puntos_obtenidos == Decimal("1")
+    assert by_key["pregunta:2"].origen == "docente"
+    # La pregunta que nadie tocó sigue pendiente y sin puntaje.
+    assert by_key["pregunta:3"].puntos_obtenidos is None
+    assert by_key["pregunta:3"].estado == "revision_pendiente"
+    assert by_key["pregunta:3"].requiere_revision is True
+    assert updated.requiere_revision is True
+    # La nota no se confirma mientras falten preguntas.
+    assert cal.estado == "requiere_revision"
+    assert cal.nota_confirmada is None
+    assert cal.revisado_por_docente is True
+
+
+def test_167_a_scored_question_can_be_corrected_while_another_is_pending():
+    components = [_component(1, Decimal("0"), "incorrecta"), _component(2, None)]
+    active = _breakdown_with(components)
+    cal = _pending_grade(active)
+    updated = asyncio.run(update_breakdown(
+        FakeDB(active), calificacion=cal, expected_version=1,
+        changes=[_teacher_change(components[0], "1")], global_adjustment=None, actor_id=uuid4(),
+    ))
+    assert updated.componentes[0].puntos_obtenidos == Decimal("1")
+    assert updated.componentes[1].puntos_obtenidos is None
+    assert cal.estado == "requiere_revision"
+    assert cal.nota_confirmada is None
+
+
+def test_167_resolving_the_last_pending_question_sets_the_grade_as_before():
+    components = [_component(1, Decimal("1")), _component(2, None)]
+    active = _breakdown_with(components)
+    cal = _pending_grade(active)
+    updated = asyncio.run(update_breakdown(
+        FakeDB(active), calificacion=cal, expected_version=1,
+        changes=[_teacher_change(components[1], "0.5", "parcial")], global_adjustment=None, actor_id=uuid4(),
+    ))
+    assert updated.requiere_revision is False
+    assert updated.nota_final == Decimal("3.75")
+    assert cal.estado == "ajustada"
+    assert cal.nota_confirmada == Decimal("3.75")
+
+
+def test_167_out_of_range_points_on_the_edited_question_are_a_validation_error():
+    components = [_component(1, Decimal("1")), _component(2, None)]
+    active = _breakdown_with(components)
+    cal = _pending_grade(active)
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(update_breakdown(
+            FakeDB(active), calificacion=cal, expected_version=1,
+            changes=[_teacher_change(components[1], "2")], global_adjustment=None, actor_id=uuid4(),
+        ))
+    assert error.value.status_code == 422
+    assert "pregunta 2" in error.value.detail
+    assert cal.estado == "requiere_revision"

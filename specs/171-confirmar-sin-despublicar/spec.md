@@ -1,6 +1,6 @@
 # Especificación: «Confirmar todos» no despublica las notas publicadas
 
-**Rama**: `codex/171-confirmar-sin-despublicar` | **Creada**: 2026-11-11 | **Estado**: Implementada; falta que el usuario registre `spec-approved` y `plan-approved` | **Issue**: [#361](https://github.com/Andres-back/Calificator/issues/361)
+**Rama**: `codex/171-confirmar-sin-despublicar` | **Creada**: 2026-11-11 | **Estado**: Aprobada e implementada | **Issue**: [#361](https://github.com/Andres-back/Calificator/issues/361)
 
 **Entrada**: la auditoría funcional del 2026-11-10 encontró que confirmar en lote fija el estado «confirmada» sin mirar el estado actual. El 2026-11-11 se comprobó contra la API local: una nota publicada volvió a «confirmada» con `POST /api/calificaciones/lote/confirmar`.
 
