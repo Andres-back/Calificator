@@ -18,11 +18,11 @@ Backend, en `update_breakdown`:
 
 - El rango de puntos se valida solo en los componentes con cambio, y un valor fuera de rango responde 422.
 - Un componente sin cambio conserva `puntos_obtenidos`, estado y `requiere_revision`.
-- Si la versión nueva tiene bloqueos (`coverage_state`) y la calificación no está publicada: estado `requiere_revision`, sin llamar a `apply_computed_final_grade`. `nota_confirmada` y `redondeo_empate` no cambian.
-- Sin bloqueos, el flujo actual no cambia.
+- Si la versión nueva conserva alguna pregunta sin puntaje y la calificación no está publicada: estado `requiere_revision`, sin llamar a `apply_computed_final_grade`. `nota_confirmada` y `redondeo_empate` no cambian.
+- Sin preguntas sin puntaje, el flujo actual no cambia. Una pregunta con puntaje marcada para revisión tampoco lo cambia: ese caso ya se guardaba.
 - `revisado_por_docente` se sigue marcando en ambos casos, para que un trabajo tardío no pise la corrección del docente.
 
-Frontend, en `CalificacionesWorkspace` y `GradeComponentEditor`:
+Frontend, en `CalificacionesWorkspace` (`GradeComponentEditor` ya muestra la recarga solo si recibe `onReload`):
 
 - El aviso de conflicto y «Recargar versión vigente» se muestran solo con 409. Los demás rechazos muestran el mensaje del backend.
 - Tras guardar con preguntas aún pendientes, el aviso de éxito dice cuántas faltan en vez de «nota recalculada».
@@ -40,14 +40,13 @@ Descartado:
 | --- | --- |
 | `backend/app/modules/calificaciones/breakdown_service.py` | validación por cambio y estado con pendientes |
 | `backend/tests/unit/test_breakdown_teacher_adjustment.py` | pruebas de regresión |
-| `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx` | aviso de conflicto solo con 409; mensaje de éxito |
-| `frontend/src/modules/calificaciones/components/GradeComponentEditor.tsx` | «Recargar versión vigente» solo en conflicto |
-| pruebas de Vitest de esos dos archivos | regresión del aviso |
+| `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx` | «Recargar versión vigente» solo con 409; mensaje de éxito con pendientes |
+| `frontend/e2e/explainable-grading.spec.ts` | regresión del aviso y del mensaje |
 
 Sin migraciones, sin rutas nuevas y sin cambios de datos.
 
 ## Riesgos
 
-- Una calificación con correcciones parciales queda con `revisado_por_docente` y estado `requiere_revision`. La lista «Por revisar» filtra por estado, así que sigue apareciendo; hay que comprobarlo en la prueba manual.
+- Una calificación con correcciones parciales queda con `revisado_por_docente` y estado `requiere_revision`. La lista «Por revisar» filtra por estado, así que debe seguir apareciendo; no se comprobó en pantalla (ver `quickstart.md`).
 - Si una calificación ya publicada tuviera preguntas pendientes, conserva el estado publicado y la nota recalculada, como hoy. No se conoce un camino que produzca ese estado.
 - El texto de ayuda del editor dice que guardar «no confirma ni publica la nota», pero resolver la última pregunta sí la deja `ajustada`. Ese desajuste ya existe y queda fuera de este cambio.
