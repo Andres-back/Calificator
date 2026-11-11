@@ -27,6 +27,7 @@ Varios PRs pequeños, solo de frontend. Las acciones siguen visibles: se ordenan
 
 - `ReportesPage`: se quita la tarjeta que repite el encabezado.
 - `MateriaAsistencia`: las tres acciones pasan a la tarjeta «Tomar asistencia», con la principal primero.
+- `MateriaDbaPage`: las dos acciones del encabezado forman una fila de dos columnas en el teléfono, con la principal primero.
 - `DashboardEstudiante`: la imagen decorativa se oculta por debajo de 640 px.
 - `MateriasListPage`: la bienvenida del estudiante se oculta por debajo de 640 px y su imagen se funde con el fondo en el tema claro.
 

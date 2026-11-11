@@ -279,12 +279,12 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
           <h2 className="font-display text-xl font-bold">Criterios de aprendizaje</h2>
           <details className="mt-1"><summary className="focus-ring min-h-11 cursor-pointer content-center rounded-lg text-sm font-semibold text-muted">Cómo usar los criterios</summary><p className="mt-2 text-sm text-muted">{materia ? `Define qué deben demostrar los estudiantes de ${materia.nombre}. Elige los criterios pertinentes para cada evaluación.` : 'Crea y gestiona los criterios de tu materia.'}</p></details>
         </div>
-        {canManage && <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={() => setShowUploader(!showUploader)}>
-            <Upload className="h-4 w-4" /> {showUploader ? 'Cerrar subida' : 'Subir PDF o Word'}
+        {canManage && <div role="group" aria-label="Acciones de criterios" className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap sm:items-center">
+          <Button size="sm" className="min-h-11 whitespace-normal text-left leading-tight" onClick={openCreate} disabled={save.isPending}>
+            <Plus className="h-4 w-4 shrink-0" /> Nuevo criterio
           </Button>
-          <Button onClick={openCreate} disabled={save.isPending}>
-            <Plus className="h-4 w-4" /> Nuevo criterio
+          <Button size="sm" className="min-h-11 whitespace-normal text-left leading-tight" variant="secondary" onClick={() => setShowUploader(!showUploader)}>
+            <Upload className="h-4 w-4 shrink-0" /> {showUploader ? 'Cerrar subida' : 'Subir PDF o Word'}
           </Button>
         </div>}
       </div>

@@ -15,6 +15,7 @@ Recorrido de la aplicación local el 2026-11-11 con un docente de prueba, a 1440
 | Lista de materias | Las dos acciones de cada materia cuelgan debajo de la tarjeta, fuera de ella. |
 | Reportes | El encabezado se repite en dos tarjetas seguidas. |
 | Asistencia | Tres botones de ancho distinto, alineados a la derecha y apilados en el teléfono, antes de «Tomar asistencia». |
+| Criterios de aprendizaje | En el teléfono, dos botones de ancho distinto apilados bajo el título. |
 | Inicio del estudiante | En el teléfono, la imagen de Xali tapa parte del botón «Ir a mis materias». |
 | Mis materias del estudiante | Una segunda tarjeta de bienvenida, con la imagen de Xali sobre un recuadro blanco, empuja la lista fuera de la primera pantalla del teléfono. |
 
@@ -56,7 +57,7 @@ Como docente o estudiante, quiero que cada pantalla muestre una sola vez su enca
 - **FR-002**: Las acciones de estudiantes DEBEN mostrarse en un grupo propio debajo del título, en dos columnas en el teléfono.
 - **FR-003**: El cambio NO DEBE alterar nombres, permisos ni comportamiento de ninguna acción.
 - **FR-004**: Reportes DEBE mostrar un único encabezado.
-- **FR-005**: Las acciones de Asistencia DEBEN mostrarse dentro de la tarjeta «Tomar asistencia», agrupadas con un nombre accesible.
+- **FR-005**: Las acciones de Asistencia DEBEN mostrarse dentro de la tarjeta «Tomar asistencia», y las de Criterios de aprendizaje en una fila de dos columnas en el teléfono; ambos grupos con un nombre accesible.
 - **FR-006**: En el teléfono, ninguna imagen decorativa DEBE superponerse a un botón del inicio del estudiante, y la bienvenida de «Mis materias» NO DEBE aparecer antes de la lista.
 
 ## Criterios de éxito

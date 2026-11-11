@@ -20,7 +20,7 @@
 ## PR 2 - Pantallas restantes de docente y estudiante
 
 - [X] T005 Caso nuevo en `MateriasListPage.test.tsx`: la bienvenida del estudiante no se muestra en el teléfono. RED: 1 falla. (FR-006)
-- [X] T006 `ReportesPage` sin la tarjeta repetida; acciones de Asistencia dentro de «Tomar asistencia». (FR-004, FR-005, FR-003)
+- [X] T006 `ReportesPage` sin la tarjeta repetida; acciones de Asistencia dentro de «Tomar asistencia» y acciones de Criterios de aprendizaje en dos columnas. (FR-004, FR-005, FR-003)
 - [X] T007 Inicio y «Mis materias» del estudiante: imagen fuera del teléfono y bienvenida oculta por debajo de 640 px. (FR-006)
 - [X] T008 Pruebas de materias, reportes e inicio, tipos, lint y comprobación en el navegador; resultados en `quickstart.md`. (FR-003)
 

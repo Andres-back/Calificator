@@ -54,6 +54,7 @@ Aplicación local con un docente y un estudiante de prueba.
 | --- | --- | --- |
 | Reportes | Un solo encabezado; las tres cifras quedan justo debajo | No se comprobó |
 | Asistencia | Las tres acciones a la derecha del título, dentro de la tarjeta | Dos acciones en una fila y el reporte en la siguiente, dentro de la tarjeta |
+| Criterios de aprendizaje | No se comprobó | Las dos acciones caben en una fila bajo el título |
 | Inicio del estudiante | No se comprobó | Los dos botones se ven completos, sin imagen encima |
 | Mis materias del estudiante | La bienvenida sigue visible y su imagen ya no muestra el recuadro blanco | La lista empieza justo debajo de las pestañas |
 
