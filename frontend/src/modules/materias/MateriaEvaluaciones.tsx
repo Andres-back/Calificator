@@ -243,6 +243,10 @@ export function MateriaEvaluaciones() {
         nota_maxima: form.nota_maxima,
         modalidad: form.modalidad,
         fecha_limite_entrega: form.fecha_limite_entrega ? new Date(form.fecha_limite_entrega).toISOString() : null,
+        // Spec 166: el backend exige la versión abierta cuando la evaluación ya tiene
+        // versión de contenido (reparto, impresión o copia).
+        expected_updated_at: editingEval.updated_at,
+        ...(editingEval.contenido_version_id ? { expected_content_version_id: editingEval.contenido_version_id } : {}),
       },
     });
   }
