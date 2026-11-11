@@ -1,6 +1,6 @@
 # Especificación: Corregir una pregunta aunque otras sigan pendientes
 
-**Rama**: `codex/167-corregir-con-pendientes` | **Creada**: 2026-11-11 | **Estado**: Implementada; falta que el usuario registre `spec-approved` y `plan-approved` | **Issue**: [#351](https://github.com/Andres-back/Calificator/issues/351)
+**Rama**: `codex/167-corregir-con-pendientes` | **Creada**: 2026-11-11 | **Estado**: Aprobada e implementada | **Issue**: [#351](https://github.com/Andres-back/Calificator/issues/351)
 
 **Entrada**: la auditoría funcional del 2026-11-10 abrió una calificación con varias preguntas «Por revisar» sin puntaje, ajustó el puntaje de una y guardó. El backend respondió 409 «Puntaje inválido para pregunta:N», donde N era otra pregunta pendiente, y la pantalla mostró «La calificación cambió en otra revisión» con el botón «Recargar versión vigente».
 
