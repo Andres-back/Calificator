@@ -698,7 +698,9 @@ describe('GenerationWizard', () => {
     expect(warning.closest('details')).not.toHaveAttribute('open');
     await userEvent.setup().click(warning);
     await waitFor(() => expect(warning.closest('details')).toHaveAttribute('open'));
-    expect(screen.getByText(/Se conservan las entregas y notas anteriores/i)).toBeVisible();
+    // Spec 169: el modal entra con una animación y empieza en opacity 0; la visibilidad
+    // se espera, porque en un runner lento la animación aún no ha terminado.
+    await waitFor(() => expect(screen.getByText(/Se conservan las entregas y notas anteriores/i)).toBeVisible());
     expect(screen.getByRole('button', { name: 'Agregar pregunta' })).toBeInTheDocument();
   });
 
