@@ -223,4 +223,16 @@ describe('MateriasListPage student enrollment', () => {
     expect(await screen.findByText('Materia agregada correctamente. Ya aparece en tu lista.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Mis materias' })).toBeInTheDocument();
   });
+
+  it('168 deja la bienvenida fuera del teléfono para mostrar primero las materias', async () => {
+    mocks.list.mockResolvedValue([createdMateria]);
+    useAuth.setState({
+      user: { id: 'student-1', nombre: 'Estudiante', email: 'estudiante@example.com', rol: 'estudiante', estado: 'activo', permissions: ['subjects.read', 'subjects.enroll'] },
+      status: 'authenticated',
+    });
+    renderPage();
+    const welcome = (await screen.findByText('Todo listo para continuar')).closest('[data-student-welcome]');
+    expect(welcome).toHaveClass('hidden', 'sm:block');
+    expect(screen.getByRole('link', { name: /Matemáticas/ })).toBeInTheDocument();
+  });
 });
