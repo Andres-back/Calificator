@@ -158,6 +158,7 @@ ALL_SPECS = {
     "163-claude-console-ready",
     "168-organizacion-visual",
     "167-corregir-con-pendientes",
+    "165-guardar-sin-rubrica",
     "169-prueba-aviso-asignada",
 }
 OWNED_SPECS = {
