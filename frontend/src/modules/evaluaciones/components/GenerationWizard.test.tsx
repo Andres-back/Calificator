@@ -879,4 +879,20 @@ describe('156 respuesta libre en preguntas abiertas', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(/revisa tu conexión y vuelve a guardar/i);
     });
   });
+  it('165 reabre una evaluación generada sin rúbrica y guarda sin pedir pesos', async () => {
+    const user = userEvent.setup();
+    const savedWithoutRubric = { ...evaluation, criterios: [{ nombre: 'Comprensión', descripcion: 'Comprende el texto.', peso_porcentaje: 0, niveles: {}, dba_ids: [] }] };
+    mocks.update.mockResolvedValueOnce(savedWithoutRubric);
+    renderWizard(vi.fn(), savedWithoutRubric);
+
+    expect(screen.queryByText(/el peso debe ser mayor que cero/i)).not.toBeInTheDocument();
+    const save = screen.getByRole('button', { name: 'Guardar cambios' });
+    expect(save).toBeEnabled();
+    await user.click(save);
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    // Al editar solo viaja lo que cambió: los criterios guardados no se reenvían ni se tocan.
+    expect(mocks.update.mock.calls[0][0]).toBe(savedWithoutRubric.id);
+    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('criterios');
+  });
 });
