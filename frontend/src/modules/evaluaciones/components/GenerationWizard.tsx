@@ -36,7 +36,7 @@ import { pendingQuestionIndexes, sheetWarnings, showsPublishChecklist } from './
 import {
   createBlankQuestion, createEmptyWizardState, discardWizardDraft, duplicateQuestion, getWizardStorage,
   evaluationToEditableQuestions, evaluationToWizardState, loadWizardDraft, MAX_QUESTIONS,
-  moveQuestion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
+  criteriaWithoutRubric, moveQuestion, normalizeRubricCriteria, persistWizardDraft, prepareRubricCriteriaForSave, QUESTION_TYPES, questionsToUpdatePayload,
   renumberQuestions, selectedQuestionTypes, totalQuestionCount, validateQuestion,
   updateWizardTopic, updateQuestionVisual, reconcileVisualQuestions, validatePreparation, validateReferenceFile, validateRubricCriteria, validateStep, type EditableQuestion, type QuestionType, type WizardState,
   loadVisualEditDraft, discardVisualEditDraft,
@@ -771,7 +771,7 @@ export function GenerationWizard({
       fecha_limite_entrega: current.fechaLimiteEntrega ? new Date(current.fechaLimiteEntrega).toISOString() : null,
       dba_ids: current.useDba ? current.dbaIds : [],
       dba_personalizado_ids: current.useDba ? current.dbaPersonalizadoIds : [],
-      criterios: current.useRubric ? prepareRubricCriteriaForSave(current.generatedCriteria, current.notaMaxima) : current.generatedCriteria,
+      criterios: current.useRubric ? prepareRubricCriteriaForSave(current.generatedCriteria, current.notaMaxima) : criteriaWithoutRubric(current.generatedCriteria),
       ...questionsToUpdatePayload(current.questions),
       ...(current.contenidoVisual ? { contenido_visual: current.contenidoVisual, claves_visuales_revisadas: current.visualKeysReviewed ?? [] } : {}),
       ...(current.estructuraDocumento ? { estructura_documento: current.estructuraDocumento, claves_documentales_revisadas: current.documentKeysReviewed ?? [] } : {}),
