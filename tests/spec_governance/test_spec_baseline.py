@@ -159,6 +159,7 @@ ALL_SPECS = {
     "168-organizacion-visual",
     "167-corregir-con-pendientes",
     "165-guardar-sin-rubrica",
+    "166-editar-datos-version",
     "173-e2e-editor-criterios",
 }
 OWNED_SPECS = {
