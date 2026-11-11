@@ -337,6 +337,16 @@ export function moveRubricCriterion(
   return next;
 }
 
+/** Criterios de una evaluación sin rúbrica: sin pesos ni puntajes por criterio. */
+export function criteriaWithoutRubric(criteria: EditableRubricCriterion[]): Record<string, unknown>[] {
+  return criteria.map((criterion) => {
+    const rest: Record<string, unknown> = { ...criterion };
+    delete rest.peso_porcentaje;
+    delete rest.puntaje_maximo;
+    return rest;
+  });
+}
+
 export function prepareRubricCriteriaForSave(
   criteria: EditableRubricCriterion[],
   maximumGrade: number,
@@ -566,8 +576,10 @@ export function evaluationToWizardState(evaluation: Evaluacion): WizardState {
   const criteria = (evaluation.criterios ?? []) as Record<string, unknown>[];
   const counts = { opcion_multiple: 0, abierta: 0, verdadero_falso: 0, completar: 0 };
   questions.forEach((question) => { counts[question.tipo] += 1; });
+  // Spec 165: un peso en cero no es una rúbrica. El asistente lo guardaba así en las
+  // evaluaciones generadas sin rúbrica, y al reabrirlas exigía pesos que nadie pidió.
   const hasRubric = criteria.some((criterion) => (
-    criterion.peso_porcentaje != null
+    Number(criterion.peso_porcentaje) > 0
     || (criterion.niveles != null && Object.keys(criterion.niveles as object).length > 0)
   ));
   return {
