@@ -6,7 +6,11 @@
 
 - `MateriaManagement` dibuja sus dos botones en un bloque propio. `MateriaDetailPage` lo coloca entre el encabezado y las pestañas, y `MateriasListPage` debajo de cada tarjeta.
 - En `MateriaVistaGeneral`, el título, el conteo y cuatro botones comparten un contenedor flexible que se parte sin orden.
-- Recursos y Pendientes escriben su propio título en vez de usar `PageHeader`; Reportes muestra `PageHeader` y, debajo, una tarjeta con el mismo título.
+- Reportes muestra `PageHeader` y, debajo, una tarjeta con el mismo título.
+- `MateriaAsistencia` dibuja sus tres acciones en una fila suelta, alineada a la derecha, encima de la tarjeta «Tomar asistencia».
+- En `DashboardEstudiante`, la imagen decorativa del héroe se dibuja también por debajo de 640 px, donde no hay espacio reservado para ella.
+- En `MateriasListPage`, el estudiante con materias ve una tarjeta de bienvenida entre el encabezado y la lista; su imagen tiene fondo blanco.
+- Recursos y Pendientes escriben un título compacto. Las specs 095 y 104 lo decidieron así para que el contenido aparezca antes; no se cambia.
 
 ## Decisión
 
@@ -19,11 +23,15 @@ Varios PRs pequeños, solo de frontend. Las acciones siguen visibles: se ordenan
 - `MateriasListPage`: la tarjeta pasa a ser el contenedor; el enlace ocupa el cuerpo y las acciones el pie.
 - `MateriaVistaGeneral`: título y conteo en una fila; debajo, el grupo «Acciones de estudiantes» en cuadrícula de dos columnas, con la acción principal primero.
 
-**PR 2**: `PageHeader` en Recursos, Pendientes y Reportes.
+**PR 2, pantallas restantes de docente y estudiante**:
 
-**PR 3**: vistas del estudiante.
+- `ReportesPage`: se quita la tarjeta que repite el encabezado.
+- `MateriaAsistencia`: las tres acciones pasan a la tarjeta «Tomar asistencia», con la principal primero.
+- `MateriaDbaPage`: las dos acciones del encabezado forman una fila de dos columnas en el teléfono, con la principal primero.
+- `DashboardEstudiante`: la imagen decorativa se oculta por debajo de 640 px.
+- `MateriasListPage`: la bienvenida del estudiante se oculta por debajo de 640 px y su imagen se funde con el fondo en el tema claro.
 
-**PR 4**: evaluaciones y calificación.
+**PR 3**: evaluaciones y calificación, cuando se fusionen las correcciones en curso.
 
 Descartado:
 
