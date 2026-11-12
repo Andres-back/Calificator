@@ -1,6 +1,6 @@
 # Especificación: Ubicar la respuesta en la hoja al revisar una calificación
 
-**Rama**: `codex/175-ubicar-respuesta-en-hoja` | **Creada**: 2026-11-12 | **Estado**: Borrador | **Issue**: [#370](https://github.com/Andres-back/Calificator/issues/370)
+**Rama**: `codex/175-ubicar-respuesta-en-hoja` | **Creada**: 2026-11-12 | **Estado**: Aprobada e implementada | **Issue**: [#370](https://github.com/Andres-back/Calificator/issues/370)
 
 **Entrada**: el usuario pidió que, en «Respuestas y puntajes», pulsar una respuesta ayude a ubicar su zona en la hoja con IA, para que el docente no tenga que ampliar a mano y buscar dónde está y qué marcó el estudiante; y que calificar sea más fácil a la vista.
 

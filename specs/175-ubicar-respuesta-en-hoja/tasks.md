@@ -1,6 +1,6 @@
 # Tareas: Ubicar la respuesta en la hoja al revisar una calificación
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), de #370.
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), de #370. Aprobados por el usuario el 2026-11-12 (`spec-approved` y `plan-approved` en #370).
 
 ### Pruebas primero (RED)
 
