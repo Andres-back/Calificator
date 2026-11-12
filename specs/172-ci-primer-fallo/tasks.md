@@ -1,6 +1,6 @@
 # Tareas: La CI se detiene en el primer fallo de prueba
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), de #364, pedido por el usuario el 2026-11-11. Las etiquetas `spec-approved` y `plan-approved` las registra él.
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), de #364, pedido por el usuario el 2026-11-11. Aprobados por el usuario el 2026-11-12 (`spec-approved` y `plan-approved` en #364).
 
 ## Fase 1: Pruebas primero (RED)
 

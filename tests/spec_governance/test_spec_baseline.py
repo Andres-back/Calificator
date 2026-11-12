@@ -162,6 +162,7 @@ ALL_SPECS = {
     "166-editar-datos-version",
     "169-prueba-aviso-asignada",
     "171-confirmar-sin-despublicar",
+    "170-errores-asistente",
     "172-ci-primer-fallo",
 }
 OWNED_SPECS = {

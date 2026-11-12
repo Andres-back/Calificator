@@ -1,6 +1,6 @@
 # Especificación: La CI se detiene en el primer fallo de prueba
 
-**Rama**: `codex/172-ci-primer-fallo` | **Creada**: 2026-11-11 | **Estado**: Implementada; falta que el usuario registre `spec-approved` y `plan-approved` | **Issue**: [#364](https://github.com/Andres-back/Calificator/issues/364)
+**Rama**: `codex/172-ci-primer-fallo` | **Creada**: 2026-11-11 | **Estado**: Aprobada e implementada | **Issue**: [#364](https://github.com/Andres-back/Calificator/issues/364)
 
 **Entrada**: el usuario pidió el 2026-11-11: «para la próxima agrega que si falla 1 prueba en ci se detenga, para analizarla y volver a enviar así si va fallando se detiene y se corrige en lugar de esperar a que acabe todo». En la ronda de seis PR de ese día, cada ejecución tardó más de 20 minutos y el motivo de un fallo solo se pudo leer al terminar todo.
 
