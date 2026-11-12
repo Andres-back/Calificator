@@ -163,6 +163,7 @@ ALL_SPECS = {
     "169-prueba-aviso-asignada",
     "171-confirmar-sin-despublicar",
     "170-errores-asistente",
+    "173-e2e-editor-criterios",
 }
 OWNED_SPECS = {
     name
