@@ -650,7 +650,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "73ab0eff3be7af70d4bb1fdc307d9cd80e4532e99ccdaad5eba4e4710a414b8a",
+  "source_digest": "557556b01f385fe9e96e685f1f87e08bf117ddcc68fd711e8f384ed5aa707df4",
   "surfaces": [
     {
       "actors": [
@@ -55231,6 +55231,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_attempt_policy_contract.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_batch_confirm_published.py"
         },
         {
           "level": "unit",
