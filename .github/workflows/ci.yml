@@ -24,6 +24,10 @@ jobs:
   backend:
     name: Backend quality and tests
     runs-on: ubuntu-22.04
+    # Spec 172: este trabajo cancela la ejecución cuando falla, y eso exige escribir en Actions.
+    permissions:
+      contents: read
+      actions: write
     timeout-minutes: 20
     services:
       postgres:
@@ -145,7 +149,7 @@ jobs:
           DATABASE_URL="$SPEC116_TEST_DATABASE_URL" alembic upgrade head
 
       - name: Run backend unit tests
-        run: python -m pytest tests/unit -v
+        run: python -m pytest tests/unit -v -x
 
       - name: Prepare isolated reading controls database
         run: |
@@ -157,14 +161,24 @@ jobs:
         run: psql postgresql://xcalificator:test-password@127.0.0.1:5432/xcalificator_test -c 'CREATE DATABASE spec134'
 
       - name: Run backend integration tests
-        run: python -m pytest tests/integration -v
+        run: python -m pytest tests/integration -v -x
 
       - name: Run isolated document converter contracts
-        run: python -m pytest ../document-renderer/tests -v
+        run: python -m pytest ../document-renderer/tests -v -x
+
+      - name: Stop the run at the first failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
 
   frontend-quality:
     name: Frontend quality and build
     runs-on: ubuntu-22.04
+    # Spec 172: este trabajo cancela la ejecución cuando falla, y eso exige escribir en Actions.
+    permissions:
+      contents: read
+      actions: write
     timeout-minutes: 35
     defaults:
       run:
@@ -224,7 +238,7 @@ jobs:
         run: npm run lint:strict
 
       - name: Run unit tests
-        run: npm run test:run
+        run: npm run test:run -- --bail=1
 
       - name: Verify isolated phone QA cannot accept uploads
         run: node --test ../scripts/evidence-scan/phone-qa-server.test.mjs
@@ -235,10 +249,20 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+      - name: Stop the run at the first failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+
   frontend-e2e-general:
     name: Frontend general shard (${{ matrix.shard }}/4)
     needs: frontend-quality
     runs-on: ubuntu-22.04
+    # Spec 172: este trabajo cancela la ejecución cuando falla, y eso exige escribir en Actions.
+    permissions:
+      contents: read
+      actions: write
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -280,8 +304,9 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       - name: Run general end-to-end tests
+        id: e2e
         timeout-minutes: 35
-        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line,json
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4 --reporter=line,json --max-failures=1
         env:
           PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results.json
 
@@ -301,10 +326,20 @@ jobs:
             frontend/playwright-report/
             output/playwright/
 
+      - name: Stop the run at the first failure
+        if: failure() && steps.e2e.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
+
   frontend-e2e-contextual:
     name: Frontend contextual regressions
     needs: frontend-quality
     runs-on: ubuntu-22.04
+    # Spec 172: este trabajo cancela la ejecución cuando falla, y eso exige escribir en Actions.
+    permissions:
+      contents: read
+      actions: write
     timeout-minutes: 35
     defaults:
       run:
@@ -341,8 +376,9 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       - name: Run contextual teacher flow regressions
+        id: e2e
         timeout-minutes: 25
-        run: npm run test:mock -- grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts --reporter=line
+        run: npm run test:mock -- grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts --reporter=line --max-failures=1
 
       - name: Upload E2E diagnostics on failure
         if: failure()
@@ -355,6 +391,12 @@ jobs:
             frontend/test-results/
             frontend/playwright-report/
             output/playwright/
+
+      - name: Stop the run at the first failure
+        if: failure() && steps.e2e.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
 
   frontend-e2e:
     name: Frontend E2E (${{ matrix.suite }})
