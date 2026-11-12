@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { FileQuestion, ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 export function NotFoundPage() {
@@ -7,9 +7,7 @@ export function NotFoundPage() {
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-      <div className="mb-6 grid h-20 w-20 place-items-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
-        <FileQuestion className="h-10 w-10" />
-      </div>
+      <img src="/branding/not-found.webp" alt="" width={224} height={224} className="mb-4 h-44 w-44 select-none object-contain sm:h-56 sm:w-56" draggable={false} />
       <h1 className="font-display text-3xl font-extrabold">Página no encontrada</h1>
       <p className="mt-3 max-w-md text-muted">
         La página que buscas no existe o ha sido movida.
