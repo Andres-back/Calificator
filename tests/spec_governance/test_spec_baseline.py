@@ -164,6 +164,7 @@ ALL_SPECS = {
     "171-confirmar-sin-despublicar",
     "170-errores-asistente",
     "173-e2e-editor-criterios",
+    "174-revision-docente-clara",
     "172-ci-primer-fallo",
 }
 OWNED_SPECS = {

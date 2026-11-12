@@ -33,6 +33,15 @@ def normalized_version(value: datetime) -> datetime:
     )
 
 
+def teacher_decided(grade) -> bool:
+    """La nota ya tiene una decisión docente que una reapertura dejaría sin efecto."""
+    return bool(
+        grade.revisado_por_docente
+        or grade.nota_confirmada is not None
+        or grade.estado in {"confirmada", "ajustada", "publicada"}
+    )
+
+
 def ensure_reprocessing_allowed(
     grade, expected_version: datetime, confirmed: bool
 ) -> None:
@@ -46,11 +55,7 @@ def ensure_reprocessing_allowed(
             409,
             "Esta calificación está procesándose o fue anulada. No se enviará otra vez.",
         )
-    if (
-        grade.revisado_por_docente
-        or grade.nota_confirmada is not None
-        or grade.estado in {"confirmada", "ajustada", "publicada"}
-    ) and not confirmed:
+    if teacher_decided(grade) and not confirmed:
         raise HTTPException(
             409,
             "Confirma que deseas reabrir la nota. Conservaremos el resultado anterior en el historial.",

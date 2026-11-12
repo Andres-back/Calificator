@@ -57,3 +57,26 @@ export function gradePresentation(grade: Pick<Calificacion, 'estado' | 'resultad
   if (score != null) return { label: 'Sugerida', score, processing: false };
   return { label: 'Revisión necesaria', score: null, processing: false };
 }
+
+export type ReviewRowTone = 'neutral' | 'progress' | 'attention' | 'suggested' | 'done' | 'published' | 'danger';
+
+const REVIEW_ROW_STATUS: Record<string, { label: string; tone: ReviewRowTone }> = {
+  sin_entrega: { label: 'Sin entrega', tone: 'neutral' },
+  pendiente: { label: 'Pendiente', tone: 'neutral' },
+  procesando: { label: 'Calificando', tone: 'progress' },
+  requiere_revision: { label: 'Requiere revisión', tone: 'attention' },
+  requiere_reintento: { label: 'Requiere reintento', tone: 'danger' },
+  sugerida: { label: 'Nota sugerida', tone: 'suggested' },
+  confirmada: { label: 'Confirmada', tone: 'done' },
+  ajustada: { label: 'Ajustada', tone: 'done' },
+  publicada: { label: 'Publicada', tone: 'published' },
+  anulada: { label: 'Anulada', tone: 'danger' },
+};
+
+/** Estado de una fila de la lista de revisión, con su nombre correcto y un tono para distinguirlo de un vistazo. */
+export function reviewRowStatus(estado: string): { label: string; tone: ReviewRowTone } {
+  const known = REVIEW_ROW_STATUS[estado];
+  if (known) return known;
+  const text = estado.replace(/_/g, ' ').trim();
+  return { label: text ? text.charAt(0).toUpperCase() + text.slice(1) : 'Sin estado', tone: 'neutral' };
+}

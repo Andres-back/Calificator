@@ -241,6 +241,12 @@ export async function ajustarNotaBatch(items: { calificacion_id: string; nota_co
 }
 
 
+/** Vuelve a calificar varias entregas sin revisar. El backend omite las que el docente ya decidió. */
+export async function recalificarLote(calificacionIds: string[]): Promise<BatchResult> {
+  const { data } = await api.post<BatchResult>('/calificaciones/lote/recalificar', { calificacion_ids: calificacionIds });
+  return data;
+}
+
 /* ── Publicar ── */
 
 export async function publicarNota(calificacionId: string): Promise<Calificacion> {

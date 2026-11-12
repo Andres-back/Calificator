@@ -175,8 +175,9 @@ describe('AppShell ambientación', () => {
     const desktopNav = container.querySelector('#main-navigation-desktop');
     const iconBadges = desktopNav?.querySelectorAll('[data-nav-illustration]');
 
-    expect(iconBadges).toHaveLength(7);
+    expect(iconBadges).toHaveLength(6);
     expect(desktopNav?.querySelector('[data-nav-illustration="resources"]')).toBeInTheDocument();
+    expect(desktopNav?.querySelector('[data-nav-illustration="presentations"]')).not.toBeInTheDocument();
     expect(desktopNav?.querySelector('[data-educational-icon="resources"] img')).toHaveAttribute(
       'src',
       '/branding/semantic-icons/resources.webp',

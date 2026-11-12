@@ -17,14 +17,20 @@ describe('navegación del estudiante', () => {
   });
 
   it('builds a mixed menu from effective permissions without exposing other modules', () => {
-    const allowed = new Set(['presentations.read']);
+    const allowed = new Set(['reports.read']);
     const mixed = [...adminNav, ...profesorNav, ...estudianteNav]
       .filter((item, index, items) => items.findIndex((candidate) => candidate.to === item.to) === index)
       .filter((item) => !item.permission || allowed.has(item.permission));
 
-    expect(mixed.map((item) => item.label)).toEqual(['Inicio', 'Presentaciones']);
+    expect(mixed.map((item) => item.label)).toEqual(['Inicio', 'Reportes']);
     expect(mixed.map((item) => item.label)).not.toContain('Usuarios');
     expect(mixed.map((item) => item.label)).not.toContain('Recursos');
+  });
+
+  it('174 no ofrece Presentaciones en ningún menú, ni con su permiso', () => {
+    const everything = [...adminNav, ...profesorNav, ...estudianteNav];
+    expect(everything.map((item) => item.to)).not.toContain('/app/presentaciones');
+    expect(everything.filter((item) => item.permission === 'presentations.read')).toEqual([]);
   });
 });
 

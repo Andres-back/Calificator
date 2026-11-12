@@ -378,6 +378,11 @@ class BatchAjustarRequest(BaseModel):
     items: list[BatchAjustarItem]
 
 
+class BatchRegradeRequest(BaseModel):
+    # Cada entrega vuelve a leerse con IA: el lote se acota para no saturar la cola.
+    calificacion_ids: list[UUID] = Field(min_length=1, max_length=60)
+
+
 class BatchResultItem(BaseModel):
     calificacion_id: UUID
     success: bool
