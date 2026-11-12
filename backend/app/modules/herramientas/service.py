@@ -134,7 +134,18 @@ async def _generate_with_quality(
         expected_count = int(value) if value is not None else None
     try:
         for attempt in range(2):
-            result = await generator()
+            try:
+                result = await generator()
+            except HTTPException:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                # Spec 174: un proveedor caído no es un fallo interno; el docente debe saber que puede reintentar.
+                logger.warning("Material %s: la IA no respondió (%s)", tipo.value, type(exc).__name__)
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="La IA configurada no pudo generar este recurso. Tus datos se conservan; intenta de nuevo y, "
+                    "si continúa, pide al administrador revisar el modelo de generación.",
+                ) from exc
             normalized, issues = normalize_material_content(
                 tipo,
                 result,

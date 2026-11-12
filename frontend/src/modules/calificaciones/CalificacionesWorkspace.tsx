@@ -38,7 +38,7 @@ import { isStandardStudentProfile } from '@/lib/authorization';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias, listCalificaciones,
-  establecerNotaManual, publicarNota, publicarNotaBatch,
+  establecerNotaManual, publicarNota, publicarNotaBatch, recalificarLote,
   marcarRevisionManual, resolverIncidencia, setAnswersReleased, solicitarReemplazoEvidencia, updateGradeBreakdown,
 } from './api';
 import { addPendingGrading } from './gradingJobs';
@@ -67,12 +67,22 @@ import { formatAIModelSource } from './aiPipelineLabels';
 import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submissionCandidates';
 import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
 import { TieDecisionField } from './components/TieDecisionField';
-import { effectiveGradeScore, formatGradeScore, formatScoreDetail, gradePresentation, isGradeProcessing, tieOptions } from './gradePresentation';
+import { effectiveGradeScore, formatGradeScore, formatScoreDetail, gradePresentation, isGradeProcessing, reviewRowStatus, tieOptions, type ReviewRowTone } from './gradePresentation';
 import { PreviousGradeReference } from './components/PreviousGradeReference';
 import { formatTimelineScore } from './timeline';
 import { ReviewNavigation, type ReviewSection } from './ReviewNavigation';
 import type { BatchResult, Calificacion, CalificacionDetalle, GradeBreakdownData, GradeComponentChange, GradeFinalAdjustment, ReviewFilter, TieDecision } from '@/types/api';
 
+const REGRADE_BATCH_LIMIT = 60;
+const REVIEW_ROW_DOT: Record<ReviewRowTone, string> = {
+  neutral: 'bg-slate-300 dark:bg-slate-600',
+  progress: 'bg-sky-500',
+  attention: 'bg-amber-500',
+  suggested: 'bg-indigo-500',
+  done: 'bg-emerald-500',
+  published: 'bg-emerald-600 ring-2 ring-emerald-200 dark:ring-emerald-500/30',
+  danger: 'bg-rose-500',
+};
 type WorkspaceGrade = Pick<Calificacion, 'id' | 'estudiante_id' | 'nota_sugerida' | 'nota_confirmada' | 'redondeo_empate' | 'estado' | 'resultado_json'>;
 
 export function GradingLegacyRedirect() {
@@ -1403,6 +1413,7 @@ function BatchActions({
   onConfirmBatch,
   onAjustarBatch,
   onPublishBatch,
+  onRegradeBatch,
   onClear,
   batchPending,
   canPublish,
@@ -1412,6 +1423,7 @@ function BatchActions({
   onConfirmBatch: (items: { calificacion_id: string; nota_confirmada: number }[]) => void;
   onAjustarBatch: (items: { calificacion_id: string; nota_confirmada: number }[]) => void;
   onPublishBatch: (ids: string[]) => void;
+  onRegradeBatch: (ids: string[]) => void;
   onClear: () => void;
   batchPending: boolean;
   canPublish: boolean;
@@ -1449,6 +1461,9 @@ function BatchActions({
           {canPublish && <Button size="sm" variant="secondary" onClick={() => onPublishBatch(selected.map((c) => c.id))} disabled={batchPending}>
             <CheckCircle2 className="h-4 w-4" /> Publicar seleccionados
           </Button>}
+          <Button size="sm" variant="outline" onClick={() => onRegradeBatch(selected.map((c) => c.id))} disabled={batchPending}>
+            <RotateCcw className="h-4 w-4" /> Recalificar seleccionados
+          </Button>
           <Button size="sm" variant="ghost" onClick={onClear}>
             <X className="h-4 w-4" /> Limpiar
           </Button>
@@ -2164,6 +2179,20 @@ function GradingCenter() {
     onSuccess: (_data, gradeId) => { invalidate(); toast.success('Nota publicada al estudiante'); trackEvent('calificacion_published', { evaluacion_id: evalId, calificacion_id: gradeId }); },
     onError: (e) => toast.error(toApiError(e).detail),
   });
+  // Spec 174: el lote solo pide confirmación; el backend decide cuáles puede reabrir.
+  const [regradeRequest, setRegradeRequest] = useState<string[] | null>(null);
+  const regradeBatchMut = useMutation({
+    mutationFn: (ids: string[]) => recalificarLote(ids),
+    onSuccess: (res: BatchResult) => {
+      invalidate();
+      setRegradeRequest(null);
+      if (res.exitosos > 0) toast.success(`${res.exitosos === 1 ? '1 entrega vuelve' : `${res.exitosos} entregas vuelven`} a calificarse. Verás el avance en la lista.`);
+      if (res.fallidos > 0) toast.error(`${res.fallidos === 1 ? '1 entrega no se pudo' : `${res.fallidos} entregas no se pudieron`} volver a calificar.`);
+      setBatchResult(res);
+      setSelectedBatch(new Set(res.results.filter((item) => !item.success).map((item) => item.calificacion_id)));
+    },
+    onError: (e) => { setRegradeRequest(null); toast.error(toApiError(e).detail); },
+  });
   const publishBatchMut = useMutation({
     mutationFn: (ids: string[]) => publicarNotaBatch(ids),
     onSuccess: (res: BatchResult) => {
@@ -2221,6 +2250,10 @@ function GradingCenter() {
     });
   }
 
+  const regradeCandidates = useMemo(
+    () => (cals ?? []).filter((c) => c.nota_confirmada == null && !['confirmada', 'ajustada', 'publicada', 'anulada'].includes(c.estado) && !isGradeProcessing(c)).map((c) => c.id),
+    [cals],
+  );
   const selectedArray = useMemo(
     () => (cals ?? []).filter((c) => selectedBatch.has(c.id) && effectiveGradeScore(c) != null),
     [cals, selectedBatch],
@@ -2292,6 +2325,7 @@ function GradingCenter() {
                 </Button>}
               {evalId && <FeedbackToolsButton evaluationId={evalId} initialSelectedIds={[...selectedBatch]} suggestedArea={selectedMateria?.area} disabled={mobileDirty || deliveryBusy} />}
               {canGrade && evalId && estudiantes.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty || deliveryBusy} onClick={() => { setManualGradeOpen(true); setMobileMoreActionsOpen(false); }}><Pencil className="h-4 w-4" /> Establecer nota</Button>}
+              {canGrade && evalId && regradeCandidates.length > 0 && <Button variant="ghost" fullWidth disabled={mobileDirty || deliveryBusy || regradeBatchMut.isPending} onClick={() => { setRegradeRequest(regradeCandidates.slice(0, REGRADE_BATCH_LIMIT)); setMobileMoreActionsOpen(false); }}><RotateCcw className="h-4 w-4" aria-hidden="true" /> Recalificar no revisadas ({regradeCandidates.length})</Button>}
               {canPublish && <Button variant="ghost" fullWidth disabled={!evalId} onClick={() => { changeContext({ modo: mode === 'publicacion' ? null : 'publicacion', calificacion: null, estudiante: null, pregunta: null, hoja: null }); setMobileMoreActionsOpen(false); }}>{mode === 'publicacion' ? 'Volver a revisión' : 'Resumen y publicación'}</Button>}
             </div>}
           </>}
@@ -2443,7 +2477,7 @@ function GradingCenter() {
                       key={row.estudiante_id}
                       data-review-student={row.estudiante_id}
                       className={`flex w-full items-center gap-2 rounded-xl border p-2 text-left transition-all ${
-                        selected ? 'border-brand-300 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface hover:bg-surface-2'
+                        selected ? 'border-brand-300 bg-brand-50 dark:bg-brand-500/10' : 'border-border bg-surface hover:border-brand-200 hover:bg-surface-2 hover:shadow-sm'
                       }`}
                     >
                       {canGrade && row.calificacion_id && <button type="button" role="checkbox" aria-label={`Seleccionar nota de ${row.nombre}`} aria-checked={selectedBatch.has(row.calificacion_id)} className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-lg disabled:opacity-40" disabled={row.nota == null} onClick={() => toggleSelect(row.calificacion_id!)}>
@@ -2455,7 +2489,7 @@ function GradingCenter() {
                       }}>
                         <div className="min-w-0 flex-1">
                           <p className="break-words text-sm font-semibold">{row.nombre}</p>
-                          <p className="text-xs capitalize text-muted">{row.estado === 'procesando' ? 'Calificando' : row.estado.replace(/_/g, ' ')}</p>
+                          <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-secondary"><span aria-hidden="true" className={cn('h-2 w-2 shrink-0 rounded-full', REVIEW_ROW_DOT[reviewRowStatus(row.estado).tone])} />{reviewRowStatus(row.estado).label}</p>
                           {summary.tiene_alertas && <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">{['confirmada', 'ajustada', 'publicada'].includes(row.estado) ? 'Avisos del análisis inicial' : 'Respuestas por comprobar'}{summary.pqrs_abiertas ? ` · ${summary.pqrs_abiertas} reclamo(s)` : ''}</p>}
                           {row.calificacion_id && summary.version == null && row.estado !== 'procesando' && <p className="text-xs text-muted">Sin puntajes por pregunta guardados</p>}
                         </div>
@@ -2556,10 +2590,22 @@ function GradingCenter() {
         onConfirmBatch={(items) => confirmBatchMut.mutate(items)}
         onAjustarBatch={(items) => ajustarBatchMut.mutate(items)}
         onPublishBatch={(ids) => publishBatchMut.mutate(ids)}
+        onRegradeBatch={(ids) => setRegradeRequest(ids.slice(0, REGRADE_BATCH_LIMIT))}
         onClear={() => setSelectedBatch(new Set())}
-        batchPending={confirmBatchMut.isPending || ajustarBatchMut.isPending || publishBatchMut.isPending}
+        batchPending={confirmBatchMut.isPending || ajustarBatchMut.isPending || publishBatchMut.isPending || regradeBatchMut.isPending}
         canPublish={canPublish}
       />}
+      <ConfirmDialog
+        open={Boolean(regradeRequest)}
+        title={regradeRequest?.length === 1 ? 'Volver a calificar 1 entrega' : `Volver a calificar ${regradeRequest?.length ?? 0} entregas`}
+        description="La IA leerá de nuevo cada hoja y propondrá otra nota; puede tardar varios minutos y la lectura puede cambiar respecto a la anterior. No se tocan las notas que ya revisaste, confirmaste o publicaste. El resultado actual queda en el historial de cada entrega."
+        confirmLabel="Volver a calificar"
+        loading={regradeBatchMut.isPending}
+        onClose={() => { if (!regradeBatchMut.isPending) setRegradeRequest(null); }}
+        onConfirm={() => { if (regradeRequest && !regradeBatchMut.isPending) regradeBatchMut.mutate(regradeRequest); }}
+      >
+        {regradeRequest && regradeRequest.length >= REGRADE_BATCH_LIMIT && <p className="text-sm text-muted">Se envían {REGRADE_BATCH_LIMIT} por tanda. Repite la acción para las demás.</p>}
+      </ConfirmDialog>
 
       <ManualGradeModal
         preferredStudentId={selectedStudentId}

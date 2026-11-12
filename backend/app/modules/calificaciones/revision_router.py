@@ -2,9 +2,10 @@
 
 from datetime import datetime
 import json
+import logging
 import mimetypes
 from types import SimpleNamespace
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Path as ApiPath, Query, Response, UploadFile
@@ -30,6 +31,9 @@ from app.modules.calificaciones.evidence_scan_reads import EvidenceVariant, mani
 from app.modules.calificaciones.evidence_service import EvidencePageError, MAX_EVIDENCE_PAGES, _render_cached_evidence_page
 from app.services.answer_evidence_regions import evidence_version
 from app.modules.calificaciones.schemas import (
+    BatchRegradeRequest,
+    BatchResult,
+    BatchResultItem,
     CalificacionRead,
     CalificacionRevisionRead,
     ReprocessingContextRead,
@@ -43,6 +47,7 @@ from app.services.evidence_bundle_service import (
 from app.services.storage_service import resolve_upload_path
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 async def owned_grade(db, grade_id, actor, *, lock=False):
@@ -69,6 +74,61 @@ async def owned_grade(db, grade_id, actor, *, lock=False):
                 .execution_options(populate_existing=True)
             )
     return grade, evaluation
+
+
+async def _rollback_keeping_actor(db, actor) -> None:
+    """Un rollback caduca al usuario ya cargado; se recarga para seguir con el lote."""
+    await db.rollback()
+    await db.refresh(actor)
+
+
+# Declarada antes de la ruta por calificación: «lote» no debe leerse como un identificador.
+@router.post("/calificaciones/lote/recalificar", response_model=BatchResult, status_code=202)
+async def recalificar_lote(
+    payload: BatchRegradeRequest,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Vuelve a calificar varias entregas que el docente aún no ha decidido.
+
+    Cada entrega usa la misma reapertura que la acción individual: conserva su
+    historial y su evidencia. Una nota revisada, confirmada o publicada no entra
+    en un lote; reabrirla es una decisión de una en una.
+    """
+    require_permission_now(current_user, "grading.grade")
+    from app.modules.materias.service import ensure_active_materia
+
+    results: list[BatchResultItem] = []
+    for grade_id in dict.fromkeys(payload.calificacion_ids):
+        try:
+            await owned_grade(db, grade_id, current_user)
+            request_id = uuid4()
+            await lock_scan_request(db, request_id)
+            grade, evaluation = await owned_grade(db, grade_id, current_user, lock=True)
+            await ensure_active_materia(db, evaluation.materia_id)
+            service.ensure_evaluation_active(evaluation)
+            if revision_service.teacher_decided(grade):
+                raise HTTPException(409, "Ya revisaste esta nota. Para volver a calificarla, ábrela y usa «Recalificar».")
+            await revision_service.reprocess_grade(
+                db,
+                grade=grade,
+                evaluation=evaluation,
+                actor_id=current_user.id,
+                request_id=request_id,
+                expected_version=grade.updated_at,
+                confirmed=False,
+                reason="Recalificación en lote",
+            )
+            results.append(BatchResultItem(calificacion_id=grade_id, success=True))
+        except HTTPException as exc:
+            await _rollback_keeping_actor(db, current_user)
+            results.append(BatchResultItem(calificacion_id=grade_id, success=False, error=str(exc.detail)))
+        except Exception:  # noqa: BLE001
+            await _rollback_keeping_actor(db, current_user)
+            logger.exception("batch_regrade_failed")
+            results.append(BatchResultItem(calificacion_id=grade_id, success=False, error="No se pudo volver a calificar esta entrega."))
+    succeeded = sum(1 for item in results if item.success)
+    return BatchResult(results=results, total=len(results), exitosos=succeeded, fallidos=len(results) - succeeded)
 
 
 @router.post(
