@@ -346,7 +346,7 @@ export function MateriaAsistencia() {
             {visibleStudents.length === 0 && <div className="space-y-2"><p>No hay estudiantes con esa búsqueda.</p><Button type="button" variant="outline" onClick={() => setSearch('')}>Mostrar todo el grupo</Button></div>}
           </Card>
 
-          <div className="space-y-2" aria-label="Lista de asistencia">
+          <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3" aria-label="Lista de asistencia">
             {visibleStudents.map(({ student, index }) => {
               const current = draft[student.estudiante_id] ?? {
                 estado: student.estado,
@@ -356,12 +356,12 @@ export function MateriaAsistencia() {
                 <Card
                   key={student.estudiante_id}
                   className={cn(
-                    'min-w-0 p-3 transition-colors lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_auto] lg:items-center lg:gap-x-3 lg:px-3 lg:py-2',
+                    'flex min-w-0 flex-col p-3 transition-colors sm:p-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-x-2 lg:gap-y-2 lg:p-3',
                     current.estado === null && 'border-amber-300 dark:border-amber-500/40',
                   )}
                 >
-                  <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 lg:flex lg:gap-2">
-                    <span className="row-span-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-extrabold text-secondary">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-extrabold text-secondary">
                       {index + 1}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -370,7 +370,7 @@ export function MateriaAsistencia() {
                     </div>
                     <span
                       className={cn(
-                        'w-fit max-w-full shrink-0 rounded-full px-2 py-1 text-[11px] font-bold lg:ml-auto lg:max-w-20 lg:whitespace-normal',
+                        'ml-auto w-fit max-w-[7rem] shrink-0 rounded-full px-2 py-1 text-center text-[11px] font-bold leading-tight',
                         current.estado
                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200'
                           : 'bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-200',
@@ -383,16 +383,16 @@ export function MateriaAsistencia() {
                     </span>
                   </div>
                   {autosave.status(student.estudiante_id) === 'error' && (
-                    <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 text-sm text-rose-700 dark:text-rose-300 lg:col-span-3 lg:row-start-2">
+                    <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 text-sm text-rose-700 dark:text-rose-300 lg:col-span-2 lg:row-start-4 lg:mt-0">
                       <span>No se pudo guardar. Tu selección sigue aquí.</span>
                       <Button type="button" variant="outline" onClick={() => autosave.retry(student.estudiante_id)} aria-label={`Reintentar asistencia para ${student.estudiante_nombre}`}>Reintentar</Button>
                     </div>
                   )}
-                  {!current.estado && current.observacion.trim() && <p className="mt-2 text-sm text-amber-700 dark:text-amber-200 lg:col-span-3 lg:row-start-2">Selecciona un estado para guardar la observación.</p>}
+                  {!current.estado && current.observacion.trim() && <p className="mt-2 text-sm text-amber-700 dark:text-amber-200 lg:col-span-2 lg:row-start-4 lg:mt-0">Selecciona un estado para guardar la observación.</p>}
 
-                  <fieldset className="mt-3 min-w-0 lg:col-start-2 lg:row-start-1 lg:mt-0">
+                  <fieldset className="mt-3 min-w-0 lg:col-span-2 lg:row-start-2 lg:mt-0">
                     <legend className="sr-only">Estado de asistencia de {student.estudiante_nombre}</legend>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:gap-1">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:gap-1.5">
                       {STATUS_OPTIONS.map((option) => {
                         const selected = current.estado === option.value;
                         return (
@@ -409,7 +409,7 @@ export function MateriaAsistencia() {
                                 : 'border-border bg-surface text-fg hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10',
                             )}
                           >
-                            <option.icon className="h-4 w-4 shrink-0 lg:hidden xl:block" aria-hidden="true" />
+                            <option.icon className="h-4 w-4 shrink-0 lg:hidden" aria-hidden="true" />
                             {option.label}
                           </button>
                         );
@@ -417,7 +417,7 @@ export function MateriaAsistencia() {
                     </div>
                   </fieldset>
 
-                  <details className="mt-2 min-w-0 lg:col-start-3 lg:row-start-1 lg:mt-0 lg:[&[open]]:col-span-3 lg:[&[open]]:col-start-1 lg:[&[open]]:row-start-3">
+                  <details className="mt-2 min-w-0 lg:col-start-2 lg:row-start-1 lg:mt-0 lg:[&[open]]:col-span-2 lg:[&[open]]:col-start-1 lg:[&[open]]:row-start-3">
                     <summary aria-label={`Abrir observación para ${student.estudiante_nombre}`} className="focus-ring min-h-11 min-w-11 cursor-pointer content-center rounded-lg px-2 text-xs font-semibold text-brand-700 dark:text-brand-200">
                       {current.observacion.trim() ? 'Observación añadida' : 'Observación'}
                     </summary>

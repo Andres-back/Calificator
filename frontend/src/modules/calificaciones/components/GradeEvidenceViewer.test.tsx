@@ -10,6 +10,16 @@ function loadImage() {
 }
 
 describe('GradeEvidenceViewer', () => {
+  it('174 en escritorio la hoja ocupa el alto disponible de la pantalla', () => {
+    const view = render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" sheetView />);
+    const frame = screen.getByRole('group', { name: 'Imagen ampliable de la evidencia' });
+    expect(frame.className).toContain('lg:h-[clamp(30rem,calc(100dvh-13rem),72rem)]');
+    expect(frame.className).toContain('h-[clamp(16rem,45dvh,34rem)]');
+    view.unmount();
+    render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
+    expect(screen.getByRole('group', { name: 'Imagen ampliable de la evidencia' }).className).not.toContain('100dvh');
+  });
+
   it('prioriza la hoja en su vista propia y vuelve a evidencia desde el visor ampliado', () => {
     render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" sheetView />);
     const image = loadImage();
