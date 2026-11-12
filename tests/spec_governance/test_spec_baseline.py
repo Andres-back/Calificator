@@ -160,6 +160,7 @@ ALL_SPECS = {
     "167-corregir-con-pendientes",
     "165-guardar-sin-rubrica",
     "166-editar-datos-version",
+    "169-prueba-aviso-asignada",
 }
 OWNED_SPECS = {
     name
