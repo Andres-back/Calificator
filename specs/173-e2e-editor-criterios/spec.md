@@ -1,6 +1,6 @@
 # Especificación: La prueba E2E del editor de criterios no mide durante la animación
 
-**Rama**: `codex/173-e2e-editor-criterios` | **Creada**: 2026-11-11 | **Estado**: Implementada como hotfix; falta que el usuario registre `spec-approved` | **Issue**: [#366](https://github.com/Andres-back/Calificator/issues/366)
+**Rama**: `codex/173-e2e-editor-criterios` | **Creada**: 2026-11-11 | **Estado**: Aprobada (hotfix) e implementada | **Issue**: [#366](https://github.com/Andres-back/Calificator/issues/366)
 
 **Entrada**: la prueba E2E «106 criterios mantiene cabecera y acciones dentro del editor» falló en `main` y, el 2026-11-11, en el fragmento 3/4 del PR #352, que no toca recursos. El error fue `expect(received).toBeGreaterThanOrEqual(expected)` al comparar la posición de la cabecera con la del diálogo.
 

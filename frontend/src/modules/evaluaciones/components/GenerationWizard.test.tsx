@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -832,6 +833,53 @@ describe('156 respuesta libre en preguntas abiertas', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar esta respuesta' }));
     expect(screen.queryByRole('button', { name: 'Confirmar esta respuesta' })).not.toBeInTheDocument();
     expect(screen.getByText('Respuesta confirmada o editada por el docente.')).toBeInTheDocument();
+  });
+  describe('170 errores del asistente a la vista y con su motivo', () => {
+    function rejection(status: number, detail: string) {
+      return new AxiosError('rechazo', 'ERR_BAD_REQUEST', undefined, undefined, { status, data: { detail } } as never);
+    }
+
+    it('lleva a la vista el aviso cuando falla la generación', async () => {
+      mocks.generate.mockRejectedValueOnce(rejection(503, 'La IA configurada no pudo generar la evaluación.'));
+      const user = userEvent.setup();
+      renderWizard();
+      await user.type(screen.getByLabelText(/Qué quieres evaluar/), 'Lectura comprensiva');
+      const content = screen.getByTestId('evaluation-wizard-content');
+      content.scrollTop = 400;
+      expect(content.scrollTop).toBe(400);
+      await user.click(screen.getByRole('button', { name: 'Generar evaluación' }));
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('La IA configurada no pudo generar la evaluación.');
+      await waitFor(() => expect(content.scrollTop).toBe(0));
+    });
+
+    it('muestra el motivo del backend cuando rechaza el guardado y lo lleva a la vista', async () => {
+      mocks.update.mockRejectedValueOnce(rejection(409, 'La suma de puntajes debe coincidir con la nota máxima.'));
+      const user = userEvent.setup();
+      renderWizard(vi.fn(), evaluation);
+      await user.clear(screen.getByLabelText(/Enunciado/));
+      await user.type(screen.getByLabelText(/Enunciado/), 'Conservar edición');
+      const content = screen.getByTestId('evaluation-wizard-content');
+      content.scrollTop = 400;
+      expect(content.scrollTop).toBe(400);
+      await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent('La suma de puntajes debe coincidir con la nota máxima.');
+      expect(alert).not.toHaveTextContent(/revisa tu conexión/i);
+      expect(screen.getByLabelText(/Enunciado/)).toHaveValue('Conservar edición');
+      expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled();
+      await waitFor(() => expect(content.scrollTop).toBe(0));
+    });
+
+    it('sin respuesta del servidor conserva el aviso de conexión', async () => {
+      mocks.update.mockRejectedValueOnce(new Error('offline'));
+      const user = userEvent.setup();
+      renderWizard(vi.fn(), evaluation);
+      await user.clear(screen.getByLabelText(/Enunciado/));
+      await user.type(screen.getByLabelText(/Enunciado/), 'Conservar edición');
+      await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(/revisa tu conexión y vuelve a guardar/i);
+    });
   });
   it('165 reabre una evaluación generada sin rúbrica y guarda sin pedir pesos', async () => {
     const user = userEvent.setup();

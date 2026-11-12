@@ -1,6 +1,6 @@
 # Tareas: La prueba E2E del editor de criterios no mide durante la animación
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), hotfix de #366. El usuario ordenó reparar los hallazgos de la auditoría el 2026-11-11; la etiqueta `spec-approved` la registra él.
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), hotfix de #366. Aprobados por el usuario el 2026-11-12 (`spec-approved` y `plan-approved` en #366).
 
 ## Fase 1: Diagnóstico (RED)
 
