@@ -1202,6 +1202,17 @@ async def confirmar_nota_batch(
             validate_score_within_evaluation(
                 item.nota_confirmada, evaluacion, "nota_confirmada"
             )
+            if cal.estado == CalificacionEstado.PUBLICADA.value:
+                # Spec 171: confirmar en lote no retira una nota que el estudiante ya ve.
+                if cal.nota_confirmada is not None and Decimal(item.nota_confirmada) == cal.nota_confirmada:
+                    results.append(
+                        BatchResultItem(calificacion_id=item.calificacion_id, success=True)
+                    )
+                    continue
+                raise HTTPException(
+                    status_code=409,
+                    detail="Esta nota ya está publicada. Para cambiarla usa «Editar nota».",
+                )
             from app.modules.calificaciones.visual_grade_policy import ensure_visual_grade_publishable
             await ensure_visual_grade_publishable(db, cal, evaluacion)
             resolved = apply_final_grade(cal, evaluacion, item.nota_confirmada, item.redondeo_empate,
