@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampEvidenceViewport, evidenceImageLayout, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
+import { clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
 
 const dimensions = { width: 400, height: 300, imageWidth: 800, imageHeight: 1200 };
 const initial = { zoom: 1, centerX: 0.5, centerY: 0.5 };
@@ -55,5 +55,20 @@ describe('evidenceViewport', () => {
     expect(layout.top + layout.height).toBeGreaterThanOrEqual(dimensions.height);
     expect(zoomEvidenceViewport(dimensions, initial, 100).zoom).toBe(8);
     expect(zoomEvidenceViewport(dimensions, initial, 0.01).zoom).toBe(1);
+  });
+});
+
+describe('175 recuadro de la zona de una respuesta', () => {
+  it('ubica la zona en píxeles del marco con la hoja completa y con la vista ampliada', () => {
+    // A hoja completa la imagen de 800 × 1200 mide 200 × 300 y queda centrada en un marco de 400 × 300.
+    expect(evidenceRegionRect(dimensions, initial, [0.1, 0.2, 0.4, 0.1])).toEqual({ left: 120, top: 60, width: 80, height: 30 });
+    const zoomed = evidenceRegionRect(dimensions, { zoom: 2, centerX: 0.5, centerY: 0.5 }, [0.1, 0.2, 0.4, 0.1]);
+    expect(zoomed).toEqual({ left: 40, top: -30, width: 160, height: 60 });
+  });
+
+  it('no inventa un recuadro sin zona válida o sin medidas', () => {
+    expect(evidenceRegionRect(dimensions, initial, [0.9, 0.9, 0.5, 0.5])).toBeNull();
+    expect(evidenceRegionRect(dimensions, initial, undefined)).toBeNull();
+    expect(evidenceRegionRect({ ...dimensions, imageWidth: 0 }, initial, [0.1, 0.2, 0.4, 0.1])).toBeNull();
   });
 });

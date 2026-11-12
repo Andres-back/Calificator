@@ -247,6 +247,20 @@ export async function recalificarLote(calificacionIds: string[]): Promise<BatchR
   return data;
 }
 
+export interface AnswerLocationResult {
+  ubicadas: number;
+  pendientes: number;
+  intentos: number;
+  intentos_maximos: number;
+}
+
+/** Pide a la IA la zona de cada respuesta en la foto. No cambia la nota ni los puntajes. */
+export async function ubicarRespuestas(calificacionId: string): Promise<AnswerLocationResult> {
+  // La lectura de la hoja tarda más que una petición normal.
+  const { data } = await api.post<AnswerLocationResult>(`/calificaciones/${calificacionId}/ubicar-respuestas`, undefined, { timeout: 65_000 });
+  return data;
+}
+
 /* ── Publicar ── */
 
 export async function publicarNota(calificacionId: string): Promise<Calificacion> {

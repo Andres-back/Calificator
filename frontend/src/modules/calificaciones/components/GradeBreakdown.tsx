@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import './gradeQuestionLayout.css';
 import { componentPoints } from '@/lib/componentPoints';
-import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, EyeOff, FileSearch, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, EyeOff, FileSearch, ScanSearch, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
 import { GradeFormula } from './GradeFormula';
@@ -12,7 +12,7 @@ import { reviewPriorityPresentation } from '../review-triage/reviewPriorityPrese
 
 const stateIcons = { check: CheckCircle2, warning: AlertTriangle, x: XCircle };
 
-export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent, reviewSummary }: {
+export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent, reviewSummary, onShowInSheet }: {
   breakdown: GradeBreakdownData;
   student?: boolean;
   compactTeacher?: boolean;
@@ -24,6 +24,8 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   selectedComponentId?: string;
   onSelectComponent?: (componentId: string) => void;
   reviewSummary?: ReviewTriageSummary;
+  /** Spec 175: lleva la hoja a la zona de la respuesta que el docente pulsa. */
+  onShowInSheet?: (component: GradeBreakdownData['componentes'][number]) => void;
 }) {
   const compact = compactTeacher && !student;
   const calculation = student ? undefined : gradeCalculationPresentation(breakdown);
@@ -91,10 +93,19 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             </div>
             <div className="mt-3 grid items-start gap-3" style={!splitEvidence && renderEvidence && !student ? { gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,24rem),1fr))' } : undefined}>
             {compact ? <div data-testid="grade-answer-comparison" className="min-w-0 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface-2">
-              <div className="space-y-0.5 px-3 pb-2">
+              {onShowInSheet && splitEvidence ? <button type="button" onClick={() => onShowInSheet(component)} title="Ver esta respuesta en la hoja"
+                className="focus-ring group flex w-full items-start gap-2 px-3 pb-2 text-left transition-colors hover:bg-brand-50/70 dark:hover:bg-brand-500/10">
+                <span className="block min-w-0 flex-1 space-y-0.5">
+                  <span className="block text-xs font-semibold text-muted">Respuesta del estudiante</span>
+                  <span className="block whitespace-pre-wrap text-base leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</span>
+                </span>
+                <span className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-brand-200 bg-surface px-2 py-1 text-xs font-semibold text-brand-700 group-hover:border-brand-400 dark:border-brand-500/40 dark:text-brand-200">
+                  <ScanSearch aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /><span className="sr-only sm:not-sr-only">Ver en la hoja</span>
+                </span>
+              </button> : <div className="space-y-0.5 px-3 pb-2">
                 <p className="text-xs font-semibold text-muted">Respuesta del estudiante</p>
                 <p className="whitespace-pre-wrap text-base leading-6 text-fg">{component.respuesta_estudiante || 'No se detectó una respuesta.'}</p>
-              </div>
+              </div>}
               <div className="space-y-0.5 px-3 pt-2">
                 <p className="text-xs font-semibold text-muted">Respuesta de referencia</p>
                 <p className="whitespace-pre-wrap text-base leading-6 text-fg">{component.referencia_oculta ? 'Se mostrará cuando el docente libere las respuestas.' : component.respuesta_referencia || 'No aplica o no fue configurada.'}</p>

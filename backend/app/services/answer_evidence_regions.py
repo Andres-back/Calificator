@@ -116,3 +116,26 @@ def attach_answer_regions(components: list[dict], extraction: object, entrega_id
         evidence["regiones"] = [{"pagina": region["page"], "bbox": region["bbox"], "marco": FRAME, "evidencia_version": evidence_version(entrega_id, fingerprint)} for region in regions]
         evidence["paginas"] = sorted({page for page in evidence.get("paginas", []) if type(page) is int and 1 <= page <= total} | {region["page"] for region in regions})
         component["evidencia_json"] = evidence
+
+
+LOCATED_KEY = "zonas_ubicadas"
+
+
+def located_answer_regions(provenance: object) -> dict[str, list[dict]]:
+    """Zonas pedidas por el docente después de calificar; viven fuera de los componentes."""
+    stored = provenance.get(LOCATED_KEY) if isinstance(provenance, dict) else None
+    regions = stored.get("regiones") if isinstance(stored, dict) else None
+    if not isinstance(regions, dict):
+        return {}
+    result = {}
+    for key, value in regions.items():
+        normalized = public_answer_regions(value)
+        if normalized:
+            result[str(key)] = normalized
+    return result
+
+
+def location_attempts(provenance: object) -> int:
+    stored = provenance.get(LOCATED_KEY) if isinstance(provenance, dict) else None
+    attempts = stored.get("intentos") if isinstance(stored, dict) else 0
+    return attempts if type(attempts) is int and attempts > 0 else 0

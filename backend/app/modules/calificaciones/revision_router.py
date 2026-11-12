@@ -16,7 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
-from app.modules.calificaciones import revision_service, service
+from app.modules.calificaciones import answer_location_service, revision_service, service
 from app.modules.calificaciones.models import (
     Calificacion,
     CalificacionRevision,
@@ -31,6 +31,7 @@ from app.modules.calificaciones.evidence_scan_reads import EvidenceVariant, mani
 from app.modules.calificaciones.evidence_service import EvidencePageError, MAX_EVIDENCE_PAGES, _render_cached_evidence_page
 from app.services.answer_evidence_regions import evidence_version
 from app.modules.calificaciones.schemas import (
+    AnswerLocationResult,
     BatchRegradeRequest,
     BatchResult,
     BatchResultItem,
@@ -83,6 +84,19 @@ async def _rollback_keeping_actor(db, actor) -> None:
 
 
 # Declarada antes de la ruta por calificación: «lote» no debe leerse como un identificador.
+@router.post("/calificaciones/{calificacion_id}/ubicar-respuestas", response_model=AnswerLocationResult)
+async def ubicar_respuestas(
+    calificacion_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Spec 175: guarda dónde está cada respuesta en la foto. No cambia la nota."""
+    grade, evaluation = await owned_grade(db, calificacion_id, current_user)
+    return await answer_location_service.locate_answers(
+        db, grade=grade, evaluation=evaluation, actor=current_user
+    )
+
+
 @router.post("/calificaciones/lote/recalificar", response_model=BatchResult, status_code=202)
 async def recalificar_lote(
     payload: BatchRegradeRequest,

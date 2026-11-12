@@ -166,6 +166,7 @@ ALL_SPECS = {
     "173-e2e-editor-criterios",
     "174-revision-docente-clara",
     "172-ci-primer-fallo",
+    "175-ubicar-respuesta-en-hoja",
 }
 OWNED_SPECS = {
     name
