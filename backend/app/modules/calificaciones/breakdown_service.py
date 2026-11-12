@@ -25,7 +25,7 @@ from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado
-from app.services.answer_evidence_regions import attach_answer_regions, public_answer_regions
+from app.services.answer_evidence_regions import attach_answer_regions, located_answer_regions, public_answer_regions
 
 
 _QUESTION_IN_ALERT = re.compile(r"\b(?:pregunta\s*|p\s*\.?\s*)(\d+)\b", re.IGNORECASE)
@@ -54,7 +54,13 @@ async def get_active_breakdown(db: AsyncSession, calificacion_id: UUID, *, lock:
     return await db.scalar(query)
 
 
-def _component_dict(component: CalificacionComponente, *, student: bool = False, reveal_key: bool = False) -> dict:
+def _component_dict(component: CalificacionComponente, *, student: bool = False, reveal_key: bool = False, located: list[dict] | None = None) -> dict:
+    # Spec 175: una zona ubicada después de calificar solo completa a la que no trae la suya.
+    own = [] if student else public_answer_regions((component.evidencia_json or {}).get("regiones"))
+    regions = own or ([] if student else list(located or []))
+    pages = list((component.evidencia_json or {}).get("paginas") or [])
+    if regions and not own:
+        pages = sorted({*pages, *(region["pagina"] for region in regions)})
     data = {
         "id": component.id,
         "clave": component.clave,
@@ -72,8 +78,8 @@ def _component_dict(component: CalificacionComponente, *, student: bool = False,
         "orientacion_mejora": str((component.evidencia_json or {}).get("orientacion_mejora") or "") or None,
         "origen": component.origen,
         "requiere_revision": component.requiere_revision,
-        "evidencia_paginas": list((component.evidencia_json or {}).get("paginas") or []),
-        "evidencia_regiones": [] if student else public_answer_regions((component.evidencia_json or {}).get("regiones")),
+        "evidencia_paginas": pages,
+        "evidencia_regiones": regions,
         # Las fuentes de apoyo pueden contener fragmentos privados del docente.
         # El estudiante recibe la explicación, nunca esa procedencia interna.
         "fuentes": [] if student else list((component.evidencia_json or {}).get("fuentes") or []),
@@ -107,6 +113,7 @@ def serialize_breakdown(breakdown: CalificacionDesglose, *, student: bool = Fals
             "valor": global_detail.get("valor"),
             "explicacion_estudiante": global_detail.get("explicacion_estudiante"),
         }
+    located = {} if student else located_answer_regions(breakdown.procedencia_json)
     payload = {
         "id": breakdown.id,
         "calificacion_id": breakdown.calificacion_id,
@@ -116,7 +123,7 @@ def serialize_breakdown(breakdown: CalificacionDesglose, *, student: bool = Fals
         "formula": formula,
         "ajuste_global_detalle": global_detail or None,
         "requiere_revision": breakdown.requiere_revision,
-        "componentes": [_component_dict(item, student=student, reveal_key=reveal_key) for item in breakdown.componentes],
+        "componentes": [_component_dict(item, student=student, reveal_key=reveal_key, located=located.get(item.clave)) for item in breakdown.componentes],
         "created_at": breakdown.created_at,
     }
     if student:

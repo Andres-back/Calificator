@@ -77,6 +77,22 @@ describe('GradeBreakdown', () => {
     expect(screen.queryByTestId('grade-answer-comparison')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ajustar/ })).not.toBeInTheDocument();
   });
+  it('175 pulsar la respuesta del estudiante pide verla en la hoja, solo junto al visor', () => {
+    const show = vi.fn();
+    const view = render(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} onShowInSheet={show} renderEvidence={() => <p>Visor</p>} />);
+    const comparison = screen.getByTestId('grade-answer-comparison');
+    expect(comparison).toHaveClass('divide-y');
+    const answer = within(comparison).getByRole('button', { name: /Respuesta del estudiante.*24.*Ver en la hoja/ });
+    fireEvent.click(answer);
+    expect(show).toHaveBeenCalledExactlyOnceWith(breakdown.componentes[0]);
+    expect(within(comparison).getByText('Respuesta de referencia')).toBeInTheDocument();
+
+    view.rerender(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} onShowInSheet={show} />);
+    expect(within(screen.getByTestId('grade-answer-comparison')).queryByRole('button')).not.toBeInTheDocument();
+    view.rerender(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} renderEvidence={() => <p>Visor</p>} />);
+    expect(within(screen.getByTestId('grade-answer-comparison')).queryByRole('button')).not.toBeInTheDocument();
+  });
+
   it('mantiene la explicación y el ajuste junto a la respuesta, separados del visor', () => {
     render(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1"
       onEdit={vi.fn()} renderEvidence={() => <p>Visor de prueba</p>} />);

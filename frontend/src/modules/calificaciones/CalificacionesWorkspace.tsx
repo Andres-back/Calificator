@@ -38,7 +38,7 @@ import { isStandardStudentProfile } from '@/lib/authorization';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias, listCalificaciones,
-  establecerNotaManual, publicarNota, publicarNotaBatch, recalificarLote,
+  establecerNotaManual, publicarNota, publicarNotaBatch, recalificarLote, ubicarRespuestas,
   marcarRevisionManual, resolverIncidencia, setAnswersReleased, solicitarReemplazoEvidencia, updateGradeBreakdown,
 } from './api';
 import { addPendingGrading } from './gradingJobs';
@@ -52,7 +52,7 @@ import { buildReviewHref, isPendingReviewRoute, resolveReviewContext, safeReview
 import { TeacherInbox } from '@/modules/dashboard/TeacherInbox';
 import { focusReviewSection, revealWithinReview } from './components/reviewSectionFocus';
 import { GradeEvidenceViewer } from './components/GradeEvidenceViewer';
-import { GradeQuestionEvidence } from './components/GradeQuestionEvidence';
+import { GradeQuestionEvidence, type AnswerLocationAction } from './components/GradeQuestionEvidence';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
 import { GradeFeedback } from './components/GradeFeedback';
 import { GradeReprocessing } from './components/GradeReprocessing';
@@ -745,6 +745,28 @@ function PanelDetalle({
   const evidenceSectionRef = useRef<HTMLElement | null>(null);
   const feedbackSectionRef = useRef<HTMLDivElement | null>(null);
 
+  // Spec 175: pulsar la respuesta lleva la hoja a su zona; si no la tiene, la IA puede ubicarla.
+  const [sheetFocus, setSheetFocus] = useState(0);
+  const showAnswerInSheet = (component: NonNullable<typeof activeBreakdown>['componentes'][number]) => {
+    const page = component.evidencia_regiones?.[0]?.pagina ?? component.evidencia_paginas[0];
+    if (page && page !== evidencePage) setEvidencePage(page);
+    setSheetFocus((value) => value + 1);
+    window.requestAnimationFrame(() => document.getElementById(`grade-component-${component.id}`)
+      ?.querySelector('[data-testid="grade-question-evidence-column"]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+  };
+  const locateMutation = useMutation({
+    mutationFn: () => ubicarRespuestas(cal.id),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+      if (result.ubicadas === 0) toast('La IA no distinguió más respuestas en esta foto. Revísalas en la hoja completa.');
+      else if (result.pendientes > 0) toast.success(`${result.ubicadas === 1 ? 'Se ubicó 1 respuesta' : `Se ubicaron ${result.ubicadas} respuestas`}. ${result.pendientes === 1 ? 'Queda 1 que no aparece o no se distingue' : `Quedan ${result.pendientes} que no aparecen o no se distinguen`} en la foto.`);
+      else toast.success(result.ubicadas === 1 ? 'Se ubicó la respuesta en la hoja.' : `Se ubicaron ${result.ubicadas} respuestas en la hoja.`);
+      setSheetFocus((value) => value + 1);
+    },
+    onError: (error) => toast.error(toApiError(error).detail),
+  });
+  const locationAttempts = Number((activeBreakdown?.procedencia?.zonas_ubicadas as { intentos?: unknown } | undefined)?.intentos) || 0;
+
   const replacementMutation = useMutation({
     mutationFn: () => solicitarReemplazoEvidencia(cal.id, replacementReason.trim()),
     onSuccess: () => {
@@ -997,6 +1019,16 @@ function PanelDetalle({
     window.requestAnimationFrame(() => revealWithinReview(finalGradeEditorRef.current, 'nearest'));
   }
 
+  const answerLocation = (component: NonNullable<typeof activeBreakdown>['componentes'][number]): AnswerLocationAction | undefined => {
+    if (!canGrade || component.tipo !== 'pregunta') return undefined;
+    if (locationAttempts >= 2) return { note: 'La IA ya buscó esta respuesta dos veces y no la distingue en la foto; se muestra la hoja completa.' };
+    return {
+      onLocate: editingComponentId ? undefined : () => locateMutation.mutate(),
+      locating: locateMutation.isPending,
+      note: locationAttempts === 1 ? 'La IA no encontró esta respuesta la primera vez. Puedes buscarla una vez más.' : undefined,
+    };
+  };
+
   const questionReview = activeBreakdown ? (
     <GradeBreakdown
       breakdown={activeBreakdown}
@@ -1006,6 +1038,7 @@ function PanelDetalle({
       onSelectComponent={selectQuestion}
       onEdit={canGrade ? requestComponentEdit : undefined}
       onEvidencePage={evidenceUrl ? showEvidencePage : undefined}
+      onShowInSheet={evidenceUrl && mobileTab === 'revision' ? showAnswerInSheet : undefined}
       renderEvidence={evidenceUrl && mobileTab === 'revision' ? (component) => <GradeQuestionEvidence
         key={`${detailActorId}:${cal.id}:${activeBreakdown.version}:${component.id}`}
         evidenceUrl={evidenceUrl}
@@ -1014,6 +1047,8 @@ function PanelDetalle({
         regions={component.evidencia_regiones}
         activePage={evidencePage}
         onPageChange={setEvidencePage}
+        focusSignal={sheetFocus}
+        location={answerLocation(component)}
       /> : undefined}
       editingComponentId={editingComponentId}
       renderEditor={(component) => (

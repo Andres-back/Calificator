@@ -378,6 +378,15 @@ class BatchAjustarRequest(BaseModel):
     items: list[BatchAjustarItem]
 
 
+class AnswerLocationResult(BaseModel):
+    """Spec 175: resultado de pedir a la IA la zona de cada respuesta en la foto."""
+
+    ubicadas: int = Field(ge=0)
+    pendientes: int = Field(ge=0)
+    intentos: int = Field(ge=0)
+    intentos_maximos: int = Field(ge=1)
+
+
 class BatchRegradeRequest(BaseModel):
     # Cada entrega vuelve a leerse con IA: el lote se acota para no saturar la cola.
     calificacion_ids: list[UUID] = Field(min_length=1, max_length=60)

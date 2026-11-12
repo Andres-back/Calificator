@@ -17,7 +17,39 @@ describe('GradeEvidenceViewer', () => {
     expect(frame.className).toContain('h-[clamp(16rem,45dvh,34rem)]');
     view.unmount();
     render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
-    expect(screen.getByRole('group', { name: 'Imagen ampliable de la evidencia' }).className).not.toContain('100dvh');
+    const answerFrame = screen.getByRole('group', { name: 'Imagen ampliable de la evidencia' });
+    expect(answerFrame.className).not.toContain('calc(100dvh-13rem)');
+    // 175: el visor de una respuesta también crece con la pantalla, sin tapar la explicación.
+    expect(answerFrame.className).toContain('lg:h-[clamp(20rem,calc(100dvh-27rem),44rem)]');
+  });
+
+  it('175 marca con un recuadro la zona de la respuesta y vuelve a ella cuando el docente la pide', () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, right: 400, bottom: 300, width: 400, height: 300, toJSON() {} });
+    const props = { src: '/api/evidencia/paginas/2', label: 'Hoja 2 de la evidencia', region: [0.1, 0.2, 0.4, 0.1] as [number, number, number, number] };
+    const view = render(<GradeEvidenceViewer {...props} focusSignal={0} />);
+    expect(screen.queryByTestId('evidence-region-outline')).not.toBeInTheDocument();
+    loadImage();
+    const outline = screen.getByTestId('evidence-region-outline');
+    expect(outline).toHaveAttribute('aria-hidden', 'true');
+    expect(outline.className).toContain('pointer-events-none');
+    const focused = { width: outline.style.width, left: outline.style.left, top: outline.style.top };
+    expect(parseFloat(focused.width)).toBeGreaterThan(300);
+    expect(parseFloat(focused.left)).toBeGreaterThanOrEqual(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver hoja completa' }));
+    expect(screen.getByText('100 %')).toBeInTheDocument();
+    expect(parseFloat(screen.getByTestId('evidence-region-outline').style.width)).toBeLessThan(120);
+
+    view.rerender(<GradeEvidenceViewer {...props} focusSignal={1} />);
+    const again = screen.getByTestId('evidence-region-outline');
+    expect({ width: again.style.width, left: again.style.left, top: again.style.top }).toEqual(focused);
+    vi.restoreAllMocks();
+  });
+
+  it('175 sin zona no dibuja recuadro', () => {
+    render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
+    loadImage();
+    expect(screen.queryByTestId('evidence-region-outline')).not.toBeInTheDocument();
   });
 
   it('prioriza la hoja en su vista propia y vuelve a evidencia desde el visor ampliado', () => {

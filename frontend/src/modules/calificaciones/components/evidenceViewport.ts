@@ -67,3 +67,11 @@ export function panEvidenceViewport(size: EvidenceDimensions, viewport: Evidence
   if (!layout || !Number.isFinite(dx) || !Number.isFinite(dy)) return clampEvidenceViewport(size, viewport);
   return clampEvidenceViewport(size, { ...viewport, centerX: viewport.centerX - dx / layout.width, centerY: viewport.centerY - dy / layout.height });
 }
+
+/** Rectángulo, en píxeles del marco, que ocupa una zona de la hoja con la vista actual. */
+export function evidenceRegionRect(size: EvidenceDimensions, viewport: EvidenceViewport, box: unknown) {
+  const layout = evidenceImageLayout(size, viewport);
+  if (!layout || !validEvidenceBox(box)) return null;
+  const [x, y, width, height] = box;
+  return { left: layout.left + x * layout.width, top: layout.top + y * layout.height, width: width * layout.width, height: height * layout.height };
+}

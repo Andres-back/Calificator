@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { ScanSearch } from 'lucide-react';
+import { Button } from '@/components/ui';
 import type { GradeEvidenceRegion } from '@/types/api';
 import { GradeEvidenceViewer } from './GradeEvidenceViewer';
 import { validEvidenceBox } from './evidenceViewport';
 
-function VersionedEvidence({ evidenceUrl, page, region }: { evidenceUrl: string; page: number; region: GradeEvidenceRegion }) {
+function VersionedEvidence({ evidenceUrl, page, region, focusSignal }: { evidenceUrl: string; page: number; region: GradeEvidenceRegion; focusSignal?: number }) {
   const [loadedUrl, setLoadedUrl] = useState('');
   const [failed, setFailed] = useState(false);
   const [manual, setManual] = useState(false);
@@ -35,17 +37,22 @@ function VersionedEvidence({ evidenceUrl, page, region }: { evidenceUrl: string;
   if (!loadedUrl) return <p role="status" className="rounded-xl border border-border p-4 text-sm text-muted">Comprobando la hoja de esta respuesta…</p>;
   return <>
     <p className="sr-only">Vista cercana de esta respuesta.</p>
-    <GradeEvidenceViewer src={loadedUrl} label={`Hoja ${page} de la evidencia`} region={region.bbox} />
+    <GradeEvidenceViewer src={loadedUrl} label={`Hoja ${page} de la evidencia`} region={region.bbox} focusSignal={focusSignal} />
   </>;
 }
 
-export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, regions = [], activePage, onPageChange }: {
+/** Qué puede hacer el docente cuando la respuesta no tiene zona: pedirla a la IA o leer por qué no se puede. */
+export type AnswerLocationAction = { onLocate?: () => void; locating?: boolean; note?: string };
+
+export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, regions = [], activePage, onPageChange, focusSignal, location }: {
   evidenceUrl: string;
   pages: number;
   associatedPages: number[];
   regions?: GradeEvidenceRegion[];
   activePage: number;
   onPageChange: (page: number) => void;
+  focusSignal?: number;
+  location?: AnswerLocationAction;
 }) {
   const count = Number.isSafeInteger(pages) && pages > 0 ? Math.min(pages, 20) : 1;
   const validRegions = regions.filter((region) => region.marco === 'pagina_canonica_orientada' && /^[a-f0-9]{32}$/.test(region.evidencia_version) && validEvidenceBox(region.bbox) && Number.isInteger(region.pagina) && region.pagina >= 1 && region.pagina <= count).slice(0, 8);
@@ -56,7 +63,15 @@ export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, reg
   const [regionIndex, setRegionIndex] = useState(0);
   const activeRegion = pageRegions[Math.min(regionIndex, pageRegions.length - 1)];
   return <section className="min-w-0 space-y-2" aria-label="Evidencia de la respuesta seleccionada">
-    {!activeRegion && <p className="text-xs text-muted">No hay una zona localizada; se muestra la hoja completa.</p>}
+    {!activeRegion && !location && <p className="text-xs text-muted">No hay una zona localizada; se muestra la hoja completa.</p>}
+    {!activeRegion && location && <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-brand-300 bg-brand-50/60 px-3 py-2 dark:border-brand-500/40 dark:bg-brand-500/10" data-testid="answer-location-action">
+      <p className="min-w-0 flex-1 basis-52 text-sm leading-5 text-fg" role={location.locating ? 'status' : undefined}>{location.locating
+        ? 'Buscando las respuestas en la hoja… Tarda unos segundos.'
+        : location.note ?? 'No hay una zona localizada; se muestra la hoja completa.'}</p>
+      {location.onLocate && <Button type="button" size="sm" className="min-h-11" loading={location.locating} onClick={location.onLocate}>
+        <ScanSearch aria-hidden="true" className="h-4 w-4" />Ubicar respuestas con IA
+      </Button>}
+    </div>}
     {available.length > 1 && <nav className="flex flex-wrap gap-2" aria-label="Hojas de esta respuesta">
       {available.map((item) => <button type="button" key={item} aria-current={item === page ? 'page' : undefined} onClick={() => onPageChange(item)}
         className={`focus-ring min-h-11 min-w-11 rounded-lg border px-3 text-sm font-semibold ${item === page ? 'border-brand-400 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200' : 'border-border bg-surface text-fg'}`}>Hoja {item}</button>)}
@@ -64,6 +79,6 @@ export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, reg
     {pageRegions.length > 1 && <nav className="flex flex-wrap gap-2" aria-label="Fragmentos de esta respuesta">
       {pageRegions.map((region, index) => <button key={`${region.evidencia_version}:${index}`} type="button" onClick={() => setRegionIndex(index)} aria-current={activeRegion === region ? 'step' : undefined} className="focus-ring min-h-11 rounded-lg border border-border bg-surface px-3 text-sm font-semibold">Fragmento {index + 1}</button>)}
     </nav>}
-    {activeRegion ? <VersionedEvidence key={`${evidenceUrl}:${page}:${activeRegion.evidencia_version}`} evidenceUrl={evidenceUrl} page={page} region={activeRegion} /> : <GradeEvidenceViewer key={`${evidenceUrl}:${page}`} src={`${evidenceUrl}/paginas/${page}`} label={`Hoja ${page} de la evidencia`} />}
+    {activeRegion ? <VersionedEvidence key={`${evidenceUrl}:${page}:${activeRegion.evidencia_version}`} evidenceUrl={evidenceUrl} page={page} region={activeRegion} focusSignal={focusSignal} /> : <GradeEvidenceViewer key={`${evidenceUrl}:${page}`} src={`${evidenceUrl}/paginas/${page}`} label={`Hoja ${page} de la evidencia`} />}
   </section>;
 }

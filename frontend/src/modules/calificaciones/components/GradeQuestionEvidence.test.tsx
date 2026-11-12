@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GradeEvidenceRegion } from '@/types/api';
@@ -28,6 +28,25 @@ describe('GradeQuestionEvidence', () => {
     expect(screen.getByText(/No hay una zona localizada/)).toBeInTheDocument();
     expect(screen.getByText(/se muestra la hoja completa/)).toBeInTheDocument();
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/evidencia/paginas/2');
+  });
+
+  it('175 ofrece ubicar con IA la respuesta que no tiene zona y avisa mientras busca', () => {
+    const locate = vi.fn();
+    const view = render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} location={{ onLocate: locate }} />);
+    expect(within(screen.getByTestId('answer-location-action')).getByText(/No hay una zona localizada/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ubicar respuestas con IA' }));
+    expect(locate).toHaveBeenCalledOnce();
+    expect(screen.getByRole('img')).toHaveAttribute('src', '/api/evidencia/paginas/2');
+
+    view.rerender(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} location={{ onLocate: locate, locating: true }} />);
+    expect(within(screen.getByTestId('answer-location-action')).getByRole('status')).toHaveTextContent('Buscando las respuestas en la hoja');
+    expect(screen.getByRole('button', { name: /Ubicar respuestas con IA/ })).toBeDisabled();
+  });
+
+  it('175 cuando ya no se puede buscar explica por qué y no ofrece el botón', () => {
+    render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} location={{ note: 'La IA ya buscó esta respuesta dos veces.' }} />);
+    expect(screen.getByText('La IA ya buscó esta respuesta dos veces.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ubicar respuestas con IA/ })).not.toBeInTheDocument();
   });
 
   it('reencuadra cada respuesta de la misma foto y de otra hoja, sin inferencias o escrituras', async () => {
