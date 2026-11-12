@@ -1,6 +1,6 @@
 # Especificación: Evidencia a pantalla, recalificar en lote y asistencia en mosaico
 
-**Rama**: `codex/174-revision-docente-clara` | **Creada**: 2026-11-12 | **Estado**: Borrador | **Issue**: [#368](https://github.com/Andres-back/Calificator/issues/368)
+**Rama**: `codex/174-revision-docente-clara` | **Creada**: 2026-11-12 | **Estado**: Aprobada e implementada | **Issue**: [#368](https://github.com/Andres-back/Calificator/issues/368)
 
 **Entrada**: el usuario pidió, en un solo cambio: mejorar el apartado de evidencia en ordenador, poder recalificar a todos o a los seleccionados, un mosaico para tomar asistencia, quitar Presentaciones, comprobar que los recursos funcionan y pulir la calificación y la retroalimentación.
 

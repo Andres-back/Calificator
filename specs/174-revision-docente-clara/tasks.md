@@ -1,6 +1,6 @@
 # Tareas: Evidencia a pantalla, recalificar en lote y asistencia en mosaico
 
-**Entrada**: [spec.md](spec.md) y [plan.md](plan.md).
+**Entrada**: [spec.md](spec.md) y [plan.md](plan.md), de #368. Aprobados por el usuario el 2026-11-12 (`spec-approved` y `plan-approved` en #368).
 
 ### Pruebas primero (RED)
 
