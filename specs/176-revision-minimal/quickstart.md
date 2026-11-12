@@ -38,6 +38,10 @@ Aplicación local con el backend de `main`, un docente de prueba y una nota de c
 | Recorrido «Anterior · N de M · Siguiente», 1440 px | Sin fondo. |
 | Teléfono, 360 px | Sin desplazamiento horizontal; marco de 306 × 256 px; la hoja abre a 159 %; instrucciones a la vista; «2 por revisar» visible. |
 
+## Corrección tras la primera CI
+
+La prueba E2E «131 ubicación verificada con zoom y texto ampliado» falló: con texto al 150 % y una ventana de 844 × 390 px, el marco del visor ampliado se montaba sobre el botón «Volver a la respuesta». El contenedor del visor ampliado podía encogerse por debajo de su contenido; ya no puede, y el diálogo se desplaza. Reproducida y corregida en local; las 124 pruebas E2E de calificaciones (`grade-evidence-review`, `explainable-grading`, `grade-review-mobile`, `grade-direct-review`, `grade-review-triage`) pasan en Chromium, tres de ellas al segundo intento en un equipo con el disco lleno.
+
 ## Lo que no se comprobó
 
 - **Que el aviso desaparezca en producción.** Es el objetivo principal y solo se puede ver allí.

@@ -139,7 +139,7 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
       {extraControl}
     </div>;
   const instructions = <p id={instructionId} className={sheetView ? 'sr-only' : 'flex items-start gap-2 text-xs leading-5 text-muted lg:sr-only'}><Move aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span>Amplía con dos dedos o los botones. Arrastra la imagen ampliada para ver más.<span className="hidden sm:inline"> Con teclado: +, − y flechas; 0 muestra toda la hoja.</span></span></p>;
-  return <div className={expanded ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-2'}>
+  return <div className={expanded ? 'flex flex-1 flex-col gap-3' : 'space-y-2'}>
     {!sheetView && (expanded ? tools : <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
       <p className="min-w-0 text-sm font-bold text-fg">{label}</p>
       {tools}
