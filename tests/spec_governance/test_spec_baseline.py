@@ -161,6 +161,7 @@ ALL_SPECS = {
     "165-guardar-sin-rubrica",
     "166-editar-datos-version",
     "169-prueba-aviso-asignada",
+    "171-confirmar-sin-despublicar",
     "173-e2e-editor-criterios",
 }
 OWNED_SPECS = {
