@@ -2320,6 +2320,7 @@ function GradingCenter() {
     backLabel={detail ? 'Volver a lista' : canOpenEvaluations ? 'Volver a evaluaciones' : 'Volver a pendientes'}
     onBack={detail ? () => setSelectedId(null) : undefined}
     backHref={detail ? undefined : backToEvaluationList} bookHref={currentBook}
+    pendingCount={detail ? counters?.pendientes : undefined}
   />;
   if (contextMismatch) return <Card className="space-y-3 p-4">
     <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">La evaluación no corresponde a la materia o al contexto del enlace. No se cargaron alumnos ni se habilitaron cambios.</p>

@@ -9,26 +9,39 @@ function VersionedEvidence({ evidenceUrl, page, region, focusSignal }: { evidenc
   const [loadedUrl, setLoadedUrl] = useState('');
   const [failed, setFailed] = useState(false);
   const [manual, setManual] = useState(false);
+  const versionedUrl = `${evidenceUrl}/paginas/${page}?evidencia_version=${region.evidencia_version}`;
   useEffect(() => {
     if (manual) return;
     const controller = new AbortController();
     let objectUrl = '';
     let active = true;
     void (async () => {
+      // El servidor responde 409 si la versión pedida ya no es la vigente. Solo eso, o una
+      // cabecera que lo contradiga, demuestra que la zona no corresponde a esta hoja.
+      let mismatch = false;
       try {
-        const response = await fetch(`${evidenceUrl}/paginas/${page}?evidencia_version=${region.evidencia_version}`, { signal: controller.signal, credentials: 'same-origin', cache: 'no-store' });
-        if (!response.ok || response.headers.get('X-Evidence-Version') !== region.evidencia_version || response.headers.get('X-Evidence-Page') !== String(page) || response.headers.get('Content-Type')?.split(';')[0] !== 'image/png') throw new Error('evidence_version_unverified');
+        const response = await fetch(versionedUrl, { signal: controller.signal, credentials: 'same-origin', cache: 'no-store' });
+        const version = response.headers.get('X-Evidence-Version');
+        const sentPage = response.headers.get('X-Evidence-Page');
+        mismatch = response.status === 409 || (version !== null && version !== region.evidencia_version) || (sentPage !== null && sentPage !== String(page));
+        if (mismatch) throw new Error('evidence_version_mismatch');
+        const type = (response.headers.get('Content-Type') ?? '').split(';')[0].trim();
+        if (!response.ok || version === null || sentPage === null || !type.startsWith('image/')) throw new Error('evidence_version_unverified');
         const blob = await response.blob();
         if (!active) return;
         if (blob.size > 32 * 1024 * 1024) throw new Error('evidence_preview_too_large');
         objectUrl = URL.createObjectURL(blob);
         setLoadedUrl(objectUrl);
       } catch {
-        if (active) setFailed(true);
+        if (!active) return;
+        // Spec 176: si la comprobación previa no concluye (un intermediario altera la respuesta o la
+        // lectura falla), la hoja se pide directamente con su versión: el servidor solo la entrega si coincide.
+        if (mismatch) setFailed(true);
+        else setLoadedUrl(versionedUrl);
       }
     })();
     return () => { active = false; controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [evidenceUrl, page, region.evidencia_version, manual]);
+  }, [evidenceUrl, page, region.evidencia_version, manual, versionedUrl]);
   if (manual) return <GradeEvidenceViewer src={`${evidenceUrl}/paginas/${page}`} label={`Hoja ${page} de la evidencia`} />;
   if (failed) return <div role="alert" className="space-y-2 rounded-xl border border-amber-300 bg-surface p-3 text-sm">
     <p>No pudimos comprobar que esta zona corresponda a la evidencia actual. Actualiza la revisión o abre la hoja sin señalar una zona.</p>

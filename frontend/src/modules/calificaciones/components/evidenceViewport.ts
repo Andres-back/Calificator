@@ -50,6 +50,14 @@ export function focusEvidenceRegion(size: EvidenceDimensions, box: unknown): Evi
   return clampEvidenceViewport(size, { zoom, centerX: x + width / 2, centerY: y + height / 2 });
 }
 
+/** Hoja ajustada al ancho del marco y desde arriba: se lee sin ampliar cuando no hay zona que enfocar. */
+export function fitEvidenceWidth(size: EvidenceDimensions): EvidenceViewport {
+  if (!usable(size)) return complete();
+  const rendered = size.imageWidth * fit(size);
+  if (rendered >= size.width * 0.98) return complete();
+  return clampEvidenceViewport(size, { zoom: Math.min(2.5, size.width / rendered), centerX: 0.5, centerY: 0 });
+}
+
 export function zoomEvidenceViewport(size: EvidenceDimensions, viewport: EvidenceViewport, factor: number, anchor = { x: size.width / 2, y: size.height / 2 }): EvidenceViewport {
   const before = evidenceImageLayout(size, viewport);
   if (!before || !Number.isFinite(factor) || factor <= 0 || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return clampEvidenceViewport(size, viewport);

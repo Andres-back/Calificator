@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
+import { clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
 
 const dimensions = { width: 400, height: 300, imageWidth: 800, imageHeight: 1200 };
 const initial = { zoom: 1, centerX: 0.5, centerY: 0.5 };
@@ -70,5 +70,19 @@ describe('175 recuadro de la zona de una respuesta', () => {
     expect(evidenceRegionRect(dimensions, initial, [0.9, 0.9, 0.5, 0.5])).toBeNull();
     expect(evidenceRegionRect(dimensions, initial, undefined)).toBeNull();
     expect(evidenceRegionRect({ ...dimensions, imageWidth: 0 }, initial, [0.1, 0.2, 0.4, 0.1])).toBeNull();
+  });
+});
+
+describe('176 hoja ajustada al ancho', () => {
+  it('amplía una hoja vertical hasta el ancho del marco y la deja arriba', () => {
+    const view = fitEvidenceWidth(dimensions);
+    expect(view.zoom).toBe(2);
+    expect(evidenceImageLayout(dimensions, view)).toMatchObject({ left: 0, top: 0, width: 400, height: 600 });
+  });
+
+  it('no pasa de 2,5 aumentos ni amplía una hoja que ya llena el ancho', () => {
+    expect(fitEvidenceWidth({ width: 1200, height: 300, imageWidth: 800, imageHeight: 1200 }).zoom).toBe(2.5);
+    expect(fitEvidenceWidth({ width: 400, height: 300, imageWidth: 1200, imageHeight: 800 })).toEqual(initial);
+    expect(fitEvidenceWidth({ ...dimensions, imageWidth: 0 })).toEqual(initial);
   });
 });

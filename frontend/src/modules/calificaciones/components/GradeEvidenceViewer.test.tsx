@@ -46,6 +46,22 @@ describe('GradeEvidenceViewer', () => {
     vi.restoreAllMocks();
   });
 
+  it('176 la barra del visor cabe en una fila: controles con icono y nombre accesible, sin instrucciones a la vista en ordenador', () => {
+    render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
+    loadImage();
+    const controls = screen.getByRole('group', { name: 'Controles de la imagen' });
+    for (const name of ['Alejar imagen', 'Acercar imagen', 'Girar vista 90 grados', 'Ver hoja completa', 'Ampliar evidencia']) {
+      const control = within(controls).getByRole('button', { name });
+      expect(control).toHaveTextContent('');
+      expect(control).toHaveClass('min-h-11', 'min-w-11');
+    }
+    expect(controls.parentElement).toHaveTextContent('Hoja 2 de la evidencia');
+    expect(screen.getByText(/Amplía con dos dedos/).closest('p')).toHaveClass('lg:sr-only');
+    // El visor ampliado sigue abriendo la hoja completa.
+    fireEvent.click(within(controls).getByRole('button', { name: 'Ampliar evidencia' }));
+    expect(within(screen.getByRole('dialog', { name: 'Hoja 2 de la evidencia' })).getByLabelText('Nivel de ampliación')).toHaveTextContent('100 %');
+  });
+
   it('175 sin zona no dibuja recuadro', () => {
     render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
     loadImage();
@@ -95,6 +111,11 @@ describe('GradeEvidenceViewer', () => {
     render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
     expect(screen.getByRole('status', { name: 'Estado de la imagen' })).toHaveTextContent('Cargando');
     loadImage();
+    // 176: sin zona, una hoja vertical abre ajustada al ancho del marco, desde arriba.
+    expect(screen.getByText('200 %')).toBeInTheDocument();
+    expect(screen.getByRole('img').style.top).toBe('0px');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver hoja completa' }));
+    expect(screen.getByText('100 %')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Acercar imagen' }));
     expect(screen.getByText('125 %')).toBeInTheDocument();
     const canvas = screen.getByRole('group', { name: 'Imagen ampliable de la evidencia' });
@@ -135,6 +156,7 @@ describe('GradeEvidenceViewer', () => {
   it('permite pellizco táctil y arrastre sin desplazar la página entera', () => {
     render(<GradeEvidenceViewer src="/api/evidencia/paginas/2" label="Hoja 2 de la evidencia" />);
     loadImage();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver hoja completa' }));
     const canvas = screen.getByRole('group', { name: 'Imagen ampliable de la evidencia' });
     const pointer = (kind: string, pointerId: number, clientX: number, clientY: number) => {
       const event = new Event(kind, { bubbles: true });
