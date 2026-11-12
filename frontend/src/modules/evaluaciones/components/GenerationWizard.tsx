@@ -366,6 +366,12 @@ export function GenerationWizard({
   const confirmLock = useRef(false);
   const referenceInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  // Spec 170: los avisos de error se pintan arriba del contenido y el botón queda abajo;
+  // sin volver al inicio, un fallo parece un botón que no hizo nada. Solo se mueve este
+  // contenedor: scrollIntoView también desplaza el modal y oculta su cabecera.
+  useEffect(() => {
+    if ((generationError || saveError) && contentRef.current) contentRef.current.scrollTop = 0;
+  }, [generationError, saveError]);
   const formRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const initializedKey = useRef<string | null>(null);
@@ -480,7 +486,13 @@ export function GenerationWizard({
       onCompleted(evaluation);
     },
     onError: (_error, context) => {
-      if (activeContext.current.userId === context.userId && activeContext.current.id === context.id) setSaveError('No pudimos guardar los cambios. Se conservan aquí; revisa tu conexión y vuelve a guardar.');
+      if (activeContext.current.userId !== context.userId || activeContext.current.id !== context.id) return;
+      // Spec 170: si el servidor respondió, se muestra su motivo; el aviso de conexión queda
+      // para los fallos sin respuesta.
+      const parsed = toApiError(_error);
+      setSaveError(parsed.status >= 400
+        ? `No pudimos guardar los cambios. ${parsed.detail} Tu edición se conserva aquí.`
+        : 'No pudimos guardar los cambios. Se conservan aquí; revisa tu conexión y vuelve a guardar.');
     },
     onSettled: () => { confirmLock.current = false; },
   });
