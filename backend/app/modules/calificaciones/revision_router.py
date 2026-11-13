@@ -16,7 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
-from app.modules.calificaciones import answer_location_service, revision_service, service
+from app.modules.calificaciones import answer_location_service, explanation_draft_service, revision_service, service
 from app.modules.calificaciones.models import (
     Calificacion,
     CalificacionRevision,
@@ -36,6 +36,8 @@ from app.modules.calificaciones.schemas import (
     BatchResult,
     BatchResultItem,
     CalificacionRead,
+    ExplanationDraft,
+    ExplanationDraftRequest,
     CalificacionRevisionRead,
     ReprocessingContextRead,
 )
@@ -94,6 +96,21 @@ async def ubicar_respuestas(
     grade, evaluation = await owned_grade(db, calificacion_id, current_user)
     return await answer_location_service.locate_answers(
         db, grade=grade, evaluation=evaluation, actor=current_user
+    )
+
+
+@router.post("/calificaciones/{calificacion_id}/redactar-explicacion", response_model=ExplanationDraft)
+async def redactar_explicacion(
+    calificacion_id: UUID,
+    payload: ExplanationDraftRequest,
+    current_user: User = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Spec 181: borrador de explicación para el estudiante. No guarda ni cambia la nota."""
+    grade, evaluation = await owned_grade(db, calificacion_id, current_user)
+    return await explanation_draft_service.draft_explanation(
+        db, grade=grade, evaluation=evaluation, actor=current_user,
+        component_id=payload.componente_id, state=payload.estado, points=payload.puntos_obtenidos,
     )
 
 

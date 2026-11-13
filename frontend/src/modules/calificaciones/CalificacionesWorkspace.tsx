@@ -38,7 +38,7 @@ import { isStandardStudentProfile } from '@/lib/authorization';
 import {
   ajustarNota, ajustarNotaBatch, confirmarNota, confirmarNotaBatch,
   crearIncidencia, getEvaluationReview, getCalificacionDetalle, listarIncidencias, listCalificaciones,
-  establecerNotaManual, publicarNota, publicarNotaBatch, recalificarLote, ubicarRespuestas,
+  establecerNotaManual, publicarNota, publicarNotaBatch, recalificarLote, redactarExplicacion, ubicarRespuestas,
   marcarRevisionManual, resolverIncidencia, setAnswersReleased, solicitarReemplazoEvidencia, updateGradeBreakdown,
 } from './api';
 import { addPendingGrading } from './gradingJobs';
@@ -1060,6 +1060,7 @@ function PanelDetalle({
           saveError={breakdownSaveError}
           onDirtyChange={setEditingComponentDirty}
           onCancel={requestComponentClose}
+          onDraftExplanation={(input) => redactarExplicacion(cal.id, { componente_id: component.id, ...input })}
           onReload={breakdownSaveConflict ? () => setPendingEditorAction('close') : undefined}
           onSave={(change) => breakdownMutation.mutate({ change })}
           onSaveAndNextQuestion={(change) => {

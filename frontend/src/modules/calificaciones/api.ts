@@ -261,6 +261,18 @@ export async function ubicarRespuestas(calificacionId: string): Promise<AnswerLo
   return data;
 }
 
+export interface ExplanationDraftInput {
+  componente_id: string;
+  estado: 'correcta' | 'parcial' | 'incorrecta' | 'sin_respuesta';
+  puntos_obtenidos: number;
+}
+
+export async function redactarExplicacion(calificacionId: string, input: ExplanationDraftInput): Promise<string> {
+  // Spec 181: la IA solo redacta; nada se guarda hasta que el docente guarda el ajuste.
+  const { data } = await api.post<{ explicacion: string }>(`/calificaciones/${calificacionId}/redactar-explicacion`, input, { timeout: 40_000 });
+  return data.explicacion;
+}
+
 /* ── Publicar ── */
 
 export async function publicarNota(calificacionId: string): Promise<Calificacion> {
