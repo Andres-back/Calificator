@@ -12,7 +12,7 @@
 
 - [X] T004 Localizador con cuadrícula y servicio por hoja. (FR-001, FR-002, FR-003)
 - [X] T005 Prioridad de la zona en el desglose del docente. (FR-004)
-- [X] T006 Visor, evidencia de la pregunta y revisión con ubicación automática. (FR-005, FR-006)
+- [X] T006 Visor, evidencia de la pregunta y «Ubicar de nuevo» en la revisión, sin escrituras al abrirla. (FR-005, FR-006)
 
 ### Validación
 

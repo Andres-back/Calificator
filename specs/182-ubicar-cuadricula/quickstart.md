@@ -35,4 +35,6 @@ Antes del cambio, el localizador no existía y el servicio guardaba la zona esti
 
 ## Después de desplegar
 
-Abrir la misma calificación de la captura, «Respuestas y puntajes», pregunta 13: tras unos segundos, el recuadro rodea la pregunta 13.
+Abrir la misma calificación de la captura, «Respuestas y puntajes», pregunta 13, y pulsar «¿El recuadro no está en la pregunta? Ubicar de nuevo»: tras unos segundos, el recuadro rodea la pregunta 13.
+
+La primera CI falló en `grading-review.mock.spec.ts` (099): la versión que ubicaba al abrir la revisión escribía. Se quitó esa ubicación automática.

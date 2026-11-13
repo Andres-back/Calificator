@@ -18,9 +18,10 @@
 ### Historia 1 - El recuadro cae sobre la pregunta (Prioridad: P1)
 
 **Aceptación**:
-1. **Dada** una calificación cuyas zonas no se ubicaron con la cuadrícula, **cuando** el docente abre «Respuestas y puntajes», **entonces** las preguntas se ubican automáticamente una vez, sin avisos que interrumpan.
+1. **Dado** un recuadro que no coincide o una pregunta sin recuadro, **cuando** el docente pide ubicar con IA, **entonces** se ubican todas las preguntas de esa calificación de una vez.
 2. **Dada** una zona ubicada con la cuadrícula, **cuando** abro la pregunta, **entonces** el recuadro rodea la pregunta con un margen pequeño, aunque la foto esté de lado.
-3. **Dado** un recuadro que no coincide, **cuando** pulso «¿El recuadro no está en la pregunta? Ubicar de nuevo», **entonces** se vuelve a ubicar, hasta dos veces.
+3. **Dado** un recuadro, **cuando** pulso «¿El recuadro no está en la pregunta? Ubicar de nuevo», **entonces** se ubica con la cuadrícula, hasta dos veces.
+4. **Dado** que solo abro y recorro la revisión, **entonces** no se escribe nada: la ubicación siempre la pide el docente.
 
 ### Casos límite
 
@@ -38,7 +39,7 @@
 - **FR-003**: Las zonas DEBEN guardarse en la procedencia del desglose, marcadas con el método, sin cambiar nota, puntajes, estados ni la huella de la devolución.
 - **FR-004**: Para el docente, la zona de la cuadrícula DEBE prevalecer sobre la de la lectura; el estudiante no la recibe.
 - **FR-005**: El visor DEBE dibujar la zona de la cuadrícula con un margen de 1 % y seguir ampliando las demás como en la Spec 180.
-- **FR-006**: La revisión DEBE ubicar automáticamente una vez por calificación y ofrecer ubicar de nuevo, con dos intentos como máximo.
+- **FR-006**: La revisión DEBE ofrecer ubicar con IA tanto sin recuadro como con uno que no coincide, con dos intentos como máximo; abrir y recorrer la revisión NO DEBE escribir nada.
 
 ## Criterios de éxito
 

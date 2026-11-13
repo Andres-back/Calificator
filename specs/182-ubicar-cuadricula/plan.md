@@ -15,12 +15,13 @@
   - Ubica todas las hojas a la vez con la ruta de visión `calificacion.extraccion`, sin transacción abierta.
   - Guarda en `procedencia_json.zonas_ubicadas` con `version: 2` y `metodo: "cuadricula"`. Conserva las zonas de la Spec 175 solo donde la cuadrícula no encontró la pregunta.
 - `breakdown_service`: para el docente, cuadrícula > zona de la lectura > zona de la Spec 175. El estudiante no recibe zonas ubicadas, como antes.
-- Frontend: la zona con `metodo: "cuadricula"` se dibuja con 1 % de margen (`padQuestionRegion`). La revisión ubica automáticamente una vez por calificación y desglose. Aparece el enlace «Ubicar de nuevo» y los intentos solo cuentan para la cuadrícula.
+- Frontend: la zona con `metodo: "cuadricula"` se dibuja con 1 % de margen (`padQuestionRegion`). Con recuadro aparece el enlace «Ubicar de nuevo»; sin recuadro, el botón de la Spec 175. Los intentos solo cuentan para la cuadrícula.
 
 Descartado:
 
 - **Cambiar la lectura de calificación**: la cuadrícula roja podría tapar marcas; la calificación no se toca.
 - **Enderezar y pedir coordenadas**: falla por una pregunta.
+- **Ubicar al abrir la revisión**: rompe la regla de que revisar no escribe, que protegen unas 20 pruebas de extremo a extremo. Ubicar al calificar, en segundo plano, queda para otra spec.
 
 ## Alcance técnico
 
@@ -33,10 +34,10 @@ Descartado:
 | `frontend/src/modules/calificaciones/components/evidenceViewport.ts` | `padQuestionRegion` |
 | `frontend/src/modules/calificaciones/components/GradeEvidenceViewer.tsx` | recuadro ceñido para la cuadrícula |
 | `frontend/src/modules/calificaciones/components/GradeQuestionEvidence.tsx` | «Ubicar de nuevo» y textos |
-| `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx` | ubicación automática e intentos |
+| `frontend/src/modules/calificaciones/CalificacionesWorkspace.tsx` | intentos de la cuadrícula y textos |
 | `frontend/src/types/api.ts` | `metodo` en la zona |
 
 ## Riesgos
 
-- Costo: una llamada de visión por hoja y calificación abierta, una vez (Sonnet en producción).
+- Costo: una llamada de visión por hoja cada vez que el docente pide ubicar (Sonnet en producción), dos como máximo por calificación.
 - Si el modelo se equivoca, el docente puede ubicar de nuevo dos veces y siempre tiene la hoja completa.
