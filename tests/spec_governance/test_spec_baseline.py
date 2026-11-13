@@ -175,6 +175,7 @@ ALL_SPECS = {
     "181-ajuste-asistido",
     "182-ubicar-cuadricula",
     "183-hoja-sin-respuestas",
+    "184-camara-varias-fotos",
 }
 OWNED_SPECS = {
     name

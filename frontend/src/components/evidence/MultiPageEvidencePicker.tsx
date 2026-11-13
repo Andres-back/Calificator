@@ -11,6 +11,7 @@ import { analyzeEvidenceImage, type ImageQualityResult } from './imageQuality';
 import { CameraCapture } from './CameraCapture';
 import { openEvidenceFilePicker, prefersNativeCapture } from './nativeCapture';
 import { EvidenceScanEditor } from './EvidenceScanEditor';
+import { useCloseOnBack } from './useCloseOnBack';
 import type { CornerAssistant } from './cornerAssistance';
 
 const MAX_FILES = 10;
@@ -93,7 +94,11 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [scanRequest, setScanRequest] = useState<{ id: string; epoch: number } | null>(null);
+  const [scanRequest, setScanRequest] = useState<{ id: string; epoch: number; scan: number } | null>(null);
+  // Preparation on/off only invalidates the editor; a pending camera/file result survives it (Spec 184).
+  const scanEnabledRef = useRef(scanEnabled);
+  scanEnabledRef.current = scanEnabled;
+  const scanEpoch = useRef(0);
   const qualityQueue = useRef<(() => Promise<void>)[]>([]);
   const qualityRunning = useRef(false);
   const drainQuality = async () => {
@@ -116,12 +121,17 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       selectionCleanup.current?.();
       selectionCleanup.current = null;
     };
-  }, [contextKey, disabled, scanEnabled]);
+  }, [contextKey, disabled]);
+  useLayoutEffect(() => {
+    scanEpoch.current++;
+    setScanRequest(null);
+  }, [scanEnabled]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
   const reportError = (message: string) => onError ? onError(message) : toast.error(message);
+  const openPreparation = (id: string, epoch = contextEpoch.current) => setScanRequest({ id, epoch, scan: scanEpoch.current });
   const canSelect = (replacementId: string | null) => !disabledRef.current && mounted.current
     && !pagesRef.current.some((page) => page.file.type === 'application/pdf')
     && (replacementId ? pagesRef.current.some((page) => page.id === replacementId) : pagesRef.current.length < pageLimit);
@@ -192,9 +202,9 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
       : [...currentPages.slice(0, replacementIndex), ...additions, ...currentPages.slice(replacementIndex + 1)];
     pagesRef.current = nextPages;
     onChange(nextPages);
-    if (scanEnabled && !incomingPdf) {
+    if (scanEnabledRef.current && !incomingPdf) {
       // Quality is assessed in the same Worker decode as preview, never alongside it.
-      setScanRequest({ id: additions[0].id, epoch });
+      openPreparation(additions[0].id, epoch);
       return;
     }
     // A single serial queue, including separate file-selection gestures.
@@ -242,6 +252,10 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
   const scanPage = scanPageIndex >= 0 ? pages[scanPageIndex] : null;
   const previewIndex = pages.findIndex((page) => page.id === previewId);
   const totalMb = pages.reduce((total, page) => total + page.file.size, 0) / 1024 / 1024;
+  const scanOpen = Boolean(scanEnabled && scanPage && scanRequest?.epoch === contextEpoch.current && scanRequest.scan === scanEpoch.current && !disabled && !isPdf);
+  const cameraOpen = Boolean(cameraRequest && cameraRequest.context === contextKey && cameraRequest.epoch === contextEpoch.current && !disabled && !isPdf);
+  useCloseOnBack(scanOpen || cameraOpen, () => { setScanRequest(null); setCameraRequest(null); });
+  const unpreparedIndex = scanEnabled && !isPdf ? pages.findIndex((page) => !page.scan) : -1;
 
   return (
     <div className="space-y-4">
@@ -268,7 +282,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
               <p className="truncate text-sm font-semibold text-fg" title={page.file.name}>{page.file.name}</p>
               {scanEnabled && !isPdf && <div className="space-y-2">
                 <p className="text-xs font-semibold text-muted">{page.scan?.decision === 'prepared' ? 'Preparada y revisada' : page.scan?.decision === 'original' ? 'Se enviará la foto original' : 'Sin revisar · prepara la hoja o elige la original'}</p>
-                <button type="button" disabled={disabled} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-300 px-3 text-sm font-semibold text-brand-700 dark:text-brand-200" onClick={() => setScanRequest({ id: page.id, epoch: contextEpoch.current })}><ScanLine className="h-4 w-4" /> Preparar hoja {index + 1}</button>
+                <button type="button" disabled={disabled} className="focus-ring flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-brand-300 px-3 text-sm font-semibold text-brand-700 dark:text-brand-200" onClick={() => openPreparation(page.id)}><ScanLine className="h-4 w-4" /> Preparar hoja {index + 1}</button>
                 {!page.scan && <button type="button" disabled={disabled} className="focus-ring min-h-11 text-sm font-semibold underline" onClick={() => updatePage(page.id, { scan: { decision: 'original' }, quality: page.quality ?? null })}>Usar original sin preparar</button>}
               </div>}
               {page.quality?.status === 'good' && (
@@ -297,21 +311,25 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
                   <button type="button" disabled={disabled || index === pages.length - 1} onClick={() => move(index, 1)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2 disabled:opacity-35" aria-label={`Bajar hoja ${index + 1}`}><ArrowDown className="h-4 w-4" /></button>
                   <button type="button" disabled={disabled} onClick={() => updatePage(page.id, { rotation: ((page.rotation + 90) % 360) as EvidenceRotation, ...(scanEnabled ? { scan: undefined, quality: undefined } : {}) })} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2" aria-label={`Rotar hoja ${index + 1}`}><RotateCw className="h-4 w-4" /></button>
                 </>}
-                <button type="button" disabled={scanEnabled && disabled} onClick={() => scanEnabled && !isPdf ? setScanRequest({ id: page.id, epoch: contextEpoch.current }) : setPreviewId(page.id)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2" aria-label={isPdf ? 'Ampliar PDF' : `Ampliar hoja ${index + 1}`}><ZoomIn className="h-4 w-4" /></button>
+                <button type="button" disabled={scanEnabled && disabled} onClick={() => scanEnabled && !isPdf ? openPreparation(page.id) : setPreviewId(page.id)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-border hover:bg-surface-2" aria-label={isPdf ? 'Ampliar PDF' : `Ampliar hoja ${index + 1}`}><ZoomIn className="h-4 w-4" /></button>
                 <button type="button" disabled={disabled} onClick={() => remove(page.id)} className="focus-ring grid min-h-11 min-w-11 place-items-center rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-500/30 dark:hover:bg-rose-500/10" aria-label={isPdf ? 'Quitar PDF' : `Quitar hoja ${index + 1}`}><Trash2 className="h-4 w-4" /></button>
               </div>
             </div>
           </li>)}
         </ol>
+        {unpreparedIndex >= 0 && !scanOpen && <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <p>Prepara la hoja {unpreparedIndex + 1} o usa la original para poder enviar.</p>
+          <button type="button" disabled={disabled} className="focus-ring flex min-h-11 items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 font-semibold text-amber-900 disabled:opacity-50 dark:border-amber-500/40 dark:bg-white/10 dark:text-amber-100" onClick={() => openPreparation(pages[unpreparedIndex].id)}><ScanLine className="h-4 w-4" /> Abrir hoja {unpreparedIndex + 1}</button>
+        </div>}
         {!isPdf && pages.length > 1 && <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">Revisa el orden: Xali leerá primero la hoja 1 y continuará hasta la hoja {pages.length}.</p>}
       </>}
       <PreviewModal page={previewIndex >= 0 ? pages[previewIndex] : null} pageNumber={previewIndex + 1} onClose={() => setPreviewId(null)} />
-      {scanEnabled && scanPage && scanRequest?.epoch === contextEpoch.current && !disabled && !isPdf && <EvidenceScanEditor key={`${scanRequest.epoch}:${scanPage.id}`} file={scanPage.file} rotation={scanPage.rotation} previous={scanPage.scan} suggestCorners={suggestCorners} pageNumber={scanPageIndex + 1} onClose={() => setScanRequest(null)} onAccept={(selection, quality) => {
-        if (scanRequest.epoch !== contextEpoch.current || disabledRef.current || !pagesRef.current.some((page) => page.id === scanPage.id && page.file === scanPage.file)) return;
+      {scanOpen && scanPage && scanRequest && <EvidenceScanEditor key={`${scanRequest.epoch}:${scanPage.id}`} file={scanPage.file} rotation={scanPage.rotation} previous={scanPage.scan} suggestCorners={suggestCorners} pageNumber={scanPageIndex + 1} onClose={() => setScanRequest(null)} onAccept={(selection, quality) => {
+        if (scanRequest.epoch !== contextEpoch.current || scanRequest.scan !== scanEpoch.current || disabledRef.current || !pagesRef.current.some((page) => page.id === scanPage.id && page.file === scanPage.file)) return;
         updatePage(scanPage.id, { scan: selection, quality: quality ?? scanPage.quality ?? null, rotation: selection.decision === 'prepared' ? selection.recipe.rotation : scanPage.rotation });
         setScanRequest(null);
       }} />}
-      {cameraRequest && cameraRequest.context === contextKey && cameraRequest.epoch === contextEpoch.current && !disabled && !isPdf && <CameraCapture key={cameraRequest.id}
+      {cameraOpen && cameraRequest && <CameraCapture key={cameraRequest.id}
         preferredCameraId={preferredCameraId} onCameraChange={setPreferredCameraId}
         onClose={() => setCameraRequest(null)}
         onUpload={() => selectFiles(false, cameraRequest.replacementId)}

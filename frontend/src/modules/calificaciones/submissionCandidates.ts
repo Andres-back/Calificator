@@ -4,6 +4,11 @@ export function summarizeCaptureRegistration(students: { id: string }[], registe
   return { total: group.size, registered: registered.size };
 }
 
+/** Waits for one fresh roster check; later background refetches keep it (Spec 184). */
+export function uploadEligibilityVerified(query: { isSuccess: boolean; isFetching: boolean; isFetchedAfterMount: boolean }) {
+  return query.isSuccess && (query.isFetchedAfterMount || !query.isFetching);
+}
+
 export function excludeSubmittedStudents<T extends { id: string }>(
   students: T[],
   submittedStudentIds: Iterable<string>,

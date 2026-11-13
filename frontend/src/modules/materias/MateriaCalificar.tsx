@@ -140,7 +140,10 @@ function GradingUploadPanelContent({ evaluationId, evaluationName, materiaName, 
   const [error, setError] = useState('');
   const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [scanScope, setScanScope] = useState<string | null>(null);
-  const capability = useEvidenceScanCapability(evaluationId, studentId, eligibilityVerified);
+  // Once verified for this student, a background roster check must not switch preparation off mid-capture (Spec 184).
+  const [eligibilitySeen, setEligibilitySeen] = useState(eligibilityVerified);
+  if (eligibilityVerified && !eligibilitySeen) setEligibilitySeen(true);
+  const capability = useEvidenceScanCapability(evaluationId, studentId, eligibilitySeen);
   const scanEnabled = pages.length ? scanScope === capability.scope : capability.available;
   const usingScan = scanEnabled && pages.length > 0 && pages.every((page) => page.file.type.startsWith('image/'));
   const sending = useRef(false);
@@ -179,7 +182,8 @@ function GradingUploadPanelContent({ evaluationId, evaluationName, materiaName, 
     return () => onDirtyChange(false);
   }, [onDirtyChange, pages.length, upload.isPending]);
   const student = students.find((item) => item.id === studentId);
-  const qualityPending = pages.some((page) => page.file.type.startsWith('image/') && page.quality === undefined);
+  // A page waiting for preparation is not being checked: the picker names it instead (Spec 184).
+  const qualityPending = pages.some((page) => page.file.type.startsWith('image/') && page.quality === undefined && !(usingScan && !page.scan));
   const canSend = eligibilityVerified && Boolean(student) && pages.length > 0 && !qualityPending && !hasUnusableEvidence(pages) && !upload.isPending
     && (!usingScan || scanPagesReviewed(pages));
   const submit = () => {
@@ -220,7 +224,6 @@ function GradingUploadPanelContent({ evaluationId, evaluationName, materiaName, 
       }}>Continuar sin escaneo</Button>
       <p className="text-sm leading-6 text-muted">Conserva estas fotos en la selección y usa el envío habitual. No se guardará la copia original adicional del escáner. Todavía debes pulsar «Enviar a calificar».</p>
     </div>}
-    {usingScan && !scanPagesReviewed(pages) && <p role="status" className="text-sm text-muted">Revisa cada hoja o elige usar su foto original antes de enviar.</p>}
     {error && <p role="alert" className="text-sm text-rose-600 dark:text-rose-300">{error} Conservamos las hojas para que puedas corregir o reintentar.</p>}
     {qualityPending && <p role="status" className="text-sm text-muted">Comprobando la calidad de las fotos…</p>}
     {pages.length > 0 && <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm">
