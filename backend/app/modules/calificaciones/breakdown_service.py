@@ -25,7 +25,7 @@ from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
 from app.modules.users.models import User
 from app.shared.enums import CalificacionEstado
-from app.services.answer_evidence_regions import attach_answer_regions, located_answer_regions, public_answer_regions
+from app.services.answer_evidence_regions import GRID_METHOD, attach_answer_regions, located_answer_regions, public_answer_regions
 
 
 _QUESTION_IN_ALERT = re.compile(r"\b(?:pregunta\s*|p\s*\.?\s*)(\d+)\b", re.IGNORECASE)
@@ -55,11 +55,14 @@ async def get_active_breakdown(db: AsyncSession, calificacion_id: UUID, *, lock:
 
 
 def _component_dict(component: CalificacionComponente, *, student: bool = False, reveal_key: bool = False, located: list[dict] | None = None) -> dict:
-    # Spec 175: una zona ubicada después de calificar solo completa a la que no trae la suya.
+    # Spec 175: una zona ubicada después de calificar completa a la que no trae la suya.
+    # Spec 182: la ubicada con la cuadrícula prevalece; la de la lectura puede ser una estimación.
     own = [] if student else public_answer_regions((component.evidencia_json or {}).get("regiones"))
-    regions = own or ([] if student else list(located or []))
+    located = [] if student else list(located or [])
+    grid = [region for region in located if region.get("metodo") == GRID_METHOD]
+    regions = grid or own or located
     pages = list((component.evidencia_json or {}).get("paginas") or [])
-    if regions and not own:
+    if regions and regions is not own:
         pages = sorted({*pages, *(region["pagina"] for region in regions)})
     data = {
         "id": component.id,

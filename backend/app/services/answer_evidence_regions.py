@@ -7,6 +7,9 @@ import re
 from uuid import UUID
 
 FRAME = "pagina_canonica_orientada"
+# Spec 182: zona ubicada con la cuadrícula rotulada; prevalece sobre la de la lectura.
+GRID_METHOD = "cuadricula"
+GRID_VERSION = 2
 MAX_REGIONS = 8
 MAX_PAGES = 20
 
@@ -82,7 +85,10 @@ def public_answer_regions(value: object) -> list[dict]:
         normalized = sanitize_answer_regions([{"page": item.get("pagina"), "bbox": item.get("bbox"), "frame": item.get("marco")}])
         if normalized:
             region = normalized[0]
-            result.append({"pagina": region["page"], "bbox": region["bbox"], "marco": FRAME, "evidencia_version": item["evidencia_version"]})
+            public = {"pagina": region["page"], "bbox": region["bbox"], "marco": FRAME, "evidencia_version": item["evidencia_version"]}
+            if item.get("metodo") == GRID_METHOD:
+                public["metodo"] = GRID_METHOD
+            result.append(public)
     return result
 
 
@@ -135,7 +141,16 @@ def located_answer_regions(provenance: object) -> dict[str, list[dict]]:
     return result
 
 
+def grid_located(provenance: object) -> bool:
+    """Spec 182: las zonas guardadas ya se ubicaron con la cuadrícula."""
+    stored = provenance.get(LOCATED_KEY) if isinstance(provenance, dict) else None
+    return isinstance(stored, dict) and stored.get("version") == GRID_VERSION and stored.get("metodo") == GRID_METHOD
+
+
 def location_attempts(provenance: object) -> int:
+    """Intentos del método vigente: los de la Spec 175 no cuentan para la cuadrícula."""
+    if not grid_located(provenance):
+        return 0
     stored = provenance.get(LOCATED_KEY) if isinstance(provenance, dict) else None
     attempts = stored.get("intentos") if isinstance(stored, dict) else 0
     return attempts if type(attempts) is int and attempts > 0 else 0

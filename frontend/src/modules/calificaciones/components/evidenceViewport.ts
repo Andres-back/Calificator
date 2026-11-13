@@ -47,6 +47,15 @@ export function evidenceImageLayout(size: EvidenceDimensions, viewport: Evidence
  * supone dónde está el enunciado: el recuadro crece a lo largo de su lado mayor (el sentido del texto)
  * y, con un margen, a ambos lados del menor (los renglones vecinos de la misma pregunta).
  */
+/** Spec 182: una zona de la cuadrícula ya abarca la pregunta; solo se separa un poco del texto. */
+export function padQuestionRegion(box: unknown, pad = 0.01): EvidenceBox | undefined {
+  if (!validEvidenceBox(box)) return undefined;
+  const [x, y, width, height] = box;
+  const left = Math.max(0, x - pad);
+  const top = Math.max(0, y - pad);
+  return [left, top, Math.min(1, x + width + pad) - left, Math.min(1, y + height + pad) - top];
+}
+
 export function expandAnswerRegion(box: unknown): EvidenceBox | undefined {
   if (!validEvidenceBox(box)) return undefined;
   const [x, y, width, height] = box;

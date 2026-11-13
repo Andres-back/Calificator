@@ -2,24 +2,24 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type P
 import { Expand, Minimize2, Move, RotateCcw, RotateCw, ScanSearch, ZoomIn, ZoomOut } from 'lucide-react';
 import { Modal } from '@/components/ui';
 import {
-  ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, expandAnswerRegion, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport,
+  ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, expandAnswerRegion, padQuestionRegion, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport,
   type EvidenceBox, type EvidenceDimensions, type EvidenceRotation, type EvidenceViewport,
 } from './evidenceViewport';
 
 type Point = { x: number; y: number };
 /** `focusSignal` cambia cada vez que el docente pide volver a la zona de la respuesta. */
-type Props = { src: string; label: string; region?: EvidenceBox; sheetView?: boolean; focusSignal?: number };
+type Props = { src: string; label: string; region?: EvidenceBox; wholeQuestion?: boolean; sheetView?: boolean; focusSignal?: number };
 const initial: EvidenceViewport = { zoom: 1, centerX: 0.5, centerY: 0.5 };
 const controlClass = 'focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-semibold text-fg disabled:opacity-50';
 
-function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = false, sheetView = false, focusSignal = 0, extraControl }: Props & { rotation: EvidenceRotation; onRotate: (direction: -1 | 1) => void; expanded?: boolean; extraControl?: ReactNode }) {
+function EvidenceCanvas({ src, label, region, wholeQuestion = false, rotation, onRotate, expanded = false, sheetView = false, focusSignal = 0, extraControl }: Props & { rotation: EvidenceRotation; onRotate: (direction: -1 | 1) => void; expanded?: boolean; extraControl?: ReactNode }) {
   const frame = useRef<HTMLDivElement>(null);
   const instructionId = useId();
   const [naturalSize, setSize] = useState<EvidenceDimensions>({ width: 0, height: 0, imageWidth: 0, imageHeight: 0 });
   const swapped = rotation % 180 !== 0;
   const size = useMemo(() => swapped ? { ...naturalSize, imageWidth: naturalSize.imageHeight, imageHeight: naturalSize.imageWidth } : naturalSize, [naturalSize, swapped]);
   // Spec 180: el recuadro abarca la pregunta con un margen, no solo la marca que guardó el lector.
-  const orientedRegion = useMemo(() => { const shown = expandAnswerRegion(region); return shown ? rotateEvidenceBox(shown, rotation) : undefined; }, [region, rotation]);
+  const orientedRegion = useMemo(() => { const shown = wholeQuestion ? padQuestionRegion(region) : expandAnswerRegion(region); return shown ? rotateEvidenceBox(shown, rotation) : undefined; }, [region, rotation, wholeQuestion]);
   const [viewport, setViewport] = useState(initial);
   const currentViewport = useRef(viewport);
   const [loaded, setLoaded] = useState(false);
@@ -171,7 +171,7 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
         style={regionRect} />}
     </div>
     {sheetView && tools}
-    {validEvidenceBox(region) && <p className="text-xs leading-5 text-muted">Ubicación sugerida: el recuadro marca dónde está la respuesta. Consulta la hoja completa para comprobar el contexto.</p>}
+    {validEvidenceBox(region) && <p className="text-xs leading-5 text-muted">Ubicación sugerida: el recuadro marca dónde está la pregunta. Consulta la hoja completa para comprobar el contexto.</p>}
   </div>;
 }
 
@@ -180,11 +180,11 @@ export function GradeEvidenceViewer(props: Props) {
   return <EvidenceViewerSession key={`${props.src}:${props.region?.join(',') ?? 'hoja'}`} {...props} />;
 }
 
-function EvidenceViewerSession({ src, label, region, sheetView = false, focusSignal }: Props) {
+function EvidenceViewerSession({ src, label, region, wholeQuestion, sheetView = false, focusSignal }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [rotation, setRotation] = useState<EvidenceRotation>(0);
   const rotate = (direction: -1 | 1) => setRotation(value => ((value + 360 + direction * 90) % 360) as EvidenceRotation);
-  const canvasProps = { src, label, region, rotation, onRotate: rotate, focusSignal };
+  const canvasProps = { src, label, region, wholeQuestion, rotation, onRotate: rotate, focusSignal };
   return <div className={sheetView ? 'min-w-0 space-y-2' : 'min-w-0 space-y-2 rounded-xl border border-border bg-surface-2 p-2 sm:p-3'}>
     {sheetView && !expanded && <EvidenceCanvas {...canvasProps} sheetView extraControl={<button type="button" className={controlClass} aria-label="Ampliar evidencia" title="Ampliar evidencia" onClick={() => setExpanded(true)}><Expand aria-hidden="true" className="h-4 w-4" /></button>} />}
     {!sheetView && !expanded && <EvidenceCanvas {...canvasProps} extraControl={<button type="button" className={controlClass} aria-label="Ampliar evidencia" title="Ampliar evidencia" onClick={() => setExpanded(true)}><Expand aria-hidden="true" className="h-4 w-4" /></button>} />}
