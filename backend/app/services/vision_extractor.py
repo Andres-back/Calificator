@@ -135,10 +135,14 @@ class VisionExtraction(BaseModel):
     preparation_ms: int = 0
     parsing_ms: int = 0
 
-    def legacy_payload(self) -> dict[str, Any]:
-        page_text = "\n\n".join(
+    def printed_text(self) -> str:
+        """Lo transcrito de las hojas, sin las marcas observadas del estudiante."""
+        return "\n\n".join(
             f"=== PÁGINA {p.page} ===\n{p.page_text}" for p in self.pages if p.page_text
         )
+
+    def legacy_payload(self) -> dict[str, Any]:
+        page_text = self.printed_text()
         visual_lines = [
             (
                 f"Pregunta {answer.question_number} ("
@@ -176,6 +180,11 @@ class VisionExtraction(BaseModel):
             "rotation_applied": self.rotation_applied,
             "vision_extraction": self.model_dump(mode="json"),
         }
+
+
+DOCUMENT_TRANSCRIPTION_RULES = """En page_text transcribe todo el texto de la hoja impresa, literal, completo y en el orden
+en que se lee, con un elemento por renglón. No copies en page_text lo escrito o marcado por el
+estudiante: regístralo en answers. En warnings indica lo que no pudiste leer. No inventes texto."""
 
 
 class VisionExtractionError(RuntimeError):
@@ -411,7 +420,17 @@ class VisionExtractor:
         )
         return list(dict.fromkeys(key for key in (self.api_key, *configured) if key))
 
+    def _document_prompt(self, page: int, total: int) -> str:
+        """Leer una hoja para digitalizarla no es buscar respuestas: se transcribe lo impreso."""
+        rules = (getattr(self, "_document_instructions", None) or DOCUMENT_TRANSCRIPTION_RULES).strip()
+        return f"""Eres VisionExtractor. Transcribe la hoja impresa de una evaluación escolar para digitalizarla. Página {page} de {total}.
+{rules}
+Devuelve SOLO JSON:
+{{"student_detected":false,"page_role":"unknown","document_quality":0.0,"page_text":"","answers":[{{"question_id":null,"question_number":1,"present":true,"answer":null,"visual_description":null,"confidence":0.0,"legible":false,"blank":false,"needs_review":true,"correction_detected":false}}],"warnings":[]}}"""
+
     def _prompt(self, blueprint: dict[str, Any], page: int, total: int, purpose: str) -> str:
+        if purpose == "evaluation_document":
+            return self._document_prompt(page, total)
         context = build_extraction_context(blueprint)
         action = "Extrae respuestas sin calificarlas." if purpose == "student_response" else "Transcribe preguntas, opciones, instrucciones y respuestas visibles."
         drawing_rule = (
@@ -998,8 +1017,9 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
             warnings=["Página no extraída automáticamente."],
         )
 
-    async def extract(self, content: bytes, mime: str, *, blueprint: dict | None = None, purpose: Literal["student_response", "evaluation_document"] = "student_response", canonical_pages: CanonicalEvidencePages | None = None) -> VisionExtraction:
+    async def extract(self, content: bytes, mime: str, *, blueprint: dict | None = None, purpose: Literal["student_response", "evaluation_document"] = "student_response", canonical_pages: CanonicalEvidencePages | None = None, document_instructions: str | None = None) -> VisionExtraction:
         started = time.monotonic()
+        self._document_instructions = document_instructions if purpose == "evaluation_document" else None
         preparation_started = time.monotonic()
         if canonical_pages is not None and purpose != "student_response":
             raise VisionExtractionError("vision_invalid_file")

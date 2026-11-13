@@ -136,7 +136,8 @@ def test_a_page_that_cannot_be_loaded_is_only_warned():
 def test_reread_prompt_asks_for_literal_text():
     assert "literal" in rc.LITERAL_READING_PROMPT.lower()
     assert "(lectura)" in rc.LITERAL_READING_PROMPT
-    assert "texto_extraido vacío" in rc.LITERAL_READING_PROMPT
+    # Spec 179: el prompt habla el contrato que interpreta el lector (page_text y answers).
+    assert "answers como lista vacía" in rc.LITERAL_READING_PROMPT
 
 
 def test_pdf_pages_render_one_at_a_time():

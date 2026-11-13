@@ -652,7 +652,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b6f7791ccf437aef9f491442bdcb73c38cd728f0e890ecc332fb6d15cdb151e9",
+  "source_digest": "39b7c29199fc23dce875c367b0ad5b925fb26fb718b717c3a386721286fe2feb",
   "surfaces": [
     {
       "actors": [
@@ -23606,6 +23606,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_digitalization_queue.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_digitalization_reading_prompt.py"
         },
         {
           "level": "unit",
@@ -55758,6 +55764,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_digitalization_reading_prompt.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_document_grading_context.py"
         },
         {
@@ -57558,6 +57570,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_digitalization_queue.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_digitalization_reading_prompt.py"
         },
         {
           "level": "unit",

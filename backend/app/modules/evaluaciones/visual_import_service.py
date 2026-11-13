@@ -26,13 +26,13 @@ from app.modules.evaluaciones.visual_service import read_resource_bytes, stage_r
 
 Persist = Callable[[dict], Awaitable[None]]
 VISUAL_PAGE_PROMPT = DIGITALIZATION_VISION_PROMPT + """
-Además conserva en texto_preguntas TODO el contexto impreso para responder:
+Además conserva en page_text TODO el contexto impreso para responder:
 pasajes compartidos, tablas con cada fila/columna, encabezados, unidades, fórmulas,
 dibujos y gráficas con sus ejes, etiquetas y valores realmente legibles.
 Describe estos estímulos separados de las preguntas. No conviertas un dibujo en
 una pregunta adicional ni inventes valores o contenido oculto. No uses escritura,
 marcas ni respuestas del estudiante para completar una tabla o una solución.
-Si falta un detalle, indícalo en alertas para revisión; no lo adivines.
+Si falta un detalle, indícalo en warnings para revisión; no lo adivines.
 """
 
 
