@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-import { excludeSubmittedStudents, summarizeCaptureRegistration } from '@/modules/calificaciones/submissionCandidates';
+import { excludeSubmittedStudents, summarizeCaptureRegistration, uploadEligibilityVerified } from '@/modules/calificaciones/submissionCandidates';
 import { GradingUploadPanel } from './MateriaCalificar';
 import type { EvidencePage } from '@/components/evidence/evidencePayload';
 
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   scan: false,
 }));
 vi.mock('@/components/evidence/useEvidenceScanCapability', () => ({
-  useEvidenceScanCapability: () => ({ available: mocks.scan, scope: 'teacher:evaluation-1:student-1' }),
+  useEvidenceScanCapability: (_evaluationId: string, _studentId: string, enabled = true) => ({ available: mocks.scan && enabled, scope: 'teacher:evaluation-1:student-1' }),
 }));
 
 vi.mock('@/modules/calificaciones/api', () => ({ calificarFoto: mocks.calificar }));
@@ -22,8 +22,8 @@ vi.mock('@/lib/queryClient', () => ({
   queryClient: { invalidateQueries: mocks.invalidateQueries },
 }));
 vi.mock('@/components/evidence/MultiPageEvidencePicker', () => ({
-  MultiPageEvidencePicker: ({ disabled, onChange }: { disabled: boolean; onChange: (pages: unknown[]) => void }) => (
-    <div data-testid="evidence-picker" data-disabled={String(disabled)}>
+  MultiPageEvidencePicker: ({ disabled, scanEnabled, onChange }: { disabled: boolean; scanEnabled?: boolean; onChange: (pages: unknown[]) => void }) => (
+    <div data-testid="evidence-picker" data-disabled={String(disabled)} data-scan={String(Boolean(scanEnabled))}>
       <button
         type="button"
         disabled={disabled}
@@ -274,10 +274,49 @@ describe('GradingUploadPanel student picker', () => {
     expect(onUploadAccepted).not.toHaveBeenCalled();
   });
 
+  it('184 una hoja pendiente de preparar no se presenta como «Comprobando la calidad»', async () => {
+    const user = userEvent.setup();
+    mocks.scan = true;
+    mocks.pages = [{ ...mocks.pages[0], id: crypto.randomUUID(), scan: undefined, quality: undefined }];
+    renderPanel({ studentId: 'student-1' });
+    await user.click(screen.getByRole('button', { name: 'Añadir hoja de prueba' }));
+    expect(screen.queryByText(/Comprobando la calidad/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
+    mocks.pages = [{ ...mocks.pages[0], scan: { decision: 'original' }, quality: null }];
+    await user.click(screen.getByRole('button', { name: 'Añadir hoja de prueba' }));
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeEnabled();
+  });
+
+  it('184 la preparación no se apaga mientras se vuelve a consultar quién falta', () => {
+    mocks.scan = true;
+    const client = new QueryClient();
+    const panel = (eligibilityVerified: boolean) => <QueryClientProvider client={client}><GradingUploadPanel
+      evaluationId="evaluation-1" evaluationName="Multiplicación" materiaName="Matemáticas"
+      eligibilityVerified={eligibilityVerified} students={[{ id: 'student-1', nombre: 'Estudiante 1' }]} studentId="student-1"
+      onStudentChange={vi.fn()} onDirtyChange={vi.fn()} onUploadAccepted={vi.fn()} /></QueryClientProvider>;
+    const view = render(panel(true));
+    expect(screen.getByTestId('evidence-picker')).toHaveAttribute('data-scan', 'true');
+    view.rerender(panel(false));
+    expect(screen.getByTestId('evidence-picker')).toHaveAttribute('data-scan', 'true');
+    expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
+  });
+
   it('does not enable sending while candidates are being revalidated', () => {
     renderPanel({ studentId: 'student-1', eligibilityVerified: false });
     expect(screen.getByRole('button', { name: 'Enviar a calificar' })).toBeDisabled();
     expect(screen.getByRole('combobox')).toBeDisabled();
+  });
+});
+
+describe('uploadEligibilityVerified', () => {
+  it('184 una consulta de fondo no retira la verificación ya hecha en esta pantalla', () => {
+    expect(uploadEligibilityVerified({ isSuccess: true, isFetching: true, isFetchedAfterMount: true })).toBe(true);
+    expect(uploadEligibilityVerified({ isSuccess: true, isFetching: false, isFetchedAfterMount: true })).toBe(true);
+  });
+  it('184 sigue esperando la primera consulta fresca y se apaga si la consulta falla', () => {
+    expect(uploadEligibilityVerified({ isSuccess: true, isFetching: true, isFetchedAfterMount: false })).toBe(false);
+    expect(uploadEligibilityVerified({ isSuccess: false, isFetching: false, isFetchedAfterMount: true })).toBe(false);
+    expect(uploadEligibilityVerified({ isSuccess: false, isFetching: true, isFetchedAfterMount: false })).toBe(false);
   });
 });
 

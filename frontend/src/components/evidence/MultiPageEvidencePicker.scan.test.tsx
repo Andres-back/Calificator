@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { StrictMode, useState } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MultiPageEvidencePicker } from './MultiPageEvidencePicker';
@@ -97,6 +97,68 @@ describe('preparación opt-in del paquete', () => {
     expect(onChange).toHaveBeenCalledOnce();
     expect(pages[0].file).toBe(first);
     expect(pages[0].scan).toBeUndefined();
+  });
+  it.each([true, false])('184 conserva la foto nativa aunque la preparación cambie con la cámara abierta (vuelve a %s)', async (finalScan) => {
+    const agent = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Android');
+    try {
+      const onChange = vi.fn();
+      const view = render(<MultiPageEvidencePicker scanEnabled contextKey="a" pages={[]} onChange={onChange} />);
+      fireEvent.click(screen.getByRole('button', { name: /^Tomar foto/ }));
+      const camera = document.querySelector('input[capture]') as HTMLInputElement;
+      view.rerender(<MultiPageEvidencePicker scanEnabled={false} contextKey="a" pages={[]} onChange={onChange} />);
+      view.rerender(<MultiPageEvidencePicker scanEnabled={finalScan} contextKey="a" pages={[]} onChange={onChange} />);
+      expect(camera.isConnected).toBe(true);
+      fireEvent.change(camera, { target: { files: [first] } });
+      expect(onChange).toHaveBeenCalledOnce();
+      const pages = onChange.mock.calls[0][0] as EvidencePage[];
+      expect(pages[0].file).toBe(first);
+      view.rerender(<MultiPageEvidencePicker scanEnabled={finalScan} contextKey="a" pages={pages} onChange={onChange} />);
+      if (finalScan) expect(screen.getByRole('dialog', { name: 'Preparar hoja 1' })).toBeInTheDocument();
+      else await waitFor(() => expect(captured.analyze).toHaveBeenCalledOnce());
+    } finally { agent.mockRestore(); }
+  });
+  it('184 una hoja que se cerró sin preparar dice cuál falta y permite reabrirla', () => {
+    render(<Harness />); selectFiles([first, second]);
+    fireEvent.click(screen.getByRole('button', { name: 'Usar foto original' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Prepara la hoja 2 o usa la original');
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir hoja 2' }));
+    expect(screen.getByRole('dialog', { name: 'Preparar hoja 2' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Usar foto original' }));
+    expect(screen.queryByText(/Prepara la hoja/)).not.toBeInTheDocument();
+  });
+  it('184 el gesto Atrás cierra la preparación sin salir de la pantalla ni perder la hoja', async () => {
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    const before = window.location.href;
+    expect(JSON.stringify(window.history.state)).not.toContain('__evidenceOverlay');
+    render(<Harness />); selectFiles([first]);
+    expect(screen.getByRole('dialog', { name: 'Preparar hoja 1' })).toBeInTheDocument();
+    expect(JSON.stringify(window.history.state)).toContain('__evidenceOverlay');
+    act(() => window.history.back());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(window.location.href).toBe(before);
+    expect(screen.getByText('1 hoja seleccionada')).toBeInTheDocument();
+    expect(screen.getByText(/Prepara la hoja 1/)).toBeInTheDocument();
+  });
+  it('184 en modo estricto (doble montaje) Atrás también cierra la preparación', async () => {
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    render(<StrictMode><Harness /></StrictMode>); selectFiles([first]);
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    expect(screen.getByRole('dialog', { name: 'Preparar hoja 1' })).toBeInTheDocument();
+    expect(JSON.stringify(window.history.state)).toContain('__evidenceOverlay');
+    act(() => window.history.back());
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByText('1 hoja seleccionada')).toBeInTheDocument();
+  });
+  it('184 cerrar la preparación con sus botones devuelve el historial a como estaba', async () => {
+    render(<Harness />); selectFiles([first]);
+    const opened = window.history.state;
+    expect(opened).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Volver sin cambios' }));
+    await waitFor(() => expect(window.history.state).not.toEqual(opened));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir hoja 1' }));
+    expect(screen.getByRole('dialog', { name: 'Preparar hoja 1' })).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByRole('dialog', { name: 'Preparar hoja 1' })).toBeInTheDocument();
   });
   it('la calidad legacy de varias selecciones también se decodifica en serie', async () => {
     let finish!: (result: null) => void;

@@ -64,7 +64,7 @@ import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
 import { buildReviewTriage, hasVerifierReviewSignals } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
-import { excludeSubmittedStudents, summarizeCaptureRegistration } from './submissionCandidates';
+import { excludeSubmittedStudents, summarizeCaptureRegistration, uploadEligibilityVerified } from './submissionCandidates';
 import { clearTeacherReviewResume, readTeacherReviewResume, saveTeacherReviewResume } from './teacherReviewResume';
 import { TieDecisionField } from './components/TieDecisionField';
 import { effectiveGradeScore, formatGradeScore, formatScoreDetail, gradePresentation, isGradeProcessing, reviewRowStatus, tieOptions, type ReviewRowTone } from './gradePresentation';
@@ -2110,6 +2110,7 @@ function GradingCenter() {
       ...(acceptedUploads[evalId] ?? []),
     ],
   ), [acceptedUploads, estudiantes, evalId, uploadGradesQuery.data]);
+  const uploadEligible = uploadEligibilityVerified(uploadGradesQuery);
   const selectedStudentReference = useQuery({
     queryKey: ['review-student', evalId, selectedStudentId],
     queryFn: ({ signal }) => getEvaluationReview(evalId, { estudiante_id: selectedStudentId! }, signal),
@@ -2402,7 +2403,7 @@ function GradingCenter() {
         <p role="status" className="text-sm text-muted">{selectedStudentReference.isLoading ? 'Consultando entrega…' : selectedStudentReference.error ? 'No se pudo consultar la entrega. Actualiza la lista.' : selectedRow ? 'Aún no tiene una calificación. Puedes añadir su entrega o establecer una nota manual.' : 'Este estudiante no pertenece a la evaluación seleccionada.'}</p>
         {canGrade && selectedRow && <div className="flex flex-wrap gap-2"><Button onClick={() => changeContext({ modo: 'carga' })}>Añadir su entrega</Button><Button variant="outline" onClick={() => setManualGradeOpen(true)}>Establecer nota</Button></div>}
       </Card>}
-      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isFetching && (
+      {mode === 'carga' && canGrade && selectedEval && uploadGradesQuery.isFetching && !uploadEligible && (
         <Card className="mx-4 mb-4 p-4" role="status">
           <p className="text-sm text-muted">Consultando quiénes aún necesitan entregar evidencia…</p>
         </Card>
@@ -2425,7 +2426,7 @@ function GradingCenter() {
         ])}
         suggestNextStudent={Boolean(acceptedUploadNames[evalId])}
         evaluationName={selectedEval.nombre} materiaName={selectedMateria?.nombre ?? 'Materia seleccionada'}
-        eligibilityVerified={uploadGradesQuery.isSuccess && !uploadGradesQuery.isFetching}
+        eligibilityVerified={uploadEligible}
         onStudentChange={(id) => changeContext({ estudiante: id, calificacion: null, pregunta: null, hoja: null })}
         onDirtyChange={updateDirty}
         onUploadAccepted={(studentId, name) => {
