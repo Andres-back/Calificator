@@ -35,12 +35,13 @@ describe('GradeEvidenceViewer', () => {
     const focused = { width: outline.style.width, left: outline.style.left, top: outline.style.top };
     // 178: el enfoque no pasa de 250 %, para que se vea la pregunta con sus opciones y no solo la marca.
     expect(screen.getByLabelText('Nivel de ampliación')).toHaveTextContent('250 %');
-    expect(parseFloat(focused.width)).toBeCloseTo(200, 0);
+    // 180: el recuadro abarca la pregunta con margen: el 70 % del ancho de la hoja.
+    expect(parseFloat(focused.width)).toBeCloseTo(350, 0);
     expect(parseFloat(focused.left)).toBeGreaterThanOrEqual(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver hoja completa' }));
     expect(screen.getByText('100 %')).toBeInTheDocument();
-    expect(parseFloat(screen.getByTestId('evidence-region-outline').style.width)).toBeLessThan(120);
+    expect(parseFloat(screen.getByTestId('evidence-region-outline').style.width)).toBeCloseTo(140, 0);
 
     view.rerender(<GradeEvidenceViewer {...props} focusSignal={1} />);
     const again = screen.getByTestId('evidence-region-outline');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
+import { ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, expandAnswerRegion, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
 
 const dimensions = { width: 400, height: 300, imageWidth: 800, imageHeight: 1200 };
 const initial = { zoom: 1, centerX: 0.5, centerY: 0.5 };
@@ -100,5 +100,42 @@ describe('178 enfoque de una respuesta con la pregunta a la vista', () => {
 
   it('una zona grande que ya cabe con menos aumento no se amplía hasta el límite', () => {
     expect(focusEvidenceRegion(dimensions, [0.05, 0.05, 0.9, 0.9], ANSWER_FOCUS_MAX_ZOOM).zoom).toBeLessThan(1.2);
+  });
+});
+
+describe('180 recuadro que abarca la pregunta', () => {
+  const close = (actual: number[] | undefined, expected: number[]) => expected.forEach((value, index) => expect(actual![index]).toBeCloseTo(value, 5));
+
+  it('en una hoja derecha crece a lo largo del renglón y a ambos lados, arriba y abajo', () => {
+    // Fila de opciones: 30 % del ancho y 5 % del alto de la hoja.
+    close(expandAnswerRegion([0.4, 0.5, 0.3, 0.05]), [0.2, 0.44, 0.7, 0.17]);
+  });
+
+  it('en una hoja de lado crece a lo largo de la columna y a ambos lados, sin suponer dónde está el enunciado', () => {
+    // Caso real: la marca de la opción B en una foto girada 90°.
+    close(expandAnswerRegion([0.48, 0.3, 0.024, 0.057]), [0.44, 0.1575, 0.104, 0.342]);
+  });
+
+  it('una marca pequeña recibe un margen mínimo en vez de un recuadro diminuto', () => {
+    close(expandAnswerRegion([0.5, 0.5, 0.02, 0.02]), [0.44, 0.46, 0.14, 0.1]);
+  });
+
+  it('no se sale de la hoja y no inventa recuadro sin zona válida', () => {
+    close(expandAnswerRegion([0.01, 0.02, 0.4, 0.1]), [0, 0, 0.61, 0.24]);
+    close(expandAnswerRegion([0.7, 0.9, 0.29, 0.09]), [0.5, 0.792, 0.5, 0.208]);
+    expect(expandAnswerRegion([0.9, 0.9, 0.5, 0.5])).toBeUndefined();
+    expect(expandAnswerRegion(undefined)).toBeUndefined();
+  });
+
+  it('el recuadro ampliado contiene siempre la zona original', () => {
+    for (const box of [[0.1, 0.2, 0.4, 0.1], [0.5, 0.5, 0.02, 0.02], [0, 0, 1, 1], [0.6, 0.85, 0.35, 0.1], [0.48, 0.3, 0.024, 0.057]] as const) {
+      const [x, y, width, height] = expandAnswerRegion([...box])!;
+      expect(x).toBeLessThanOrEqual(box[0]);
+      expect(y).toBeLessThanOrEqual(box[1]);
+      expect(x + width).toBeGreaterThanOrEqual(box[0] + box[2] - 1e-9);
+      expect(y + height).toBeGreaterThanOrEqual(box[1] + box[3] - 1e-9);
+      expect(x + width).toBeLessThanOrEqual(1 + 1e-9);
+      expect(y + height).toBeLessThanOrEqual(1 + 1e-9);
+    }
   });
 });
