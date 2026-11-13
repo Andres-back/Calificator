@@ -170,6 +170,7 @@ ALL_SPECS = {
     "176-revision-minimal",
     "177-identidad-visual",
     "178-pregunta-completa",
+    "179-lectura-fiel-digitalizacion",
 }
 OWNED_SPECS = {
     name

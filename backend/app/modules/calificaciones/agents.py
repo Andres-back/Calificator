@@ -854,8 +854,13 @@ async def vision_agent(
             blueprint=ctx.blueprint,
             purpose=purpose,
             **({"canonical_pages": ctx.canonical_pages} if ctx.canonical_pages is not None else {}),
+            # Spec 179: las reglas de digitalización viajan al modelo, no solo eligen el propósito.
+            **({"document_instructions": prompt_override} if purpose == "evaluation_document" else {}),
         )
         parsed = extraction.legacy_payload()
+        if purpose == "evaluation_document":
+            # Solo lo impreso: las marcas observadas del estudiante no son parte de la evaluación.
+            parsed["texto_preguntas"] = extraction.printed_text()
         return AgentResult(
             nota_sugerida=None,
             confianza=extraction.document_quality,

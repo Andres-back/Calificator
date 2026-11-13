@@ -35,10 +35,10 @@ _MIN_READING_WORDS = 40
 LITERAL_READING_PROMPT = """
 Atención: en una lectura anterior de esta hoja, el texto de lectura quedó resumido o
 reemplazado por un marcador como "(lectura)", "[texto]" o "...". Transcribe en
-texto_preguntas el texto de lectura de forma literal y completa, con todos sus párrafos,
+page_text el texto de lectura de forma literal y completa, con todos sus párrafos,
 en el orden de la hoja, seguido de las preguntas y opciones. No lo resumas, no lo
 abrevies, no lo pongas entre paréntesis y no uses marcadores. En esta lectura deja
-texto_extraido vacío y respuestas_detectadas como lista vacía, para no repetir la hoja.
+answers como lista vacía, para no repetir la hoja.
 Mantén el resto de reglas.
 """
 

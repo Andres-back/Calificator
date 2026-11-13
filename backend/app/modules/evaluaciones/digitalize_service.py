@@ -119,40 +119,43 @@ Contenido extraído:
 ---
 """
 
-DIGITALIZATION_VISION_PROMPT = """Eres un extractor OCR de evaluaciones escolares.
-La imagen contiene una hoja de preguntas que el docente quiere digitalizar. Puede estar
-vacía o ya resuelta por un estudiante.
+# Spec 179: reglas de lectura que viajan al modelo de visión. El formato JSON de salida lo
+# añade `VisionExtractor`, que es quien lo interpreta (`page_text`, `answers`, `warnings`).
+DIGITALIZATION_VISION_PROMPT = """La imagen contiene una hoja de preguntas que el docente quiere digitalizar. Puede estar
+vacía o ya resuelta por un estudiante. Lo que importa es la hoja IMPRESA, no las respuestas.
 
-Transcribe todo el contenido educativo visible:
-- título e instrucciones;
-- títulos de secciones, capítulos y subsecciones, en su orden original;
-- actividades compartidas, debates y recuadros educativos aunque no tengan pregunta o nota;
-- lectura y textos de apoyo completos, conservando sus párrafos aunque la hoja no tenga preguntas;
-- cada pregunta con su número;
-- todas las opciones de respuesta;
-- expresiones matemáticas preservando +, -, ×, ÷, =, paréntesis y decimales;
-- antes de leer, identifica la orientación y gira mentalmente la hoja 0°, 90°, 180° o 270°;
-- separa el enunciado impreso de la respuesta manuscrita del estudiante;
+Antes de leer, identifica la orientación y gira mentalmente la hoja 0°, 90°, 180° o 270°.
+
+En page_text transcribe TODO el contenido impreso, literal y completo, en el orden en que
+se lee la hoja: de arriba abajo, y si hay columnas o recuadros, termina uno antes de pasar
+al siguiente. Escribe un elemento por renglón, separados por saltos de línea; nunca toda la
+hoja en un solo párrafo:
+- el título de la hoja y las instrucciones generales, cada uno en su renglón;
+- los títulos de secciones, partes, capítulos y subsecciones en su propio renglón, en su
+  orden original, y debajo la indicación de esa sección ("Marca la respuesta correcta.");
+- la lectura y los textos de apoyo COMPLETOS, palabra por palabra, un párrafo por renglón,
+  con sus subtítulos, aunque la hoja no tenga preguntas; no los resumas ni los reemplaces
+  por un marcador como "(lectura)", "[texto]" o "...";
+- cada pregunta en su renglón, empezando por el número o la letra que tiene impresos
+  ("1.", "17.", "a)"); no renumeres ni reordenes;
+- cada opción de respuesta en su propio renglón, con su letra impresa ("A) ...");
+- las tablas con una fila por renglón y las celdas separadas por " | ";
+- las actividades compartidas, debates, compromisos y recuadros educativos, aunque no
+  tengan pregunta ni nota;
+- las expresiones matemáticas preservando +, -, ×, ÷, =, paréntesis y decimales;
 - si hay una lista de ejercicios sin número, numérala secuencialmente sin omitir filas;
-- no confundas números decorativos de dibujos para colorear con preguntas.
+- los campos para datos (Nombre, Fecha, Grado) solo con su rótulo, sin lo que tengan escrito;
+- no confundas números decorativos de dibujos para colorear con preguntas;
+- conserva la ortografía impresa: no corrijas ni completes palabras.
 
-Devuelve SOLO JSON válido con este formato:
-{
-  "texto_preguntas": "título, instrucciones, lectura íntegra, preguntas y opciones impresas; sin respuestas del estudiante",
-  "texto_extraido": "transcripción completa con respuestas observadas etiquetadas",
-  "preguntas_detectadas": [1, 2],
-  "respuestas_detectadas": [{"pregunta": 1, "respuesta": "respuesta manuscrita visible"}],
-  "calidad_imagen": {"borroso": "bajo|medio|alto", "iluminacion": "buena|mala", "recorte": "completo|parcial|cortado"},
-  "usable": true,
-  "alertas": []
-}
+En page_text NUNCA incluyas respuestas, selecciones, operaciones, dibujos ni correcciones
+hechas por el estudiante. Si la hoja está resuelta, registra cada respuesta observada en
+answers (question_number y answer) sin decidir si es correcta; si está vacía, answers=[].
 
-Marca usable=true si puedes reconstruir una lectura o al menos una pregunta, incluso cuando el texto sea
-manuscrito, la hoja esté inclinada o existan imperfecciones menores. Usa false únicamente
-si no hay contenido educativo recuperable. No inventes texto que no esté visible.
-En texto_preguntas NUNCA incluyas respuestas, selecciones, operaciones ni correcciones
-realizadas por el estudiante. En texto_extraido etiqueta cada una como
-[RESPUESTA DEL ESTUDIANTE: ...]. No decidas si la respuesta observada es correcta.
+En warnings indica lo que no pudiste leer: una parte tapada, borrosa o cortada. No inventes
+texto que no esté visible. document_quality es tu confianza, de 0 a 1, en la transcripción.
+page_role: reading si la hoja solo tiene lectura, responses si solo tiene preguntas y mixed
+si tiene ambas.
 """
 
 def detect_digitalization_mime(content: bytes, filename: str) -> str:
@@ -553,11 +556,18 @@ _STUDENT_ANSWER_TAG_RE = re.compile(
 _STUDENT_ANSWER_LINE_RE = re.compile(
     r"(?im)^[ \t]*(?:\[\s*)?RESPUESTA\s+DEL\s+ESTUDIANTE\s*:.*$",
 )
+# Spec 179: el lector añade al final las marcas observadas del estudiante. Sirven para
+# calificar, no para definir la evaluación; el bloque llega hasta la siguiente hoja o el final.
+_STUDENT_EVIDENCE_BLOCK_RE = re.compile(
+    r"^[ \t]*=== EVIDENCIA GR[ÁA]FICA DEL ESTUDIANTE ===[ \t]*$.*?(?=^[ \t]*=== P[ÁA]GINA \d+ ===[ \t]*$|\Z)",
+    flags=re.IGNORECASE | re.DOTALL | re.MULTILINE,
+)
 
 
 def _strip_student_answer_annotations(text: str) -> str:
     """Separa la escritura del alumno del documento que define la evaluación."""
-    cleaned = _STUDENT_ANSWER_TAG_RE.sub(" ", str(text or ""))
+    cleaned = _STUDENT_EVIDENCE_BLOCK_RE.sub("", str(text or ""))
+    cleaned = _STUDENT_ANSWER_TAG_RE.sub(" ", cleaned)
     cleaned = _STUDENT_ANSWER_LINE_RE.sub("", cleaned)
     cleaned = re.sub(r"[ \t]+\n", "\n", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
