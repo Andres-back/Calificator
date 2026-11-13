@@ -42,7 +42,7 @@ MAX_ATTEMPTS = 2
 MAX_PAGES = 6
 # El proxy corta una petición a los 60 s; las hojas se ubican a la vez y deben terminar antes.
 TIMEOUT_SECONDS = 50
-MAX_OUTPUT_TOKENS = 6000
+MAX_OUTPUT_TOKENS = 8000
 FEATURE = "calificacion.extraccion"
 
 UNAVAILABLE = (
