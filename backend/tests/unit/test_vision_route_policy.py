@@ -466,3 +466,90 @@ async def test_invalid_captured_limits_are_not_treated_as_absent(invalid, transp
     result = await read({'primary':selection(), 'runtime_limits':invalid})
     assert result.error_code == 'vision_limits_invalid'
     transport.assert_not_awaited()
+
+
+def blank_page():
+    """Spec 183: printed questions, no student marks on the sheet."""
+    payload = response()
+    payload["choices"][0]["message"]["content"] = json.dumps({
+        "student_detected": True,
+        "document_quality": 0.9,
+        "page_text": "1. ¿Qué es el clima? A B C D",
+        "answers": [],
+    })
+    return payload
+
+
+@pytest.mark.asyncio
+async def test_183_a_sheet_no_reader_sees_answers_on_returns_for_review(transport):
+    transport.side_effect = [blank_page(), blank_page()]
+
+    result = await read({
+        "primary": selection(),
+        "fallback": selection("visual-b", "api_b"),
+        "runtime_limits": {"max_attempts": 2},
+    })
+
+    assert result.status == "requires_review"
+    assert result.answers == [] and result.page_text == ""
+    assert any("no fue posible recuperar respuestas" in warning for warning in result.warnings)
+    assert result.model == "visual-b" and result.fallback_used is True
+    assert transport.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_183_the_backup_reader_still_gets_its_turn_before_review(transport):
+    transport.side_effect = [blank_page(), response()]
+
+    result = await read({
+        "primary": selection(),
+        "fallback": selection("visual-b", "api_b"),
+        "runtime_limits": {"max_attempts": 2},
+    })
+
+    assert result.status == "extracted"
+    assert [answer.answer for answer in result.answers] == ["B"]
+
+
+@pytest.mark.asyncio
+async def test_183_a_blank_sheet_does_not_sink_the_other_sheets(monkeypatch, transport):
+    monkeypatch.setattr(
+        module,
+        "_pages",
+        lambda *_: [
+            (1, b"first", "image/png", False),
+            (2, b"second", "image/png", False),
+        ],
+    )
+    transport.side_effect = [response(), blank_page()]
+    reader = module.VisionExtractor(
+        tracking={
+            "_ai_config": {
+                "feature": "calificacion.extraccion",
+                "primary": selection(),
+                "runtime_limits": {"max_attempts": 1},
+            }
+        }
+    )
+
+    extraction = await reader.extract(
+        b"synthetic", "application/pdf", blueprint={"preguntas": [{"numero": 1}, {"numero": 2}]}
+    )
+
+    assert extraction.requires_review is True
+    assert [page.status for page in extraction.pages] == ["extracted", "requires_review"]
+    assert [answer.answer for answer in extraction.answers] == ["B"]
+
+
+@pytest.mark.asyncio
+async def test_183_a_timeout_after_a_blank_reading_is_still_a_failure(transport):
+    transport.side_effect = [blank_page(), httpx.ReadTimeout("synthetic")]
+
+    result = await read({
+        "primary": selection(),
+        "fallback": selection("visual-b", "api_b"),
+        "runtime_limits": {"max_attempts": 2},
+    })
+
+    assert result.status.startswith("failed_")
+    assert result.error_code == "vision_timeout"
