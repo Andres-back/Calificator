@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
+import { ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
 
 const dimensions = { width: 400, height: 300, imageWidth: 800, imageHeight: 1200 };
 const initial = { zoom: 1, centerX: 0.5, centerY: 0.5 };
@@ -84,5 +84,21 @@ describe('176 hoja ajustada al ancho', () => {
     expect(fitEvidenceWidth({ width: 1200, height: 300, imageWidth: 800, imageHeight: 1200 }).zoom).toBe(2.5);
     expect(fitEvidenceWidth({ width: 400, height: 300, imageWidth: 1200, imageHeight: 800 })).toEqual(initial);
     expect(fitEvidenceWidth({ ...dimensions, imageWidth: 0 })).toEqual(initial);
+  });
+});
+
+describe('178 enfoque de una respuesta con la pregunta a la vista', () => {
+  it('centra la zona sin pasar del límite pedido y sin límite conserva el enfoque ajustado', () => {
+    const tight = focusEvidenceRegion(dimensions, [0.3, 0.4, 0.1, 0.03]);
+    const capped = focusEvidenceRegion(dimensions, [0.3, 0.4, 0.1, 0.03], ANSWER_FOCUS_MAX_ZOOM);
+    expect(ANSWER_FOCUS_MAX_ZOOM).toBe(2.5);
+    expect(tight.zoom).toBeGreaterThan(6);
+    expect(capped.zoom).toBe(2.5);
+    expect(capped.centerX).toBeCloseTo(0.4, 1);
+    expect(capped.centerY).toBeCloseTo(0.415, 2);
+  });
+
+  it('una zona grande que ya cabe con menos aumento no se amplía hasta el límite', () => {
+    expect(focusEvidenceRegion(dimensions, [0.05, 0.05, 0.9, 0.9], ANSWER_FOCUS_MAX_ZOOM).zoom).toBeLessThan(1.2);
   });
 });

@@ -41,12 +41,15 @@ export function evidenceImageLayout(size: EvidenceDimensions, viewport: Evidence
   return { width, height, left: size.width / 2 - view.centerX * width, top: size.height / 2 - view.centerY * height };
 }
 
-export function focusEvidenceRegion(size: EvidenceDimensions, box: unknown): EvidenceViewport {
+/** Mayor ampliación al enfocar una respuesta: deja a la vista la pregunta con sus opciones, no solo la marca. */
+export const ANSWER_FOCUS_MAX_ZOOM = 2.5;
+
+export function focusEvidenceRegion(size: EvidenceDimensions, box: unknown, maxZoom = 8): EvidenceViewport {
   if (!usable(size) || !validEvidenceBox(box)) return complete();
   const [x, y, width, height] = box;
   const paddedWidth = Math.min(1, x + width + 0.03) - Math.max(0, x - 0.03);
   const paddedHeight = Math.min(1, y + height + 0.03) - Math.max(0, y - 0.03);
-  const zoom = Math.min(size.width / (size.imageWidth * fit(size) * paddedWidth), size.height / (size.imageHeight * fit(size) * paddedHeight));
+  const zoom = Math.min(maxZoom, size.width / (size.imageWidth * fit(size) * paddedWidth), size.height / (size.imageHeight * fit(size) * paddedHeight));
   return clampEvidenceViewport(size, { zoom, centerX: x + width / 2, centerY: y + height / 2 });
 }
 

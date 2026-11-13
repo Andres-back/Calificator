@@ -169,6 +169,7 @@ ALL_SPECS = {
     "175-ubicar-respuesta-en-hoja",
     "176-revision-minimal",
     "177-identidad-visual",
+    "178-pregunta-completa",
 }
 OWNED_SPECS = {
     name

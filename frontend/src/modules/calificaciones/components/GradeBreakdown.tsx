@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import './gradeQuestionLayout.css';
 import { componentPoints } from '@/lib/componentPoints';
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, EyeOff, FileSearch, ScanSearch, XCircle } from 'lucide-react';
@@ -11,6 +11,15 @@ import { buildReviewTriage, classifyReviewComponent, type ReviewTriageSummary } 
 import { reviewPriorityPresentation } from '../review-triage/reviewPriorityPresentation';
 
 const stateIcons = { check: CheckCircle2, warning: AlertTriangle, x: XCircle };
+
+function readSeen(key: string): ReadonlySet<string> {
+  try {
+    const stored: unknown = JSON.parse(window.sessionStorage.getItem(key) ?? '[]');
+    return new Set(Array.isArray(stored) ? stored.filter((item): item is string => typeof item === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
 
 export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent, reviewSummary, onShowInSheet }: {
   breakdown: GradeBreakdownData;
@@ -31,6 +40,18 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   const calculation = student ? undefined : gradeCalculationPresentation(breakdown);
   const priorities = new Map((student ? [] : (reviewSummary ?? buildReviewTriage(breakdown)).items).map((item) => [item.component.id, item]));
   const selectedIndex = breakdown.componentes.findIndex(component => component.id === selectedComponentId);
+  // Spec 178: «Conviene comprobar» invita a entrar a la pregunta; una vez dentro, el aviso ya cumplió.
+  const seenKey = `xcal:revision-vista:${breakdown.id}`;
+  const [seen, setSeen] = useState<ReadonlySet<string>>(() => readSeen(seenKey));
+  useEffect(() => {
+    if (!compact || !selectedComponentId) return;
+    setSeen((previous) => {
+      if (previous.has(selectedComponentId)) return previous;
+      const next = new Set(previous).add(selectedComponentId);
+      try { window.sessionStorage.setItem(seenKey, JSON.stringify([...next])); } catch { /* sin almacenamiento: vale para esta visita */ }
+      return next;
+    });
+  }, [compact, selectedComponentId, seenKey]);
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className={compact ? 'sr-only' : 'flex flex-wrap items-center justify-between gap-2'}>
@@ -46,7 +67,9 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
         <nav aria-label="Preguntas y criterios" className="grid grid-cols-[repeat(auto-fit,minmax(max(2.75rem,calc((100%_-_1.5rem)/4)),1fr))] gap-2 lg:flex lg:flex-wrap">
           {breakdown.componentes.map((component, index) => {
             const item = priorities.get(component.id) ?? classifyReviewComponent(component);
-            const { label, Icon, classes } = reviewPriorityPresentation[item.level];
+            const { label } = reviewPriorityPresentation[item.level];
+            const settled = compact && item.level === 'attention' && (seen.has(component.id) || component.id === selectedComponentId);
+            const { Icon, classes } = reviewPriorityPresentation[settled ? 'safe' : item.level];
             return <button
             key={component.id} type="button" onClick={() => onSelectComponent(component.id)}
             aria-current={component.id === selectedComponentId ? 'step' : undefined}
@@ -54,6 +77,7 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
             aria-describedby={compact ? `grade-nav-summary-${component.id}` : undefined}
             title={[compact ? gradeComponentPresentation(component).label : null, label, ...item.reasons.map((reason) => reason.label)].filter(Boolean).join('. ')}
             data-review-priority={item.level}
+            data-review-seen={settled || undefined}
             className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold sm:justify-start sm:gap-2 sm:px-3 ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
           ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-all">{component.numero ?? component.orden + 1}</span>{compact && <span data-question-score aria-hidden="true" className="hidden text-left text-xs font-normal tabular-nums lg:inline">{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)}</span>}{compact && <span className="sr-only" id={`grade-nav-summary-${component.id}`}>{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
@@ -73,12 +97,10 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           const priority = item ? reviewPriorityPresentation[item.level] : null;
           const PriorityIcon = priority?.Icon;
           const splitEvidence = compact && Boolean(renderEvidence);
-          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 [overflow-wrap:anywhere] ${compact ? 'grade-question-container border-t border-border pt-5' : `rounded-xl border border-l-4 p-4 ${priority ? priority.classes : `border-border bg-surface ${presentation.cardClass}`}`}`}>
+          return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 [overflow-wrap:anywhere] ${compact ? 'grade-question-container border-t border-border pt-5 outline-none' : `rounded-xl border border-l-4 p-4 ${priority ? priority.classes : `border-border bg-surface ${presentation.cardClass}`}`}`}>
             <div className={splitEvidence ? 'grade-question-split grid items-start gap-5' : undefined}>
             <div className="min-w-0" data-testid={compact ? 'grade-question-reading' : undefined}>
-            {priority && PriorityIcon && (!compact || item?.level !== 'safe') && (compact && item?.level === 'attention'
-              ? <div data-testid="grade-attention-note" className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-5 text-amber-800 dark:text-amber-200"><p className="inline-flex items-center gap-1.5 font-bold"><PriorityIcon className="h-3.5 w-3.5 shrink-0 self-center" aria-hidden="true" />{priority.label}</p>{item.reasons.length ? <p className="min-w-0">{[...new Set(item.reasons.map((reason) => reason.label))].join(' · ')}</p> : null}</div>
-              : <div className={`mb-3 space-y-1 ${compact ? `rounded-lg border px-3 py-2 ${priority.classes}` : ''}`}><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{[...new Set(item.reasons.map((reason) => reason.label))].join(' · ')}</p> : null}</div>)}
+            {priority && PriorityIcon && (!compact || item?.level === 'blocked') && <div className={`mb-3 space-y-1 ${compact ? `rounded-lg border px-3 py-2 ${priority.classes}` : ''}`}><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{[...new Set(item.reasons.map((reason) => reason.label))].join(' · ')}</p> : null}</div>}
             <div className={`flex flex-col gap-2 ${compact || !selectedComponentId || student ? 'sm:flex-row sm:items-start sm:justify-between' : ''}`}>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">

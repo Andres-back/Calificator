@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type P
 import { Expand, Minimize2, Move, RotateCcw, RotateCw, ScanSearch, ZoomIn, ZoomOut } from 'lucide-react';
 import { Modal } from '@/components/ui';
 import {
-  clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport,
+  ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport,
   type EvidenceBox, type EvidenceDimensions, type EvidenceRotation, type EvidenceViewport,
 } from './evidenceViewport';
 
@@ -56,7 +56,7 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
     if (!loaded || size.width <= 0 || size.height <= 0) return;
     const rotated = lastRotation.current !== rotation;
     // Spec 176: sin zona, el visor de una respuesta abre la hoja al ancho del marco para leerla sin ampliar.
-    const opening = orientedRegion || expanded || sheetView ? focusEvidenceRegion(size, orientedRegion) : fitEvidenceWidth(size);
+    const opening = orientedRegion || expanded || sheetView ? focusEvidenceRegion(size, orientedRegion, ANSWER_FOCUS_MAX_ZOOM) : fitEvidenceWidth(size);
     const next = focused.current && !rotated ? clampEvidenceViewport(size, currentViewport.current) : opening;
     if (rotated) {
       pointers.current.clear();
@@ -72,7 +72,7 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
     if (lastFocusSignal.current === focusSignal) return;
     lastFocusSignal.current = focusSignal;
     if (!loaded || size.width <= 0 || size.height <= 0 || !orientedRegion) return;
-    const next = focusEvidenceRegion(size, orientedRegion);
+    const next = focusEvidenceRegion(size, orientedRegion, ANSWER_FOCUS_MAX_ZOOM);
     currentViewport.current = next;
     setViewport(next);
   }, [focusSignal, loaded, size, orientedRegion]);
@@ -135,7 +135,7 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
       {sheetView && <button type="button" className={controlClass} aria-label="Girar a la izquierda" title="Girar a la izquierda" disabled={!ready} onClick={() => onRotate(-1)}><RotateCcw aria-hidden="true" className="h-4 w-4" /></button>}
       <button type="button" className={controlClass} aria-label={sheetView ? 'Girar a la derecha' : 'Girar vista 90 grados'} title="Girar a la derecha" disabled={!ready} onClick={() => onRotate(1)}><RotateCw aria-hidden="true" className="h-4 w-4" /></button>
       {!sheetView && <button type="button" className={controlClass} aria-label="Ver hoja completa" title="Ver hoja completa" disabled={!ready} onClick={() => updateViewport(initial)}><Minimize2 aria-hidden="true" className="h-4 w-4" /></button>}
-      {orientedRegion && <button type="button" className={controlClass} disabled={!ready} onClick={() => updateViewport(focusEvidenceRegion(size, orientedRegion))}><ScanSearch aria-hidden="true" className="h-4 w-4" />Ver zona sugerida</button>}
+      {orientedRegion && <button type="button" className={controlClass} disabled={!ready} onClick={() => updateViewport(focusEvidenceRegion(size, orientedRegion, ANSWER_FOCUS_MAX_ZOOM))}><ScanSearch aria-hidden="true" className="h-4 w-4" />Ver zona sugerida</button>}
       {extraControl}
     </div>;
   const instructions = <p id={instructionId} className={sheetView ? 'sr-only' : 'flex items-start gap-2 text-xs leading-5 text-muted lg:sr-only'}><Move aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" /><span>Amplía con dos dedos o los botones. Arrastra la imagen ampliada para ver más.<span className="hidden sm:inline"> Con teclado: +, − y flechas; 0 muestra toda la hoja.</span></span></p>;
