@@ -378,6 +378,18 @@ class BatchAjustarRequest(BaseModel):
     items: list[BatchAjustarItem]
 
 
+class ExplanationDraftRequest(BaseModel):
+    """Spec 181: estado y puntos que el docente eligió; la IA solo redacta."""
+
+    componente_id: UUID
+    estado: Literal["correcta", "parcial", "incorrecta", "sin_respuesta"]
+    puntos_obtenidos: Decimal = Field(ge=0)
+
+
+class ExplanationDraft(BaseModel):
+    explicacion: str = Field(min_length=1, max_length=600)
+
+
 class AnswerLocationResult(BaseModel):
     """Spec 175: resultado de pedir a la IA la zona de cada respuesta en la foto."""
 

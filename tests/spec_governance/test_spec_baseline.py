@@ -172,6 +172,7 @@ ALL_SPECS = {
     "178-pregunta-completa",
     "179-lectura-fiel-digitalizacion",
     "180-recuadro-pregunta",
+    "181-ajuste-asistido",
 }
 OWNED_SPECS = {
     name
