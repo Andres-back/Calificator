@@ -77,23 +77,45 @@ describe('GradeBreakdown', () => {
     expect(screen.queryByTestId('grade-answer-comparison')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ajustar/ })).not.toBeInTheDocument();
   });
-  it('176 «Conviene comprobar» ocupa una línea sin caja y la revisión prioritaria conserva la suya', () => {
-    const assisted = { ...breakdown, componentes: [{ ...breakdown.componentes[0], origen: 'ia', valoraciones: [{ estado: 'correcta', puntos: 1, confianza: 0.95 }] }] };
-    const attention = { items: [{ component: assisted.componentes[0], level: 'attention' as const, reasons: [{ code: 'insufficient_verification', label: 'No hay información suficiente para comprobar la revisión de IA' }] }] };
-    const view = render(<GradeBreakdown breakdown={assisted} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} reviewSummary={attention as never} />);
-    const note = screen.getByTestId('grade-attention-note');
-    expect(note).toHaveTextContent('Conviene comprobar');
-    expect(note).toHaveTextContent('No hay información suficiente para comprobar la revisión de IA');
-    expect(note.className).not.toContain('border');
-    const chip = within(screen.getByRole('navigation', { name: 'Preguntas y criterios' })).getByRole('button');
-    expect(chip.querySelector('[data-question-score]')).toHaveTextContent(/^1\.00\/1\.00$/);
-    expect(chip).toHaveAccessibleDescription('1.00/1.00 · Correcta');
-    expect(chip.title).toContain('Correcta');
+  it('178 «Conviene comprobar» se va al entrar a la pregunta y la revisión prioritaria se queda', () => {
+    window.sessionStorage.clear();
+    const second = { ...breakdown.componentes[0], id: 'p2', clave: 'pregunta:2', numero: '2', orden: 1 };
+    const two = { ...breakdown, id: 'd-178', componentes: [breakdown.componentes[0], second] };
+    const reason = [{ code: 'insufficient_verification', label: 'No hay información suficiente para comprobar la revisión de IA' }];
+    const attention = { items: two.componentes.map((component) => ({ component, level: 'attention' as const, reasons: reason })) };
+    const view = render(<GradeBreakdown breakdown={two} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} reviewSummary={attention as never} />);
+    const chips = () => within(screen.getByRole('navigation', { name: 'Preguntas y criterios' })).getAllByRole('button');
 
-    const blocked = { items: [{ component: assisted.componentes[0], level: 'blocked' as const, reasons: [{ code: 'x', label: 'Falta puntaje' }] }] };
-    view.rerender(<GradeBreakdown breakdown={assisted} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} reviewSummary={blocked as never} />);
+    // Dentro de la pregunta no se repite el aviso: el docente ya la está comprobando.
+    expect(screen.queryByText('No hay información suficiente para comprobar la revisión de IA')).not.toBeInTheDocument();
     expect(screen.queryByTestId('grade-attention-note')).not.toBeInTheDocument();
+    // La pregunta abierta deja de marcarse; la que falta por abrir conserva su aviso.
+    expect(chips()[0]).toHaveAttribute('data-review-seen', 'true');
+    expect(chips()[0].className).toContain('emerald');
+    expect(chips()[1]).not.toHaveAttribute('data-review-seen');
+    expect(chips()[1].className).toContain('amber');
+    // El nombre accesible y la prioridad real no cambian.
+    expect(chips()[0]).toHaveAccessibleName('Pregunta 1, Conviene comprobar');
+    expect(chips()[0]).toHaveAttribute('data-review-priority', 'attention');
+    expect(chips()[0].querySelector('[data-question-score]')).toHaveTextContent(/^1\.00\/1\.00$/);
+
+    // Al pasar a la segunda, la primera sigue como vista, también si se vuelve a abrir la nota.
+    view.rerender(<GradeBreakdown breakdown={two} compactTeacher selectedComponentId="p2" onSelectComponent={vi.fn()} reviewSummary={attention as never} />);
+    expect(chips().every((chip) => chip.getAttribute('data-review-seen') === 'true')).toBe(true);
+    view.unmount();
+    render(<GradeBreakdown breakdown={two} compactTeacher selectedComponentId="p2" onSelectComponent={vi.fn()} reviewSummary={attention as never} />);
+    expect(chips()[0]).toHaveAttribute('data-review-seen', 'true');
+  });
+
+  it('178 la revisión prioritaria conserva su caja y su marca aunque se abra', () => {
+    window.sessionStorage.clear();
+    const blocked = { items: [{ component: breakdown.componentes[0], level: 'blocked' as const, reasons: [{ code: 'x', label: 'Falta puntaje' }] }] };
+    render(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} reviewSummary={blocked as never} />);
     expect(screen.getByText('Revisión prioritaria').closest('div')?.className).toContain('border');
+    expect(screen.getByText('Falta puntaje')).toBeVisible();
+    const chip = within(screen.getByRole('navigation', { name: 'Preguntas y criterios' })).getByRole('button');
+    expect(chip).not.toHaveAttribute('data-review-seen');
+    expect(chip.className).toContain('rose');
   });
 
   it('175 pulsar la respuesta del estudiante pide verla en la hoja, solo junto al visor', () => {

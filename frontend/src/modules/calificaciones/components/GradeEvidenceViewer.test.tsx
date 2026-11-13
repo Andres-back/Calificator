@@ -33,7 +33,9 @@ describe('GradeEvidenceViewer', () => {
     expect(outline).toHaveAttribute('aria-hidden', 'true');
     expect(outline.className).toContain('pointer-events-none');
     const focused = { width: outline.style.width, left: outline.style.left, top: outline.style.top };
-    expect(parseFloat(focused.width)).toBeGreaterThan(300);
+    // 178: el enfoque no pasa de 250 %, para que se vea la pregunta con sus opciones y no solo la marca.
+    expect(screen.getByLabelText('Nivel de ampliación')).toHaveTextContent('250 %');
+    expect(parseFloat(focused.width)).toBeCloseTo(200, 0);
     expect(parseFloat(focused.left)).toBeGreaterThanOrEqual(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver hoja completa' }));
