@@ -193,7 +193,8 @@ async def test_confirm_creates_only_selected_students_and_is_idempotent() -> Non
         assert (result["creados"], result["omitidos"]) == (2, 1)
         assert len({item["email"] for item in result["credenciales"]}) == 2
         assert len({item["password_temporal"] for item in result["credenciales"]}) == 2
-        assert all(item["email"].endswith("@alumnos.xcalificator.daimuz.com") for item in result["credenciales"])
+        # Spec 185: apellido + nombre (un solo nombre) @xcalificator.com.
+        assert sorted(item["email"] for item in result["credenciales"]) == ["pazluis@xcalificator.com", "ruizana@xcalificator.com"]
         assert await db.scalar(select(func.count(Matricula.id)).where(Matricula.materia_id == subject.id)) == 2
         for item in result["credenciales"]:
             student = await db.get(User, item["estudiante_id"])

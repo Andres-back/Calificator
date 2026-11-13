@@ -16,6 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.security import get_password_hash
 from app.core.permissions import require_permission_now
+from app.modules.importacion_estudiantes import student_email
 from app.modules.importacion_estudiantes.models import ImportacionEstudiantesFila, ImportacionEstudiantesLote
 from app.modules.importacion_estudiantes.schemas import FilaUpdate, LoteManualCreate
 from app.modules.materias.models import Materia
@@ -31,20 +32,18 @@ def normalize_name(value: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9 ]+", " ", "".join(c for c in folded if not unicodedata.combining(c))).split())
 
 
-def _slug(value: str) -> str:
-    return (normalize_name(value).replace(" ", ".")[:48].strip(".") or "estudiante")
-
-
 def temporary_password() -> str:
     return f"Xc!{secrets.token_urlsafe(12)}9a"
 
 
 async def unique_internal_email(db: AsyncSession, name: str) -> str:
-    for _ in range(20):
-        candidate = f"{_slug(name)}.{secrets.token_hex(4)}@alumnos.xcalificator.daimuz.com"
-        if not await db.scalar(select(User.id).where(func.lower(User.email) == candidate.lower())):
-            return candidate
-    raise RuntimeError("No fue posible generar un acceso único")
+    """Spec 185: apellido + iniciales @xcalificator.com; si existe, 1, 2…"""
+    local = student_email.propose(name).local
+    # Serializa la misma base: dos importaciones a la vez no deben elegir el mismo número.
+    await db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:key))"), {"key": f"student-email:{local}"})
+    pattern = re.compile(rf"^{re.escape(local)}\d*@{re.escape(student_email.DOMAIN)}$")
+    rows = await db.scalars(select(func.lower(User.email)).where(func.lower(User.email).like(f"{local}%@{student_email.DOMAIN}")))
+    return student_email.first_free(local, {email for email in rows if pattern.match(email)})
 
 
 async def get_lote(db: AsyncSession, lote_id: UUID, actor: User) -> ImportacionEstudiantesLote:
