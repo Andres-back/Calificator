@@ -174,6 +174,7 @@ ALL_SPECS = {
     "180-recuadro-pregunta",
     "181-ajuste-asistido",
     "182-ubicar-cuadricula",
+    "183-hoja-sin-respuestas",
 }
 OWNED_SPECS = {
     name

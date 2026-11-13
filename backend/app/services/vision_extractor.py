@@ -788,6 +788,8 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                 size_bytes=len(data),
             )
         route_index, last_error, temporary = 0, "vision_route_not_ready", False
+        # Spec 183: lectura válida sin respuestas visibles; se devuelve para revisión si ningún lector ve marcas.
+        unanswered: VisionPageResult | None = None
         selected = routes[0]
         for attempt in range(1, limits.max_attempts + 1):
             selected = routes[route_index]
@@ -931,6 +933,12 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                         and not has_answer
                         and not (total > 1 and result.page_role == "reading")
                     ):
+                        result.model, result.provider, result.fallback_used = (
+                            model,
+                            provider_id,
+                            route_index > 0,
+                        )
+                        unanswered = result
                         raise VisionExtractionError("vision_no_student_answers")
                     result.duration_ms = int(
                         (time.monotonic() - operation_started) * 1000
@@ -1005,6 +1013,17 @@ Informa tachones, correcciones y preguntas ausentes. Devuelve SOLO JSON:
                 route_index = 1
             elif not temporary:
                 break
+        if unanswered is not None and last_error == "vision_no_student_answers":
+            # Como la ruta no administrada: incertidumbre explícita, nunca un cero ni
+            # una calificación entera fallida por una hoja en blanco o con marcas tenues.
+            unanswered.status = "requires_review"
+            unanswered.page_text = ""
+            unanswered.duration_ms = int((time.monotonic() - operation_started) * 1000)
+            unanswered.warnings.append(
+                "Se reconoció el material impreso, pero no fue posible "
+                "recuperar respuestas del estudiante."
+            )
+            return unanswered
         return VisionPageResult(
             page=page,
             status="failed_temporary" if temporary else "failed_permanent",
