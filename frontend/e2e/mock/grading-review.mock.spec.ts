@@ -779,7 +779,9 @@ test('captura contextual en cuatro acciones, conserva paquete al refrescar y no 
     void queryClient.invalidateQueries({ queryKey: ['calificaciones', 'e1'] });
   }, '/src/lib/queryClient.ts');
   await expect.poll(() => queries).toBeGreaterThan(1);
-  await expect(send).toBeDisabled();
+  // Spec 184: ya verificada la lista, la consulta de fondo no bloquea el envío ni mueve la pantalla.
+  await expect(send).toBeEnabled();
+  await expect(page.getByText('Consultando quiénes aún necesitan entregar evidencia…')).toHaveCount(0);
   await expect(page.getByText('evidencia.png', { exact: true })).toBeVisible();
   failRefresh = true;
   refreshing = false;
