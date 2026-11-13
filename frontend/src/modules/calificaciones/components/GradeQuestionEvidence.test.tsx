@@ -99,9 +99,9 @@ describe('GradeQuestionEvidence', () => {
   it.each([
     ['otra versión', { 'X-Evidence-Version': 'b'.repeat(32), 'X-Evidence-Page': '2', 'Content-Type': 'image/png' }],
     ['otra hoja', { 'X-Evidence-Version': 'a'.repeat(32), 'X-Evidence-Page': '1', 'Content-Type': 'image/png' }],
-    ['servidor antiguo', { 'Content-Type': 'image/png' }],
-  ])('no señala una región sobre %s y ofrece lectura manual', async (_name, headers) => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(new Blob(['png']), { headers }));
+    ['una evidencia que cambió', { 'Content-Type': 'application/json' }, 409],
+  ] as Array<[string, Record<string, string>, number?]>)('no señala una región sobre %s y ofrece lectura manual', async (_name, headers, status = 200) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(new Blob(['png']), { headers, status }));
     render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} regions={[region]} activePage={2} onPageChange={vi.fn()} />);
     expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos comprobar');
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
@@ -109,6 +109,21 @@ describe('GradeQuestionEvidence', () => {
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/evidencia/paginas/2');
     expect(screen.queryByText(/Ubicación sugerida/)).not.toBeInTheDocument();
   });
+  it.each([
+    ['la respuesta llega sin sus cabeceras', () => Promise.resolve(new Response(new Blob(['png']), { headers: { 'Content-Type': 'image/png' } }))],
+    ['un intermediario cambia el tipo', () => Promise.resolve(new Response(new Blob(['x']), { headers: { 'Content-Type': 'application/octet-stream', 'X-Evidence-Version': 'a'.repeat(32), 'X-Evidence-Page': '2' } }))],
+    ['la lectura previa falla', () => Promise.reject(new TypeError('Failed to fetch'))],
+  ])('176 si %s pide la hoja con su versión y conserva la zona', async (_name, respond) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(respond);
+    const create = vi.spyOn(URL, 'createObjectURL');
+    render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} regions={[region]} activePage={2} onPageChange={vi.fn()} />);
+    // El servidor solo entrega esta dirección si la versión pedida es la vigente.
+    expect(await screen.findByRole('img')).toHaveAttribute('src', `/api/evidencia/paginas/2?evidencia_version=${region.evidencia_version}`);
+    expect(screen.getByText(/Ubicación sugerida/)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it('StrictMode descarta su primera lectura cancelada y libera solo la imagen vigente', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(new Blob(['png']), { headers: { 'Content-Type': 'image/png', 'X-Evidence-Version': region.evidencia_version, 'X-Evidence-Page': '2' } }));
     const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:strict-current');

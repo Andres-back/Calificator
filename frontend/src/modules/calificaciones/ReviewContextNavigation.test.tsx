@@ -42,3 +42,12 @@ it('138 una acción onBack prevalece sobre backHref y permite nombres largos sin
   expect(nav).toHaveClass('min-w-0');
   expect(nav.querySelectorAll('[data-review-back-arrow]')).toHaveLength(1);
 });
+
+it('176 al entrar a una nota conserva a la vista cuántas quedan por revisar', () => {
+  const view = render(<MemoryRouter><ReviewContextNavigation materiaName="Lenguaje" evaluationName="Lectura" studentName="Estudiante Prueba" onBack={vi.fn()} backLabel="Volver a lista" pendingCount={7} /></MemoryRouter>);
+  expect(within(screen.getByRole('navigation', { name: 'Ubicación de la revisión' })).getByTestId('review-pending-count')).toHaveTextContent('7 por revisar');
+  view.rerender(<MemoryRouter><ReviewContextNavigation materiaName="Lenguaje" evaluationName="Lectura" studentName="Estudiante Prueba" onBack={vi.fn()} backLabel="Volver a lista" pendingCount={0} /></MemoryRouter>);
+  expect(screen.queryByTestId('review-pending-count')).not.toBeInTheDocument();
+  view.rerender(<MemoryRouter><ReviewContextNavigation materiaName="Lenguaje" evaluationName="Lectura" backHref="/app/materias/m1/evaluaciones" backLabel="Volver a evaluaciones" /></MemoryRouter>);
+  expect(screen.queryByTestId('review-pending-count')).not.toBeInTheDocument();
+});

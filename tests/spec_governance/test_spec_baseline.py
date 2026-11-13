@@ -167,6 +167,7 @@ ALL_SPECS = {
     "174-revision-docente-clara",
     "172-ci-primer-fallo",
     "175-ubicar-respuesta-en-hoja",
+    "176-revision-minimal",
 }
 OWNED_SPECS = {
     name

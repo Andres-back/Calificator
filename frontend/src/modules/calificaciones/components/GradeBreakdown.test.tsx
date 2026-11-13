@@ -77,6 +77,25 @@ describe('GradeBreakdown', () => {
     expect(screen.queryByTestId('grade-answer-comparison')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Ajustar/ })).not.toBeInTheDocument();
   });
+  it('176 «Conviene comprobar» ocupa una línea sin caja y la revisión prioritaria conserva la suya', () => {
+    const assisted = { ...breakdown, componentes: [{ ...breakdown.componentes[0], origen: 'ia', valoraciones: [{ estado: 'correcta', puntos: 1, confianza: 0.95 }] }] };
+    const attention = { items: [{ component: assisted.componentes[0], level: 'attention' as const, reasons: [{ code: 'insufficient_verification', label: 'No hay información suficiente para comprobar la revisión de IA' }] }] };
+    const view = render(<GradeBreakdown breakdown={assisted} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} reviewSummary={attention as never} />);
+    const note = screen.getByTestId('grade-attention-note');
+    expect(note).toHaveTextContent('Conviene comprobar');
+    expect(note).toHaveTextContent('No hay información suficiente para comprobar la revisión de IA');
+    expect(note.className).not.toContain('border');
+    const chip = within(screen.getByRole('navigation', { name: 'Preguntas y criterios' })).getByRole('button');
+    expect(chip.querySelector('[data-question-score]')).toHaveTextContent(/^1\.00\/1\.00$/);
+    expect(chip).toHaveAccessibleDescription('1.00/1.00 · Correcta');
+    expect(chip.title).toContain('Correcta');
+
+    const blocked = { items: [{ component: assisted.componentes[0], level: 'blocked' as const, reasons: [{ code: 'x', label: 'Falta puntaje' }] }] };
+    view.rerender(<GradeBreakdown breakdown={assisted} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} reviewSummary={blocked as never} />);
+    expect(screen.queryByTestId('grade-attention-note')).not.toBeInTheDocument();
+    expect(screen.getByText('Revisión prioritaria').closest('div')?.className).toContain('border');
+  });
+
   it('175 pulsar la respuesta del estudiante pide verla en la hoja, solo junto al visor', () => {
     const show = vi.fn();
     const view = render(<GradeBreakdown breakdown={breakdown} compactTeacher selectedComponentId="p1" onSelectComponent={vi.fn()} onShowInSheet={show} renderEvidence={() => <p>Visor</p>} />);
