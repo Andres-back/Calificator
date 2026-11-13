@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "4dc92a92649828728df91cc497b7042eb3c985b6d468b36a7d082942fa323182",
+  "source_digest": "5c972c97500092a8d1c57f718dcfe984c9d688c8c71dccf65fcaf4a43a27ccd8",
   "surfaces": [
     {
       "actors": [
@@ -55758,6 +55758,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_answer_grid_locator.py"
         },
         {
           "level": "unit",

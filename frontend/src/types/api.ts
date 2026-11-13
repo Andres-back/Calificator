@@ -377,6 +377,8 @@ export interface GradeEvidenceRegion {
   bbox: [number, number, number, number];
   marco: 'pagina_canonica_orientada';
   evidencia_version: string;
+  /** Spec 182: ubicada con la cuadrícula; ya abarca la pregunta completa. */
+  metodo?: 'cuadricula';
 }
 
 export interface GradeComponentData {

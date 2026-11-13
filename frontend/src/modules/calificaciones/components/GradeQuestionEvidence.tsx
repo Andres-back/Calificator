@@ -50,7 +50,7 @@ function VersionedEvidence({ evidenceUrl, page, region, focusSignal }: { evidenc
   if (!loadedUrl) return <p role="status" className="rounded-xl border border-border p-4 text-sm text-muted">Comprobando la hoja de esta respuesta…</p>;
   return <>
     <p className="sr-only">Vista cercana de esta respuesta.</p>
-    <GradeEvidenceViewer src={loadedUrl} label={`Hoja ${page} de la evidencia`} region={region.bbox} focusSignal={focusSignal} />
+    <GradeEvidenceViewer src={loadedUrl} label={`Hoja ${page} de la evidencia`} region={region.bbox} wholeQuestion={region.metodo === 'cuadricula'} focusSignal={focusSignal} />
   </>;
 }
 
@@ -79,10 +79,10 @@ export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, reg
     {!activeRegion && !location && <p className="text-xs text-muted">No hay una zona localizada; se muestra la hoja completa.</p>}
     {!activeRegion && location && <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-brand-300 bg-brand-50/60 px-3 py-2 dark:border-brand-500/40 dark:bg-brand-500/10" data-testid="answer-location-action">
       <p className="min-w-0 flex-1 basis-52 text-sm leading-5 text-fg" role={location.locating ? 'status' : undefined}>{location.locating
-        ? 'Buscando las respuestas en la hoja… Tarda unos segundos.'
+        ? 'Ubicando las preguntas en la hoja… Tarda unos segundos.'
         : location.note ?? 'No hay una zona localizada; se muestra la hoja completa.'}</p>
       {location.onLocate && <Button type="button" size="sm" className="min-h-11" loading={location.locating} onClick={location.onLocate}>
-        <ScanSearch aria-hidden="true" className="h-4 w-4" />Ubicar respuestas con IA
+        <ScanSearch aria-hidden="true" className="h-4 w-4" />Ubicar preguntas con IA
       </Button>}
     </div>}
     {available.length > 1 && <nav className="flex flex-wrap gap-2" aria-label="Hojas de esta respuesta">
@@ -93,5 +93,10 @@ export function GradeQuestionEvidence({ evidenceUrl, pages, associatedPages, reg
       {pageRegions.map((region, index) => <button key={`${region.evidencia_version}:${index}`} type="button" onClick={() => setRegionIndex(index)} aria-current={activeRegion === region ? 'step' : undefined} className="focus-ring min-h-11 rounded-lg border border-border bg-surface px-3 text-sm font-semibold">Fragmento {index + 1}</button>)}
     </nav>}
     {activeRegion ? <VersionedEvidence key={`${evidenceUrl}:${page}:${activeRegion.evidencia_version}`} evidenceUrl={evidenceUrl} page={page} region={activeRegion} focusSignal={focusSignal} /> : <GradeEvidenceViewer key={`${evidenceUrl}:${page}`} src={`${evidenceUrl}/paginas/${page}`} label={`Hoja ${page} de la evidencia`} />}
+    {activeRegion && location && (location.locating
+      ? <p role="status" className="text-sm text-muted">Ubicando las preguntas en la hoja… Tarda unos segundos.</p>
+      : location.onLocate
+        ? <button type="button" onClick={location.onLocate} className="focus-ring min-h-11 rounded-lg px-1 text-left text-sm font-semibold text-brand-700 underline underline-offset-2 dark:text-brand-300" data-testid="answer-relocate">¿El recuadro no está en la pregunta? Ubicar de nuevo</button>
+        : location.note && <p className="text-sm text-muted">{location.note}</p>)}
   </section>;
 }

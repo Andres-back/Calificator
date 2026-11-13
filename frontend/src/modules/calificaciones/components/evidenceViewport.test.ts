@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, expandAnswerRegion, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
+import { ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, expandAnswerRegion, padQuestionRegion, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport, type EvidenceBox, type EvidenceRotation } from './evidenceViewport';
 
 const dimensions = { width: 400, height: 300, imageWidth: 800, imageHeight: 1200 };
 const initial = { zoom: 1, centerX: 0.5, centerY: 0.5 };
@@ -137,5 +137,15 @@ describe('180 recuadro que abarca la pregunta', () => {
       expect(x + width).toBeLessThanOrEqual(1 + 1e-9);
       expect(y + height).toBeLessThanOrEqual(1 + 1e-9);
     }
+  });
+
+  it('182 separa un poco la zona de la cuadrícula sin salirse de la hoja', () => {
+    const [x, y, width, height] = padQuestionRegion([0.3333, 0.4375, 0.1667, 0.1875])!;
+    expect(x).toBeCloseTo(0.3233, 4);
+    expect(y).toBeCloseTo(0.4275, 4);
+    expect(width).toBeCloseTo(0.1867, 4);
+    expect(height).toBeCloseTo(0.2075, 4);
+    expect(padQuestionRegion([0, 0, 1, 1])).toEqual([0, 0, 1, 1]);
+    expect(padQuestionRegion([0.5, 0.5, 0.6, 0.1])).toBeUndefined();
   });
 });

@@ -758,14 +758,17 @@ function PanelDetalle({
     mutationFn: () => ubicarRespuestas(cal.id),
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
-      if (result.ubicadas === 0) toast('La IA no distinguió más respuestas en esta foto. Revísalas en la hoja completa.');
-      else if (result.pendientes > 0) toast.success(`${result.ubicadas === 1 ? 'Se ubicó 1 respuesta' : `Se ubicaron ${result.ubicadas} respuestas`}. ${result.pendientes === 1 ? 'Queda 1 que no aparece o no se distingue' : `Quedan ${result.pendientes} que no aparecen o no se distinguen`} en la foto.`);
-      else toast.success(result.ubicadas === 1 ? 'Se ubicó la respuesta en la hoja.' : `Se ubicaron ${result.ubicadas} respuestas en la hoja.`);
       setSheetFocus((value) => value + 1);
+      if (result.ubicadas === 0) toast('La IA no distinguió las preguntas en esta foto. Revísalas en la hoja completa.');
+      else if (result.pendientes > 0) toast.success(`${result.ubicadas === 1 ? 'Se ubicó 1 pregunta' : `Se ubicaron ${result.ubicadas} preguntas`}. ${result.pendientes === 1 ? 'Queda 1 que no aparece o no se distingue' : `Quedan ${result.pendientes} que no aparecen o no se distinguen`} en la foto.`);
+      else toast.success(result.ubicadas === 1 ? 'Se ubicó la pregunta en la hoja.' : `Se ubicaron ${result.ubicadas} preguntas en la hoja.`);
     },
     onError: (error) => toast.error(toApiError(error).detail),
   });
-  const locationAttempts = Number((activeBreakdown?.procedencia?.zonas_ubicadas as { intentos?: unknown } | undefined)?.intentos) || 0;
+  const locatedZones = activeBreakdown?.procedencia?.zonas_ubicadas as { intentos?: unknown; version?: unknown; metodo?: unknown } | undefined;
+  // Spec 182: solo cuentan los intentos con la cuadrícula; los de la Spec 175 no la bloquean.
+  const gridLocated = locatedZones?.version === 2 && locatedZones?.metodo === 'cuadricula';
+  const locationAttempts = gridLocated ? Number(locatedZones?.intentos) || 0 : 0;
 
   const replacementMutation = useMutation({
     mutationFn: () => solicitarReemplazoEvidencia(cal.id, replacementReason.trim()),
@@ -1021,11 +1024,11 @@ function PanelDetalle({
 
   const answerLocation = (component: NonNullable<typeof activeBreakdown>['componentes'][number]): AnswerLocationAction | undefined => {
     if (!canGrade || component.tipo !== 'pregunta') return undefined;
-    if (locationAttempts >= 2) return { note: 'La IA ya buscó esta respuesta dos veces y no la distingue en la foto; se muestra la hoja completa.' };
+    if (locationAttempts >= 2) return { note: 'La IA ya ubicó las preguntas dos veces; si el recuadro no coincide, revisa la hoja completa.' };
     return {
       onLocate: editingComponentId ? undefined : () => locateMutation.mutate(),
       locating: locateMutation.isPending,
-      note: locationAttempts === 1 ? 'La IA no encontró esta respuesta la primera vez. Puedes buscarla una vez más.' : undefined,
+      note: locationAttempts === 1 ? 'La IA no encontró esta pregunta la primera vez. Puedes buscarla una vez más.' : undefined,
     };
   };
 

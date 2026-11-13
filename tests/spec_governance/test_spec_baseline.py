@@ -173,6 +173,7 @@ ALL_SPECS = {
     "179-lectura-fiel-digitalizacion",
     "180-recuadro-pregunta",
     "181-ajuste-asistido",
+    "182-ubicar-cuadricula",
 }
 OWNED_SPECS = {
     name

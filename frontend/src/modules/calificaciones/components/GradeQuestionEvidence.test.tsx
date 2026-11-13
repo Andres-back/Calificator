@@ -35,19 +35,37 @@ describe('GradeQuestionEvidence', () => {
     const locate = vi.fn();
     const view = render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} location={{ onLocate: locate }} />);
     expect(within(screen.getByTestId('answer-location-action')).getByText(/No hay una zona localizada/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Ubicar respuestas con IA' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ubicar preguntas con IA' }));
     expect(locate).toHaveBeenCalledOnce();
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/evidencia/paginas/2');
 
     view.rerender(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} location={{ onLocate: locate, locating: true }} />);
-    expect(within(screen.getByTestId('answer-location-action')).getByRole('status')).toHaveTextContent('Buscando las respuestas en la hoja');
-    expect(screen.getByRole('button', { name: /Ubicar respuestas con IA/ })).toBeDisabled();
+    expect(within(screen.getByTestId('answer-location-action')).getByRole('status')).toHaveTextContent('Ubicando las preguntas en la hoja');
+    expect(screen.getByRole('button', { name: /Ubicar preguntas con IA/ })).toBeDisabled();
   });
 
   it('175 cuando ya no se puede buscar explica por qué y no ofrece el botón', () => {
     render(<GradeQuestionEvidence evidenceUrl="/api/evidencia" pages={2} associatedPages={[2]} activePage={2} onPageChange={vi.fn()} location={{ note: 'La IA ya buscó esta respuesta dos veces.' }} />);
     expect(screen.getByText('La IA ya buscó esta respuesta dos veces.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Ubicar respuestas con IA/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ubicar preguntas con IA/ })).not.toBeInTheDocument();
+  });
+
+  it('182 con recuadro ofrece ubicar de nuevo si no está en la pregunta', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(new Blob(['synthetic']), { headers: { 'Content-Type': 'image/png', 'X-Evidence-Version': region.evidencia_version, 'X-Evidence-Page': '2' } }));
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:hoja');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const locate = vi.fn();
+    const props = { evidenceUrl: '/api/evidencia', pages: 2, associatedPages: [2], activePage: 2, onPageChange: vi.fn(), regions: [{ ...region, metodo: 'cuadricula' as const }] };
+    const view = render(<GradeQuestionEvidence {...props} location={{ onLocate: locate }} />);
+    expect(await screen.findByRole('img')).toHaveAttribute('src', 'blob:hoja');
+    expect(screen.queryByTestId('answer-location-action')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '¿El recuadro no está en la pregunta? Ubicar de nuevo' }));
+    expect(locate).toHaveBeenCalledOnce();
+    view.rerender(<GradeQuestionEvidence {...props} location={{ onLocate: locate, locating: true }} />);
+    expect(screen.getByText('Ubicando las preguntas en la hoja… Tarda unos segundos.')).toHaveAttribute('role', 'status');
+    view.rerender(<GradeQuestionEvidence {...props} location={{ note: 'La IA ya ubicó las preguntas dos veces.' }} />);
+    expect(screen.getByText('La IA ya ubicó las preguntas dos veces.')).toBeInTheDocument();
+    expect(screen.queryByTestId('answer-relocate')).not.toBeInTheDocument();
   });
 
   it('reencuadra cada respuesta de la misma foto y de otra hoja, sin inferencias o escrituras', async () => {
