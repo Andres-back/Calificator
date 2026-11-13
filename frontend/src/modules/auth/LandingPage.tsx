@@ -48,7 +48,7 @@ export function LandingPage() {
       <header className="relative z-20 border-b border-border/80 bg-surface/90 backdrop-blur-xl">
         <div className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <Link to={routes.home} className="focus-ring flex items-center gap-3 rounded-xl" aria-label="XCalificator, inicio">
-            <img src="/branding/logo-full.webp" alt="" className="h-11 w-11 rounded-xl object-contain" />
+            <img src="/branding/logo-mark.webp" alt="" className="h-11 w-11 rounded-xl object-contain" />
             <div className="hidden sm:block">
               <p className="font-display text-lg font-extrabold leading-none">XCalificator</p>
               <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">Plataforma educativa abierta</p>

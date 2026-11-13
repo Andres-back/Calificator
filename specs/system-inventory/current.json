@@ -652,7 +652,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "2baa9de7db05647349d6e4ff5b3323780f9641bae0f8e464cb134a45b2d44e33",
+  "source_digest": "1621a2ae8d6db0a52567727fc66edf3ece5780fb129ea6bfc425345cbd3828f8",
   "surfaces": [
     {
       "actors": [
@@ -14842,6 +14842,12 @@
         {
           "level": "unit",
           "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/src/config/brandAssets.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
           "status": "domain",
           "test_path": "frontend/src/lib/authorization.test.ts"
         },
@@ -15540,6 +15546,12 @@
           "reference": "POST:/auth/register",
           "status": "domain",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "direct",
+          "test_path": "frontend/src/config/brandAssets.test.tsx"
         },
         {
           "level": "unit",
@@ -24631,6 +24643,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/config/brandAssets.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/config/nav.test.ts"
         },
         {
@@ -26149,6 +26167,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/src/components/ui/P2Accessibility.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/src/config/brandAssets.test.tsx"
         },
         {
           "level": "unit",
@@ -31434,6 +31458,12 @@
           "reference": "/login",
           "status": "direct",
           "test_path": "frontend/src/components/seo/RouteMetadata.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/login",
+          "status": "direct",
+          "test_path": "frontend/src/config/brandAssets.test.tsx"
         },
         {
           "level": "unit",
@@ -45784,6 +45814,12 @@
           "reference": "POST:/auth/login",
           "status": "direct",
           "test_path": "frontend/e2e/teacher-ai-configuration.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/login",
+          "status": "direct",
+          "test_path": "frontend/src/config/brandAssets.test.tsx"
         }
       ]
     },
@@ -46064,6 +46100,12 @@
           "reference": "POST:/auth/register",
           "status": "direct",
           "test_path": "backend/tests/integration/test_business_flow_smoke.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/auth/register",
+          "status": "direct",
+          "test_path": "frontend/src/config/brandAssets.test.tsx"
         }
       ]
     },

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldAlert, ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 export function ForbiddenPage() {
@@ -7,9 +7,7 @@ export function ForbiddenPage() {
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-      <div className="mb-6 grid h-20 w-20 place-items-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
-        <ShieldAlert className="h-10 w-10" />
-      </div>
+      <img src="/branding/forbidden.webp" alt="" width={224} height={224} className="mb-4 h-44 w-44 select-none object-contain sm:h-56 sm:w-56" draggable={false} />
       <h1 className="font-display text-3xl font-extrabold">Acceso denegado</h1>
       <p className="mt-3 max-w-md text-muted">
         No tienes permiso para acceder a esta sección. Si crees que esto es un error,

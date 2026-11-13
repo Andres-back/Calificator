@@ -17,6 +17,7 @@ const icons: EducationalIconName[] = [
   'subject-technology', 'report-subjects', 'report-grades', 'report-average', 'student-roster',
   'interactive-games', 'archived-drafts', 'pdf-ready', 'presentation-processing',
   'presentation-ready', 'presentation-error', 'ai-institutional', 'ai-own-key', 'ai-routing',
+  'review-answers', 'review-feedback', 'review-history',
 ];
 
 const illustratedAssets = [
@@ -31,11 +32,12 @@ const illustratedAssets = [
   'report-average', 'student-roster',
   'interactive-games', 'archived-drafts', 'pdf-ready', 'presentation-processing',
   'presentation-ready', 'presentation-error', 'ai-institutional', 'ai-own-key', 'ai-routing',
+  'review-answers', 'review-feedback', 'review-history',
 ];
 
 describe('EducationalIcon', () => {
-  it('publica las 48 ilustraciones dentro del paquete del frontend', () => {
-    expect(illustratedAssets).toHaveLength(48);
+  it('publica las 51 ilustraciones dentro del paquete del frontend', () => {
+    expect(illustratedAssets).toHaveLength(51);
     for (const asset of illustratedAssets) {
       expect(existsSync(resolve(process.cwd(), 'public', 'branding', 'semantic-icons', asset + '.webp'))).toBe(true);
     }

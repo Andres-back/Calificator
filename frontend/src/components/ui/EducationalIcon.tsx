@@ -52,7 +52,10 @@ export type EducationalIconName =
   | 'presentation-error'
   | 'ai-institutional'
   | 'ai-own-key'
-  | 'ai-routing';
+  | 'ai-routing'
+  | 'review-answers'
+  | 'review-feedback'
+  | 'review-history';
 
 type IconProps = Omit<HTMLAttributes<HTMLSpanElement>, 'children'> & { name: EducationalIconName };
 
@@ -108,6 +111,9 @@ const EDUCATIONAL_ICON_ASSET: Record<EducationalIconName, string> = {
   'ai-institutional': 'ai-institutional',
   'ai-own-key': 'ai-own-key',
   'ai-routing': 'ai-routing',
+  'review-answers': 'review-answers',
+  'review-feedback': 'review-feedback',
+  'review-history': 'review-history',
 };
 
 const FALLBACK_ICON: Partial<Record<EducationalIconName, EducationalIconName>> = {
@@ -138,6 +144,9 @@ const FALLBACK_ICON: Partial<Record<EducationalIconName, EducationalIconName>> =
   'ai-institutional': 'ai-settings',
   'ai-own-key': 'xali',
   'ai-routing': 'ai-settings',
+  'review-answers': 'exam',
+  'review-feedback': 'reading',
+  'review-history': 'learning-guide',
 };
 
 function Glyph({ name }: { name: EducationalIconName }) {

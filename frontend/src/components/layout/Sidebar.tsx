@@ -9,7 +9,7 @@ import { routes } from '@/config/routes';
 function Logo() {
   return (
     <div className="flex items-center gap-2.5 px-2">
-      <img src="/branding/logo-full.webp" alt="XCalificator" className="h-10 w-10 rounded-lg object-contain" />
+      <img src="/branding/logo-mark.webp" alt="XCalificator" className="h-10 w-10 rounded-lg object-contain" />
       <div className="leading-tight">
         <p className="font-display font-extrabold text-fg">XCalificator</p>
         <p className="text-xs font-medium uppercase tracking-wide text-muted">Plataforma IA</p>

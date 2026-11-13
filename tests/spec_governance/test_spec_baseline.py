@@ -168,6 +168,7 @@ ALL_SPECS = {
     "172-ci-primer-fallo",
     "175-ubicar-respuesta-en-hoja",
     "176-revision-minimal",
+    "177-identidad-visual",
 }
 OWNED_SPECS = {
     name

@@ -103,7 +103,7 @@ export function LoginPage() {
         <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <section className="hidden lg:block">
             <div className="mb-8 flex items-center gap-3">
-              <img src="/branding/logo-full.webp" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
+              <img src="/branding/logo-mark.webp" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
               <div>
                 <p className="font-display text-2xl font-extrabold">XCalificator</p>
                 <p className="text-sm text-muted">Evaluación asistida por IA</p>
@@ -159,7 +159,7 @@ export function LoginPage() {
           >
             <Card className="mx-auto w-full max-w-md p-6 shadow-lg sm:p-8">
               <div className="mb-7 text-center">
-                <img src="/branding/logo-full.webp" alt="XCalificator" className="mx-auto mb-4 h-16 w-16 rounded-xl object-contain lg:hidden" />
+                <img src="/branding/logo-mark.webp" alt="XCalificator" className="mx-auto mb-4 h-16 w-16 rounded-xl object-contain lg:hidden" />
                 <p className="font-display text-2xl font-extrabold">XCalificator</p>
                 <p className="mt-2 text-sm font-semibold text-brand-600 dark:text-brand-300">La IA sugiere. El docente decide.</p>
                 <p className="mt-3 text-sm leading-6 text-muted">
