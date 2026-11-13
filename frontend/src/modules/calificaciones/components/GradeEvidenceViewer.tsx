@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type P
 import { Expand, Minimize2, Move, RotateCcw, RotateCw, ScanSearch, ZoomIn, ZoomOut } from 'lucide-react';
 import { Modal } from '@/components/ui';
 import {
-  ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport,
+  ANSWER_FOCUS_MAX_ZOOM, clampEvidenceViewport, evidenceImageLayout, evidenceRegionRect, expandAnswerRegion, fitEvidenceWidth, focusEvidenceRegion, panEvidenceViewport, rotateEvidenceBox, validEvidenceBox, zoomEvidenceViewport,
   type EvidenceBox, type EvidenceDimensions, type EvidenceRotation, type EvidenceViewport,
 } from './evidenceViewport';
 
@@ -18,7 +18,8 @@ function EvidenceCanvas({ src, label, region, rotation, onRotate, expanded = fal
   const [naturalSize, setSize] = useState<EvidenceDimensions>({ width: 0, height: 0, imageWidth: 0, imageHeight: 0 });
   const swapped = rotation % 180 !== 0;
   const size = useMemo(() => swapped ? { ...naturalSize, imageWidth: naturalSize.imageHeight, imageHeight: naturalSize.imageWidth } : naturalSize, [naturalSize, swapped]);
-  const orientedRegion = useMemo(() => validEvidenceBox(region) ? rotateEvidenceBox(region, rotation) : undefined, [region, rotation]);
+  // Spec 180: el recuadro abarca la pregunta con un margen, no solo la marca que guardó el lector.
+  const orientedRegion = useMemo(() => { const shown = expandAnswerRegion(region); return shown ? rotateEvidenceBox(shown, rotation) : undefined; }, [region, rotation]);
   const [viewport, setViewport] = useState(initial);
   const currentViewport = useRef(viewport);
   const [loaded, setLoaded] = useState(false);

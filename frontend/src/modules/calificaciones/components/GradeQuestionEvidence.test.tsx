@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GradeEvidenceRegion } from '@/types/api';
 import { GradeQuestionEvidence } from './GradeQuestionEvidence';
+import { expandAnswerRegion } from './evidenceViewport';
 
 describe('GradeQuestionEvidence', () => {
   afterEach(() => { vi.restoreAllMocks(); });
@@ -66,8 +67,10 @@ describe('GradeQuestionEvidence', () => {
       expect(image).toHaveAttribute('src', src);
       Object.defineProperties(image, { naturalWidth: { value: 800 }, naturalHeight: { value: 1200 } });
       fireEvent.load(image);
-      const centerX = parseFloat(image.style.left) + (box[0] + box[2] / 2) * parseFloat(image.style.width);
-      const centerY = parseFloat(image.style.top) + (box[1] + box[3] / 2) * parseFloat(image.style.height);
+      // 180: se centra el recuadro que se dibuja, que abarca la pregunta con margen.
+      const shown = expandAnswerRegion(box)!;
+      const centerX = parseFloat(image.style.left) + (shown[0] + shown[2] / 2) * parseFloat(image.style.width);
+      const centerY = parseFloat(image.style.top) + (shown[1] + shown[3] / 2) * parseFloat(image.style.height);
       expect(centerX).toBeCloseTo(200, 0);
       expect(centerY).toBeCloseTo(150, 0);
       expect(parseFloat(image.style.height)).toBeGreaterThan(300);

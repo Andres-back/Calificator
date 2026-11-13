@@ -171,6 +171,7 @@ ALL_SPECS = {
     "177-identidad-visual",
     "178-pregunta-completa",
     "179-lectura-fiel-digitalizacion",
+    "180-recuadro-pregunta",
 }
 OWNED_SPECS = {
     name

@@ -41,6 +41,28 @@ export function evidenceImageLayout(size: EvidenceDimensions, viewport: Evidence
   return { width, height, left: size.width / 2 - view.centerX * width, top: size.height / 2 - view.centerY * height };
 }
 
+/**
+ * Recuadro que se dibuja para una respuesta. El lector guarda la zona de la marca o de la fila de
+ * opciones; el docente necesita ver la pregunta completa. La hoja puede estar de lado, así que no se
+ * supone dónde está el enunciado: el recuadro crece a lo largo de su lado mayor (el sentido del texto)
+ * y, con un margen, a ambos lados del menor (los renglones vecinos de la misma pregunta).
+ */
+export function expandAnswerRegion(box: unknown): EvidenceBox | undefined {
+  if (!validEvidenceBox(box)) return undefined;
+  const [x, y, width, height] = box;
+  const horizontal = width >= height;
+  const long = horizontal ? width : height;
+  const short = horizontal ? height : width;
+  const along = Math.min(0.2, Math.max(0.06, long * 2.5));
+  const across = Math.max(0.04, short * 1.2);
+  const [padX, padY] = horizontal ? [along, across] : [across, along];
+  const left = Math.max(0, x - padX);
+  const top = Math.max(0, y - padY);
+  const right = Math.min(1, x + width + padX);
+  const bottom = Math.min(1, y + height + padY);
+  return [left, top, right - left, bottom - top];
+}
+
 /** Mayor ampliación al enfocar una respuesta: deja a la vista la pregunta con sus opciones, no solo la marca. */
 export const ANSWER_FOCUS_MAX_ZOOM = 2.5;
 
