@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "8219e107387ae1397afab556477a9aa02cfb3fef99298bcd04c49c54ff831bd2",
+  "source_digest": "cd30ea740d5ae089eeac87011959a8ca02d880593e24e48bbd5374b608fe5ddd",
   "surfaces": [
     {
       "actors": [
@@ -23973,6 +23973,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_material_dba_alignment.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_migrate_student_emails.py"
         },
         {
           "level": "unit",

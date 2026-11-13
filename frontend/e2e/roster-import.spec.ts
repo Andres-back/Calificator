@@ -50,7 +50,7 @@ async function installMocks(page: Page, loseResponse = false, rosterError?: { co
       const repeated = confirmed;
       confirmed = true;
       if (loseResponse && !repeated) return route.abort('failed');
-      return json(route, { creados: 1, matriculados_existentes: 0, ya_matriculados: 0, omitidos: 0, credenciales: repeated ? [] : [{ estudiante_id: 'student-1', nombre: 'Ana Perez', email: 'ana@alumnos.xcalificator.daimuz.com', password_temporal: 'ClaveTemporal123!' }], credenciales_mostradas_una_vez: !repeated });
+      return json(route, { creados: 1, matriculados_existentes: 0, ya_matriculados: 0, omitidos: 0, credenciales: repeated ? [] : [{ estudiante_id: 'student-1', nombre: 'Ana Perez', email: 'perezana@xcalificator.com', password_temporal: 'ClaveTemporal123!' }], credenciales_mostradas_una_vez: !repeated });
     }
     return json(route, []);
   });
@@ -113,7 +113,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await nameField.focus();
     await expect(nameField).toBeFocused();
     await page.getByRole('button', { name: /Confirmar 1 estudiantes/ }).click();
-    await expect(page.getByText('ana@alumnos.xcalificator.daimuz.com')).toBeVisible();
+    await expect(page.getByText('perezana@xcalificator.com')).toBeVisible();
     expect(state.created()).toBe(true);
     expect(state.confirmed()).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);

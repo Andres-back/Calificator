@@ -176,6 +176,7 @@ ALL_SPECS = {
     "182-ubicar-cuadricula",
     "183-hoja-sin-respuestas",
     "184-camara-varias-fotos",
+    "185-correos-estudiantes",
 }
 OWNED_SPECS = {
     name
