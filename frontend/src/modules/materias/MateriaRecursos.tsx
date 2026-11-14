@@ -55,6 +55,7 @@ export function MateriaRecursos() {
         empty={(
           <EmptyState
             icon={BookOpenCheck}
+            image="/branding/empty-resources.webp"
             title={canManageResource || canCreateResource ? 'Aún no hay recursos en esta materia' : 'Tu docente aún no ha publicado recursos'}
             description={canManageResource || canCreateResource ? 'Crea un recurso seleccionando esta materia; aparecerá aquí como borrador y también en tu biblioteca.' : 'Cuando haya una guía o práctica disponible aparecerá aquí.'}
             action={canCreateResource ? <Link to="/app/herramientas" className={resourceLinkClass}>Abrir mi biblioteca</Link> : undefined}

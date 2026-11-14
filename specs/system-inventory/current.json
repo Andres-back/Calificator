@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "6ce96660667db670bd1797619938728fc04e29193e3b8292bedc41905f047c77",
+  "source_digest": "c26708ca31a493f7202b3fed66bffeaa51f40017931b0663c5737d5af36210a6",
   "surfaces": [
     {
       "actors": [
@@ -30181,7 +30181,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 67,
+      "source_line": 68,
       "source_path": "frontend/src/modules/materias/MateriaRecursos.tsx",
       "states": [],
       "tests": [

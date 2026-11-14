@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button, Skeleton } from '@/components/ui';
 
 /* ─── Loading ─── */
@@ -92,9 +92,7 @@ export function QueryError({
 
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-rose-300 bg-surface px-6 py-14 text-center dark:border-rose-500/40" role="alert">
-      <div className="mb-4 grid h-14 w-14 place-items-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
-        <AlertTriangle className="h-7 w-7" aria-hidden="true" />
-      </div>
+      <img src="/branding/state-error.webp" alt="" className="mb-4 h-28 w-28 object-contain" />
       <h3 className="font-display text-lg font-bold text-fg">{displayTitle}</h3>
       <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-muted">{displayMessage}</p>
 

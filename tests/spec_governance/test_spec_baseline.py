@@ -179,6 +179,7 @@ ALL_SPECS = {
     "185-correos-estudiantes",
     "186-editor-revision",
     "188-evidencia-reemplazada",
+    "191-ilustraciones-estados",
 }
 OWNED_SPECS = {
     name
