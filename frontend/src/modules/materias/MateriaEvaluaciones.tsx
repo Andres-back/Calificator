@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { MODALITY_LABELS } from '@/modules/evaluaciones/modalityLabels';
+import { describeDeadline } from '@/lib/dates';
 import { EvaluationCopyDialog } from '@/modules/evaluaciones/EvaluationCopyDialog';
 import { EvaluationScoreDialog } from '@/modules/evaluaciones/components/EvaluationScoreDialog';
 import { EvaluationDocumentRecovery } from '@/modules/evaluaciones/EvaluationDocumentRecovery';
@@ -61,11 +63,6 @@ import type {
   Materia,
 } from '@/types/api';
 
-const MODALITY_LABELS: Record<EvaluacionModalidad, string> = {
-  fisica: 'En papel',
-  online: 'En línea',
-  mixta: 'Mixta',
-};
 
 interface EvaluationForm {
   nombre: string;
@@ -304,9 +301,12 @@ export function MateriaEvaluaciones() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={statusTone[evaluation.estado] ?? 'neutral'}>
-                        {ESTADO_LABEL[evaluation.estado] ?? 'Estado desconocido'}
-                      </Badge>
+                      {/* Spec 189: el estado de publicación es del docente; el estudiante ve su propio estado. */}
+                      {!isLearnerView && (
+                        <Badge tone={statusTone[evaluation.estado] ?? 'neutral'}>
+                          {ESTADO_LABEL[evaluation.estado] ?? 'Estado desconocido'}
+                        </Badge>
+                      )}
                       <Badge tone="brand">
                         {MODALITY_LABELS[modality]}
                       </Badge>
@@ -323,11 +323,14 @@ export function MateriaEvaluaciones() {
                       <span className="text-xs text-muted">
                         Nota máxima: {Number(evaluation.nota_maxima)}
                       </span>
-                      {evaluation.fecha_limite_entrega && (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                          <Clock className="h-3 w-3" /> Vence {new Date(evaluation.fecha_limite_entrega).toLocaleString()}
-                        </span>
-                      )}
+                      {evaluation.fecha_limite_entrega && (() => {
+                        const deadline = describeDeadline(evaluation.fecha_limite_entrega);
+                        return (
+                          <span className={deadline.past ? 'flex items-center gap-1 text-xs text-muted' : 'flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300'}>
+                            <Clock className="h-3 w-3" /> {deadline.text}
+                          </span>
+                        );
+                      })()}
                       {evaluation.tiempo_limite_minutos != null && (
                         <span className="flex items-center gap-1 text-xs text-muted">
                           <Clock className="h-3 w-3" />{' '}

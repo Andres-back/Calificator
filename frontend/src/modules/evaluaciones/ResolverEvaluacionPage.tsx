@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { modalityLabel } from './modalityLabels';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -409,7 +410,7 @@ export function ResolverEvaluacionPage() {
             {evaluacion.descripcion && <RichContent content={evaluacion.descripcion} variant="compact" className="mt-1 text-muted" />}
           </div>
           <div className="flex flex-wrap gap-2 sm:justify-end">
-            <Badge tone="brand" className="capitalize">{modalidad}</Badge>
+            <Badge tone="brand">{modalityLabel(modalidad)}</Badge>
             <Badge tone={statusTone[evaluacion.estado] ?? 'neutral'}>{evaluacion.estado}</Badge>
             <Badge tone="neutral">{preguntas.length} preguntas</Badge>
             <Badge tone="neutral">Nota máx.: {Number(evaluacion.nota_maxima)}</Badge>

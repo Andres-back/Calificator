@@ -34,8 +34,8 @@
 | endpoint | `GET:/impacto/kappa` | admin, profesor | missing | `backend/app/modules/impacto_tesis/router.py:454` |
 | endpoint | `GET:/impacto/likert` | authenticated | missing | `backend/app/modules/impacto_tesis/router.py:524` |
 | endpoint | `GET:/impacto/tiempo-ahorrado` | admin, profesor | missing | `backend/app/modules/impacto_tesis/router.py:427` |
-| endpoint | `GET:/reportes/estudiante/{estudiante_id}` | admin, estudiante, profesor | missing | `backend/app/modules/reportes/router.py:46` |
-| endpoint | `GET:/reportes/materia/{materia_id}` | admin, profesor | missing | `backend/app/modules/reportes/router.py:17` |
+| endpoint | `GET:/reportes/estudiante/{estudiante_id}` | admin, estudiante, profesor | covered | `backend/app/modules/reportes/router.py:46` |
+| endpoint | `GET:/reportes/materia/{materia_id}` | admin, profesor | covered | `backend/app/modules/reportes/router.py:17` |
 | endpoint | `GET:/reportes/profesor/resumen` | admin, profesor | covered | `backend/app/modules/reportes/router.py:83` |
 | endpoint | `POST:/analytics/evento` | admin, estudiante, profesor | covered | `backend/app/modules/analytics/router.py:85` |
 | endpoint | `POST:/analytics/sesiones-trabajo` | admin, profesor | covered | `backend/app/modules/analytics/router.py:106` |
@@ -48,7 +48,7 @@
 | endpoint | `POST:/impacto/estudios/{study_id}/concesiones/revocar` | authenticated | missing | `backend/app/modules/impacto_tesis/router.py:184` |
 | endpoint | `POST:/impacto/estudios/{study_id}/observaciones` | authenticated | missing | `backend/app/modules/impacto_tesis/router.py:258` |
 | endpoint | `POST:/impacto/estudios/{study_id}/retencion/aplicar` | authenticated | missing | `backend/app/modules/impacto_tesis/router.py:394` |
-| endpoint | `POST:/reportes/export/pdf` | admin, profesor | missing | `backend/app/modules/reportes/router.py:108` |
+| endpoint | `POST:/reportes/export/pdf` | admin, profesor | covered | `backend/app/modules/reportes/router.py:112` |
 | frontend_route | `/app/analytics` | admin, profesor | covered | `frontend/src/config/routes.ts:70` |
 | frontend_route | `/app/reportes` | admin, profesor | covered | `frontend/src/config/routes.ts:64` |
 | frontend_call | `GET:/analytics/ai-quality/concordancia` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:426` |
@@ -87,5 +87,5 @@
 
 ## Hallazgos
 
-- **low · missing_coverage**: 18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.
-- **medium · contract_mismatch**: 7 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **medium · contract_mismatch**: 6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **low · missing_coverage**: 15 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.

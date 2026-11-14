@@ -88,9 +88,13 @@ async def resumen_profesor(
     require_permission_now(current_user, "reports.read")
     rows = await db.execute(
         text(
-            "SELECT m.nombre, COUNT(c.id) as total_cals, AVG(c.nota_confirmada) as promedio "
+            # Cada nota se lleva a escala 5 antes de promediar, como el resumen del estudiante:
+            # evaluaciones con distinta nota máxima no se mezclan en bruto.
+            "SELECT m.nombre, COUNT(c.id) as total_cals, "
+            "AVG(c.nota_confirmada * 5.0 / NULLIF(e.nota_maxima, 0)) as promedio "
             "FROM materias m "
             "LEFT JOIN calificaciones c ON c.materia_id=m.id "
+            "LEFT JOIN evaluaciones e ON e.id=c.evaluacion_id "
             "WHERE m.profesor_id=:p "
             "GROUP BY m.id, m.nombre"
         ),
@@ -99,7 +103,7 @@ async def resumen_profesor(
     return {
         "profesor_id": current_user.id,
         "materias": [
-            {"nombre": r.nombre, "total_calificaciones": r.total_cals, "promedio": float(r.promedio or 0)}
+            {"nombre": r.nombre, "total_calificaciones": r.total_cals, "promedio": float(r.promedio or 0), "escala": 5}
             for r in rows
         ],
     }

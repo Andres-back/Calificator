@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { plural } from '@/lib/dates';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpenCheck, GraduationCap, ShieldCheck, HelpCircle, CheckCircle2, Clock3, ListChecks } from 'lucide-react';
 import { Badge, statusTone, Button, Card, EmptyState, Field, Select, Skeleton, GuidedTour, useFirstVisitTour, RichContent, QueryError } from '@/components/ui';
@@ -219,7 +220,7 @@ export function BoletinPage() {
               {isStudent ? <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted" aria-label="Resumen de resultados">
                 <span>{boletinSummary.total} evaluaciones</span>
                 <span>{boletinSummary.confirmed} publicadas</span>
-                <span>{boletinSummary.pending} pendientes</span>
+                <span>{plural(boletinSummary.pending, 'pendiente')}</span>
               </div> : <div className="grid gap-3 sm:grid-cols-3">
                 <BulletinMetric icon={ListChecks} label="Evaluaciones" value={boletinSummary.total} tone="neutral" />
                 <BulletinMetric icon={CheckCircle2} label="Confirmadas" value={boletinSummary.confirmed} tone="success" />

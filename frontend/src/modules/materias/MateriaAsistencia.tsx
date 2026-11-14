@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { capitalizeFirst, plural } from '@/lib/dates';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useBlocker } from 'react-router-dom';
 import {
@@ -272,7 +273,7 @@ export function MateriaAsistencia() {
           </Field>
           <div className="rounded-lg border border-border bg-surface-2 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Día seleccionado</p>
-            <p className="mt-1 text-base font-bold capitalize">{formatDate(selectedDate)}</p>
+            <p className="mt-1 text-base font-bold">{capitalizeFirst(formatDate(selectedDate))}</p>
           </div>
         </div>
       </Card>
@@ -450,7 +451,7 @@ export function MateriaAsistencia() {
           >
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <p aria-live="polite" className="text-sm font-semibold tabular-nums">
-                {summary.total - summary.pendientes}/{summary.total} marcados · {summary.pendientes} pendientes
+                {summary.total - summary.pendientes}/{summary.total} marcados · {plural(summary.pendientes, 'pendiente')}
               </p>
               <p role="status" className="text-sm text-muted">
                 {autosave.errors ? `${autosave.errors} cambios no guardados`

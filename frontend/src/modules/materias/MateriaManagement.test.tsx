@@ -25,12 +25,12 @@ it('edits only metadata with a version guard', async () => {
 });
 it('requires explicit archive confirmation and cancellation does not write', async () => {
   show(); const user = userEvent.setup();
-  await user.click(screen.getByRole('button', { name: 'Eliminar de mis materias' }));
+  await user.click(screen.getByRole('button', { name: 'Archivar materia' }));
   expect(screen.getByRole('dialog')).toHaveTextContent('No borra estudiantes, notas');
   await user.click(screen.getByRole('button', { name: 'Cancelar' }));
   expect(mocks.update).not.toHaveBeenCalled();
-  await user.click(screen.getByRole('button', { name: 'Eliminar de mis materias' }));
   await user.click(screen.getByRole('button', { name: 'Archivar materia' }));
+  await user.click(screen.getByRole('button', { name: 'Sí, archivar' }));
   await waitFor(() => expect(mocks.update).toHaveBeenCalledWith('m', { expected_updated_at: subject.updated_at, estado: 'archivada' }));
 });
 it('explains that restoring does not open reception and exposes errors inside the dialog', async () => {

@@ -11,9 +11,12 @@ export function getStudentEvaluationStatus(evaluation: Evaluacion): {
   tone: 'success' | 'warning' | 'neutral' | 'brand';
 } {
   if (evaluation.mi_nota_confirmada != null) {
+    const maximum = Number(evaluation.mi_nota_maxima ?? evaluation.nota_maxima);
+    // Spec 189: verde solo si aprueba (60 % de la nota máxima); si no, ámbar.
+    const passes = maximum > 0 && Number(evaluation.mi_nota_confirmada) >= maximum * 0.6;
     return {
-      label: `Calificada: ${formatGradeScore(evaluation.mi_nota_confirmada, evaluation.mi_nota_maxima ?? evaluation.nota_maxima)} / ${formatGradeScore(evaluation.mi_nota_maxima ?? evaluation.nota_maxima)}`,
-      tone: 'success',
+      label: `Tu nota: ${formatGradeScore(evaluation.mi_nota_confirmada, evaluation.mi_nota_maxima ?? evaluation.nota_maxima)} / ${formatGradeScore(evaluation.mi_nota_maxima ?? evaluation.nota_maxima)}`,
+      tone: passes ? 'success' : 'warning',
     };
   }
   if (evaluation.mi_entrega_estado === 'requiere_reintento') {
