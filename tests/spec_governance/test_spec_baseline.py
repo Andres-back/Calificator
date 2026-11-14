@@ -177,6 +177,7 @@ ALL_SPECS = {
     "183-hoja-sin-respuestas",
     "184-camara-varias-fotos",
     "185-correos-estudiantes",
+    "186-editor-revision",
 }
 OWNED_SPECS = {
     name

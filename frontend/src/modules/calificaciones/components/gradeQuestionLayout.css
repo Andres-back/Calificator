@@ -13,5 +13,9 @@
     border-inline-start-width: 1px;
     padding-top: 0;
     padding-inline-start: 1.25rem;
+    /* Spec 186: la hoja acompaña al docente mientras baja por la explicación o el editor. */
+    position: sticky;
+    top: 0.75rem;
+    align-self: start;
   }
 }
