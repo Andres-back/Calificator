@@ -367,3 +367,40 @@ def test_feedback_claiming_everything_correct_is_rewritten_from_components(monke
     assert cal.estado == "requiere_revision"
     assert cal.nota_confirmada is None
     assert guard["original_feedback"] == "Excelente: todas las respuestas están correctas."
+
+
+def _teacher_breakdown():
+    from datetime import datetime
+    return SimpleNamespace(id=uuid4(), version=2, origen="docente", activo=True, created_at=datetime(2026, 11, 13, 22, 12, 55), componentes=[],
+                           procedencia_json={"primera_sugerencia": {"version": 1, "nota_final": 1.26, "pipeline_run_id": "run-1"}}, pipeline_run_id=None, nota_final=1.26)
+
+
+def _simple_run():
+    blueprint = {"nota_maxima": 5, "preguntas": [{"numero": 1, "enunciado": "Respuesta", "puntaje": 5}]}
+    valuation = {"clave": "pregunta:1", "respuesta_estudiante": "C", "puntaje": 5, "estado": "correcta", "explicacion": "Correcta.", "paginas": [1]}
+    return blueprint, {"grader_a": {"componentes": [valuation]}, "grader_b": {"componentes": [valuation]}}
+
+
+def test_188_a_teacher_breakdown_survives_a_run_nobody_asked_for(monkeypatch):
+    monkeypatch.setattr("app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED", True)
+    teacher = _teacher_breakdown()
+    blueprint, raw = _simple_run()
+    # existe la corrida, desglose activo docente, ninguna recalificación posterior
+    db = FakeDB([None, teacher, None])
+    result = asyncio.run(create_automatic_breakdown(db, calificacion=_calification(), blueprint=blueprint, raw_output=raw, pipeline_run_id="run-2"))
+    assert result is teacher and teacher.activo is True and db.added == []
+
+
+def test_188_changing_the_evidence_or_regrading_replaces_the_old_teacher_breakdown(monkeypatch):
+    from datetime import datetime
+    monkeypatch.setattr("app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED", True)
+    teacher = _teacher_breakdown()
+    blueprint, raw = _simple_run()
+    # el docente cambió la evidencia o recalificó después de su ajuste
+    db = FakeDB([None, teacher, datetime(2026, 11, 13, 22, 17, 32)])
+    result = asyncio.run(create_automatic_breakdown(db, calificacion=_calification(), blueprint=blueprint, raw_output=raw, pipeline_run_id="run-after-new-evidence"))
+    assert result is not teacher
+    assert result.origen == "automatico" and result.version == 3
+    assert result.componentes[0].respuesta_estudiante == "C"
+    # el ajuste anterior queda en el historial, inactivo
+    assert teacher.activo is False
