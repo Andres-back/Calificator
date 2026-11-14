@@ -127,4 +127,4 @@
 
 ## Hallazgos
 
-- **medium · contract_mismatch**: 6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **medium · contract_mismatch**: 7 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.

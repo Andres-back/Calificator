@@ -6,7 +6,7 @@ import { EvidenceScanner } from './evidenceScan';
 import { conservativeScanSuggestion, rotateScanPoint, validScanQuad, type ScanPoint, type ScanQuad, type ScanRotation } from './scanGeometry';
 import type { EvidenceScanRecipe, EvidenceScanSelection } from './scanTypes';
 import type { ImageQualityResult } from './imageQuality';
-import type { CornerAssistant } from './cornerAssistance';
+import type { CornerAssistant, OrientationAssistant } from './cornerAssistance';
 import { fitScanViewport } from './scanViewport';
 
 const FULL: ScanQuad = [[0, 0], [1, 0], [1, 1], [0, 1]];
@@ -25,6 +25,8 @@ function useBlobUrl(blob: Blob | null) {
 
 interface Props {
   suggestCorners?: CornerAssistant;
+  /** Spec 187: gira la hoja para que el texto quede derecho, salvo que el docente ya la haya girado. */
+  suggestOrientation?: OrientationAssistant;
   file: File;
   pageNumber: number;
   rotation: ScanRotation;
@@ -33,7 +35,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation, previous, onAccept, onClose, suggestCorners }: Props) {
+export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation, previous, onAccept, onClose, suggestCorners, suggestOrientation }: Props) {
   const scanner = useRef<EvidenceScanner | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [corners, setCorners] = useState<ScanQuad>(FULL);
@@ -47,6 +49,11 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
   const [loading, setLoading] = useState(true);
   const [assisting, setAssisting] = useState(false);
   const assistant = useRef(suggestCorners);
+  const orientationAssistant = useRef(suggestOrientation);
+  const orientationRequest = useRef<AbortController | null>(null);
+  const [orienting, setOrienting] = useState(false);
+  // El giro del docente siempre gana: una sugerencia tardía no lo deshace.
+  const cancelOrientation = () => { orientationRequest.current?.abort(); setOrienting(false); };
   const assistanceRequest = useRef<AbortController | null>(null);
   const assistanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editEpoch = useRef(0);
@@ -79,8 +86,20 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
       setCorners(usableSaved ? saved.recipe.corners : result.quad ?? FULL);
       setRotation(usableSaved ? saved.recipe.rotation : initialRotationRef.current);
       setProfile(usableSaved ? saved.recipe.profile : 'natural');
-      setNotice(result.quad ? 'Bordes aproximados: comprueba que no falte ninguna respuesta.' : 'Mueve las esquinas hasta los bordes de la hoja. También puedes usar la foto original.');
+      setNotice(result.quad ? 'Hoja enderezada automáticamente. Comprueba que no falte ninguna respuesta; si falta algo, toca «Ajustar bordes».' : 'Mueve las esquinas hasta los bordes de la hoja. También puedes usar la foto original.');
+      // Spec 187: con bordes propuestos, se muestra primero la hoja preparada, como un escáner.
+      setTab(usableSaved || result.quad ? 'preview' : 'source');
       setLoading(false);
+      if (!usableSaved && initialRotationRef.current === 0 && result.sourcePreview && orientationAssistant.current) {
+        const controller = new AbortController(); orientationRequest.current = controller;
+        const timer = setTimeout(() => controller.abort(), 20_000);
+        setOrienting(true);
+        void orientationAssistant.current(result.sourcePreview, controller.signal).then((advice) => {
+          if (!active || controller.signal.aborted || advice === null || advice === 0) return;
+          setRotation(advice);
+          setNotice((current) => `${current} La hoja se giró para que el texto quede derecho; usa «Girar» si hace falta.`);
+        }).catch(() => undefined).finally(() => { clearTimeout(timer); if (active && orientationRequest.current === controller) setOrienting(false); });
+      }
       if (!usableSaved && !result.quad && result.sourcePreview && assistant.current && editEpoch.current === epoch) {
         const controller = new AbortController(); assistanceRequest.current = controller;
         const timer = setTimeout(() => { controller.abort(); if (active && editEpoch.current === epoch) { setAssisting(false); setNotice('No pudimos proponer los bordes. Puedes ajustarlos o usar la foto original.'); } }, 20_000);
@@ -90,14 +109,15 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
           if (!active || controller.signal.aborted || editEpoch.current !== epoch) return;
           if (quad && validScanQuad(quad)) {
             setCorners(conservativeScanSuggestion(quad));
-            setNotice('Bordes sugeridos con ayuda visual y margen de seguridad. Comprueba que no falte ninguna respuesta antes de aceptar.');
+            setTab('preview');
+            setNotice('Hoja enderezada con ayuda visual y margen de seguridad. Comprueba que no falte ninguna respuesta; si falta algo, toca «Ajustar bordes».');
           } else setNotice('No pudimos proponer los bordes. Puedes ajustarlos o usar la foto original.');
         }).catch(() => {
           if (active && !controller.signal.aborted && editEpoch.current === epoch) setNotice('No pudimos proponer los bordes. Puedes ajustarlos o usar la foto original.');
         }).finally(() => { clearTimeout(timer); if (active && editEpoch.current === epoch) setAssisting(false); });
       }
     }).catch((reason: Error) => { if (active && reason.name !== 'AbortError') { setError(reason.message); setLoading(false); } });
-    return () => { active = false; editEpoch.current += 1; assistanceRequest.current?.abort(); if (assistanceTimer.current) clearTimeout(assistanceTimer.current); current.dispose(); if (scanner.current === current) scanner.current = null; };
+    return () => { active = false; editEpoch.current += 1; assistanceRequest.current?.abort(); orientationRequest.current?.abort(); if (assistanceTimer.current) clearTimeout(assistanceTimer.current); current.dispose(); if (scanner.current === current) scanner.current = null; };
   }, [file]);
 
   const recipe = useMemo<EvidenceScanRecipe>(() => ({ ...dimensions, corners, rotation, profile, coordinate_frame: 'exif_oriented_source' }), [dimensions, corners, rotation, profile]);
@@ -158,17 +178,18 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
   };
   const imageTransform = rotation === 90 ? 'translate(1000 0) rotate(90)' : rotation === 180 ? `translate(1000 ${viewHeight}) rotate(180)` : rotation === 270 ? `translate(0 ${viewHeight}) rotate(270)` : undefined;
   const accepted = valid && preview?.key === recipeKey && !loading && !error;
-  const close = () => { cancelAssistance(); scanner.current?.dispose(); onClose(); };
+  const close = () => { cancelAssistance(); cancelOrientation(); scanner.current?.dispose(); onClose(); };
   const useOriginal = () => { cancelAssistance(); scanner.current?.dispose(); if (quality) onAccept({ decision: 'original' }, quality); else onAccept({ decision: 'original' }); };
 
   return <Modal open fullScreen onClose={close} title={`Preparar hoja ${pageNumber}`} className="fixed inset-0 m-0 flex h-[100dvh] max-h-[100dvh] w-full max-w-none flex-col overflow-hidden rounded-none p-3 pt-[max(.75rem,env(safe-area-inset-top))] sm:p-4 [&>h2]:mb-2 [&>h2]:shrink-0" closeOnBackdrop={false}>
     <div ref={editorBody} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+    {orienting && !assisting && <p role="status" aria-live="polite" className="mb-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">Girando la hoja para que el texto quede derecho… Puedes revisar o aceptar sin esperar.</p>}
     {assisting && <p role="status" aria-live="polite" className="mb-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">Buscando los bordes con ayuda visual externa… Puedes ajustar las esquinas o usar la original sin esperar.</p>}
     {notice && <p className="mb-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">{notice}</p>}
     {error && <p role="alert" className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">{error}</p>}
     <div className="mb-3 grid grid-cols-2 gap-2 lg:hidden">
-      <button type="button" className={control} aria-pressed={tab === 'source'} onClick={() => setTab('source')}>Ajustar bordes</button>
-      <button type="button" className={control} aria-pressed={tab === 'preview'} onClick={() => setTab('preview')}>Ver preparada</button>
+      <button type="button" className={cn(control, tab === 'source' && 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-100')} aria-pressed={tab === 'source'} onClick={() => setTab('source')}>Ajustar bordes</button>
+      <button type="button" className={cn(control, tab === 'preview' && 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-100')} aria-pressed={tab === 'preview'} onClick={() => setTab('preview')}>Ver preparada</button>
     </div>
     <div className="grid min-w-0 gap-4 lg:grid-cols-2">
       <section className={`${tab !== 'source' ? 'hidden lg:block' : ''} min-w-0 space-y-2`} aria-label="Ajuste de la foto original">
@@ -205,8 +226,8 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
           <span className="min-w-12 text-center text-sm">{Math.round(zoom * 100)}%</span>
           <button type="button" className={control} disabled={!source || zoom >= 3} aria-label="Ampliar foto" onClick={() => setZoom((n) => Math.min(3, n + 0.5))}><ZoomIn className="h-4 w-4" /></button>
           <button type="button" className={control} disabled={!source} onClick={fitPhoto}>Encajar hoja</button>
-          <button type="button" className={control} disabled={!source} onClick={() => { cancelAssistance(); setRotation((n) => ((n + 90) % 360) as ScanRotation); fitPhoto(); }}><RotateCw className="h-4 w-4" /> Girar</button>
-          <button type="button" className={control} disabled={!source} onClick={() => { cancelAssistance(); setCorners(FULL); setRotation(initialRotation); setProfile('natural'); fitPhoto(); }}><Undo2 className="h-4 w-4" /> Restablecer</button>
+          <button type="button" className={control} disabled={!source} onClick={() => { cancelAssistance(); cancelOrientation(); setRotation((n) => ((n + 90) % 360) as ScanRotation); fitPhoto(); }}><RotateCw className="h-4 w-4" /> Girar</button>
+          <button type="button" className={control} disabled={!source} onClick={() => { cancelAssistance(); cancelOrientation(); setCorners(FULL); setRotation(initialRotation); setProfile('natural'); fitPhoto(); }}><Undo2 className="h-4 w-4" /> Restablecer</button>
         </div>
         {source && <details className="rounded-xl border border-border p-2"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Ajuste preciso con botones</summary><div className="flex flex-wrap items-center gap-2">
           <label className="flex min-h-11 items-center gap-2 text-sm font-semibold">Esquina<select aria-label="Esquina que quieres ajustar" className="min-h-11 rounded-lg border border-border bg-surface px-2" value={selected} onChange={(event) => setSelected(Number(event.target.value))}>{CORNERS.map((name, i) => <option key={name} value={i}>{i + 1} · {name}</option>)}</select></label>
@@ -227,7 +248,7 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
     <div role="status" aria-live="polite" className="my-3 min-h-6 text-sm text-muted">{source && !valid ? 'Revisa las esquinas para continuar.' : loading ? 'Preparando en este dispositivo…' : accepted ? 'Vista lista. Comprueba la hoja antes de aceptar.' : ''}</div>
     </div>
     <footer className="mt-2 grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-surface pt-2 pb-[env(safe-area-inset-bottom)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-      <button type="button" className={cn(control, 'col-span-2 border-brand-600 bg-brand-600 text-white hover:bg-brand-700 sm:col-span-1')} disabled={!accepted} onClick={() => { if (accepted && preview) { cancelAssistance(); scanner.current?.dispose(); onAccept({ decision: 'prepared', recipe, preview: preview.blob }, quality); } }}><ScanLine className="h-4 w-4 shrink-0" /> Usar esta preparación</button>
+      <button type="button" className={cn(control, 'col-span-2 border-brand-600 bg-brand-600 text-white hover:bg-brand-700 sm:col-span-1')} disabled={!accepted} onClick={() => { if (accepted && preview) { cancelAssistance(); scanner.current?.dispose(); onAccept({ decision: 'prepared', recipe, preview: preview.blob }, quality); } }}><ScanLine className="h-4 w-4 shrink-0" /> Usar esta hoja</button>
       <button type="button" className={control} onClick={useOriginal}>Usar foto original</button>
       <button type="button" className={control} onClick={close}>Volver sin cambios</button>
     </footer>

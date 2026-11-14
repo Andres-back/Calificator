@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCornerAssistant } from './cornerAssistance';
+import { createCornerAssistant, createOrientationAssistant } from './cornerAssistance';
 
 const http = vi.hoisted(() => ({ post: vi.fn(), get: vi.fn() }));
 vi.mock('@/lib/api', () => ({ api: http }));
@@ -51,3 +51,24 @@ describe('ayuda de esquinas sin claves ni imágenes en caché', () => {
     expect(http.post).not.toHaveBeenCalled();
   });
 });
+
+describe('187 ayuda de giro', () => {
+  it('pide la orientación en su propia ruta y acepta solo 0, 90, 180 o 270', async () => {
+    http.post.mockImplementation(async (_url: string, form: FormData) => ({ data: {
+      request_id: form.get('solicitud_id'), image_sha256: image.sha256, state: 'proposed', rotacion: 270,
+    } }));
+    const ask = createOrientationAssistant('evaluation-a', 'student-a', vi.fn().mockResolvedValue(image));
+    expect(await ask(new Blob(), new AbortController().signal)).toBe(270);
+    expect(await ask(new Blob(), new AbortController().signal)).toBe(270);
+    expect(http.post).toHaveBeenCalledOnce();
+    expect(http.post.mock.calls[0][0]).toBe('/calificaciones/sugerir-orientacion');
+  });
+  it.each([{ rotacion: 45 }, { rotacion: '90' }, { state: 'abstained' }, { image_sha256: 'b'.repeat(64) }])('rechaza una respuesta inválida o ajena', async (changes) => {
+    http.post.mockImplementationOnce(async (_url: string, form: FormData) => ({ data: {
+      request_id: form.get('solicitud_id'), image_sha256: image.sha256, state: 'proposed', rotacion: 90, ...changes,
+    } }));
+    const ask = createOrientationAssistant('evaluation', 'student', vi.fn().mockResolvedValue(image));
+    expect(await ask(new Blob(), new AbortController().signal)).toBeNull();
+  });
+});
+

@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 116
+**Superficies propietarias:** 117
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -12,6 +12,7 @@
 | endpoint | `GET:/calificaciones/modo-salon/{sesion_id}` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:963` |
 | endpoint | `GET:/calificaciones/modo-salon/{sesion_id}/estudiantes` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:987` |
 | endpoint | `GET:/calificaciones/sugerir-bordes/{solicitud_id}` | authenticated | covered | `backend/app/modules/calificaciones/evidence_scan_suggestion_router.py:76` |
+| endpoint | `GET:/calificaciones/sugerir-orientacion/{solicitud_id}` | authenticated | covered | `backend/app/modules/calificaciones/evidence_scan_suggestion_router.py:141` |
 | endpoint | `GET:/calificaciones/{calificacion_id}/desglose` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1793` |
 | endpoint | `GET:/calificaciones/{calificacion_id}/desglose/historial` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1829` |
 | endpoint | `GET:/calificaciones/{calificacion_id}/detalle` | admin, estudiante, profesor | covered | `backend/app/modules/calificaciones/router.py:1599` |
@@ -47,6 +48,7 @@
 | endpoint | `POST:/calificaciones/modo-salon/iniciar` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:922` |
 | endpoint | `POST:/calificaciones/modo-salon/{sesion_id}/foto` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1076` |
 | endpoint | `POST:/calificaciones/sugerir-bordes` | authenticated | covered | `backend/app/modules/calificaciones/evidence_scan_suggestion_router.py:39` |
+| endpoint | `POST:/calificaciones/sugerir-orientacion` | authenticated | covered | `backend/app/modules/calificaciones/evidence_scan_suggestion_router.py:103` |
 | endpoint | `POST:/calificaciones/{calificacion_id}/incidencias` | admin, profesor | covered | `backend/app/modules/calificaciones/router.py:1725` |
 | endpoint | `POST:/calificaciones/{calificacion_id}/recalificar` | admin, profesor | covered | `backend/app/modules/calificaciones/revision_router.py:165` |
 | endpoint | `POST:/calificaciones/{calificacion_id}/redactar-explicacion` | authenticated | covered | `backend/app/modules/calificaciones/revision_router.py:102` |
@@ -74,7 +76,6 @@
 | frontend_call | `GET:/calificaciones/bandeja-docente` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:5` |
 | frontend_call | `GET:/calificaciones/capacidades-evidencia` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:55` |
 | frontend_call | `GET:/calificaciones/modo-salon/{sesionId}` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:177` |
-| frontend_call | `GET:/calificaciones/sugerir-bordes/{id}` | ambiguous | covered | `frontend/src/components/evidence/cornerAssistance.ts:83` |
 | frontend_call | `GET:/calificaciones/{calificacionId}/desglose/historial` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:316` |
 | frontend_call | `GET:/calificaciones/{calificacionId}/desglose` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:306` |
 | frontend_call | `GET:/calificaciones/{calificacionId}/detalle` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:226` |
@@ -85,6 +86,7 @@
 | frontend_call | `GET:/devoluciones/disponibilidad` | ambiguous | covered | `frontend/src/modules/feedback_sharing/api.ts:40` |
 | frontend_call | `GET:/estudiantes/{estudianteId}/boletin` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:212` |
 | frontend_call | `GET:/estudiantes/{estudianteId}/resumen-academico` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:218` |
+| frontend_call | `GET:/{path}/{id}` | ambiguous | covered | `frontend/src/components/evidence/cornerAssistance.ts:92` |
 | frontend_call | `PATCH:/calificaciones/{calificacionId}/publicar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:279` |
 | frontend_call | `PATCH:/calificaciones/{id}/ajustar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:41` |
 | frontend_call | `PATCH:/calificaciones/{id}/confirmar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:37` |
@@ -98,7 +100,6 @@
 | frontend_call | `POST:/calificaciones/lote/recalificar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:246` |
 | frontend_call | `POST:/calificaciones/modo-salon/iniciar` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:171` |
 | frontend_call | `POST:/calificaciones/modo-salon/{sesionId}/foto` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:185` |
-| frontend_call | `POST:/calificaciones/sugerir-bordes` | ambiguous | covered | `frontend/src/components/evidence/cornerAssistance.ts:75` |
 | frontend_call | `POST:/calificaciones/{calificacionId}/incidencias` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:297` |
 | frontend_call | `POST:/calificaciones/{calificacionId}/redactar-explicacion` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:272` |
 | frontend_call | `POST:/calificaciones/{calificacionId}/reintentar-foto` | ambiguous | covered | `frontend/src/modules/calificaciones/api.ts:88` |
@@ -129,5 +130,5 @@
 
 ## Hallazgos
 
-- **low · orphan_candidate**: 34 superficies no alcanzables o históricas se conservan como candidatas a retiro.
-- **medium · contract_mismatch**: 6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
+- **low · orphan_candidate**: 36 superficies no alcanzables o históricas se conservan como candidatas a retiro.
+- **medium · contract_mismatch**: 7 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.
