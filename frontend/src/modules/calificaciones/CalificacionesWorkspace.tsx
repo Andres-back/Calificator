@@ -296,6 +296,13 @@ export function MobileReviewActionBar({
   );
 }
 
+/** Spec 186: texto de la acción principal del editor hacia el siguiente componente. */
+function nextComponentAction(components: { id: string; tipo: string; numero?: string | null; orden: number }[], id: string) {
+  const next = components[components.findIndex((item) => item.id === id) + 1];
+  if (!next) return undefined;
+  return next.tipo === 'pregunta' ? `Guardar e ir a la pregunta ${next.numero ?? next.orden + 1}` : 'Guardar e ir al siguiente criterio';
+}
+
 export function GradeNoteExplanation({ cal, score }: { cal: CalificacionDetalle; score: number | null }) {
   const breakdown = cal.desglose;
   const decision = [...(cal.timeline ?? [])].reverse().find((event) => event.tipo === 'ajustada' && event.detalle)?.detalle;
@@ -1064,6 +1071,7 @@ function PanelDetalle({
           onDirtyChange={setEditingComponentDirty}
           onCancel={requestComponentClose}
           onDraftExplanation={(input) => redactarExplicacion(cal.id, { componente_id: component.id, ...input })}
+          nextQuestionAction={nextComponentAction(activeBreakdown.componentes, component.id)}
           onReload={breakdownSaveConflict ? () => setPendingEditorAction('close') : undefined}
           onSave={(change) => breakdownMutation.mutate({ change })}
           onSaveAndNextQuestion={(change) => {
@@ -1191,7 +1199,7 @@ function PanelDetalle({
         )}
 
         <ReviewNavigation active={mobileTab} onChange={changeDetailView} headingRef={reviewNavigationHeading} />
-        {editingComponentId && mobileTab === 'revision' && <Button type="button" variant="ghost" className="min-h-11" onClick={() => changeDetailView('evidencia')}>Ver evidencia completa</Button>}
+        {editingComponentId && mobileTab === 'revision' && <Button type="button" variant="outline" size="sm" className="min-h-11 self-start" icon={<FileImage className="h-4 w-4" />} onClick={() => changeDetailView('evidencia')}>Ver evidencia completa</Button>}
         {editingComponentId && mobileTab === 'evidencia' && <Button type="button" variant="ghost" className="min-h-11" onClick={() => changeDetailView('revision')}>Volver a respuestas</Button>}
         {/* Los avisos no cambian la nota ni las políticas de confirmación. */}
         {(hasReviewNotices || scoreDifference) && !done && !presentation.processing && (mobileTab === 'resumen' || mobileTab === 'revision') && reviewNotices}
@@ -1389,7 +1397,7 @@ function PanelDetalle({
       >
         {scoreTie && <TieDecisionField score={Number(adjNota)} options={scoreTie} value={tieDecision} onChange={setTieDecision} />}
       </ConfirmDialog>
-      <div hidden={mobileForm.isWriting || (mobileTab === 'retroalimentacion' && feedbackWorkspaceActive)}>
+      <div hidden={mobileForm.isWriting || Boolean(editingComponentId) || (mobileTab === 'retroalimentacion' && feedbackWorkspaceActive)}>
       <MobileReviewActionBar
         processing={presentation.processing}
         done={done}

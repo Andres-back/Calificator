@@ -9,6 +9,8 @@ const pending = {
 };
 const formula = { puntos_obtenidos: 2, puntos_posibles: 5, nota_maxima: 5, nota_base: 2, ajuste_global: 0, nota_antes_redondeo: 2, regla_redondeo: 'half_up', decimales: 2, nota_final: 2 };
 
+const STATE_LABELS: Record<string, string> = { correcta: 'Correcta', parcial: 'Parcial', incorrecta: 'Incorrecta', sin_respuesta: 'Sin respuesta' };
+
 describe('GradeComponentEditor', () => {
   it('asigna máximo exacto o cero al cambiar el estado, sin guardar automáticamente', () => {
     const onSave = vi.fn();
@@ -18,16 +20,16 @@ describe('GradeComponentEditor', () => {
       puntos_obtenidos: '0.25', puntos_maximos: '0.6250', estado: 'parcial',
       explicacion: 'Respuesta registrada.', origen: 'ia', requiere_revision: false, evidencia_paginas: [],
     }} formula={{ puntos_obtenidos: 0.25, puntos_posibles: 5, nota_maxima: 5, nota_base: 0.25, ajuste_global: 0, nota_antes_redondeo: 0.25, regla_redondeo: 'half_up', nota_final: 0.25, decimales: 2 }} onCancel={vi.fn()} onSave={onSave} />);
-    const state = screen.getByRole('combobox', { name: /^Estado/ });
+    const pick = (name: string) => fireEvent.click(screen.getByRole('radio', { name }));
     const points = screen.getByRole('spinbutton');
-    fireEvent.change(state, { target: { value: 'correcta' } });
+    pick('Correcta');
     expect(points).toHaveValue(0.625);
-    fireEvent.change(state, { target: { value: 'incorrecta' } });
+    pick('Incorrecta');
     expect(points).toHaveValue(0);
-    fireEvent.change(state, { target: { value: 'parcial' } });
+    pick('Parcial');
     fireEvent.change(points, { target: { value: '0.35' } });
     expect(points).toHaveValue(0.35);
-    fireEvent.change(state, { target: { value: 'sin_respuesta' } });
+    pick('Sin respuesta');
     expect(points).toHaveValue(0);
     expect(onSave).not.toHaveBeenCalled();
   });
@@ -46,9 +48,9 @@ describe('GradeComponentEditor', () => {
     expect(input).toHaveAttribute('max', '0.625');
     fireEvent.change(screen.getByLabelText(/Motivo interno/), { target: { value: 'Revisión sustentada' } });
     fireEvent.change(input, { target: { value: '0.63' } });
-    expect(screen.getByRole('button', { name: 'Guardar y recalcular' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Guardar$/ })).toBeDisabled();
     fireEvent.change(input, { target: { value: '0.625' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y recalcular' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ puntos_obtenidos: 0.625 }));
   });
   it('exige explicación, pero no motivo: el historial recibe uno según el estado', () => {
@@ -58,7 +60,7 @@ describe('GradeComponentEditor', () => {
       respuesta_estudiante: 'A', respuesta_referencia: 'B', puntos_obtenidos: 0, puntos_maximos: 1,
       estado: 'incorrecta', explicacion: '', origen: 'ia', requiere_revision: false, evidencia_paginas: [],
     }} formula={{ puntos_obtenidos: 0, puntos_posibles: 1, nota_maxima: 5, nota_base: 0, ajuste_global: 0, nota_antes_redondeo: 0, regla_redondeo: 'half_up', decimales: 2, nota_final: 0 }} onCancel={() => undefined} onSave={onSave} />);
-    const save = screen.getByRole('button', { name: 'Guardar y recalcular' });
+    const save = screen.getByRole('button', { name: /^Guardar$/ });
     expect(save).toBeDisabled();
     expect(screen.getByLabelText(/Motivo interno del cambio \(opcional\)/)).not.toBeRequired();
     fireEvent.change(screen.getByLabelText(/Explicación para el estudiante/), { target: { value: 'El procedimiento merece puntaje parcial.' } });
@@ -79,9 +81,9 @@ describe('GradeComponentEditor', () => {
   ])('al elegir %s llena el motivo y lo guarda', (state, reason) => {
     const onSave = vi.fn();
     render(<GradeComponentEditor component={{ ...pending }} formula={formula} onCancel={vi.fn()} onSave={onSave} />);
-    fireEvent.change(screen.getByRole('combobox', { name: /^Estado/ }), { target: { value: state } });
+    fireEvent.click(screen.getByRole('radio', { name: STATE_LABELS[state] }));
     expect(screen.getByLabelText(/Motivo interno/)).toHaveValue(reason);
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y recalcular' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ estado: state, motivo_interno: reason }));
   });
 
@@ -89,9 +91,9 @@ describe('GradeComponentEditor', () => {
     const onSave = vi.fn();
     render(<GradeComponentEditor component={{ ...pending }} formula={formula} onCancel={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText(/Motivo interno/), { target: { value: 'La marca está borrada a medias.' } });
-    fireEvent.change(screen.getByRole('combobox', { name: /^Estado/ }), { target: { value: 'correcta' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Correcta' }));
     expect(screen.getByLabelText(/Motivo interno/)).toHaveValue('La marca está borrada a medias.');
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y recalcular' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ motivo_interno: 'La marca está borrada a medias.' }));
   });
 
@@ -99,12 +101,12 @@ describe('GradeComponentEditor', () => {
     const onDraftExplanation = vi.fn().mockResolvedValue('Marcaste la C, el Amazonas. Identificaste bien el río principal.');
     const onSave = vi.fn();
     render(<GradeComponentEditor component={{ ...pending }} formula={formula} onCancel={vi.fn()} onSave={onSave} onDraftExplanation={onDraftExplanation} />);
-    fireEvent.change(screen.getByRole('combobox', { name: /^Estado/ }), { target: { value: 'correcta' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Correcta' }));
     expect(onDraftExplanation).toHaveBeenCalledWith({ estado: 'correcta', puntos_obtenidos: 0.25 });
     expect(screen.getByText('Redactando la explicación…')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Guardar y recalcular' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Guardar$/ })).toBeDisabled();
     await waitFor(() => expect(screen.getByLabelText(/Explicación para el estudiante/)).toHaveValue('Marcaste la C, el Amazonas. Identificaste bien el río principal.'));
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar y recalcular' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       estado: 'correcta', puntos_obtenidos: 0.25,
       explicacion_estudiante: 'Marcaste la C, el Amazonas. Identificaste bien el río principal.',
@@ -115,10 +117,10 @@ describe('GradeComponentEditor', () => {
     const onDraftExplanation = vi.fn().mockResolvedValue('Revisa el párrafo de los ríos y subraya el más largo.');
     render(<GradeComponentEditor component={{ ...pending }} formula={formula} onCancel={vi.fn()} onSave={vi.fn()} onDraftExplanation={onDraftExplanation} />);
     fireEvent.change(screen.getByLabelText(/Explicación para el estudiante/), { target: { value: 'Mi explicación.' } });
-    fireEvent.change(screen.getByRole('combobox', { name: /^Estado/ }), { target: { value: 'incorrecta' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Incorrecta' }));
     expect(onDraftExplanation).not.toHaveBeenCalled();
     expect(screen.getByLabelText(/Explicación para el estudiante/)).toHaveValue('Mi explicación.');
-    fireEvent.click(screen.getByRole('button', { name: /Volver a redactar con IA/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Redactar de nuevo con IA/ }));
     expect(onDraftExplanation).toHaveBeenCalledWith({ estado: 'incorrecta', puntos_obtenidos: 0 });
     await waitFor(() => expect(screen.getByLabelText(/Explicación para el estudiante/)).toHaveValue('Revisa el párrafo de los ríos y subraya el más largo.'));
   });
@@ -126,10 +128,10 @@ describe('GradeComponentEditor', () => {
   it('si la IA no responde conserva el texto y avisa en lenguaje claro', async () => {
     const onDraftExplanation = vi.fn().mockRejectedValue(new Error('503'));
     render(<GradeComponentEditor component={{ ...pending }} formula={formula} onCancel={vi.fn()} onSave={vi.fn()} onDraftExplanation={onDraftExplanation} />);
-    fireEvent.change(screen.getByRole('combobox', { name: /^Estado/ }), { target: { value: 'correcta' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Correcta' }));
     expect(await screen.findByText(/No pudimos redactar la explicación esta vez/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Explicación para el estudiante/)).toHaveValue('La valoración de esta respuesta no tiene consenso verificable.');
-    expect(screen.getByRole('button', { name: 'Guardar y recalcular' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^Guardar$/ })).toBeEnabled();
   });
 
   it('conserva el borrador cuando el guardado falla y permite recargar de forma explícita', () => {
@@ -166,5 +168,65 @@ describe('GradeComponentEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar y siguiente alumno' }));
     expect(onSaveAndNext).toHaveBeenCalledWith(expect.objectContaining({ componente_id: 'p1' }));
     expect(screen.getByText(/no confirma ni publica/i)).toBeInTheDocument();
+  });
+
+  it('186 el estado se elige con botones; parcial propone la mitad y bloquea cero o el máximo', () => {
+    const onSave = vi.fn();
+    render(<GradeComponentEditor component={{ ...pending }} formula={formula} onCancel={vi.fn()} onSave={onSave} />);
+    const group = screen.getByRole('radiogroup', { name: 'Estado' });
+    expect(group).toBeInTheDocument();
+    expect(screen.getByText('Elige una opción después de mirar la hoja.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'Parcial' }));
+    expect(screen.getByRole('radio', { name: 'Parcial' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('spinbutton')).toHaveValue(0.13);
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '0.25' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Una respuesta parcial debe tener más de 0 y menos de 0.25 puntos.');
+    expect(screen.getByRole('button', { name: /^Guardar$/ })).toBeDisabled();
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '0.1' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ estado: 'parcial', puntos_obtenidos: 0.1 }));
+  });
+
+  it('186 las flechas recorren los estados como un grupo de radio', () => {
+    render(<GradeComponentEditor component={{ ...pending }} formula={formula} onCancel={vi.fn()} onSave={vi.fn()} />);
+    const correct = screen.getByRole('radio', { name: 'Correcta' });
+    expect(correct).toHaveAttribute('tabindex', '0');
+    fireEvent.keyDown(correct, { key: 'ArrowRight' });
+    expect(screen.getByRole('radio', { name: 'Parcial' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Parcial' })).toHaveFocus();
+    fireEvent.keyDown(screen.getByRole('radio', { name: 'Parcial' }), { key: 'ArrowLeft' });
+    expect(correct).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('186 la nota muestra el antes y el después del cambio', () => {
+    render(<GradeComponentEditor component={{ ...pending, estado: 'correcta', puntos_obtenidos: 0.25 }} formula={formula} onCancel={vi.fn()} onSave={vi.fn()} />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Incorrecta' }));
+    expect(screen.getByTestId('grade-preview')).toHaveTextContent('Nota del estudiante: 2.00 → 1.75 de 5.00');
+  });
+
+  it('186 la acción principal lleva a la siguiente pregunta; en la última, al siguiente alumno', () => {
+    const onSaveAndNextQuestion = vi.fn();
+    const onSaveAndNext = vi.fn();
+    const component = { ...pending, estado: 'correcta', puntos_obtenidos: 0.25 };
+    const view = render(<GradeComponentEditor component={component} formula={formula} onCancel={vi.fn()} onSave={vi.fn()}
+      nextQuestionAction="Guardar e ir a la pregunta 14" onSaveAndNextQuestion={onSaveAndNextQuestion} onSaveAndNext={onSaveAndNext} />);
+    expect(screen.queryByRole('button', { name: 'Guardar y siguiente alumno' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar e ir a la pregunta 14' }));
+    expect(onSaveAndNextQuestion).toHaveBeenCalledWith(expect.objectContaining({ componente_id: 'p13' }));
+    view.rerender(<GradeComponentEditor component={component} formula={formula} onCancel={vi.fn()} onSave={vi.fn()}
+      onSaveAndNextQuestion={onSaveAndNextQuestion} onSaveAndNext={onSaveAndNext} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar y siguiente alumno' }));
+    expect(onSaveAndNext).toHaveBeenCalledOnce();
+  });
+
+  it('186 al abrir, el editor queda a la vista y el foco en el estado', () => {
+    // La configuración de pruebas define scrollIntoView vacío; aquí se observa la llamada.
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView')!;
+    const scroll = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { value: scroll, configurable: true });
+    render(<GradeComponentEditor component={{ ...pending, estado: 'incorrecta', puntos_obtenidos: 0 }} formula={formula} onCancel={vi.fn()} onSave={vi.fn()} />);
+    expect(scroll).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' });
+    expect(screen.getByRole('radio', { name: 'Incorrecta' })).toHaveFocus();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', original);
   });
 });

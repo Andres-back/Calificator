@@ -314,7 +314,7 @@ test('ajustar 1 a 0.7 guarda versión, conserva historial y no publica', async (
   await page.getByLabel(/Puntos/).fill('0.7');
   await page.getByLabel('Motivo interno del cambio').fill('Procedimiento parcialmente completo.');
   await page.getByLabel('Explicación para el estudiante').fill('Falta desarrollar el último paso de la operación.');
-  await page.getByRole('button', { name: 'Guardar y recalcular', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Ajustar puntaje y explicación' })).toBeVisible();
   await expect(page.locator('#grade-component-q1').getByText('0.70 / 1.00', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Volver a opciones', exact: true }).click();
@@ -497,7 +497,7 @@ test('docente llega a la respuesta 20, edita y recupera el scroll móvil', async
   await page.getByLabel('Motivo interno del cambio').fill('Corrección docente verificada');
   await page.getByLabel('Explicación para el estudiante').fill('La respuesta está completa y coincide con el procedimiento esperado.');
   await page.setViewportSize({ width: 390, height: 500 });
-  await expect(page.getByRole('button', { name: 'Guardar y recalcular' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Guardar', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Cancelar' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancelar' }).click();
   await page.getByRole('button', { name: 'Descartar y continuar' }).click();
@@ -527,7 +527,7 @@ test('un conflicto 409 no sobrescribe la revisión vigente', async ({ page }) =>
   await page.getByLabel(/Puntos/).fill('0.75');
   await page.getByLabel('Motivo interno del cambio').fill('Revisión concurrente');
   await page.getByLabel('Explicación para el estudiante').fill('La respuesta conserva el procedimiento revisado.');
-  await page.getByRole('button', { name: 'Guardar y recalcular' }).click();
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: /cambió en otra revisión/i })).toBeVisible();
   await expect(page.getByLabel(/Puntos/)).toHaveValue('0.75');
   await expect(page.getByLabel('Motivo interno del cambio')).toHaveValue('Revisión concurrente');
@@ -556,7 +556,7 @@ test('167 un rechazo que no es conflicto muestra su motivo y no ofrece recargar'
   await page.route('**/api/calificaciones/c1/desglose', (route) => json(route, {
     detail: 'El puntaje de la pregunta 1 debe estar entre 0 y 1.',
   }, 422));
-  await page.getByRole('button', { name: 'Guardar y recalcular' }).click();
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'El puntaje de la pregunta 1 debe estar entre 0 y 1.' })).toBeVisible();
   await expect(page.getByRole('alert').filter({ hasText: /cambió en otra revisión/i })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Recargar versión vigente' })).toHaveCount(0);
@@ -572,7 +572,7 @@ test('167 con otra pregunta pendiente guarda el avance y avisa cuántas faltan',
       { ...breakdown.componentes[0], id: 'q2', clave: 'pregunta:2', numero: '2', titulo: 'Segunda pregunta', puntos_obtenidos: null, estado: 'revision_pendiente', requiere_revision: true },
     ],
   }));
-  await page.getByRole('button', { name: 'Guardar y recalcular' }).click();
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
   await expect(page.getByText('Puntaje guardado. Falta 1 pregunta por revisar; la nota sigue sin confirmar.')).toBeVisible();
   await expect(page.getByText('Puntaje actualizado y nota recalculada.')).toHaveCount(0);
 });
