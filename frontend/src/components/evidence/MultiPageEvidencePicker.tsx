@@ -12,7 +12,7 @@ import { CameraCapture } from './CameraCapture';
 import { openEvidenceFilePicker, prefersNativeCapture } from './nativeCapture';
 import { EvidenceScanEditor } from './EvidenceScanEditor';
 import { useCloseOnBack } from './useCloseOnBack';
-import type { CornerAssistant } from './cornerAssistance';
+import type { CornerAssistant, OrientationAssistant } from './cornerAssistance';
 
 const MAX_FILES = 10;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -34,6 +34,7 @@ interface Props {
   /** Only contextual capability may enable this. Legacy consumers stay unchanged. */
   scanEnabled?: boolean;
   suggestCorners?: CornerAssistant;
+  suggestOrientation?: OrientationAssistant;
 }
 
 function PageVisual({ page, className, scanEnabled }: { page: EvidencePage; className: string; scanEnabled: boolean }) {
@@ -81,7 +82,7 @@ function PreviewModal({ page, pageNumber, onClose }: { page: EvidencePage | null
   );
 }
 
-export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '', allowPdf = true, maxTotalBytes = MAX_TOTAL_BYTES, maxImageBytes = MAX_IMAGE_BYTES, maxFiles = MAX_FILES, scanEnabled = false, suggestCorners }: Props) {
+export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onError, contextKey = '', allowPdf = true, maxTotalBytes = MAX_TOTAL_BYTES, maxImageBytes = MAX_IMAGE_BYTES, maxFiles = MAX_FILES, scanEnabled = false, suggestCorners, suggestOrientation }: Props) {
   const pageLimit = Math.min(MAX_FILES, Math.max(1, maxFiles));
   const selectionCleanup = useRef<(() => void) | null>(null);
   const contextEpoch = useRef(0);
@@ -324,7 +325,7 @@ export function MultiPageEvidencePicker({ pages, onChange, disabled = false, onE
         {!isPdf && pages.length > 1 && <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm leading-6 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">Revisa el orden: Xali leerá primero la hoja 1 y continuará hasta la hoja {pages.length}.</p>}
       </>}
       <PreviewModal page={previewIndex >= 0 ? pages[previewIndex] : null} pageNumber={previewIndex + 1} onClose={() => setPreviewId(null)} />
-      {scanOpen && scanPage && scanRequest && <EvidenceScanEditor key={`${scanRequest.epoch}:${scanPage.id}`} file={scanPage.file} rotation={scanPage.rotation} previous={scanPage.scan} suggestCorners={suggestCorners} pageNumber={scanPageIndex + 1} onClose={() => setScanRequest(null)} onAccept={(selection, quality) => {
+      {scanOpen && scanPage && scanRequest && <EvidenceScanEditor key={`${scanRequest.epoch}:${scanPage.id}`} file={scanPage.file} rotation={scanPage.rotation} previous={scanPage.scan} suggestCorners={suggestCorners} suggestOrientation={suggestOrientation} pageNumber={scanPageIndex + 1} onClose={() => setScanRequest(null)} onAccept={(selection, quality) => {
         if (scanRequest.epoch !== contextEpoch.current || scanRequest.scan !== scanEpoch.current || disabledRef.current || !pagesRef.current.some((page) => page.id === scanPage.id && page.file === scanPage.file)) return;
         updatePage(scanPage.id, { scan: selection, quality: quality ?? scanPage.quality ?? null, rotation: selection.decision === 'prepared' ? selection.recipe.rotation : scanPage.rotation });
         setScanRequest(null);

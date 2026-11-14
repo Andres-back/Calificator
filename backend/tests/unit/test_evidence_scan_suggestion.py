@@ -287,3 +287,100 @@ def test_usage_records_actual_model_once_without_photos_or_geometry(monkeypatch)
     assert audit.call_args.kwargs['fallback_used'] is False
     assert audit.call_args.kwargs['input_tokens'] == 12
     assert not {'photo', 'image', 'corners', 'content', 'secret'}.intersection(audit.call_args.kwargs)
+
+
+# Spec 187: la misma ayuda propone el giro que deja el texto derecho.
+
+@pytest.mark.parametrize('payload,expected', [
+    ({'upright': 'A'}, 0), ({'upright': 'B'}, 90), ({'upright': 'C'}, 180), ({'upright': 'D'}, 270), ({'upright': None}, None),
+])
+def test_187_orientation_contract(payload, expected):
+    assert scan.parse_orientation(json.dumps(payload)) == expected
+
+
+@pytest.mark.parametrize('payload', [{'upright': 'E'}, {'upright': 90}, {'upright': 'A', 'note': 'x'}, {}, 'A'])
+def test_187_untrusted_orientation_is_rejected(payload):
+    with pytest.raises(ValueError):
+        scan.parse_orientation(json.dumps(payload))
+
+
+def test_187_four_views_are_turned_clockwise_and_small():
+    buffer = BytesIO()
+    image = Image.new('RGB', (80, 120), 'white')
+    image.paste((255, 0, 0), (0, 0, 20, 20))  # marca arriba a la izquierda
+    image.save(buffer, format='PNG')
+    views = scan.orientation_views(buffer.getvalue())
+    assert len(views) == 4
+    sizes, marks = [], []
+    for url in views:
+        assert url.startswith('data:image/jpeg;base64,')
+        with Image.open(BytesIO(__import__('base64').b64decode(url.split(',', 1)[1]))) as view:
+            sizes.append(view.size)
+            corners = {'arriba-izquierda': (5, 5), 'arriba-derecha': (view.width - 6, 5),
+                       'abajo-derecha': (view.width - 6, view.height - 6), 'abajo-izquierda': (5, view.height - 6)}
+            red = [name for name, point in corners.items() if view.getpixel(point)[0] > 150 and view.getpixel(point)[1] < 120]
+            marks.append(red[0] if red else None)
+    assert sizes == [(80, 120), (120, 80), (80, 120), (120, 80)]
+    # Girar en sentido horario lleva la esquina superior izquierda a la superior derecha.
+    assert marks == ['arriba-izquierda', 'arriba-derecha', 'abajo-derecha', 'abajo-izquierda']
+
+
+def test_187_orientation_asks_once_with_four_views_and_its_own_cache(monkeypatch):
+    call = setup(monkeypatch, content=json.dumps({'upright': 'D'}))
+    ctx, store = context(), Store()
+    orientation = replace(ctx, kind='orientation')
+
+    async def run():
+        first = await scan.suggest_orientation(None, store, orientation, photo())
+        again = await scan.suggest_orientation(None, store, replace(orientation, request_id=uuid4()), photo())
+        return first, again
+    first, again = asyncio.run(run())
+    assert first == {'request_id': str(orientation.request_id), 'image_sha256': ctx.image_sha256, 'state': 'proposed', 'rotacion': 270}
+    assert again['rotacion'] == 270
+    call.assert_awaited_once()
+    parts = call.call_args.args[2][0]['content']
+    assert [part['text'] for part in parts if part['type'] == 'text'][1:] == ['Image A:', 'Image B:', 'Image C:', 'Image D:']
+    assert sum(part['type'] == 'image_url' for part in parts) == 4
+    # Bordes y orientación de la misma foto no comparten caché ni claves.
+    assert orientation.photo_key != ctx.photo_key and orientation.request_key != ctx.request_key
+    assert ctx.photo_key.startswith('xcal:scan-corners:photo:') and orientation.photo_key.startswith('xcal:scan-orientation:photo:')
+
+
+def test_187_unreadable_orientation_abstains_without_rotation(monkeypatch):
+    setup(monkeypatch, content='{"upright":"sideways"}')
+    result = asyncio.run(scan.suggest_orientation(None, Store(), replace(context(), kind='orientation'), photo()))
+    assert result['state'] == 'abstained' and result['rotacion'] is None
+
+
+def test_187_orientation_route_is_private_and_denies_before_reading(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.modules.calificaciones import evidence_scan_suggestion_router as routes
+    actor = SimpleNamespace(id=uuid4(), rol='profesor')
+    ctx = context()
+    app = FastAPI()
+    app.include_router(routes.router)
+    app.dependency_overrides[routes.get_current_user] = lambda: actor
+    app.dependency_overrides[routes.get_db] = lambda: None
+    authorized = AsyncMock()
+    monkeypatch.setattr(routes, 'authorize_corner_context', authorized)
+    monkeypatch.setattr(routes.CornerSuggestionStore, 'connect', lambda: SimpleNamespace(close=AsyncMock()))
+
+    async def proposal(_db, _store, current, content):
+        assert current.kind == 'orientation' and content == photo()
+        return scan.public_suggestion(current, {'state': 'proposed', 'rotation': 90})
+    suggest = AsyncMock(side_effect=proposal)
+    monkeypatch.setattr(routes, 'suggest_orientation', suggest)
+    data = {'evaluacion_id': str(ctx.evaluation_id), 'estudiante_id': str(ctx.student_id),
+            'solicitud_id': str(ctx.request_id), 'image_sha256': ctx.image_sha256, 'width': 80, 'height': 120}
+    with TestClient(app) as client:
+        reply = client.post('/calificaciones/sugerir-orientacion', data=data, files={'imagen': ('preview.png', photo(), 'image/png')})
+        assert reply.status_code == 200 and reply.headers['cache-control'] == 'private, no-store'
+        assert reply.json() == {'request_id': str(ctx.request_id), 'image_sha256': ctx.image_sha256, 'state': 'proposed', 'rotacion': 90}
+        authorized.side_effect = HTTPException(409, 'apagada')
+        read = AsyncMock()
+        monkeypatch.setattr(routes, 'read_upload_limited', read)
+        denied = client.post('/calificaciones/sugerir-orientacion', data=data, files={'imagen': ('preview.png', photo(), 'image/png')})
+        assert denied.status_code == 409
+        read.assert_not_awaited()
+        suggest.assert_awaited_once()

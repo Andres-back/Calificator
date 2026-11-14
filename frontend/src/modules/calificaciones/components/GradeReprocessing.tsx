@@ -210,7 +210,7 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
           </>}
           {context.estado === 'version_no_disponible' && <Button type="button" variant="outline" className="min-h-11" disabled={mutation.isPending || refreshingContext} onClick={() => void refreshPoints()}>Consultar puntos de nuevo</Button>}
         </section>}
-        {mode === 'replace' && <MultiPageEvidencePicker pages={pages} contextKey={`${capability.scope}:${cal.id}:${mode}`} scanEnabled={scanEnabled} suggestCorners={capability.suggestCorners}
+        {mode === 'replace' && <MultiPageEvidencePicker pages={pages} contextKey={`${capability.scope}:${cal.id}:${mode}`} scanEnabled={scanEnabled} suggestCorners={capability.suggestCorners} suggestOrientation={capability.suggestOrientation}
           maxImageBytes={capability.limits?.max_file_bytes} maxTotalBytes={capability.limits?.max_total_bytes}
           maxFiles={capability.limits?.max_pages}
           onChange={(next) => {
