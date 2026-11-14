@@ -1,30 +1,78 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 603,
-      "missing": 93
+      "covered": 599,
+      "missing": 96
     },
     "by_kind": {
-      "endpoint": 330,
-      "frontend_call": 222,
+      "endpoint": 328,
+      "frontend_call": 223,
       "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 696
+    "total": 695
   },
   "exceptions": [],
   "findings": [
     {
+      "category": "missing_coverage",
+      "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
+      "id": "F-324D81DB301E",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/impacto/cualitativo",
+        "backend:GET:/impacto/estudios/{study_id}/export",
+        "backend:GET:/impacto/estudios/{study_id}/indicadores",
+        "backend:GET:/impacto/estudios/{study_id}/observaciones",
+        "backend:GET:/impacto/kappa",
+        "backend:GET:/impacto/likert",
+        "backend:GET:/impacto/tiempo-ahorrado",
+        "backend:GET:/reportes/estudiante/{estudiante_id}",
+        "backend:GET:/reportes/materia/{materia_id}",
+        "backend:POST:/impacto/encuestas",
+        "backend:POST:/impacto/estudios/{study_id}/activar",
+        "backend:POST:/impacto/estudios/{study_id}/cerrar",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
+        "backend:POST:/impacto/estudios/{study_id}/observaciones",
+        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
+        "backend:POST:/reportes/export/pdf",
+        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-5403AC2120D0",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/docs",
+        "backend:GET:/health",
+        "backend:GET:/openapi.json",
+        "backend:GET:/redoc",
+        "table:ai_config_audit_logs",
+        "table:ai_global_config",
+        "table:ai_global_limits",
+        "table:ai_tool_settings",
+        "table:ai_usage_events",
+        "table:ai_usage_logs",
+        "table:evaluation_blueprints",
+        "table:importacion_estudiantes_filas",
+        "table:importacion_estudiantes_lotes"
+      ]
+    },
+    {
       "category": "orphan_candidate",
-      "description": "36 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
-      "id": "F-0AB8111F3A9A",
+      "description": "34 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
+      "id": "F-70925D8B3888",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
         "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
-        "backend:GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
         "backend:GET:/calificaciones/{calificacion_id}/evidencia/edicion",
         "backend:GET:/calificaciones/{calificacion_id}/evidencia/edicion/{referencia}",
         "backend:GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
@@ -33,7 +81,6 @@
         "backend:GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
         "backend:POST:/calificaciones/lote/recalificar",
         "backend:POST:/calificaciones/sugerir-bordes",
-        "backend:POST:/calificaciones/sugerir-orientacion",
         "backend:POST:/calificaciones/{calificacion_id}/recalificar",
         "backend:POST:/calificaciones/{calificacion_id}/redactar-explicacion",
         "backend:POST:/calificaciones/{calificacion_id}/ubicar-respuestas",
@@ -59,28 +106,6 @@
         "table:profesor_ai_credentials",
         "table:profesor_ai_feature_preferences",
         "table:profesor_ai_provider_models"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-5403AC2120D0",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/docs",
-        "backend:GET:/health",
-        "backend:GET:/openapi.json",
-        "backend:GET:/redoc",
-        "table:ai_config_audit_logs",
-        "table:ai_global_config",
-        "table:ai_global_limits",
-        "table:ai_tool_settings",
-        "table:ai_usage_events",
-        "table:ai_usage_logs",
-        "table:evaluation_blueprints",
-        "table:importacion_estudiantes_filas",
-        "table:importacion_estudiantes_lotes"
       ]
     },
     {
@@ -123,22 +148,6 @@
         "job:tasks.recover_evaluation_visuals",
         "job:tasks.recover_expired_local_jobs",
         "job:tasks.send_password_reset_email"
-      ]
-    },
-    {
-      "category": "contract_mismatch",
-      "description": "7 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
-      "id": "F-DA23BAF5CFCD",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
-        "frontend_call:GET:/evaluaciones/{evaluacionId}/{format}:frontend/src/modules/evaluaciones/api.ts",
-        "frontend_call:GET:/{path}/{id}:frontend/src/components/evidence/cornerAssistance.ts",
-        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
-        "frontend_call:POST:/devoluciones/accesos/{id}/{action}:frontend/src/modules/feedback_sharing/api.ts",
-        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
-        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
       ]
     },
     {
@@ -205,27 +214,18 @@
       ]
     },
     {
-      "category": "missing_coverage",
-      "description": "15 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
-      "id": "F-F7F9231E5351",
+      "category": "contract_mismatch",
+      "description": "6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
+      "id": "F-F37179181965",
       "issue_url": "",
-      "severity": "low",
+      "severity": "medium",
       "surface_ids": [
-        "backend:GET:/impacto/cualitativo",
-        "backend:GET:/impacto/estudios/{study_id}/export",
-        "backend:GET:/impacto/estudios/{study_id}/indicadores",
-        "backend:GET:/impacto/estudios/{study_id}/observaciones",
-        "backend:GET:/impacto/kappa",
-        "backend:GET:/impacto/likert",
-        "backend:GET:/impacto/tiempo-ahorrado",
-        "backend:POST:/impacto/encuestas",
-        "backend:POST:/impacto/estudios/{study_id}/activar",
-        "backend:POST:/impacto/estudios/{study_id}/cerrar",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
-        "backend:POST:/impacto/estudios/{study_id}/observaciones",
-        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
-        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
+        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
+        "frontend_call:GET:/evaluaciones/{evaluacionId}/{format}:frontend/src/modules/evaluaciones/api.ts",
+        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
+        "frontend_call:POST:/devoluciones/accesos/{id}/{action}:frontend/src/modules/feedback_sharing/api.ts",
+        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
+        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
       ]
     },
     {
@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "af536d43fde7d19b7bb288074b8d8feb7d80f408976576447d61a403f5f16a0a",
+  "source_digest": "79a847baa532277c8b26b8785e829e3255176a2d8a79130f7d512a43742c4293",
   "surfaces": [
     {
       "actors": [
@@ -1222,6 +1222,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -2787,6 +2793,12 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/concordancia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2825,6 +2837,12 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/confidence",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2863,6 +2881,12 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2901,6 +2925,12 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2939,6 +2969,12 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/errors",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2977,6 +3013,12 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/latency",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3017,6 +3059,12 @@
           "reference": "GET:/analytics/ai-quality/usage",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/usage",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3055,6 +3103,12 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3093,6 +3147,12 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3131,6 +3191,12 @@
           "reference": "GET:/analytics/estudiantes/{estudiante_id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes/{estudiante_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3175,6 +3241,12 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3219,6 +3291,12 @@
           "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3257,6 +3335,12 @@
           "reference": "GET:/analytics/export/criterios.csv",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/export/criterios.csv",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3295,6 +3379,12 @@
           "reference": "GET:/analytics/export/estudiantes.csv",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/export/estudiantes.csv",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3339,6 +3429,12 @@
           "reference": "GET:/analytics/overview",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/overview",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3377,6 +3473,12 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/preguntas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3424,6 +3526,12 @@
           "reference": "GET:/analytics/sesiones-trabajo",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sesiones-trabajo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3462,6 +3570,12 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sintesis",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -4424,80 +4538,6 @@
         {
           "level": "unit",
           "reference": "GET:/calificaciones/sugerir-bordes/{solicitud_id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "authenticated"
-      ],
-      "authorization": [
-        "get_current_user"
-      ],
-      "consumers": [
-        "131-escaneo-evidencias"
-      ],
-      "coverage": "covered",
-      "details": {
-        "function": "get_orientation_suggestion",
-        "registered": false,
-        "router": "router"
-      },
-      "id": "backend:GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-      "kind": "endpoint",
-      "owner_spec": "008-calificaciones",
-      "signature": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-      "source_line": 141,
-      "source_path": "backend/app/modules/calificaciones/evidence_scan_suggestion_router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "direct",
-          "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
@@ -6190,6 +6230,12 @@
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -8610,6 +8656,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -9016,6 +9068,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -10823,7 +10881,7 @@
         "require_any_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "reporte_estudiante",
         "registered": true,
@@ -10836,14 +10894,7 @@
       "source_line": 46,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/estudiante/{estudiante_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -10855,7 +10906,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "reporte_materia",
         "registered": true,
@@ -10868,14 +10919,7 @@
       "source_line": 17,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/materia/{materia_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -10901,12 +10945,6 @@
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
       "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/profesor/resumen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
         {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
@@ -12615,6 +12653,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -13427,6 +13471,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -14593,6 +14643,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -14638,6 +14694,12 @@
           "reference": "POST:/analytics/sesiones-trabajo",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -14677,6 +14739,12 @@
           "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -16374,80 +16442,6 @@
     },
     {
       "actors": [
-        "authenticated"
-      ],
-      "authorization": [
-        "get_current_user"
-      ],
-      "consumers": [
-        "131-escaneo-evidencias"
-      ],
-      "coverage": "covered",
-      "details": {
-        "function": "suggest_evidence_orientation",
-        "registered": false,
-        "router": "router"
-      },
-      "id": "backend:POST:/calificaciones/sugerir-orientacion",
-      "kind": "endpoint",
-      "owner_spec": "008-calificaciones",
-      "signature": "POST:/calificaciones/sugerir-orientacion",
-      "source_line": 103,
-      "source_path": "backend/app/modules/calificaciones/evidence_scan_suggestion_router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "direct",
-          "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
-        }
-      ]
-    },
-    {
-      "actors": [
         "admin",
         "profesor"
       ],
@@ -17723,6 +17717,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -21535,6 +21535,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -22396,7 +22402,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "export_pdf",
         "registered": true,
@@ -22406,17 +22412,10 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/reportes/export/pdf",
-      "source_line": 112,
+      "source_line": 108,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "POST:/reportes/export/pdf",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -24261,12 +24260,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
@@ -24975,12 +24968,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/lib/dates.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "frontend/src/lib/installedApp.test.ts"
         },
         {
@@ -25042,6 +25029,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -32941,6 +32934,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -35213,7 +35212,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/concordancia",
-      "source_line": 426,
+      "source_line": 418,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35228,6 +35227,12 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/concordancia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35250,7 +35255,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/confidence",
-      "source_line": 550,
+      "source_line": 542,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35265,6 +35270,12 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/confidence",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35287,7 +35298,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs/provider-comparison",
-      "source_line": 621,
+      "source_line": 613,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35302,6 +35313,12 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35324,7 +35341,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs",
-      "source_line": 617,
+      "source_line": 609,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35339,6 +35356,12 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35361,7 +35384,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/errors",
-      "source_line": 585,
+      "source_line": 577,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35376,6 +35399,12 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/errors",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35398,7 +35427,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/latency",
-      "source_line": 549,
+      "source_line": 541,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35413,6 +35442,12 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/latency",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35435,7 +35470,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/criterios",
-      "source_line": 247,
+      "source_line": 239,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35450,6 +35485,12 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35472,7 +35513,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes/{selected}",
-      "source_line": 483,
+      "source_line": 475,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35487,6 +35528,12 @@
           "reference": "GET:/analytics/estudiantes/{selected}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes/{selected}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35509,7 +35556,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes",
-      "source_line": 474,
+      "source_line": 466,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35524,6 +35571,12 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35546,7 +35599,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones",
-      "source_line": 180,
+      "source_line": 184,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35567,6 +35620,12 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35589,7 +35648,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/overview",
-      "source_line": 179,
+      "source_line": 183,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35610,6 +35669,12 @@
           "reference": "GET:/analytics/overview",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/overview",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35632,7 +35697,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/preguntas",
-      "source_line": 248,
+      "source_line": 240,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35647,6 +35712,12 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/preguntas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35706,7 +35777,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sintesis",
-      "source_line": 249,
+      "source_line": 241,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35721,6 +35792,12 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sintesis",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -36251,6 +36328,259 @@
           "reference": "GET:/calificaciones/modo-salon/{sesionId}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [
+        "116-api-modelos-configurables",
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/calificaciones/sugerir-bordes/{id}:frontend/src/components/evidence/cornerAssistance.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/sugerir-bordes/{id}",
+      "source_line": 83,
+      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_coverage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_edit.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_migration_graph.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/evidence-edit.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceEditModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
         }
       ]
     },
@@ -37782,6 +38112,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -38548,6 +38884,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -38998,7 +39340,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/disponibilidad",
-      "source_line": 1033,
+      "source_line": 1025,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39019,6 +39361,12 @@
           "reference": "GET:/impacto/estudios/disponibilidad",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/disponibilidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39038,7 +39386,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}/indicadores",
-      "source_line": 875,
+      "source_line": 867,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39053,6 +39401,12 @@
           "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39072,7 +39426,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}",
-      "source_line": 870,
+      "source_line": 862,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39093,6 +39447,12 @@
           "reference": "GET:/impacto/estudios/{effectiveId}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39112,7 +39472,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{id}/export",
-      "source_line": 921,
+      "source_line": 913,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39127,6 +39487,12 @@
           "reference": "GET:/impacto/estudios/{id}/export",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{id}/export",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39146,7 +39512,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios",
-      "source_line": 865,
+      "source_line": 857,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39167,6 +39533,12 @@
           "reference": "GET:/impacto/estudios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39958,6 +40330,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -40642,6 +41020,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -41120,12 +41504,6 @@
       "source_path": "frontend/src/modules/reportes/api.ts",
       "states": [],
       "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/profesor/resumen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
         {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
@@ -41627,259 +42005,6 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "ambiguous"
-      ],
-      "authorization": [],
-      "consumers": [
-        "116-api-modelos-configurables",
-        "131-escaneo-evidencias"
-      ],
-      "coverage": "covered",
-      "details": {
-        "backend_contract": null,
-        "backend_contract_candidates": [],
-        "contract_status": "unmatched"
-      },
-      "id": "frontend_call:GET:/{path}/{id}:frontend/src/components/evidence/cornerAssistance.ts",
-      "kind": "frontend_call",
-      "owner_spec": "008-calificaciones",
-      "signature": "GET:/{path}/{id}",
-      "source_line": 92,
-      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_coverage.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_edit.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_manifest.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_preparation.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_replacement.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_migration_graph.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_service.py"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/e2e/evidence-edit.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/e2e/evidence-scan.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/evidenceEditModel.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
         }
       ]
     },
@@ -43191,6 +43316,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -43864,6 +43995,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -44240,6 +44377,12 @@
           "reference": "PATCH:/xali/refuerzos/{id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -46898,6 +47041,259 @@
         "ambiguous"
       ],
       "authorization": [],
+      "consumers": [
+        "116-api-modelos-configurables",
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/calificaciones/sugerir-bordes",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/calificaciones/sugerir-bordes:frontend/src/components/evidence/cornerAssistance.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "POST:/calificaciones/sugerir-bordes",
+      "source_line": 75,
+      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_coverage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_edit.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_migration_graph.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/e2e/evidence-edit.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceEditModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -48590,6 +48986,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -49089,7 +49491,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios/{id}/{action}",
-      "source_line": 907,
+      "source_line": 899,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -49110,6 +49512,12 @@
           "reference": "POST:/impacto/estudios/{id}/{action}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios/{id}/{action}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -49129,7 +49537,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios",
-      "source_line": 895,
+      "source_line": 887,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -49150,6 +49558,12 @@
           "reference": "POST:/impacto/estudios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -49746,6 +50160,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -50474,6 +50894,12 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -54293,6 +54719,12 @@
           "reference": "analytics_eventos",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "analytics_eventos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -54348,6 +54780,12 @@
           "reference": "analytics_work_sessions",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "analytics_work_sessions",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -56111,12 +56549,6 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
@@ -56358,12 +56790,6 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
-          "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
         },
         {
           "level": "unit",
@@ -56942,6 +57368,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -57922,12 +58354,6 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
-          "level": "unit",
-          "reference": "evaluaciones",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
@@ -58223,6 +58649,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -60147,12 +60579,6 @@
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
         {
-          "level": "unit",
-          "reference": "materias",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
@@ -60360,6 +60786,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -60463,6 +60895,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaManagement.test.tsx"
         },
         {
           "level": "unit",

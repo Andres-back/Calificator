@@ -43,6 +43,10 @@ interface Overview {
     };
   };
 }
+const EVALUATION_STATE_LABELS: Record<string, string> = { borrador: 'Borrador', publicada: 'Publicada', en_calificacion: 'Calificando', pendiente_revision: 'Por revisar', cerrada: 'Cerrada' };
+function evaluationStateLabel(state: string) {
+  return EVALUATION_STATE_LABELS[state] ?? state.replace(/_/g, ' ');
+}
 interface EvalRow { id: string; nombre: string; estado: string; total_entregas: number; pendientes: number; confirmadas: number; publicadas: number; promedio: number; tasa_aprobacion: number; }
 interface CriterioRow { nombre: string; porcentaje_logro: number; estudiantes_evaluados: number; estudiantes_con_dificultad: number; nivel_atencion: string; }
 interface EstudianteRow { estudiante_id: string; nombre: string; email: string; promedio_pct: number; total_evaluaciones: number; pendientes: number; bajo_rendimiento: number; senales: string[]; nivel_atencion: string; }
@@ -192,16 +196,15 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard icon={<GraduationCap className="h-5 w-5" />} label="Entregas procesadas" value={String(data.entregas.total)} sub={`${data.evaluaciones_activas} evaluaciones activas`} />
       <MetricCard icon={<Clock className="h-5 w-5" />} label="Pendientes de revisión" value={String(totalPendientes)} sub={totalPendientes > 0 ? `${sinPublicar} confirmadas sin publicar` : 'Todo al día'} trend={totalPendientes > 5 ? 'down' : 'up'} />
-      <MetricCard
+      {/* Spec 190: una métrica sin mediciones no se muestra como tarjeta vacía. */}
+      {observedAvailable && <MetricCard
         icon={<Sparkles className="h-5 w-5" />}
-        label="Ahorro observado"
-        value={observedAvailable ? formatMilisegundos(observed.ahorro_ms!) : '—'}
-        sub={observedAvailable
-          ? `${observed.ahorro_porcentaje}% · ${observed.cobertura.unidades_comparables} comparación(es)`
-          : (observed?.motivo_no_disponible ?? 'Sin mediciones comparables')}
-        trend={observedAvailable ? (observed.ahorro_ms! >= 0 ? 'up' : 'down') : undefined}
-      />
-      <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Coincidencia docente–IA" value={`${(data.ia.coincidencia_exacta * 100).toFixed(0)}%`} sub={`${(data.ia.tasa_ajustes * 100).toFixed(0)}% ajustadas`} trend={data.ia.coincidencia_exacta >= 0.7 ? 'up' : 'down'} />
+        label="Tiempo ahorrado"
+        value={formatMilisegundos(observed.ahorro_ms!)}
+        sub={`${observed.ahorro_porcentaje}% · ${observed.cobertura.unidades_comparables} comparación(es)`}
+        trend={observed.ahorro_ms! >= 0 ? 'up' : 'down'}
+      />}
+      <MetricCard icon={<CheckCircle2 className="h-5 w-5" />} label="Coincidiste con la IA" value={`${(data.ia.coincidencia_exacta * 100).toFixed(0)}%`} sub={`${(data.ia.tasa_ajustes * 100).toFixed(0)}% ajustadas`} trend={data.ia.coincidencia_exacta >= 0.7 ? 'up' : 'down'} />
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="space-y-4 p-5">
@@ -211,33 +214,22 @@ function ResumenTab({ materiaId }: { materiaId: string }) {
         <ProgressBar label="Publicadas al estudiante" value={data.entregas.publicadas} max={data.entregas.total || 1} color="bg-emerald-500" />
         {data.ia.incidencias_abiertas > 0 && <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />{data.ia.incidencias_abiertas} incidencia(s) abierta(s).</div>}
       </Card>
-      <Card className="space-y-4 p-5">
-        <h3 className="font-display font-bold">Tiempo docente observado</h3>
-        {observedAvailable ? (
-          <div className="space-y-2">
-            <p className="text-3xl font-extrabold text-fg">{formatMilisegundos(observed.ahorro_ms!)}</p>
-            <p className="text-xs text-muted">Diferencia promedio entre trabajo manual y asistido comparable.</p>
-            <p className="text-xs text-muted">
-              Manual <strong>{formatMilisegundos(observed.tiempo_manual_promedio_ms!)}</strong>
-              {' · '}Asistido <strong>{formatMilisegundos(observed.tiempo_asistido_promedio_ms!)}</strong>
-            </p>
-            {observed.cobertura.incertidumbre_ms > 0 && (
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                {formatMilisegundos(observed.cobertura.incertidumbre_ms)} quedaron señalados para revisión y no se imputaron como ahorro.
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-sm text-muted">{observed?.motivo_no_disponible ?? 'Sin datos observados todavía.'}</p>
-            <p className="text-xs text-muted">La estimación histórica no se presenta como evidencia del impacto.</p>
-          </div>
-        )}
-      </Card>
+      {observedAvailable && <Card className="space-y-4 p-5">
+        <h3 className="font-display font-bold">Tiempo que te ahorra la IA</h3>
+        <div className="space-y-2">
+          <p className="text-3xl font-extrabold text-fg">{formatMilisegundos(observed.ahorro_ms!)}</p>
+          <p className="text-xs text-muted">Diferencia promedio entre calificar a mano y con ayuda, en casos comparables.</p>
+          <p className="text-xs text-muted">
+            A mano <strong>{formatMilisegundos(observed.tiempo_manual_promedio_ms!)}</strong>
+            {' · '}Con ayuda <strong>{formatMilisegundos(observed.tiempo_asistido_promedio_ms!)}</strong>
+          </p>
+        </div>
+      </Card>}
     </div>
     {evs && evs.length > 0 && <Card className="p-5"><h3 className="mb-4 font-display font-bold">Evaluaciones recientes</h3>
-      <div className="teacher-scroll-region min-w-0 max-w-full overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4">Estado</th><th className="pb-2 pr-4 text-right">Total</th><th className="pb-2 pr-4 text-right">Pend.</th><th className="pb-2 pr-4 text-right">Pub.</th><th className="pb-2 pr-4 text-right">Prom.</th><th className="pb-2 pr-4 text-right">Aprob.</th></tr></thead>
-        <tbody>{evs.slice(0, 10).map((ev: EvalRow) => <tr key={ev.id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4"><Badge tone={ev.estado === 'publicada' ? 'success' : 'warning'}>{ev.estado}</Badge></td><td className="py-2.5 pr-4 text-right">{ev.total_entregas}</td><td className="py-2.5 pr-4 text-right text-amber-700 dark:text-amber-300">{ev.pendientes}</td><td className="py-2.5 pr-4 text-right text-emerald-700 dark:text-emerald-300">{ev.publicadas}</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.promedio.toFixed(1)}</td><td className="py-2.5 pr-4 text-right">{(ev.tasa_aprobacion * 100).toFixed(0)}%</td></tr>)}</tbody></table></div></Card>}
+      <ul className="space-y-3 sm:hidden" aria-label="Evaluaciones recientes">{evs.slice(0, 10).map((ev: EvalRow) => <li key={ev.id} className="rounded-xl border border-border p-3"><div className="flex items-start justify-between gap-2"><p className="min-w-0 font-semibold">{ev.nombre}</p><Badge tone={ev.estado === 'publicada' ? 'success' : 'warning'} className="shrink-0 whitespace-nowrap">{evaluationStateLabel(ev.estado)}</Badge></div><dl className="mt-2 grid grid-cols-3 gap-2 text-center text-xs"><div><dt className="text-muted">Entregas</dt><dd className="text-base font-bold">{ev.total_entregas}</dd></div><div><dt className="text-muted">Por revisar</dt><dd className="text-base font-bold text-amber-700 dark:text-amber-300">{ev.pendientes}</dd></div><div><dt className="text-muted">Publicadas</dt><dd className="text-base font-bold text-emerald-700 dark:text-emerald-300">{ev.publicadas}</dd></div><div><dt className="text-muted">Promedio</dt><dd className="text-base font-bold">{ev.promedio.toFixed(1)}</dd></div><div className="col-span-2"><dt className="text-muted">Aprobaron</dt><dd className="text-base font-bold">{(ev.tasa_aprobacion * 100).toFixed(0)} %</dd></div></dl></li>)}</ul>
+      <div className="teacher-scroll-region hidden min-w-0 max-w-full overflow-x-auto sm:block"><table className="w-full text-left text-sm"><thead><tr className="border-b border-border text-xs font-semibold text-muted"><th className="pb-2 pr-4">Evaluación</th><th className="pb-2 pr-4">Estado</th><th className="pb-2 pr-4 text-right">Entregas</th><th className="whitespace-nowrap pb-2 pr-4 text-right">Por revisar</th><th className="pb-2 pr-4 text-right">Publicadas</th><th className="pb-2 pr-4 text-right">Promedio</th><th className="pb-2 pr-4 text-right">Aprobaron</th></tr></thead>
+        <tbody>{evs.slice(0, 10).map((ev: EvalRow) => <tr key={ev.id} className="border-b border-border/50 last:border-0"><td className="py-2.5 pr-4 font-medium">{ev.nombre}</td><td className="py-2.5 pr-4"><Badge tone={ev.estado === 'publicada' ? 'success' : 'warning'}>{evaluationStateLabel(ev.estado)}</Badge></td><td className="py-2.5 pr-4 text-right">{ev.total_entregas}</td><td className="py-2.5 pr-4 text-right text-amber-700 dark:text-amber-300">{ev.pendientes}</td><td className="py-2.5 pr-4 text-right text-emerald-700 dark:text-emerald-300">{ev.publicadas}</td><td className="py-2.5 pr-4 text-right font-semibold">{ev.promedio.toFixed(1)}</td><td className="py-2.5 pr-4 text-right">{(ev.tasa_aprobacion * 100).toFixed(0)}%</td></tr>)}</tbody></table></div></Card>}
     {necesitaAtencion > 0 && <Card className="space-y-4 p-5"><h3 className="flex items-center gap-2 font-display font-bold"><AlertTriangle className="h-5 w-5 text-amber-500" />Casos que requieren atención</h3><div className="grid gap-3 sm:grid-cols-3">{[totalPendientes > 0 && <div key="pendientes" className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10"><p className="text-2xl font-extrabold text-amber-700 dark:text-amber-300">{totalPendientes}</p><p className="text-xs text-amber-700 dark:text-amber-300">Pendientes de revisión</p></div>, sinPublicar > 0 && <div key="sin-publicar" className="rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-500/30 dark:bg-sky-500/10"><p className="text-2xl font-extrabold text-sky-700 dark:text-sky-300">{sinPublicar}</p><p className="text-xs text-sky-700 dark:text-sky-300">Confirmadas sin publicar</p></div>, data.ia.incidencias_abiertas > 0 && <div key="incidencias" className="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/30 dark:bg-rose-500/10"><p className="text-2xl font-extrabold text-rose-700 dark:text-rose-300">{data.ia.incidencias_abiertas}</p><p className="text-xs text-rose-700 dark:text-rose-300">Incidencias abiertas</p></div>].filter(Boolean)}</div></Card>}
   </>);
 }
@@ -1041,7 +1033,7 @@ export function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Analítica" eyebrow="Dashboard docente" subtitle="Métricas operativas, rendimiento académico y acompañamiento estudiantil." />
+      <PageHeader title="Analítica" eyebrow="Resumen de mis clases" subtitle="Cómo van tus evaluaciones, quiénes necesitan apoyo y qué temas reforzar." />
 
       {/* Filtros + Tabs */}
       <Card className="p-4">
@@ -1065,7 +1057,7 @@ export function AnalyticsPage() {
       {tab === 'calidad_ia' && <CalidadIaTab materiaId={materiaId} />}
       {tab === 'estudio' && impactEnabled && <ImpactStudyTab canManage={canManageStudy} />}
 
-      <p className="text-center text-[10px] text-muted"><HelpCircle className="mr-1 inline h-3 w-3" />Tiempo estimado ahorrado — calculado contra línea base de 3 min por corrección manual. Datos pueden tardar hasta 1 minuto.</p>
+      <p className="text-center text-xs text-muted"><HelpCircle className="mr-1 inline h-3.5 w-3.5" />Los datos pueden tardar hasta un minuto en actualizarse.</p>
     </div>
   );
 }
