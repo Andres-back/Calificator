@@ -40,11 +40,11 @@ describe('revisión de escaneo antes del envío', () => {
     const suggestCorners = vi.fn().mockResolvedValue(quad);
     const onAccept = vi.fn();
     render(<EvidenceScanEditor file={photo} pageNumber={1} rotation={0} suggestCorners={suggestCorners} onAccept={onAccept} onClose={vi.fn()} />);
-    await screen.findByText(/Bordes sugeridos con ayuda visual/);
+    await screen.findByText(/Hoja enderezada con ayuda visual/);
     expect(suggestCorners).toHaveBeenCalledOnce();
     expect(onAccept).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta preparación' })).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Usar esta preparación' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Usar esta hoja' }));
     const accepted = onAccept.mock.calls[0][0].recipe.corners;
     expect(accepted[0]).toEqual([.14, .14]);
     expect(accepted[2][0]).toBeCloseTo(.86, 8);
@@ -60,8 +60,8 @@ describe('revisión de escaneo antes del envío', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mover esquina a la derecha' }));
     expect(suggestCorners.mock.calls[0][1].aborted).toBe(true);
     await act(async () => finish(initial.quad));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta preparación' })).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Usar esta preparación' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Usar esta hoja' }));
     expect(onAccept.mock.calls[0][0].recipe.corners[0]).toEqual([.005, 0]);
   });
   it('ofrece ajuste manual y original cuando la ayuda falla', async () => {
@@ -78,8 +78,8 @@ describe('revisión de escaneo antes del envío', () => {
     await screen.findByRole('button', { name: 'Esquina 1, superior izquierda' });
     await userEvent.click(screen.getByRole('button', { name: 'Esquina 1, superior izquierda' }));
     await userEvent.click(screen.getByRole('button', { name: 'Mover esquina a la derecha' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta preparación' })).toBeEnabled());
-    await userEvent.click(screen.getByRole('button', { name: 'Usar esta preparación' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled());
+    await userEvent.click(screen.getByRole('button', { name: 'Usar esta hoja' }));
     expect(onAccept).toHaveBeenCalledOnce();
     expect(onAccept.mock.calls[0][0]).toMatchObject({ decision: 'prepared', recipe: { width: 800, height: 1200, corners: [[0.105, 0.1], [0.9, 0.1], [0.9, 0.9], [0.1, 0.9]], coordinate_frame: 'exif_oriented_source', profile: 'natural' } });
     expect(photo.size).toBe(6); expect(onClose).not.toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe('revisión de escaneo antes del envío', () => {
     const onAccept = vi.fn();
     render(<EvidenceScanEditor file={photo} pageNumber={2} rotation={90} onAccept={onAccept} onClose={vi.fn()} />);
     await screen.findByRole('alert');
-    expect(screen.getByRole('button', { name: 'Usar esta preparación' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Usar foto original' }));
     expect(onAccept).toHaveBeenCalledWith({ decision: 'original' });
   });
@@ -120,8 +120,57 @@ describe('revisión de escaneo antes del envío', () => {
     pointer(svg, 'pointermove', 528, 48);
     pointer(svg, 'pointerup', 528, 48);
     pointer(svg, 'pointermove', 300, 200);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta preparación' })).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Usar esta preparación' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Usar esta hoja' }));
     expect(onAccept.mock.calls[0][0].recipe.corners[0]).toEqual([0.12, 0.12]);
+  });
+
+  it('187 con bordes propuestos abre en la hoja preparada y gira el texto a derecho', async () => {
+    const suggestOrientation = vi.fn().mockResolvedValue(270);
+    const onAccept = vi.fn();
+    render(<EvidenceScanEditor file={photo} pageNumber={1} rotation={0} suggestOrientation={suggestOrientation} onAccept={onAccept} onClose={vi.fn()} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Ver preparada' })).toHaveAttribute('aria-pressed', 'true'));
+    expect(suggestOrientation).toHaveBeenCalledOnce();
+    await screen.findByText(/La hoja se giró para que el texto quede derecho/);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Usar esta hoja' }));
+    expect(onAccept.mock.calls[0][0].recipe.rotation).toBe(270);
+    expect(onAccept.mock.calls[0][0].recipe.corners).toEqual(initial.quad);
+  });
+
+  it('187 el giro del docente gana a una sugerencia tardía', async () => {
+    let finish!: (rotation: 90) => void;
+    const suggestOrientation = vi.fn((_source: Blob, _signal: AbortSignal) => new Promise<90>((resolve) => { finish = resolve; }));
+    const onAccept = vi.fn();
+    render(<EvidenceScanEditor file={photo} pageNumber={1} rotation={0} suggestOrientation={suggestOrientation} onAccept={onAccept} onClose={vi.fn()} />);
+    await screen.findByText(/Girando la hoja para que el texto quede derecho/);
+    fireEvent.click(screen.getByRole('button', { name: /Girar/ }));
+    expect(suggestOrientation.mock.calls[0][1].aborted).toBe(true);
+    await act(async () => finish(90));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Usar esta hoja' }));
+    expect(onAccept.mock.calls[0][0].recipe.rotation).toBe(90);
+    expect(screen.queryByText(/La hoja se giró/)).not.toBeInTheDocument();
+  });
+
+  it('187 no sugiere giro si la hoja ya venía girada o preparada, y sin bordes abre en las esquinas', async () => {
+    const suggestOrientation = vi.fn().mockResolvedValue(90);
+    const view = render(<EvidenceScanEditor file={photo} pageNumber={1} rotation={90} suggestOrientation={suggestOrientation} onAccept={vi.fn()} onClose={vi.fn()} />);
+    await screen.findByRole('button', { name: 'Esquina 1, superior izquierda' });
+    expect(suggestOrientation).not.toHaveBeenCalled();
+    view.unmount();
+    mocks.run.mockResolvedValueOnce({ ...initial, quad: null });
+    render(<EvidenceScanEditor file={photo} pageNumber={1} rotation={0} onAccept={vi.fn()} onClose={vi.fn()} />);
+    await screen.findByText(/Mueve las esquinas hasta los bordes/);
+    expect(screen.getByRole('button', { name: 'Ajustar bordes' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('187 si la ayuda de giro falla, la hoja queda como estaba', async () => {
+    const onAccept = vi.fn();
+    render(<EvidenceScanEditor file={photo} pageNumber={1} rotation={0} suggestOrientation={vi.fn().mockRejectedValue(new Error('private'))} onAccept={onAccept} onClose={vi.fn()} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Usar esta hoja' }));
+    expect(onAccept.mock.calls[0][0].recipe.rotation).toBe(0);
+    expect(screen.queryByText(/private/)).not.toBeInTheDocument();
   });
 });

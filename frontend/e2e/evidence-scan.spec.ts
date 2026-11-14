@@ -40,18 +40,24 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   await (await chooser).setFiles({ name: 'hoja.png', mimeType: 'image/png', buffer: bytes });
   const editor = page.getByRole('dialog', { name: 'Preparar hoja 1' });
   await expect(editor).toBeVisible();
-  await expect(editor.getByRole('button', { name: 'Usar esta preparación' })).toBeEnabled();
+  await expect(editor.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled();
   // Framer can still be settling after the Worker preview is ready.
   await expect.poll(async () => {
     const box = await editor.boundingBox();
     return box ? Math.max(Math.abs(box.x), Math.abs(box.y), Math.abs(box.width-width), Math.abs(box.height-900)) : Infinity;
   }).toBeLessThan(.2);
+  // 187: con bordes detectados, en celular se abre primero la hoja preparada, como un escáner.
+  if (width < 1024) {
+    await expect(editor.getByRole('button', { name: 'Ver preparada' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(editor.getByRole('img', { name: 'Vista previa de la hoja preparada' })).toBeInViewport();
+    await editor.getByRole('button', { name: 'Ajustar bordes' }).click();
+  }
   for (let corner = 1; corner <= 4; corner++) await expect(editor.getByRole('button', { name: new RegExp(`^Esquina ${corner},`) })).toBeInViewport();
-  await expect(editor.getByRole('button', { name: 'Usar esta preparación' })).toHaveCSS('background-color', 'rgb(79, 70, 229)');
+  await expect(editor.getByRole('button', { name: 'Usar esta hoja' })).toHaveCSS('background-color', 'rgb(79, 70, 229)');
   if (width === 390) {
     await page.evaluate(() => { document.documentElement.style.fontSize = '150%'; });
     await page.setViewportSize({ width: 844, height: 390 });
-    await expect(editor.getByRole('button', { name: 'Usar esta preparación' })).toBeInViewport();
+    await expect(editor.getByRole('button', { name: 'Usar esta hoja' })).toBeInViewport();
   }
   await expect(page.getByLabel('Decisiones del paquete')).toHaveText('pending');
   await editor.getByRole('button', { name: 'Esquina 1, superior izquierda' }).focus();
@@ -60,10 +66,10 @@ for (const width of [360, 390, 768, 1440]) for (const theme of ['light', 'dark']
   if (width < 1024) await editor.getByRole('button', { name: 'Ver preparada' }).click();
   await editor.getByRole('combobox', { name: 'Aspecto de la hoja preparada' }).selectOption('lectura_suave');
   await expect(editor.getByRole('img', { name: 'Vista previa de la hoja preparada' })).toBeVisible();
-  await expect(editor.getByRole('button', { name: 'Usar esta preparación' })).toBeEnabled();
+  await expect(editor.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('scan-editor.png') });
-  await editor.getByRole('button', { name: 'Usar esta preparación' }).click();
+  await editor.getByRole('button', { name: 'Usar esta hoja' }).click();
   await expect(editor).not.toBeVisible(); await expect(page.getByLabel('Decisiones del paquete')).toHaveText('prepared');
   await expect(page.getByText('hoja.png', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Preparar hoja 1', exact: true }).click();
@@ -94,19 +100,19 @@ for (const width of [360, 1440]) for (const invalid of [false, true]) test(`131 
   await page.getByRole('button', { name: /^Subir fotos/ }).click();
   await (await chooser).setFiles({ name: 'hoja-sintetica.png', mimeType: 'image/png', buffer: bytes });
   const editor = page.getByRole('dialog', { name: 'Preparar hoja 1' });
-  await expect(editor.getByText(invalid ? /No pudimos proponer los bordes/ : /Bordes sugeridos con ayuda visual/)).toBeVisible();
+  await expect(editor.getByText(invalid ? /No pudimos proponer los bordes/ : /Hoja enderezada con ayuda visual/)).toBeVisible();
   await expect(page.getByLabel('Decisiones del paquete')).toHaveText('pending');
   await expect(editor.getByRole('button', { name: 'Usar foto original' })).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   if (!invalid) {
     if (width < 1024) await editor.getByRole('button', { name: 'Ver preparada' }).click();
     await expect(editor.getByRole('img', { name: 'Vista previa de la hoja preparada' })).toBeVisible();
-    await expect(editor.getByRole('button', { name: 'Usar esta preparación' })).toBeEnabled();
+    await expect(editor.getByRole('button', { name: 'Usar esta hoja' })).toBeEnabled();
     await page.screenshot({ path: info.outputPath('corner-assistance-synthetic.png') });
   }
   await editor.getByRole('button', { name: 'Volver sin cambios' }).click();
   await page.getByRole('button', { name: 'Preparar hoja 1', exact: true }).click();
-  await expect(editor.getByText(invalid ? /No pudimos proponer los bordes/ : /Bordes sugeridos con ayuda visual/)).toBeVisible();
+  await expect(editor.getByText(invalid ? /No pudimos proponer los bordes/ : /Hoja enderezada con ayuda visual/)).toBeVisible();
   expect(requests).toBe(1);
   expect(external).toEqual([]);
   expect(writes).toEqual(['/api/calificaciones/sugerir-bordes']);
