@@ -172,7 +172,12 @@ export function MateriaDetailPage() {
       {materia.estado === 'archivada' && <p role="status" className="rounded-lg border border-border bg-surface p-3 text-sm">Materia archivada. Puedes consultar su historial y exportar notas. Restáurala para admitir actividades o entregas nuevas.</p>}
 
       {/* Tab navigation */}
-      <nav ref={sectionsRef} aria-label="Secciones de la materia" className="teacher-scroll-region -mx-1 flex max-w-full snap-x gap-1 overflow-x-auto rounded-2xl border border-border bg-surface/90 p-1.5 shadow-sm">
+      {/* Spec 192: en celular todas las secciones a la vista, en cuadrícula; desde tableta, una fila. */}
+      <nav ref={sectionsRef} aria-label="Secciones de la materia" data-section-count={visibleTabs.length} className={cn(
+        'grid gap-1 rounded-2xl border border-border bg-surface/90 p-1.5 shadow-sm',
+        visibleTabs.length > 4 ? 'grid-cols-3' : 'grid-cols-2',
+        'teacher-scroll-region sm:-mx-1 sm:flex sm:max-w-full sm:snap-x sm:overflow-x-auto',
+      )}>
         {visibleTabs.map((tab) => {
           const active = isActiveTab(tab.to);
           return (
@@ -181,7 +186,8 @@ export function MateriaDetailPage() {
               to={tabHref(tab.to)}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'focus-ring flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors',
+                'focus-ring flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-center text-xs font-semibold leading-tight transition-colors',
+                'sm:min-h-11 sm:shrink-0 sm:snap-start sm:flex-row sm:gap-2 sm:px-3.5 sm:py-2.5 sm:text-left sm:text-sm',
                 active
                   ? 'bg-gradient-to-r from-brand-700 to-indigo-600 text-white shadow-sm'
                   : 'text-secondary hover:bg-surface-2 hover:text-fg',
@@ -189,9 +195,9 @@ export function MateriaDetailPage() {
             >
               <EducationalIcon
                 name={tab.brandIcon === 'subjects' ? getSubjectEducationalIcon(materia.area) : tab.brandIcon}
-                className="h-7 w-7"
+                className="h-7 w-7 shrink-0"
               />
-              {tab.label}
+              <span className="min-w-0 break-words">{tab.label}</span>
             </Link>
           );
         })}
