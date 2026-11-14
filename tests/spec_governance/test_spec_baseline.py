@@ -178,6 +178,7 @@ ALL_SPECS = {
     "184-camara-varias-fotos",
     "185-correos-estudiantes",
     "186-editor-revision",
+    "188-evidencia-reemplazada",
 }
 OWNED_SPECS = {
     name

@@ -188,6 +188,23 @@ def _is_initial_automatic_breakdown(breakdown: CalificacionDesglose) -> bool:
     )
 
 
+async def _reopened_after(db: AsyncSession, calificacion_id: UUID, since) -> bool:
+    """Spec 188: el docente pidió recalificar o cambió la evidencia después de su ajuste.
+
+    Sus ajustes se referían a la evidencia anterior: el resultado nuevo los reemplaza y
+    ellos quedan en el historial como versión inactiva.
+    """
+    from app.modules.calificaciones.models import CalificacionRevision
+
+    return await db.scalar(
+        select(CalificacionRevision.created_at).where(
+            CalificacionRevision.calificacion_id == calificacion_id,
+            CalificacionRevision.accion.in_(("recalificar", "cambiar_evidencia")),
+            CalificacionRevision.created_at > since,
+        ).limit(1)
+    ) is not None
+
+
 async def create_automatic_breakdown(
     db: AsyncSession,
     *,
@@ -207,7 +224,9 @@ async def create_automatic_breakdown(
         if existing_run:
             return existing_run
     active = await get_active_breakdown(db, calificacion.id, lock=True)
-    if active and (active.origen != "automatico" or calificacion.revisado_por_docente or calificacion.estado == CalificacionEstado.PUBLICADA.value):
+    if active and (calificacion.revisado_por_docente or calificacion.estado == CalificacionEstado.PUBLICADA.value):
+        return active
+    if active and active.origen != "automatico" and not await _reopened_after(db, calificacion.id, active.created_at):
         return active
     scaffold = build_component_scaffold(blueprint)
     if not scaffold:
