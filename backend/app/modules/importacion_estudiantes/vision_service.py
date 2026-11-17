@@ -27,7 +27,7 @@ Máximo 100 estudiantes. No devuelvas correos, documentos, contraseñas ni expli
 ERROR_MESSAGES = {
     "service_unavailable": "El servicio de lectura no está disponible en este momento. Intenta más tarde o avisa al administrador.",
     "invalid_response": "La lectura no se completó correctamente. Intenta de nuevo; si continúa, avisa al administrador.",
-    "no_names": "No encontramos nombres en la foto. Prueba con buena luz y toda la lista visible.",
+    "no_names": "No encontramos nombres. Si es una foto, prueba con buena luz y toda la lista visible; si es un archivo, revisa que tenga una columna con los nombres.",
 }
 
 

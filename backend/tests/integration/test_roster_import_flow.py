@@ -43,10 +43,9 @@ async def test_failed_roster_worker_persists_safe_service_error_without_creating
         initial_users = await setup.scalar(select(func.count(User.id)))
         initial_enrollments = await setup.scalar(select(func.count(Matricula.id)))
     image = tmp_path / "synthetic.png"
-    image.write_bytes(b"synthetic")
+    image.write_bytes(bytes.fromhex("89504e470d0a1a0a") + b"synthetic")  # Spec 202: el tipo se reconoce por el contenido
     monkeypatch.setattr(worker, "AsyncSessionLocal", sessions)
     monkeypatch.setattr(worker, "resolve_private_upload_path", lambda _: image)
-    monkeypatch.setattr(worker, "validate_mime", lambda *_: "image/png")
     extraction = AsyncMock(side_effect=RosterExtractionError("service_unavailable"))
     deleted = Mock()
     monkeypatch.setattr(worker, "extract_student_names", extraction)

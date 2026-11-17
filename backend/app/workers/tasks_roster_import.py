@@ -13,11 +13,12 @@ from app.core.logging import get_logger
 from app.db.session import AsyncSessionLocal, engine
 from app.modules.importacion_estudiantes.models import ImportacionEstudiantesFila, ImportacionEstudiantesLote
 from app.modules.importacion_estudiantes.service import delete_private_photo_key, expire_abandoned_lotes, normalize_name
-from app.modules.importacion_estudiantes.vision_service import extract_student_names, roster_error_result
+from app.modules.importacion_estudiantes.roster_files import UnsupportedFile, candidates_from_file
+from app.modules.importacion_estudiantes.vision_service import RosterExtractionError, extract_student_names, roster_error_result
 from app.modules.jobs import service as jobs_service
 from app.modules.materias.service import list_students
 from app.modules.materias.models import Materia
-from app.services.storage_service import resolve_private_upload_path, validate_mime
+from app.services.storage_service import resolve_private_upload_path
 from app.shared.enums import JobEstado, JobTipo
 from app.workers.worker import celery_app
 
@@ -58,9 +59,20 @@ async def _run(job_id: UUID, lote_id: UUID) -> dict:
             path = resolve_private_upload_path(lote.archivo_key)
             async with aiofiles.open(path, "rb") as source:
                 content = await source.read()
-            mime = validate_mime(content, lote.archivo_nombre)
             job_input = await jobs_service.get_job_input(db, job_id)
-            candidates = await extract_student_names(image_bytes=content, mime=mime, teacher_id=lote.creado_por, ai_config=dict(job_input.get("_ai_config") or {}), db=db)
+            ai_config = dict(job_input.get("_ai_config") or {})
+            teacher_id = lote.creado_por
+
+            async def read_photo(image_bytes: bytes, mime: str) -> list[dict]:
+                return await extract_student_names(image_bytes=image_bytes, mime=mime, teacher_id=teacher_id, ai_config=ai_config, db=db)
+
+            # Spec 202: foto, PDF, Word, Excel, CSV o texto.
+            try:
+                candidates = await candidates_from_file(content, lote.archivo_nombre, read_photo=read_photo)
+            except UnsupportedFile as exc:
+                raise RosterExtractionError("no_names") from exc
+            if not candidates:
+                raise RosterExtractionError("no_names")
             await db.refresh(lote)
             if await jobs_service.get_job_state(db, job_id) == JobEstado.CANCELLED.value or lote.estado == "cancelado":
                 await jobs_service.finish_cancelled_job(db, job_id, progreso=50, resultado_json={"status": "cancelled"})

@@ -70,7 +70,7 @@ async function login(page: Page) {
 for (const width of [360, 1440]) {
   for (const [code, message] of [
     ['service_unavailable', 'El servicio de lectura no está disponible.'],
-    ['no_names', 'No encontramos nombres en esta foto.'],
+    ['no_names', 'No encontramos nombres en la lista.'],
     [undefined, 'No pudimos completar la lectura de la lista.'],
   ] as const) {
     test(`132 error ${code ?? 'legacy'} y recuperación en ${width}px`, async ({ page }) => {
@@ -78,7 +78,7 @@ for (const width of [360, 1440]) {
       const state = await installMocks(page, false, { codigo: code });
       await login(page);
       await page.getByRole('button', { name: 'Importar foto' }).click();
-      await page.locator('input[type="file"]').setInputFiles({ name: 'lista.png', mimeType: 'image/png', buffer: Buffer.from('foto-simulada') });
+      await page.getByLabel('Elegir una foto o un archivo con la lista').setInputFiles({ name: 'lista.png', mimeType: 'image/png', buffer: Buffer.from('foto-simulada') });
       await expect(page.getByRole('alert')).toContainText(message);
       if (code !== 'no_names') await expect(page.getByRole('alert')).not.toContainText('buena luz');
       await expect(page.getByRole('button', { name: 'Intentar con otra foto' })).toBeVisible();
@@ -86,7 +86,7 @@ for (const width of [360, 1440]) {
       expect(state.confirmed()).toBe(false);
       expect(state.rowWrites()).toBe(0);
       await page.getByRole('button', { name: 'Intentar con otra foto' }).click();
-      await expect(page.getByText('Tomar foto o elegir imagen')).toBeVisible();
+      await expect(page.getByText('Trae la lista como te quede más fácil')).toBeVisible();
     });
   }
 }
@@ -99,7 +99,7 @@ for (const viewport of [{ width: 360, height: 800 }, { width: 390, height: 844 }
     await login(page);
     await page.getByRole('button', { name: 'Importar foto' }).click();
     await expect(page.getByText('Importar estudiantes desde una foto')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles({ name: 'lista.png', mimeType: 'image/png', buffer: Buffer.from('foto-simulada') });
+    await page.getByLabel('Elegir una foto o un archivo con la lista').setInputFiles({ name: 'lista.png', mimeType: 'image/png', buffer: Buffer.from('foto-simulada') });
     await expect(page.getByLabel('Nombre del estudiante 1')).toBeVisible();
     const nameField = page.getByLabel('Nombre del estudiante 1');
     expect(await nameField.evaluate((element) => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16);
