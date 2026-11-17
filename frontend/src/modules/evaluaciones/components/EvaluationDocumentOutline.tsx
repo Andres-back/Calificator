@@ -1,3 +1,5 @@
+import { TextCaptureButtons } from '@/components/capture/TextCaptureButtons';
+import { mergeCapturedText } from '@/components/capture/textCapture';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, BookOpen, CheckCircle2, Layers3, Plus } from 'lucide-react';
 import { Button, ConfirmDialog, Field, Input, Textarea } from '@/components/ui';
@@ -97,6 +99,8 @@ export function EvaluationDocumentOutline({ document, questions, activeQuestionI
     {texts.map(node => <details key={node.id} open={expandedTextId === node.id} className="min-w-0 rounded-xl border border-border p-3">
       <summary onClick={event => { event.preventDefault(); setExpandedTextId(current => current === node.id ? null : node.id); }} className="focus-ring flex min-h-11 cursor-pointer items-center gap-2 font-semibold"><BookOpen className="h-4 w-4 shrink-0" />
         {{ lectura: 'Lectura de esta sección', instruccion: 'Indicaciones', actividad: 'Actividad sin nota', recuadro: 'Texto de apoyo' }[node.proposito ?? 'recuadro']}</summary>
+      {onChange && <TextCaptureButtons className="mb-3 mt-2" subject={node.proposito === 'lectura' ? 'la lectura' : 'el texto'}
+        onText={text => onChange(updateDocumentNode(document, node.id, { texto: mergeCapturedText(node.texto, text, 60000) }))} />}
       {onChange ? <Textarea aria-label={`Texto de ${node.proposito === 'lectura' ? 'lectura' : 'apoyo'}`} value={node.texto ?? ''} rows={8} maxLength={60000}
         className="min-h-44 text-base leading-7" onChange={event => onChange(updateDocumentNode(document, node.id, { texto: event.target.value }))} />
         : <p className="whitespace-pre-wrap break-words text-base leading-7">{node.texto}</p>}{controls(node.id)}
