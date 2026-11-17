@@ -32,7 +32,7 @@ test('157 digitalizar a 360 px prepara la hoja con el Worker real y envía su re
   await editor.getByRole('button', { name: 'Ver preparada' }).click();
   await editor.getByRole('combobox', { name: 'Aspecto de la hoja preparada' }).selectOption('lectura_suave');
   await expect(editor.getByRole('img', { name: 'Vista previa de la hoja preparada' })).toBeVisible();
-  await editor.getByRole('button', { name: 'Usar esta preparación' }).click();
+  await editor.getByRole('button', { name: 'Usar esta hoja' }).click();
   await expect(editor).not.toBeVisible();
   await expect(page.getByText('Preparada y revisada')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
