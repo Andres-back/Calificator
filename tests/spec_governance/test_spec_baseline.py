@@ -183,6 +183,7 @@ ALL_SPECS = {
     "189-revision-visual",
     "190-pantallas-claras",
     "192-navegacion-movil",
+    "199-lectura-en-verificacion",
 }
 OWNED_SPECS = {
     name

@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "ab4d0bf3674bdbd7041c641b750423f52fabd5d28d0077d60f318cd8c86d65be",
+  "source_digest": "afe9f791e024431d3ad6550c174f180332b6533e74715e87cdfabfc60b532eb6",
   "surfaces": [
     {
       "actors": [
@@ -56406,6 +56406,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_revisions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_lectura_en_calificacion.py"
         },
         {
           "level": "unit",
