@@ -185,6 +185,7 @@ ALL_SPECS = {
     "192-navegacion-movil",
     "199-lectura-en-verificacion",
     "193-herramientas-recursos",
+    "197-quiz-interactivo",
 }
 OWNED_SPECS = {
     name
