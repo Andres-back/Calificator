@@ -170,6 +170,17 @@ def component_consensus(
                 # Conserva la causa concreta si ambos coinciden (p. ej. ilegible).
                 state = states[0] if pending_evaluator and len(set(states)) == 1 else "revision_pendiente"
                 explanation = "La valoración de esta respuesta no tiene consenso verificable; el docente debe revisar la evidencia y la clave."
+                # Spec 199: si un calificador explicó por qué no pudo valorar, el docente lo ve.
+                reason = next(
+                    (
+                        " ".join(str(item.get("explicacion")).split())
+                        for item in (a, b)
+                        if item and item.get("estado") in PENDING_STATES and str(item.get("explicacion") or "").strip()
+                    ),
+                    "",
+                )
+                if reason:
+                    explanation += " Motivo: " + (reason if len(reason) <= 260 else reason[:257].rstrip() + "…")
                 orientation = "Revisa esta respuesta junto con tu docente."
         if resolutions and any(item and item.get("estado") in PENDING_STATES | {"sin_respuesta"} for item in (a, b)):
             score, state, origin, review = None, "revision_pendiente", "control_evidencia", True
