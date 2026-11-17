@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowDown, CheckCircle2, Eye, EyeOff, Link2 } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { difficultyLabel, optionText, pointsLabel, typeLabel } from './resourceLabels';
 import type { MaterialTipo } from '@/types/api';
 import { StoryContent } from './StoryContent';
 import { ResourceHeaderMotif } from '@/modules/motif_library/ResourceHeaderMotif';
@@ -183,8 +184,8 @@ function ImageFrame({ image, alt, className }: { image?: GeneratedImageContent; 
   }
   return (
     <div className={cn('rounded-lg border border-dashed border-border bg-surface-2 p-5 text-sm text-muted', className)}>
-      <p className="font-semibold text-fg">Imagen pendiente o de reserva</p>
-      <p className="mt-2">La imagen no está disponible por ahora. Puedes revisar el resto del material y volver a intentarlo más tarde.</p>
+      <p className="font-semibold text-fg">El dibujo no está disponible</p>
+      <p className="mt-2">No se pudo crear la imagen en este momento. Crea el recurso de nuevo en unos minutos para obtenerla.</p>
     </div>
   );
 }
@@ -202,24 +203,24 @@ function ExamenContent({ data }: { data: ToolContent }) {
     <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {data.instrucciones && <p className="flex-1 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200">{data.instrucciones}</p>}
-        <Button size="sm" variant={reveal ? 'secondary' : 'primary'} onClick={() => setReveal((v) => !v)}>
-          {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} {reveal ? 'Ocultar' : 'Ver respuestas'}
+        <Button size="sm" className="shrink-0 whitespace-nowrap" variant={reveal ? 'secondary' : 'primary'} onClick={() => setReveal((v) => !v)}>
+          {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} {reveal ? 'Ocultar respuestas' : 'Ver respuestas'}
         </Button>
       </div>
       {questions.map((q, i) => (
         <Block key={i} i={i}>
           <p className="font-semibold">
             <span className="text-brand-600">{q.numero}.</span> {q.enunciado}
-            {q.puntaje != null && <span className="ml-2 text-xs font-bold text-violet-500">[{q.puntaje} pts]</span>}
+            {q.puntaje != null && <span className="ml-2 whitespace-nowrap text-xs font-bold text-violet-500">[{pointsLabel(q.puntaje)}]</span>}
           </p>
           {(q.opciones ?? []).length > 0 ? (
             <div className="mt-2 space-y-1">
               {(q.opciones ?? []).map((op: string, j: number) => {
                 const ok = reveal && matchLetter(q, j);
                 return (
-                  <p key={j} className={cn('flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm', ok && 'bg-emerald-50 font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300')}>
-                    <span className="font-bold text-brand-500">{ok ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : '○'} {String.fromCharCode(65 + j)})</span>
-                    {stripPrefix(op)}
+                  <p key={j} className={cn('flex items-start gap-2 rounded-lg px-2 py-1 text-sm leading-6', ok && 'bg-emerald-50 font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300')}>
+                    <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap font-bold text-brand-500">{ok ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : '○'} {String.fromCharCode(65 + j)})</span>
+                    <span className="min-w-0 break-words">{optionText(stripPrefix(op), j)}</span>
                   </p>
                 );
               })}
@@ -248,11 +249,11 @@ function RubricaContent({ data }: { data: ToolContent }) {
         {criterios.map((criterion, index) => (
           <Block key={`${criterion.nombre}-${index}`} i={index}>
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="font-display font-bold">{criterion.nombre || `Criterio ${index + 1}`}</p>
                 {criterion.descripcion && <p className="mt-1 text-sm text-muted">{criterion.descripcion}</p>}
               </div>
-              {criterion.peso_porcentaje != null && <Badge tone="brand">{criterion.peso_porcentaje}%</Badge>}
+              {criterion.peso_porcentaje != null && <Badge tone="brand" className="shrink-0 whitespace-nowrap">{criterion.peso_porcentaje}%</Badge>}
             </div>
             <dl className="mt-3 space-y-2">
               {escala.map((level) => (
@@ -305,8 +306,8 @@ function CuentoContent({ data }: { data: ToolContent }) {
 function ParaColorearContent({ data }: { data: ToolContent }) {
   return (
     <div className="space-y-5">
-      <ImageFrame image={data.imagen} alt={data.titulo ?? 'Dibujo para colorear'} className="bg-white" />
       {data.instrucciones && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200">{data.instrucciones}</div>}
+      <ImageFrame image={data.imagen} alt={data.titulo ?? 'Dibujo para colorear'} className="bg-white" />
       {(data.uso_docente ?? []).length > 0 && <><Section title="Uso docente" />{bullets(data.uso_docente ?? [])}</>}
     </div>
   );
@@ -394,6 +395,7 @@ function FlashcardsContent({ data }: { data: ToolContent }) {
               >
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Concepto</p>
                 <p className="mt-2 font-display text-base font-bold">{card.anverso}</p>
+                <p className="mt-3 text-xs text-muted">Toca para ver la definición</p>
               </div>
               {/* Reverso */}
               <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl border-2 border-brand-300 bg-brand-50 p-4 text-center [backface-visibility:hidden] [transform:rotateY(180deg)] dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -403,7 +405,7 @@ function FlashcardsContent({ data }: { data: ToolContent }) {
             </div>
 
             {/* Mark as known buttons */}
-            <div className="mt-2 flex items-center justify-center gap-1">
+            <div className="mt-2 flex items-center justify-center gap-1.5" role="group" aria-label={`¿Cómo te fue con la tarjeta ${i + 1}?`}>
               {(['red', 'yellow', 'green'] as const).map((status) => {
                 const colors = {
                   red: { active: 'bg-rose-500 text-white', label: 'No la sé', icon: '😕' },
@@ -416,15 +418,14 @@ function FlashcardsContent({ data }: { data: ToolContent }) {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); mark(i, status); }}
                     className={cn(
-                      'flex h-8 w-8 items-center justify-center rounded-full border text-sm transition-all',
+                      'focus-ring inline-flex min-h-9 items-center justify-center gap-1 whitespace-nowrap rounded-full border px-2.5 text-xs font-semibold transition-all',
                       known[i] === status
                         ? colors.active + ' border-transparent'
-                        : 'border-border bg-surface text-muted hover:scale-110',
+                        : 'border-border bg-surface text-muted hover:border-brand-300',
                     )}
-                    title={colors.label}
-                    aria-label={colors.label}
+                    aria-pressed={known[i] === status}
                   >
-                    {colors.icon}
+                    <span aria-hidden="true">{colors.icon}</span> {colors.label}
                   </button>
                 );
               })}
@@ -444,11 +445,11 @@ function FichaContent({ data }: { data: ToolContent }) {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface-2/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0">
           {data.objetivo && <p className="font-semibold">{data.objetivo}</p>}
           {data.instrucciones && <p className="mt-1 text-sm text-muted">{data.instrucciones}</p>}
         </div>
-        <Button size="sm" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
           {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           {reveal ? 'Ocultar soluciones' : 'Ver soluciones'}
         </Button>
@@ -460,16 +461,14 @@ function FichaContent({ data }: { data: ToolContent }) {
               {exercise.numero ?? index + 1}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-semibold leading-6">{exercise.enunciado || 'Ejercicio sin enunciado'}</p>
-                {exercise.tipo && <Badge tone="neutral">{exercise.tipo.replace(/_/g, ' ')}</Badge>}
-              </div>
+              <p className="whitespace-pre-line font-semibold leading-6">{exercise.enunciado || 'Ejercicio sin enunciado'}</p>
+              {exercise.tipo && <Badge tone="neutral" className="mt-2 whitespace-nowrap">{typeLabel(exercise.tipo)}</Badge>}
               {(exercise.opciones ?? []).length > 0 && (
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {(exercise.opciones ?? []).map((option, optionIndex) => (
                     <p key={`${option}-${optionIndex}`} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted">
                       <span className="mr-1 font-bold text-brand-500">{String.fromCharCode(65 + optionIndex)})</span>
-                      {stripPrefix(option)}
+                      {optionText(stripPrefix(option), optionIndex)}
                     </p>
                   ))}
                 </div>
@@ -503,7 +502,7 @@ function TallerContent({ data }: { data: ToolContent }) {
           {data.objetivo && <p className="font-semibold">{data.objetivo}</p>}
           {data.instrucciones && <p className="mt-1 text-sm leading-6 text-muted">{data.instrucciones}</p>}
         </div>
-        <Button size="sm" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
+        <Button size="sm" className="shrink-0 whitespace-nowrap" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
           {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           {reveal ? 'Ocultar soluciones' : 'Ver soluciones'}
         </Button>
@@ -512,21 +511,21 @@ function TallerContent({ data }: { data: ToolContent }) {
         const answerLines = Math.max(1, Math.min(8, Number(point.lineas_respuesta) || 3));
         return (
           <Block key={`${point.numero}-${index}`} i={index}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <p className="min-w-0 flex-1 font-semibold leading-6">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between lg:gap-3" data-question-header>
+              <p className="min-w-0 whitespace-pre-line font-semibold leading-6 lg:flex-1">
                 <span className="text-brand-600">{point.numero ?? index + 1}.</span> {point.enunciado}
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {point.tipo && <Badge tone="neutral">{point.tipo.replace(/_/g, ' ')}</Badge>}
-                {point.dificultad && <Badge tone="violet">{point.dificultad}</Badge>}
-                {point.puntaje != null && <Badge tone="brand">{point.puntaje} pts</Badge>}
+              <div className="flex shrink-0 flex-wrap gap-1.5">
+                {point.tipo && <Badge tone="neutral" className="whitespace-nowrap">{typeLabel(point.tipo)}</Badge>}
+                {point.dificultad && <Badge tone="violet" className="whitespace-nowrap">{difficultyLabel(point.dificultad)}</Badge>}
+                {point.puntaje != null && <Badge tone="brand" className="whitespace-nowrap">{pointsLabel(point.puntaje)}</Badge>}
               </div>
             </div>
             {(point.opciones ?? []).length > 0 && (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {(point.opciones ?? []).map((option, optionIndex) => (
                   <p key={optionIndex} className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
-                    <b className="text-brand-600">{String.fromCharCode(65 + optionIndex)})</b> {stripPrefix(option)}
+                    <b className="text-brand-600">{String.fromCharCode(65 + optionIndex)})</b> {optionText(stripPrefix(option), optionIndex)}
                   </p>
                 ))}
               </div>
@@ -575,7 +574,7 @@ function LecturaContent({ data }: { data: ToolContent }) {
       <div className="flex items-center justify-between gap-3">
         <Section title="Preguntas de comprensión" />
         {questions.some((question) => question.respuesta_esperada || question.respuesta_correcta) && (
-          <Button size="sm" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
+          <Button size="sm" className="shrink-0 whitespace-nowrap" variant={reveal ? 'secondary' : 'outline'} onClick={() => setReveal((value) => !value)}>
             {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             {reveal ? 'Ocultar respuestas' : 'Ver respuestas'}
           </Button>
@@ -585,12 +584,12 @@ function LecturaContent({ data }: { data: ToolContent }) {
         <EmptyMaterial message="No se generaron preguntas de comprensión." />
       ) : questions.map((question, index) => (
         <Block key={`${question.numero}-${index}`} i={index}>
-          <div className="flex flex-wrap items-start gap-2">
-            <p className="font-semibold leading-6">
-              <span className="text-brand-600">{question.numero ?? index + 1}.</span> {question.enunciado}
-            </p>
-            {question.tipo && <Badge tone="violet">{question.tipo}</Badge>}
-            {question.dificultad && <Badge tone="neutral">{question.dificultad}</Badge>}
+          <p className="font-semibold leading-6">
+            <span className="text-brand-600">{question.numero ?? index + 1}.</span> {question.enunciado}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {question.tipo && <Badge tone="violet" className="whitespace-nowrap">{typeLabel(question.tipo)}</Badge>}
+            {question.dificultad && <Badge tone="neutral" className="whitespace-nowrap">{difficultyLabel(question.dificultad)}</Badge>}
           </div>
           {reveal && (question.respuesta_esperada || question.respuesta_correcta) && (
             <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
@@ -690,6 +689,16 @@ function MapaConceptualContent({ data }: { data: ToolContent }) {
   );
 }
 
+/** Tipos cuya vista ya muestra las instrucciones; el resto las recibe de la página que la contiene. */
+const VIEW_SHOWS_INSTRUCTIONS = new Set<MaterialTipo>(['examen', 'quiz_rapido', 'para_colorear', 'flashcards', 'ficha', 'taller', 'lectura_comprensiva']);
+
+/** Instrucciones del recurso, una sola vez, para docente y estudiante. */
+export function ResourceInstructions({ tipo, content }: { tipo: MaterialTipo; content: { instrucciones?: unknown } }) {
+  const text = typeof content.instrucciones === 'string' ? content.instrucciones.trim() : '';
+  if (!text || VIEW_SHOWS_INSTRUCTIONS.has(tipo)) return null;
+  return <p className="mb-4 whitespace-pre-wrap text-sm leading-6" data-resource-instructions><strong>Instrucciones: </strong>{text}</p>;
+}
+
 export function ContenidoView({ tipo, data }: { tipo: MaterialTipo; data: ToolContent }) {
   return <><ResourceHeaderMotif content={data} /><MaterialBody tipo={tipo} data={data} /></>;
 }
@@ -740,7 +749,7 @@ function MaterialBody({ tipo, data }: { tipo: MaterialTipo; data: ToolContent })
           {(data.dificultades ?? []).length > 0 && <Block i={0}><b className="text-sm">Necesita fortalecer</b>{bullets(data.dificultades ?? [])}</Block>}
           {(data.fortalezas ?? []).length > 0 && <Block i={1}><b className="text-sm">Fortalezas</b>{bullets(data.fortalezas ?? [])}</Block>}
         </div>
-        {data.objetivo_general && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">{data.objetivo_general}</div>}
+        {data.objetivo_general && <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm leading-6 dark:border-brand-500/30 dark:bg-brand-500/10"><b>Objetivo:</b> {data.objetivo_general}</div>}
         {data.duracion_estimada && <p className="text-sm text-muted"><b className="text-fg">Duración:</b> {data.duracion_estimada}</p>}
         {(data.semanas ?? []).map((w, i) => (
           <Block key={i} i={i}>

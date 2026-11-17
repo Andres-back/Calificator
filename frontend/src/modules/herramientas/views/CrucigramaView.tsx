@@ -109,20 +109,20 @@ export function CrucigramaView({ data }: { data: CrucigramaContenido }) {
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" data-crossword-scroll>
         <div
-          className="inline-grid gap-0.5 rounded-2xl bg-surface-2 p-3 crucigrama-grid"
-          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+          className="crucigrama-grid grid w-full gap-0.5 rounded-2xl bg-surface-2 p-2 sm:p-3"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(1.25rem, 1fr))`, maxWidth: `calc(${cols} * 2.375rem + 1.5rem)` }}
         >
           {grid.map((row, r) =>
             row.map((cell, c) => {
               const key = `${r}-${c}`;
               const filled = cell && String(cell).trim();
               const num = numbers[key];
-              if (!filled) return <div key={key} className="h-9 w-9 rounded-md bg-transparent" />;
+              if (!filled) return <div key={key} className="aspect-square w-full rounded-md bg-transparent" />;
               return (
-                <div key={key} className="relative h-9 w-9">
-                  {num && <span className="absolute left-0.5 top-0 z-10 text-[8px] font-bold text-brand-600">{num}</span>}
+                <div key={key} className="relative aspect-square w-full">
+                  {num && <span className="pointer-events-none absolute left-0.5 top-0 z-10 text-[8px] font-bold leading-none text-brand-600">{num}</span>}
                   <input
                     ref={(node) => { inputRefs.current[key] = node; }}
                     value={reveal ? String(cell).toUpperCase() : entries[key] ?? ''}
@@ -131,8 +131,13 @@ export function CrucigramaView({ data }: { data: CrucigramaContenido }) {
                     onKeyDown={(e) => handleKeyDown(r, c, e)}
                     readOnly={reveal}
                     maxLength={1}
+                    aria-label={`Fila ${r + 1}, columna ${c + 1}${num ? `, inicia la pista ${num}` : ''}`}
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
                     className={cn(
-                      'h-9 w-9 rounded-md border text-center font-mono text-sm font-bold uppercase transition focus-ring',
+                      'h-full w-full rounded-md border p-0 text-center font-mono text-[13px] font-bold uppercase transition focus-ring sm:text-sm',
                       reveal
                         ? 'border-brand-300 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200'
                         : 'border-border bg-surface text-fg focus-visible:border-brand-400',

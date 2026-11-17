@@ -174,7 +174,7 @@ export function SopaLetrasView({
       </div>
 
       <p id="sopa-instructions" className="text-sm text-muted">
-        En computador, selecciona desde una letra hasta otra. En móvil, toca y desliza. Con teclado, usa las flechas y pulsa Espacio o Enter para iniciar y terminar.
+        Toca la primera letra de la palabra y desliza el dedo (o el ratón) hasta la última. Con teclado, usa las flechas y pulsa Espacio o Enter para iniciar y terminar.
       </p>
 
       <div
@@ -185,8 +185,8 @@ export function SopaLetrasView({
       >
         <div
           ref={boardRef}
-          className="inline-block select-none rounded-2xl border-2 border-brand-200 bg-surface p-2 dark:border-brand-500/30"
-          style={{ touchAction: selecting ? 'none' : 'pan-y' }}
+          className="block w-full select-none rounded-2xl border-2 border-brand-200 bg-surface p-1.5 [--sopa-cell:2.25rem] dark:border-brand-500/30 sm:p-2 sm:[--sopa-cell:2.5rem] lg:[--sopa-cell:2.75rem]"
+          style={{ touchAction: selecting ? 'none' : 'pan-y', maxWidth: `calc(${cols} * var(--sopa-cell) + 1.25rem)`, minWidth: `calc(${cols} * 1rem + 0.75rem)` }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -196,7 +196,7 @@ export function SopaLetrasView({
           aria-label={`Sopa de letras de ${rows} filas por ${cols} columnas`}
         >
           {grid.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex" role="row">
+            <div key={rowIndex} className="flex w-full" role="row">
               {row.map((character, columnIndex) => {
                 const selected = isSelected(rowIndex, columnIndex);
                 const highlightedCell = isHighlighted(rowIndex, columnIndex);
@@ -215,7 +215,7 @@ export function SopaLetrasView({
                     aria-selected={selected || highlightedCell}
                     aria-label={`Fila ${rowIndex + 1}, columna ${columnIndex + 1}, letra ${String(character).toUpperCase()}${highlightedCell ? ', parte de una palabra encontrada' : selected ? ', selección actual' : ''}`}
                     className={cn(
-                      'grid h-8 w-8 touch-none place-items-center font-mono text-xs font-bold transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus sm:h-10 sm:w-10 sm:text-sm lg:h-11 lg:w-11',
+                      'grid aspect-square min-w-0 flex-1 touch-none place-items-center p-0 font-mono text-xs font-bold transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus sm:text-sm',
                       highlightedCell
                         ? 'rounded-full bg-emerald-200 text-emerald-800 dark:bg-emerald-500/30 dark:text-emerald-200'
                         : selected

@@ -5,7 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Badge, Card, EducationalIcon, LoadingScreen, QueryError } from '@/components/ui';
 import { getMaterial, pdfUrl } from './api';
 import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
-import { ContenidoView, CrucigramaView, MatchingView, SopaLetrasView } from './views';
+import { ContenidoView, CrucigramaView, MatchingView, ResourceInstructions, SopaLetrasView } from './views';
 import type { ToolContent } from './views/ContenidoView';
 import type { CrucigramaContenido, MatchingContenido, SopaContenido } from '@/types/api';
 
@@ -61,7 +61,7 @@ export function StudentResourcePage() {
           {activityLink && <Link to={activityLink} className="focus-ring mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2 font-semibold text-white transition hover:bg-brand-800 sm:w-auto"><BookOpenCheck className="h-4 w-4" aria-hidden="true" />{interactiveActivity ? 'Resolver actividad' : 'Ir a entregar'}</Link>}
         </div>
       </div>
-      {!interactiveActivity && <Card className="min-w-0 p-4 sm:p-6">{renderBody()}</Card>}
+      {!interactiveActivity && <Card className="min-w-0 p-4 sm:p-6"><ResourceInstructions tipo={material.tipo} content={content} />{renderBody()}</Card>}
     </div>
   );
 }
