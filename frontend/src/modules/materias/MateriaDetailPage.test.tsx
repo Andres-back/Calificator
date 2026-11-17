@@ -117,7 +117,7 @@ describe('MateriaDetailPage for students', () => {
     renderDetail();
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Ciencias' })).toBeVisible());
     expect(screen.getByText('Información de la materia').closest('details')).not.toHaveAttribute('open');
-    expect(screen.getByRole('navigation', { name: 'Secciones de la materia' })).toHaveClass('flex');
+    expect(screen.getByRole('navigation', { name: 'Secciones de la materia' })).toHaveClass('grid', 'sm:flex');
     expect(screen.queryByRole('combobox', { name: 'Sección de la materia' })).not.toBeInTheDocument();
   });
   it('retira Calificar cuando Evaluaciones es accesible al docente', async () => {
@@ -184,14 +184,14 @@ describe('MateriaDetailPage for students', () => {
     expect(materiaApi.getMateriaEstudiantes).not.toHaveBeenCalled();
   });
 
-  it('138 ofrece secciones visibles y deslizables con solo destinos autorizados', async () => {
+  it('138 y 192: secciones visibles (cuadrícula en celular, fila desde tableta) con solo destinos autorizados', async () => {
     materiaApi.getMateria.mockResolvedValue(materia);
     const user = userEvent.setup();
 
     renderDetail();
 
     const sections = await screen.findByRole('navigation', { name: 'Secciones de la materia' });
-    expect(sections).toHaveClass('flex', 'overflow-x-auto');
+    expect(sections).toHaveClass('grid', 'sm:flex', 'sm:overflow-x-auto');
     expect(sections).not.toHaveClass('hidden');
     expect(screen.getByRole('link', { name: /Vista general/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.queryByRole('link', { name: 'Calificar' })).not.toBeInTheDocument();
