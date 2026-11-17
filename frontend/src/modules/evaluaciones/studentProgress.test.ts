@@ -57,15 +57,24 @@ describe('getStudentEvaluationStatus', () => {
       mi_entrega_estado: 'calificada',
       mi_calificacion_estado: 'confirmada',
       mi_nota_confirmada: 0,
-    }))).toEqual({ label: 'Calificada: 0.0 / 5.0', tone: 'success' });
+    }))).toEqual({ label: 'Tu nota: 0.0 / 5.0', tone: 'warning' });
   });
 
   it('145 muestra la misma cifra que el docente, sin decidir el empate', () => {
     const graded = (nota: number) => getStudentEvaluationStatus(evaluation({
       entrega_realizada: true, mi_entrega_estado: 'calificada', mi_calificacion_estado: 'confirmada', mi_nota_confirmada: nota,
     })).label;
-    expect(graded(1.15)).toBe('Calificada: 1.2 / 5.0');
-    expect(graded(2.95)).toBe('Calificada: 2.95 / 5.0');
-    expect(graded(2.96)).toBe('Calificada: 3.0 / 5.0');
+    expect(graded(1.15)).toBe('Tu nota: 1.2 / 5.0');
+    expect(graded(2.95)).toBe('Tu nota: 2.95 / 5.0');
+    expect(graded(2.96)).toBe('Tu nota: 3.0 / 5.0');
+  });
+});
+
+describe('189 color de la nota según si aprueba', () => {
+  it('verde desde el 60 % de la nota máxima; ámbar por debajo', () => {
+    const status = (nota: number, maxima = 5) => getStudentEvaluationStatus({ mi_nota_confirmada: nota, mi_nota_maxima: maxima, nota_maxima: maxima } as never).tone;
+    expect(status(3)).toBe('success');
+    expect(status(2.9)).toBe('warning');
+    expect(status(60, 100)).toBe('success');
   });
 });

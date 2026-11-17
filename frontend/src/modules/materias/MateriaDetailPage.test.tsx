@@ -109,7 +109,7 @@ describe('MateriaDetailPage for students', () => {
     const actions = screen.getByRole('group', { name: 'Acciones de Ciencias' });
     expect(header).toContainElement(actions);
     expect(actions).toContainElement(screen.getByRole('button', { name: 'Editar materia' }));
-    expect(actions).toContainElement(screen.getByRole('button', { name: 'Eliminar de mis materias' }));
+    expect(actions).toContainElement(screen.getByRole('button', { name: 'Archivar materia' }));
     expect(actions).toHaveClass('grid', 'grid-cols-2');
   });
   it('keeps secondary subject information folded while navigation stays available', async () => {

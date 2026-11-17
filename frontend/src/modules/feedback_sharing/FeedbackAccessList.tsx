@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatDateTime } from '@/lib/dates';
 import { Button } from '@/components/ui';
 import type { FeedbackAccess, FeedbackPreview, IssuedFeedbackAccess } from './api';
 import { changeFeedbackAccess } from './api';
@@ -43,7 +44,7 @@ export function FeedbackAccessList({ evaluationId, accesses, previews, signal, v
     {!accesses.length && <p className="text-sm text-muted">Todavía no hay enlaces creados para esta evaluación.</p>}
     <ul className="space-y-3">{accesses.map(access => <li key={access.id} className="min-w-0 rounded-xl border border-border p-3">
       <p className="break-words font-bold">{access.estudiante}</p>
-      <p className="mt-1 text-sm">{labels[access.estado]} · Vence: {new Date(access.expires_at).toLocaleString()}</p>
+      <p className="mt-1 text-sm">{labels[access.estado]} · Vence: {formatDateTime(access.expires_at)}</p>
       {showCopy && evaluationId && <FeedbackLinkActions evaluationId={evaluationId} accesses={[access]} selectedIds={[access.calificacion_id]} signal={signal} valid={valid} disabled={busy} onBusy={setBusy} compact />}
       <div className="mt-2 flex flex-wrap gap-2">
         {access.estado === 'active' ? <Button variant="outline" disabled={busy} onClick={() => { setPending({ access, action: 'desactivar', requestId: crypto.randomUUID() }); setError(''); }}>Desactivar</Button>

@@ -28,6 +28,16 @@ function fmt(n: number | null) {
   return n == null ? '—' : n.toFixed(1);
 }
 
+/** Spec 189: el resumen llega en escala 5; se aprueba con el 60 % (3.0). */
+const ESCALA = 5;
+const APRUEBA = 3;
+
+function studentGradeMessage(promedio: number) {
+  if (promedio >= 4) return { tone: 'success' as const, text: '¡Excelente! Mantén ese ritmo.' };
+  if (promedio >= APRUEBA) return { tone: 'success' as const, text: 'Vas aprobando. Revisa tus retroalimentaciones para subir más.' };
+  return { tone: 'warning' as const, text: `Aún no llega a ${APRUEBA.toFixed(1)}. Revisa la retroalimentación de tu docente y pregúntale a Xali qué repasar.` };
+}
+
 export function DashboardEstudiante() {
   const user = useAuth((state) => state.user);
   const firstName = user?.nombre?.split(' ')[0] ?? 'Estudiante';
@@ -180,11 +190,13 @@ export function DashboardEstudiante() {
                   <span className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
                     <Award className="h-5 w-5" />
                   </span>
-                  <Badge tone="success">Tu mejor materia</Badge>
+                  <Badge tone="success">{data!.total_materias > 1 ? 'Tu mejor materia' : 'Tu materia'}</Badge>
                 </div>
                 <p className="font-display text-lg font-bold">{data!.mejor?.materia_nombre}</p>
-                <p className="mt-1 text-3xl font-extrabold text-fg">{fmt(data!.mejor?.promedio ?? null)}</p>
-                <p className="mt-2 text-sm text-muted">¡Excelente! Mantén ese ritmo.</p>
+                <p className={cn('mt-1 text-3xl font-extrabold', (data!.mejor?.promedio ?? 0) >= APRUEBA ? 'text-fg' : 'text-amber-600 dark:text-amber-400')}>
+                  {fmt(data!.mejor?.promedio ?? null)} <span className="text-base font-semibold text-muted">/ {ESCALA.toFixed(1)}</span>
+                </p>
+                <p className="mt-2 text-sm text-muted">{studentGradeMessage(data!.mejor?.promedio ?? 0).text}</p>
               </div>
             </motion.div>
 
@@ -201,18 +213,23 @@ export function DashboardEstudiante() {
                   <span className={cn('grid h-10 w-10 place-items-center rounded-lg', data!.por_mejorar ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300')}>
                     <Target className="h-5 w-5" />
                   </span>
-                  <Badge tone={data!.por_mejorar ? 'warning' : 'success'}>{data!.por_mejorar ? 'Materia por fortalecer' : 'Sin alertas'}</Badge>
+                  <Badge tone={data!.por_mejorar || (data!.mejor?.promedio ?? 0) < APRUEBA ? 'warning' : 'success'}>{data!.por_mejorar ? 'Materia por fortalecer' : (data!.mejor?.promedio ?? 0) < APRUEBA ? 'Por fortalecer' : 'Sin alertas'}</Badge>
                 </div>
                 {data!.por_mejorar ? (
                   <>
                     <p className="font-display text-lg font-bold">{data!.por_mejorar.materia_nombre}</p>
-                    <p className="mt-1 text-3xl font-extrabold text-amber-600 dark:text-amber-400">{fmt(data!.por_mejorar.promedio)}</p>
+                    <p className="mt-1 text-3xl font-extrabold text-amber-600 dark:text-amber-400">{fmt(data!.por_mejorar.promedio)} <span className="text-base font-semibold text-muted">/ {ESCALA.toFixed(1)}</span></p>
                     <p className="mt-2 text-sm text-muted">Puedes mejorar con práctica y revisando tus retroalimentaciones.</p>
                   </>
-                ) : (
+                ) : (data!.mejor?.promedio ?? 0) >= APRUEBA ? (
                   <>
                     <p className="font-display text-lg font-bold">¡Vas muy bien!</p>
                     <p className="mt-1 text-sm text-muted">Sigue así en tu materia y suma más evaluaciones para ver tu progreso completo.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-lg font-bold">Hay que repasar</p>
+                    <p className="mt-1 text-sm text-muted">Abre tu boletín para ver qué preguntas fallaste y qué te recomienda tu docente.</p>
                   </>
                 )}
               </div>
@@ -227,7 +244,7 @@ export function DashboardEstudiante() {
                   </span>
                   <Badge tone="brand">Promedio general</Badge>
                 </div>
-                <p className="mt-1 text-3xl font-extrabold text-fg">{fmt(data!.promedio_general)}</p>
+                <p className="mt-1 text-3xl font-extrabold text-fg">{fmt(data!.promedio_general)} <span className="text-base font-semibold text-muted">/ {ESCALA.toFixed(1)}</span></p>
                 <p className="mt-2 text-sm text-muted">
                   {data!.total_notas} nota{data!.total_notas === 1 ? '' : 's'} confirmada{data!.total_notas === 1 ? '' : 's'} en {data!.total_materias} materia{data!.total_materias === 1 ? '' : 's'}.
                 </p>

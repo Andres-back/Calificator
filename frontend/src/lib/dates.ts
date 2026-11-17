@@ -64,3 +64,21 @@ export function parseLocalDate(isoLike: string): Date {
   }
   return new Date(isoLike);
 }
+
+/** Spec 189: «Vence el 11 nov 2026, 1:06 a. m.» o «Venció el 11 nov 2026», sin segundos. */
+export function describeDeadline(value: string | Date | number, now: Date = new Date()): { text: string; past: boolean } {
+  const date = typeof value === 'string' || typeof value === 'number' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return { text: String(value), past: false };
+  const past = date.getTime() < now.getTime();
+  return { text: past ? `Venció el ${formatDate(date)}` : `Vence el ${formatDateTime(date)}`, past };
+}
+
+/** Mayúscula solo al inicio, como se escribe en español («Sábado, 14 de noviembre de 2026»). */
+export function capitalizeFirst(text: string): string {
+  return text ? text.charAt(0).toLocaleUpperCase('es-CO') + text.slice(1) : text;
+}
+
+/** «1 pendiente» / «2 pendientes». */
+export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
+}

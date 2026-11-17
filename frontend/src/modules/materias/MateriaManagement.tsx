@@ -40,7 +40,7 @@ export function MateriaManagement({ materia, className, actionsClassName }: { ma
   return <div className={cn('min-w-0', className)}>
     <div role="group" aria-label={`Acciones de ${materia.nombre}`} className={cn('flex flex-wrap gap-2', actionsClassName)}>
       <Button variant="outline" size="sm" className={actionClass} onClick={() => { setForm({ nombre: materia.nombre, area: materia.area ?? '', grado: materia.grado ?? '', descripcion: materia.descripcion ?? '' }); setError(''); setEditing(true); }}><Pencil className="h-4 w-4" />Editar materia</Button>
-      <Button variant="outline" size="sm" className={actionClass} onClick={() => { setError(''); setConfirm(true); }}>{archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}{archived ? 'Restaurar materia' : 'Eliminar de mis materias'}</Button>
+      <Button variant="outline" size="sm" className={actionClass} onClick={() => { setError(''); setConfirm(true); }}>{archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}{archived ? 'Restaurar materia' : 'Archivar materia'}</Button>
     </div>
     <Modal open={editing} onClose={() => { if (!mutation.isPending) setEditing(false); }} title="Editar materia" description="Solo cambia la información de la materia. Conservaremos estudiantes, evaluaciones y notas." mobileViewport={mobile.viewport} mobileWriting={mobile.isWriting} closeOnBackdrop={!mutation.isPending} closeOnEscape={!mutation.isPending}>
       <form ref={formRef} className="flex min-h-0 flex-col gap-3" onSubmit={event => { event.preventDefault(); if (permitted && !mutation.isPending) mutation.mutate(false); }}>
@@ -54,9 +54,9 @@ export function MateriaManagement({ materia, className, actionsClassName }: { ma
         <div className="flex flex-wrap gap-2"><Button type="submit" className="min-h-11" loading={mutation.isPending} disabled={form.nombre.trim().length < 2 || mutation.isPending}>Guardar cambios</Button><Button variant="outline" className="min-h-11" disabled={mutation.isPending} onClick={() => setEditing(false)}>Cancelar</Button></div>
       </form>
     </Modal>
-    <ConfirmDialog open={confirm} title={archived ? 'Restaurar materia' : 'Eliminar de mis materias'}
+    <ConfirmDialog open={confirm} title={archived ? 'Restaurar materia' : '¿Archivar esta materia?'}
       description={archived ? `«${materia.nombre}» volverá a tus materias activas si tienes cupo. No se abrirán automáticamente las inscripciones ni las entregas.` : `«${materia.nombre}» se moverá a Archivadas y podrás restaurarla. No borra estudiantes, notas, evaluaciones, evidencias ni asistencias. Se cerrarán nuevas inscripciones y entregas; lo que ya esté en proceso podrá terminar.`}
-      confirmLabel={archived ? 'Restaurar' : 'Archivar materia'} loading={mutation.isPending} onClose={() => { if (!mutation.isPending) setConfirm(false); }} onConfirm={() => { if (permitted && !mutation.isPending) mutation.mutate(true); }}>
+      confirmLabel={archived ? 'Restaurar' : 'Sí, archivar'} loading={mutation.isPending} onClose={() => { if (!mutation.isPending) setConfirm(false); }} onConfirm={() => { if (permitted && !mutation.isPending) mutation.mutate(true); }}>
       {error && <p role="alert" className="break-words text-sm text-danger">{error}</p>}
     </ConfirmDialog>
   </div>;

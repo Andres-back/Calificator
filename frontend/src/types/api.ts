@@ -650,7 +650,8 @@ export interface SalonSesionRead {
 /* ── Reportes ── */
 export interface ResumenProfesor {
   profesor_id: string;
-  materias: { nombre: string; total_calificaciones: number; promedio: number }[];
+  /** Spec 189: promedio de notas confirmadas en escala `escala` (5). */
+  materias: { nombre: string; total_calificaciones: number; promedio: number; escala?: number }[];
 }
 
 /* ── Xali ── */

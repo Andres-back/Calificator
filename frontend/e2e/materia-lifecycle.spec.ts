@@ -23,13 +23,13 @@ for (const width of [360, 390, 1440]) for (const theme of ['light', 'dark']) {
     if (width < 640) await dialog.getByRole('button', { name: 'Listo', exact: true }).click();
     await dialog.getByRole('button', { name: 'Guardar cambios' }).click();
     await expect(page.getByRole('link', { name: /Ciencias editada/ })).toBeVisible();
-    await page.getByRole('button', { name: 'Eliminar de mis materias' }).click();
+    await page.getByRole('button', { name: 'Archivar materia' }).click();
     dialog = page.getByRole('dialog');
     await expect(dialog.getByText(/No borra estudiantes/)).toBeVisible();
     await dialog.getByRole('button', { name: 'Cancelar' }).click();
     expect(changes).toHaveLength(1);
-    await page.getByRole('button', { name: 'Eliminar de mis materias' }).click();
     await page.getByRole('button', { name: 'Archivar materia' }).click();
+    await page.getByRole('button', { name: 'Sí, archivar' }).click();
     await expect(page.getByRole('link', { name: /Ciencias editada/ })).toHaveCount(0);
     await page.getByRole('button', { name: /Archivadas/ }).click();
     await expect(page.getByRole('link', { name: /Ciencias editada/ })).toBeVisible();

@@ -1,8 +1,8 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 600,
-      "missing": 96
+      "covered": 603,
+      "missing": 93
     },
     "by_kind": {
       "endpoint": 330,
@@ -59,33 +59,6 @@
         "table:profesor_ai_credentials",
         "table:profesor_ai_feature_preferences",
         "table:profesor_ai_provider_models"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
-      "id": "F-324D81DB301E",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/impacto/cualitativo",
-        "backend:GET:/impacto/estudios/{study_id}/export",
-        "backend:GET:/impacto/estudios/{study_id}/indicadores",
-        "backend:GET:/impacto/estudios/{study_id}/observaciones",
-        "backend:GET:/impacto/kappa",
-        "backend:GET:/impacto/likert",
-        "backend:GET:/impacto/tiempo-ahorrado",
-        "backend:GET:/reportes/estudiante/{estudiante_id}",
-        "backend:GET:/reportes/materia/{materia_id}",
-        "backend:POST:/impacto/encuestas",
-        "backend:POST:/impacto/estudios/{study_id}/activar",
-        "backend:POST:/impacto/estudios/{study_id}/cerrar",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
-        "backend:POST:/impacto/estudios/{study_id}/observaciones",
-        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
-        "backend:POST:/reportes/export/pdf",
-        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
       ]
     },
     {
@@ -229,6 +202,30 @@
         "backend:PATCH:/imagenes-generadas/{imagen_id}",
         "backend:POST:/imagenes/generar",
         "table:imagenes_generadas"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "15 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
+      "id": "F-F7F9231E5351",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/impacto/cualitativo",
+        "backend:GET:/impacto/estudios/{study_id}/export",
+        "backend:GET:/impacto/estudios/{study_id}/indicadores",
+        "backend:GET:/impacto/estudios/{study_id}/observaciones",
+        "backend:GET:/impacto/kappa",
+        "backend:GET:/impacto/likert",
+        "backend:GET:/impacto/tiempo-ahorrado",
+        "backend:POST:/impacto/encuestas",
+        "backend:POST:/impacto/estudios/{study_id}/activar",
+        "backend:POST:/impacto/estudios/{study_id}/cerrar",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
+        "backend:POST:/impacto/estudios/{study_id}/observaciones",
+        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
+        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
       ]
     },
     {
@@ -656,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "2bdeb187b5557864a9e0f668ad4b98c574c887b72299c6af940f3ee3a580045e",
+  "source_digest": "af536d43fde7d19b7bb288074b8d8feb7d80f408976576447d61a403f5f16a0a",
   "surfaces": [
     {
       "actors": [
@@ -10826,7 +10823,7 @@
         "require_any_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "reporte_estudiante",
         "registered": true,
@@ -10839,7 +10836,14 @@
       "source_line": 46,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/reportes/estudiante/{estudiante_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -10851,7 +10855,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "reporte_materia",
         "registered": true,
@@ -10864,7 +10868,14 @@
       "source_line": 17,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/reportes/materia/{materia_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -10890,6 +10901,12 @@
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/reportes/profesor/resumen",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        },
         {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
@@ -22379,7 +22396,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "missing",
+      "coverage": "covered",
       "details": {
         "function": "export_pdf",
         "registered": true,
@@ -22389,10 +22406,17 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/reportes/export/pdf",
-      "source_line": 108,
+      "source_line": 112,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": []
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/reportes/export/pdf",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        }
+      ]
     },
     {
       "actors": [
@@ -24237,6 +24261,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
@@ -24940,6 +24970,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/lib/csvExport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/lib/dates.test.ts"
         },
         {
           "level": "unit",
@@ -41085,6 +41121,12 @@
       "states": [],
       "tests": [
         {
+          "level": "unit",
+          "reference": "GET:/reportes/profesor/resumen",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        },
+        {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
           "status": "direct",
@@ -56069,6 +56111,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
@@ -57869,6 +57917,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_reading_completeness.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
         },
         {
           "level": "unit",
@@ -60093,6 +60147,12 @@
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
         {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        },
+        {
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
@@ -60403,12 +60463,6 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "materias",
-          "status": "direct",
-          "test_path": "frontend/src/modules/materias/MateriaManagement.test.tsx"
         },
         {
           "level": "unit",

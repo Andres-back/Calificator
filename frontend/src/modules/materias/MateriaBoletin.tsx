@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { plural } from '@/lib/dates';
 import { useSearchParams } from 'react-router-dom';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import {
@@ -204,7 +205,7 @@ function TeacherGradebook() {
           <span className="w-full break-words text-sm font-bold leading-5 [overflow-wrap:anywhere]">{row.nombre}</span>
           {duplicateNames.has(row.nombre.trim().toLocaleLowerCase('es')) && <span className="mt-1 w-full break-all text-xs text-muted">{row.email}</span>}
           {canReadGrades && <div className="mt-3 w-full">
-            {selectedEvaluation ? <StudentGradeSummary cell={row.cells[0]} /> : trackedEvaluations.length ? <p className="text-xs leading-5 text-muted">{row.decided} con nota · {row.cells.length - row.decided} pendientes</p> : <p className="text-xs text-muted">Todavía no hay notas</p>}
+            {selectedEvaluation ? <StudentGradeSummary cell={row.cells[0]} /> : trackedEvaluations.length ? <p className="text-xs leading-5 text-muted">{row.decided} con nota · {plural(row.cells.length - row.decided, 'pendiente')}</p> : <p className="text-xs text-muted">Todavía no hay notas</p>}
           </div>}
           {canReadGrades && <span className="mt-auto flex min-h-11 items-center gap-1 pt-2 text-xs font-semibold text-brand-700 dark:text-brand-200">Ver boletín <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>}
         </button>

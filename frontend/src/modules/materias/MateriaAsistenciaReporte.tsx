@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { capitalizeFirst, parseLocalDate } from '@/lib/dates';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { CalendarRange, Download, FileBarChart2, Search } from 'lucide-react';
@@ -13,7 +14,6 @@ import {
   Skeleton,
 } from '@/components/ui';
 import { toApiError } from '@/lib/api';
-import { parseLocalDate } from '@/lib/dates';
 import { getAsistenciaReporte, type AsistenciaReporte } from './asistenciaApi';
 import {
   buildAttendanceReportCsv,
@@ -124,7 +124,7 @@ function DayReportTable({ report }: { report: AsistenciaReporte }) {
           <tbody>
             {report.jornadas.map((day) => (
               <tr key={day.fecha} className='border-t border-border'>
-                <td className='px-3 py-3 font-semibold capitalize'>{readableDate(day.fecha)}</td>
+                <td className='px-3 py-3 font-semibold'>{capitalizeFirst(readableDate(day.fecha))}</td>
                 <td className='px-3 py-3 text-center tabular-nums'>{day.total_registros}</td>
                 <td className='px-3 py-3 text-center tabular-nums'>{day.presentes}</td>
                 <td className='px-3 py-3 text-center tabular-nums'>{day.tarde}</td>

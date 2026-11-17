@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { modalityLabel } from './modalityLabels';
 import { EvaluationCopyDialog } from './EvaluationCopyDialog';
 import { EvaluationDocumentRecovery } from './EvaluationDocumentRecovery';
 import { getVisualCapabilities } from './visualApi';
@@ -776,11 +777,11 @@ export function EvaluacionesPage() {
                           {isStudent ? getStudentEvaluationStatus(ev).label : ESTADO_LABEL[ev.estado]}
                         </Badge>
                         {ev.blueprint?.reglas_feedback?.trazabilidad?.generada_por_ia && (
-                          <Badge tone="violet"><Sparkles className="mr-1 h-3 w-3" /> Borrador IA</Badge>
+                          <Badge tone="violet"><Sparkles className="mr-1 h-3 w-3" /> Hecha con IA</Badge>
                         )}
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        <Badge tone="neutral" className="capitalize">{ev.modalidad ?? 'online'}</Badge>
+                        <Badge tone="neutral">{modalityLabel(ev.modalidad)}</Badge>
                         <Badge tone="neutral">Nota máx: {Number(ev.nota_maxima)}</Badge>
                         <Badge tone="neutral">{ev.preguntas?.length ?? 0} preguntas</Badge>
                         {isStudent && ev.material_origen_id && <Badge tone="violet">Material incluido</Badge>}
