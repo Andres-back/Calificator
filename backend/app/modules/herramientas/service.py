@@ -1107,6 +1107,14 @@ async def gen_para_colorear(db: AsyncSession, req: ParaColorearRequest, current_
         prompt=prompt, image_type="para_colorear", size="1024x1024",
         db=db, teacher_id=current_user.id,
     )
+    if image.is_placeholder:
+        # Spec 195: el dibujo ES el recurso; guardarlo vacío solo confunde.
+        logger.warning("Para colorear: no se obtuvo imagen (%s)", image.provider)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No se pudo crear el dibujo en este momento. No se guardó nada; intenta de nuevo en unos minutos y, "
+            "si continúa, pide al administrador revisar el servicio de imágenes.",
+        )
     await imagenes_service.register_imagen_generada(
         db,
         prompt_original=prompt,

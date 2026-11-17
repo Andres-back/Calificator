@@ -656,7 +656,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "2bdeb187b5557864a9e0f668ad4b98c574c887b72299c6af940f3ee3a580045e",
+  "source_digest": "80cfad5d85e7c65bd6dc39fff45b42ecb41855beaef4240ae7ac2ce4f488a1ad",
   "surfaces": [
     {
       "actors": [
@@ -1407,6 +1407,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
         },
         {
           "level": "unit",
@@ -7372,6 +7378,12 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -7513,6 +7525,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/catalogo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -7572,6 +7590,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/materias/{materia_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/herramientas/materias/{materia_id}/recursos",
@@ -7640,6 +7664,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
         },
         {
           "level": "unit",
@@ -7786,6 +7816,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}/evaluaciones",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}/evaluaciones",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -7833,6 +7869,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}/pdf",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}/pdf",
@@ -12892,6 +12934,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -13033,6 +13081,12 @@
           "reference": "PATCH:/herramientas/{material_id}/visibilidad",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}/visibilidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
         },
         {
           "level": "unit",
@@ -20048,6 +20102,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/crucigrama",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/crucigrama",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20088,6 +20148,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/cuento",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/cuento",
@@ -20136,6 +20202,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/emparejar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/emparejar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20176,6 +20248,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/examen",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/examen",
@@ -20224,6 +20302,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/examen-from-chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/examen-from-chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20264,6 +20348,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/ficha",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/ficha",
@@ -20312,6 +20402,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/flashcards",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/flashcards",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20352,6 +20448,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/guia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/guia",
@@ -20406,6 +20508,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/lectura-comprensiva",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/lectura-comprensiva",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20446,6 +20554,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/mapa-conceptual",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/mapa-conceptual",
@@ -20494,6 +20608,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/para-colorear",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/para-colorear",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20534,6 +20654,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/plan-refuerzo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/plan-refuerzo",
@@ -20582,6 +20708,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/quiz-rapido",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/quiz-rapido",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20622,6 +20754,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/rubrica",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/rubrica",
@@ -20670,6 +20808,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/sopa-letras",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/sopa-letras",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20714,6 +20858,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/taller",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/taller",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20754,6 +20904,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/unir-columnas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/unir-columnas",
@@ -20803,6 +20959,12 @@
           "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
           "status": "direct",
           "test_path": "backend/tests/integration/test_resource_assignment_access.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
         },
         {
           "level": "unit",
@@ -20859,6 +21021,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20909,6 +21077,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/duplicar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/duplicar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -20949,6 +21123,12 @@
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
@@ -24076,6 +24256,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_revisions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
         },
         {
           "level": "unit",
@@ -33086,6 +33272,12 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -38675,6 +38867,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/catalogo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -38730,6 +38928,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/materias/{materiaId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/materias/{materiaId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -38769,6 +38973,12 @@
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "GET:/herramientas/{id}/evaluaciones",
@@ -38829,6 +39039,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
         },
         {
           "level": "unit",
@@ -43312,6 +43528,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}/visibilidad",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}/visibilidad",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -43368,6 +43590,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
           "test_path": "backend/tests/unit/test_authorization_contracts.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
         },
         {
           "level": "unit",
@@ -48747,6 +48975,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -48886,6 +49120,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/asignar-apoyo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/asignar-apoyo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -48925,6 +49165,12 @@
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/convertir-evaluacion",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/{id}/convertir-evaluacion",
@@ -48972,6 +49218,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/duplicar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/duplicar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
         },
         {
@@ -49011,6 +49263,12 @@
       "source_path": "frontend/src/modules/herramientas/api.ts",
       "states": [],
       "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/retirar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
+        },
         {
           "level": "unit",
           "reference": "POST:/herramientas/{id}/retirar-apoyo",
