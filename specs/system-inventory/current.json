@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "af536d43fde7d19b7bb288074b8d8feb7d80f408976576447d61a403f5f16a0a",
+  "source_digest": "7d1cc77b6e920d6999c0e50a80cac1e1337b77de8e901da5336c685b31fda1ae",
   "surfaces": [
     {
       "actors": [
@@ -1222,6 +1222,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -2787,6 +2793,12 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/concordancia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2825,6 +2837,12 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/confidence",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2863,6 +2881,12 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2901,6 +2925,12 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2939,6 +2969,12 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/errors",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2977,6 +3013,12 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/latency",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3017,6 +3059,12 @@
           "reference": "GET:/analytics/ai-quality/usage",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/usage",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3055,6 +3103,12 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3093,6 +3147,12 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3131,6 +3191,12 @@
           "reference": "GET:/analytics/estudiantes/{estudiante_id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes/{estudiante_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3175,6 +3241,12 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3219,6 +3291,12 @@
           "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3257,6 +3335,12 @@
           "reference": "GET:/analytics/export/criterios.csv",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/export/criterios.csv",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3295,6 +3379,12 @@
           "reference": "GET:/analytics/export/estudiantes.csv",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/export/estudiantes.csv",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3339,6 +3429,12 @@
           "reference": "GET:/analytics/overview",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/overview",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3377,6 +3473,12 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/preguntas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3424,6 +3526,12 @@
           "reference": "GET:/analytics/sesiones-trabajo",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sesiones-trabajo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3462,6 +3570,12 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sintesis",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -6195,6 +6309,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -8610,6 +8730,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -9016,6 +9142,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -12615,6 +12747,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -13427,6 +13565,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -14593,6 +14737,12 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/evento",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -14638,6 +14788,12 @@
           "reference": "POST:/analytics/sesiones-trabajo",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -14677,6 +14833,12 @@
           "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -17723,6 +17885,12 @@
           "reference": "POST:/evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -21535,6 +21703,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -25042,6 +25216,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -32941,6 +33121,12 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -35213,7 +35399,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/concordancia",
-      "source_line": 426,
+      "source_line": 418,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35228,6 +35414,12 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/concordancia",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35250,7 +35442,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/confidence",
-      "source_line": 550,
+      "source_line": 542,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35265,6 +35457,12 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/confidence",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35287,7 +35485,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs/provider-comparison",
-      "source_line": 621,
+      "source_line": 613,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35302,6 +35500,12 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35324,7 +35528,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs",
-      "source_line": 617,
+      "source_line": 609,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35339,6 +35543,12 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/costs",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35361,7 +35571,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/errors",
-      "source_line": 585,
+      "source_line": 577,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35376,6 +35586,12 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/errors",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35398,7 +35614,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/latency",
-      "source_line": 549,
+      "source_line": 541,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35413,6 +35629,12 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/ai-quality/latency",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35435,7 +35657,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/criterios",
-      "source_line": 247,
+      "source_line": 239,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35450,6 +35672,12 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/criterios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35472,7 +35700,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes/{selected}",
-      "source_line": 483,
+      "source_line": 475,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35487,6 +35715,12 @@
           "reference": "GET:/analytics/estudiantes/{selected}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes/{selected}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35509,7 +35743,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes",
-      "source_line": 474,
+      "source_line": 466,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35524,6 +35758,12 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/estudiantes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35546,7 +35786,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones",
-      "source_line": 180,
+      "source_line": 184,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35567,6 +35807,12 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35589,7 +35835,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/overview",
-      "source_line": 179,
+      "source_line": 183,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35610,6 +35856,12 @@
           "reference": "GET:/analytics/overview",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/overview",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35632,7 +35884,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/preguntas",
-      "source_line": 248,
+      "source_line": 240,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35647,6 +35899,12 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/preguntas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35706,7 +35964,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sintesis",
-      "source_line": 249,
+      "source_line": 241,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35721,6 +35979,12 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/analytics/sintesis",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -37782,6 +38046,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -38548,6 +38818,12 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -38998,7 +39274,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/disponibilidad",
-      "source_line": 1033,
+      "source_line": 1025,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39019,6 +39295,12 @@
           "reference": "GET:/impacto/estudios/disponibilidad",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/disponibilidad",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39038,7 +39320,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}/indicadores",
-      "source_line": 875,
+      "source_line": 867,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39053,6 +39335,12 @@
           "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39072,7 +39360,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}",
-      "source_line": 870,
+      "source_line": 862,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39093,6 +39381,12 @@
           "reference": "GET:/impacto/estudios/{effectiveId}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{effectiveId}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39112,7 +39406,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{id}/export",
-      "source_line": 921,
+      "source_line": 913,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39127,6 +39421,12 @@
           "reference": "GET:/impacto/estudios/{id}/export",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios/{id}/export",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39146,7 +39446,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios",
-      "source_line": 865,
+      "source_line": 857,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39167,6 +39467,12 @@
           "reference": "GET:/impacto/estudios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/impacto/estudios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39958,6 +40264,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -40637,6 +40949,12 @@
           "reference": "GET:/materias",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -43191,6 +43509,12 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -43864,6 +44188,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -44240,6 +44570,12 @@
           "reference": "PATCH:/xali/refuerzos/{id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -48590,6 +48926,12 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -49089,7 +49431,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios/{id}/{action}",
-      "source_line": 907,
+      "source_line": 899,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -49110,6 +49452,12 @@
           "reference": "POST:/impacto/estudios/{id}/{action}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios/{id}/{action}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -49129,7 +49477,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios",
-      "source_line": 895,
+      "source_line": 887,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -49150,6 +49498,12 @@
           "reference": "POST:/impacto/estudios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/impacto/estudios",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -49746,6 +50100,12 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -50474,6 +50834,12 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -54293,6 +54659,12 @@
           "reference": "analytics_eventos",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "analytics_eventos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -54348,6 +54720,12 @@
           "reference": "analytics_work_sessions",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "analytics_work_sessions",
+          "status": "domain",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -56946,6 +57324,12 @@
         {
           "level": "unit",
           "reference": "entregas",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
         },
@@ -58223,6 +58607,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -60355,6 +60745,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",

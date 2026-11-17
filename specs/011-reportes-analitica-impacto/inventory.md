@@ -51,31 +51,31 @@
 | endpoint | `POST:/reportes/export/pdf` | admin, profesor | covered | `backend/app/modules/reportes/router.py:112` |
 | frontend_route | `/app/analytics` | admin, profesor | covered | `frontend/src/config/routes.ts:70` |
 | frontend_route | `/app/reportes` | admin, profesor | covered | `frontend/src/config/routes.ts:64` |
-| frontend_call | `GET:/analytics/ai-quality/concordancia` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:426` |
-| frontend_call | `GET:/analytics/ai-quality/confidence` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:550` |
-| frontend_call | `GET:/analytics/ai-quality/costs/provider-comparison` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:621` |
-| frontend_call | `GET:/analytics/ai-quality/costs` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:617` |
-| frontend_call | `GET:/analytics/ai-quality/errors` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:585` |
-| frontend_call | `GET:/analytics/ai-quality/latency` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:549` |
-| frontend_call | `GET:/analytics/criterios` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:247` |
-| frontend_call | `GET:/analytics/estudiantes/{selected}` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:483` |
-| frontend_call | `GET:/analytics/estudiantes` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:474` |
-| frontend_call | `GET:/analytics/evaluaciones` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:180` |
-| frontend_call | `GET:/analytics/overview` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:179` |
-| frontend_call | `GET:/analytics/preguntas` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:248` |
+| frontend_call | `GET:/analytics/ai-quality/concordancia` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:418` |
+| frontend_call | `GET:/analytics/ai-quality/confidence` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:542` |
+| frontend_call | `GET:/analytics/ai-quality/costs/provider-comparison` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:613` |
+| frontend_call | `GET:/analytics/ai-quality/costs` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:609` |
+| frontend_call | `GET:/analytics/ai-quality/errors` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:577` |
+| frontend_call | `GET:/analytics/ai-quality/latency` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:541` |
+| frontend_call | `GET:/analytics/criterios` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:239` |
+| frontend_call | `GET:/analytics/estudiantes/{selected}` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:475` |
+| frontend_call | `GET:/analytics/estudiantes` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:466` |
+| frontend_call | `GET:/analytics/evaluaciones` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:184` |
+| frontend_call | `GET:/analytics/overview` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:183` |
+| frontend_call | `GET:/analytics/preguntas` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:240` |
 | frontend_call | `GET:/analytics/sesiones-trabajo` | admin, profesor | covered | `frontend/src/lib/analytics.ts:148` |
-| frontend_call | `GET:/analytics/sintesis` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:249` |
-| frontend_call | `GET:/impacto/estudios/disponibilidad` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:1033` |
-| frontend_call | `GET:/impacto/estudios/{effectiveId}/indicadores` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:875` |
-| frontend_call | `GET:/impacto/estudios/{effectiveId}` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:870` |
-| frontend_call | `GET:/impacto/estudios/{id}/export` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:921` |
-| frontend_call | `GET:/impacto/estudios` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:865` |
+| frontend_call | `GET:/analytics/sintesis` | admin, profesor | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:241` |
+| frontend_call | `GET:/impacto/estudios/disponibilidad` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:1025` |
+| frontend_call | `GET:/impacto/estudios/{effectiveId}/indicadores` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:867` |
+| frontend_call | `GET:/impacto/estudios/{effectiveId}` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:862` |
+| frontend_call | `GET:/impacto/estudios/{id}/export` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:913` |
+| frontend_call | `GET:/impacto/estudios` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:857` |
 | frontend_call | `GET:/reportes/profesor/resumen` | admin, profesor | covered | `frontend/src/modules/reportes/api.ts:5` |
 | frontend_call | `POST:/analytics/evento` | admin, profesor | covered | `frontend/src/lib/analytics.ts:158` |
 | frontend_call | `POST:/analytics/sesiones-trabajo/{sessionId}/eventos` | admin, profesor | missing | `frontend/src/lib/analytics.ts:132` |
 | frontend_call | `POST:/analytics/sesiones-trabajo` | admin, profesor | covered | `frontend/src/lib/analytics.ts:114` |
-| frontend_call | `POST:/impacto/estudios/{id}/{action}` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:907` |
-| frontend_call | `POST:/impacto/estudios` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:895` |
+| frontend_call | `POST:/impacto/estudios/{id}/{action}` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:899` |
+| frontend_call | `POST:/impacto/estudios` | ambiguous | covered | `frontend/src/modules/analytics/AnalyticsPage.tsx:887` |
 | table | `analytics_eventos` | system | covered | `backend/app/modules/analytics/models.py:14` |
 | table | `analytics_work_sessions` | system | covered | `backend/app/modules/analytics/models.py:32` |
 | table | `impacto_observations` | system | covered | `backend/app/modules/impacto_tesis/models.py:43` |

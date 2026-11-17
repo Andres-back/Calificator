@@ -24,7 +24,6 @@ import {
   Input,
 } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { TeachingCycle } from '@/components/business/TeachingCycle';
 import { cn } from '@/lib/cn';
 import { TOOL_BY_TIPO, TOOL_EDUCATIONAL_ICON } from './meta';
 import { FORMS } from './forms';
@@ -183,8 +182,6 @@ export function GeneratePage() {
           eyebrow="Asistente paso a paso"
           subtitle="Aquí creas recursos de práctica y apoyo. Los exámenes, quices y rúbricas calificables se crean dentro de cada materia."
         />
-
-        <TeachingCycle compact />
 
         <Card className="p-5">
           <div>

@@ -47,3 +47,19 @@ describe('teacher page integration', () => {
     expect(screen.getByLabelText('Mensaje para Xali')).toHaveValue('');
   });
 });
+
+describe('190 el chat vacío no se desplaza solo', () => {
+  it('sin mensajes, el saludo queda a la vista: no se baja al final', async () => {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', { value: scrollTo, configurable: true, writable: true });
+    try {
+      setup();
+      await waitFor(() => expect(screen.queryByText('Cargando historial…')).not.toBeInTheDocument());
+      expect(screen.getByText('Hola, soy Xali 👋')).toBeInTheDocument();
+      const log = screen.getByRole('log', { name: 'Historial de conversación con Xali' });
+      expect(scrollTo.mock.contexts.filter((element) => element === log)).toHaveLength(0);
+    } finally {
+      delete (HTMLElement.prototype as { scrollTo?: unknown }).scrollTo;
+    }
+  });
+});

@@ -176,6 +176,8 @@ export function XaliPage() {
   }, [reduceMotion]);
 
   useEffect(() => {
+    // Spec 190: sin conversación no se baja; el saludo y las sugerencias quedan a la vista.
+    if (messages.length === 0 && !thinking) return;
     if (isAtBottom || thinking || messages.at(-1)?.role === 'assistant') scrollToLatest();
   }, [isAtBottom, messages, scrollToLatest, thinking]);
 
