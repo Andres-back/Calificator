@@ -24,17 +24,22 @@ CABLE_COLORS = [
 ]
 
 TOOL_LABELS = {
-    "sopa_letras": "Sopa de Letras",
+    "sopa_letras": "Sopa de letras",
     "crucigrama": "Crucigrama",
-    "unir_columnas": "Unir Columnas",
-    "emparejar": "Emparejar",
+    "unir_columnas": "Relacionar pares",
+    "emparejar": "Relacionar pares",
     "cuento": "Cuento",
-    "para_colorear": "Para Colorear",
-    "guia": "Guía de Aprendizaje",
+    "para_colorear": "Para colorear",
+    "guia": "Guía de aprendizaje",
     "taller": "Taller",
     "examen": "Examen",
     "rubrica": "Rúbrica",
-    "plan_refuerzo": "Plan de Refuerzo",
+    "plan_refuerzo": "Plan de refuerzo",
+    "ficha": "Ficha didáctica",
+    "quiz_rapido": "Quiz rápido",
+    "lectura_comprensiva": "Lectura comprensiva",
+    "mapa_conceptual": "Mapa conceptual",
+    "flashcards": "Tarjetas de estudio",
 }
 
 BASE_CSS = f"""
@@ -124,7 +129,7 @@ ul.li {{ margin: 4px 0 8px; padding-left: 18px; }}
 ul.li li {{ font-size: 11px; line-height: 1.45; margin-bottom: 3px; }}
 .moraleja {{ background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E;
              border-radius: 12px; padding: 11px 14px; font-size: 11px; }}
-.story-grid {{ display: grid; grid-template-columns: 42% 58%; gap: 14px; align-items: start; }}
+.story-grid {{ display: grid; grid-template-columns: 40% minmax(0, 1fr); gap: 14px; align-items: start; }}
 .story-panel {{ background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 14px; padding: 13px 15px; }}
 .material-image {{ max-width: 100%; max-height: 390px; object-fit: contain; border-radius: 12px; }}
 .image-box {{ text-align: center; border: 1.5px solid #E5E7EB; border-radius: 14px; padding: 9px; background: #fff; }}
@@ -140,11 +145,62 @@ table.grid td {{ padding: 6px 8px; border: 1px solid #E5E7EB; vertical-align: to
 .opt {{ font-size: 11px; margin: 3px 0 3px 8px; }}
 .opt .circle {{ color: {INDIGO}; font-weight: bold; }}
 .pts {{ color: {VIOLET}; font-weight: bold; font-size: 10px; }}
+/* ── Spec 194: saltos de página, rúbrica por niveles, dibujo y tarjetas ── */
+.keep {{ break-inside: avoid; page-break-inside: avoid; }}
+.h3 {{ break-after: avoid; page-break-after: avoid; }}
+.instr, .moraleja, .infobox {{ break-inside: avoid; page-break-inside: avoid; }}
+.multiline {{ white-space: pre-line; }}
+.drawbox {{ height: 5cm; border: 1.5px dashed #94A3B8; border-radius: 10px; margin-top: 6px; background: #fff; }}
+.drawbox-label {{ font-size: 9px; color: #64748B; margin: 6px 0 0; }}
+table.rubric {{ border-collapse: collapse; width: 100%; font-size: 9.5px; table-layout: fixed; }}
+table.rubric th {{ background: #EEF2FF; color: {INDIGO_DARK}; font-weight: bold; padding: 7px 6px;
+                   border: 1px solid #D1D5DB; text-align: left; }}
+table.rubric td {{ padding: 6px; border: 1px solid #E5E7EB; vertical-align: top; line-height: 1.35; }}
+table.rubric tr {{ break-inside: avoid; page-break-inside: avoid; }}
+table.rubric .crit-name {{ font-weight: bold; color: #1F2937; font-size: 10px; }}
+table.rubric .crit-weight {{ display: inline-block; margin: 3px 0; padding: 1px 7px; border-radius: 999px;
+                             background: #EEF2FF; color: {INDIGO_DARK}; font-weight: bold; font-size: 9px; }}
+table.rubric .crit-desc {{ color: #64748B; font-size: 8.5px; }}
+.cut-note {{ font-size: 9.5px; color: #64748B; margin: 0 0 8px; }}
+table.fcards {{ width: 100%; border-collapse: separate; border-spacing: 10px 10px; table-layout: fixed; }}
+table.fcards tr {{ break-inside: avoid; page-break-inside: avoid; }}
+table.fcards td {{ height: 150px; border: 1.6px dashed #94A3B8; border-radius: 12px;
+                   text-align: center; vertical-align: middle; padding: 12px; background: #fff; }}
+table.fcards td.empty {{ border: 0; }}
+.fc-num {{ font-size: 8px; color: #94A3B8; font-weight: bold; letter-spacing: .08em; }}
+.fc-front {{ font-size: 17px; font-weight: bold; color: #1E1B4B; margin-top: 4px; line-height: 1.25; }}
+.fc-back {{ font-size: 10.5px; color: #15803D; margin-top: 8px; line-height: 1.4; }}
 """
 
 
 def _e(value: Any) -> str:
     return escape(str(value if value is not None else ""))
+
+
+def _e_multiline(value: Any) -> str:
+    """Escapa y conserva los saltos de línea que trae el contenido."""
+    return _e(value).replace("\r\n", "\n").replace("\n", "<br/>")
+
+
+_OPTION_PAREN_PREFIX = re.compile(r"^\s*[A-Ha-h]\)\s*")
+
+
+def _clean_options(options: Any) -> list[str]:
+    """Quita la letra que el modelo ya antepuso («A. », «a) », «A - ») para no imprimirla dos veces.
+
+    El prefijo con punto, guion o dos puntos solo se quita cuando todas las opciones lo traen
+    con su propia letra en orden; así no se altera una opción que empieza por una inicial.
+    """
+    texts = [str(option if option is not None else "") for option in (options or [])]
+    if not texts:
+        return []
+    own_letter = [
+        re.match(rf"^\s*[{chr(65 + index)}{chr(97 + index)}]\s*(?:[).:]|[-–—])\s+\S", text) is not None
+        for index, text in enumerate(texts)
+    ]
+    if len(texts) > 1 and all(own_letter):
+        return [re.sub(r"^\s*[A-Za-z]\s*(?:[).:]|[-–—])\s+", "", text) for text in texts]
+    return [_OPTION_PAREN_PREFIX.sub("", text) for text in texts]
 
 
 def _image_src(image: Any) -> str | None:
@@ -160,8 +216,8 @@ def _render_image_box(image: Any, *, alt: str, cls: str = "material-image") -> s
     src = _image_src(image)
     if src:
         return f'<div class="image-box"><img class="{cls}" src="{_e(src)}" alt="{_e(alt)}"/></div>'
-    prompt = image.get("prompt") if isinstance(image, dict) else ""
-    return f'<div class="placeholder"><b>Imagen pendiente o de reserva.</b><br/>{_e(prompt)}</div>'
+    # Spec 194: sin imagen real no se imprime nada aquí; el prompt interno nunca sale en el PDF.
+    return ""
 
 
 # ── Crucigrama ───────────────────────────────────────────────────────────────
@@ -216,6 +272,14 @@ def _render_crucigrama(c: dict, soluciones: bool) -> str:
 
 
 # ── Sopa de letras ───────────────────────────────────────────────────────────
+def _sopa_cell_px(grid: Any) -> int:
+    """Tamaño de celda: ~8,5 mm hasta 15 columnas; se reduce en cuadrículas mayores para caber en una hoja."""
+    rows = len(grid) if isinstance(grid, list) else 0
+    cols = max((len(row) for row in grid if isinstance(row, list)), default=0) if rows else 0
+    side = max(rows, cols, 1)
+    return max(20, min(32, 500 // side))
+
+
 def _render_sopa(c: dict, soluciones: bool) -> str:
     nested = c.get("sopa_letras") or {}
     grid = c.get("grilla") or nested.get("grid") or []
@@ -248,8 +312,13 @@ def _render_sopa(c: dict, soluciones: bool) -> str:
     grid_html = f'<table class="ws">{"".join(rows_html)}</table>'
 
     pills = "".join(f'<span class="pill">{_e(str(w).upper())}</span>' for w in banco if w)
+    cell = _sopa_cell_px(grid)
+    size_css = (
+        f"<style>table.ws td{{width:{cell}px;height:{cell}px;font-size:{max(11, round(cell * 0.5))}px}}</style>"
+    )
 
     return f"""
+    {size_css}
     <div class="instr">{_e(c.get("instrucciones") or "Encuentra las palabras del banco en la sopa de letras.")}</div>
     <div class="sectionbar">SOPA DE LETRAS</div>
     <div style="text-align:center; margin: 6px 0;">{grid_html}</div>
@@ -366,18 +435,27 @@ def _render_cuento_mejorado(c: dict, soluciones: bool) -> str:
     parrafos = "".join(f'<p class="p">{_e(p)}</p>' for p in c.get("parrafos") or [])
     image = _render_image_box(c.get("imagen"), alt=c.get("titulo") or "Cuento")
     out = ['<div class="sectionbar">CUENTO</div>']
-    out.append('<div class="story-grid">')
-    out.append(image)
+    # Sin ilustración real el relato ocupa todo el ancho (Spec 194).
+    if image:
+        out.append('<div class="story-grid">')
+        out.append(image)
     out.append('<div class="story-panel">')
     if personajes:
         out.append(f'<p class="p"><b>Personajes:</b> {_e(personajes)}</p>')
     out.append(parrafos)
-    out.append("</div></div>")
+    out.append("</div>")
+    if image:
+        out.append("</div>")
     if c.get("moraleja"):
-        out.append(f'<div class="moraleja"><b>Moraleja:</b> {_e(c["moraleja"])}</div>')
-    if c.get("preguntas_comprension"):
-        out.append('<div class="h3">Preguntas de comprension</div>')
-        out.append(_ul(c["preguntas_comprension"]))
+        out.append(f'<div class="moraleja" style="margin-top:10px"><b>Moraleja:</b> {_e(c["moraleja"])}</div>')
+    preguntas = [q for q in (c.get("preguntas_comprension") or []) if str(q).strip()]
+    if preguntas:
+        out.append('<div class="h3">Preguntas de comprensión</div>')
+        for index, pregunta in enumerate(preguntas, start=1):
+            out.append(
+                f'<div class="keep" style="margin-bottom:8px"><p class="p"><b>{index}.</b> {_e(pregunta)}</p>'
+                '<div class="line"></div><div class="line"></div></div>'
+            )
     return "".join(out)
 
 
@@ -385,7 +463,11 @@ def _render_para_colorear(c: dict, soluciones: bool) -> str:
     out = ['<div class="sectionbar">PARA COLOREAR</div>']
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
-    out.append(_render_image_box(c.get("imagen"), alt=c.get("titulo") or "Para colorear", cls="coloring-image"))
+    image = _render_image_box(c.get("imagen"), alt=c.get("titulo") or "Para colorear", cls="coloring-image")
+    out.append(
+        image
+        or '<div class="placeholder">El dibujo no está disponible. Vuelve a generarlo desde la aplicación.</div>'
+    )
     if c.get("uso_docente"):
         out.append('<div class="h3">Uso docente</div>')
         out.append(_ul(c["uso_docente"]))
@@ -401,7 +483,10 @@ def _render_guia(c: dict, soluciones: bool) -> str:
     if c.get("introduccion"):
         out.append(f'<div class="instr indigo">{_e(c["introduccion"])}</div>')
     for s in c.get("secciones") or []:
-        out.append('<div class="card">')
+        # Una sección corta no se parte entre páginas; una larga sí puede continuar en la siguiente.
+        size = sum(len(str(s.get(key) or "")) for key in ("explicacion", "contenido", "ejemplo_guiado", "verificacion"))
+        size += sum(len(str(item)) for item in (s.get("actividades") or []))
+        out.append(f'<div class="card{" keep" if size < 1600 else ""}">')
         out.append(f'<div class="h3" style="margin-top:0">{_e(s.get("titulo"))}</div>')
         out.append(f'<p class="p">{_e(s.get("explicacion") or s.get("contenido"))}</p>')
         if s.get("ejemplo_guiado"):
@@ -425,15 +510,15 @@ def _render_taller(c: dict, soluciones: bool) -> str:
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
     for p in c.get("puntos") or []:
-        out.append('<div class="card">')
+        out.append('<div class="card keep">')
         badges = []
         if p.get("dificultad"):
             badges.append(str(p["dificultad"]))
         if p.get("puntaje") is not None:
-            badges.append(f'{p["puntaje"]} pts')
+            badges.append(f'{p["puntaje"]} {"pt" if str(p["puntaje"]) in {"1", "1.0"} else "pts"}')
         suffix = f' <span class="pts">[{" · ".join(_e(value) for value in badges)}]</span>' if badges else ""
-        out.append(f'<p class="p"><b>{_e(p.get("numero"))}.</b> {_e(p.get("enunciado"))}{suffix}</p>')
-        for idx, option in enumerate(p.get("opciones") or []):
+        out.append(f'<p class="p"><b>{_e(p.get("numero"))}.</b> {_e_multiline(p.get("enunciado"))}{suffix}</p>')
+        for idx, option in enumerate(_clean_options(p.get("opciones"))):
             out.append(f'<p class="opt"><span class="circle">○ {chr(65 + idx)})</span> {_e(option)}</p>')
         if soluciones and (p.get("respuesta_esperada") or p.get("criterio_logro")):
             if p.get("respuesta_esperada"):
@@ -454,12 +539,18 @@ def _render_taller(c: dict, soluciones: bool) -> str:
     return "".join(out)
 
 
-def _render_examen(c: dict, soluciones: bool) -> str:
+def _render_examen(
+    c: dict,
+    soluciones: bool,
+    *,
+    section_label: str = "EXAMEN",
+    keep_short_cards: bool = False,
+) -> str:
     from app.modules.evaluaciones.visual_render import ResolvedVisualBlock, visual_block_html
     from app.modules.evaluaciones.print_layout import option_columns
     from app.modules.evaluaciones.document_print import document_print_events
 
-    out = ['<div class="sectionbar">EXAMEN</div>']
+    out = [f'<div class="sectionbar">{_e(section_label)}</div>']
     compact = bool(c.get('impresion_compacta'))
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
@@ -485,7 +576,7 @@ def _render_examen(c: dict, soluciones: bool) -> str:
             continue
         short = len(str(q.get('enunciado') or '')) + sum(len(str(op)) for op in q.get('opciones') or []) < 650
         style = 'padding:6px 2px;margin-bottom:5px;border:0;border-bottom:1px solid #ddd;border-radius:0;' if compact else ''
-        if (short and (compact or c.get('configuracion_impresion') is not None)) or q.get('_evaluation_visuals'):
+        if (short and (compact or keep_short_cards or c.get('configuracion_impresion') is not None)) or q.get('_evaluation_visuals'):
             style += 'break-inside:avoid;'
         out.append(f'<div class="card" style="{style}">')
         pts = f' <span class="pts">[{_e(q.get("puntaje"))} pts]</span>' if q.get("puntaje") is not None and '_print_common_score' not in c else ""
@@ -510,10 +601,10 @@ def _render_examen(c: dict, soluciones: bool) -> str:
         columns = q.get('_print_option_columns', option_columns([str(option) for option in options]) if compact else 1)
         if columns == 2:
             out.append('<table class="compact-options" style="width:100%;border-collapse:collapse"><tbody>')
-        for idx, op in enumerate(options):
+        # El LLM a veces ya antepone "A)", "a)" o "A."; se quita para no duplicar la letra.
+        for idx, op in enumerate(_clean_options(options)):
             letra = chr(65 + idx)
-            # El LLM a veces ya antepone "A)"/"a)"; lo quitamos para no duplicar.
-            txt = _e(re.sub(r"^\s*[A-Ha-h]\)\s*", "", str(op or "")))
+            txt = _e(op)
             if columns == 2:
                 if idx % 2 == 0:
                     out.append('<tr>')
@@ -556,16 +647,75 @@ def _render_examen(c: dict, soluciones: bool) -> str:
     return "".join(out)
 
 
+def _level_key(value: Any) -> str:
+    return " ".join(str(value or "").split()).casefold()
+
+
+def _rubric_levels(escala: list[str], criterios: list[dict]) -> list[str]:
+    """Niveles en el orden de la escala; los que solo aparecen en un criterio van al final."""
+    levels: list[str] = []
+    seen: set[str] = set()
+    used = {
+        _level_key(key)
+        for cr in criterios
+        for key in (cr.get("niveles") if isinstance(cr.get("niveles"), dict) else {})
+    }
+    for level in escala:
+        key = _level_key(level)
+        if key and key not in seen and (not used or key in used):
+            seen.add(key)
+            levels.append(level)
+    for cr in criterios:
+        for name in (cr.get("niveles") if isinstance(cr.get("niveles"), dict) else {}):
+            key = _level_key(name)
+            if key and key not in seen:
+                seen.add(key)
+                levels.append(str(name))
+    return levels
+
+
 def _render_rubrica(c: dict, soluciones: bool) -> str:
     out = ['<div class="sectionbar">RÚBRICA DE EVALUACIÓN</div>']
-    if c.get("escala"):
-        out.append(f'<div class="instr">Escala: {_e(", ".join(c["escala"]))}</div>')
+    escala = [str(level) for level in (c.get("escala") or []) if str(level).strip()]
+    criterios = [cr for cr in (c.get("criterios") or []) if isinstance(cr, dict)]
+    levels = _rubric_levels(escala, criterios)
+    if escala:
+        out.append(f'<div class="instr">Escala: {_e(", ".join(escala))}</div>')
+
+    def weight(cr: dict) -> str:
+        return f'{_e(cr.get("peso_porcentaje"))}%' if cr.get("peso_porcentaje") is not None else ""
+
+    def level_text(cr: dict, level: str) -> Any:
+        niveles = cr.get("niveles") if isinstance(cr.get("niveles"), dict) else {}
+        wanted = _level_key(level)
+        return next((value for key, value in niveles.items() if _level_key(key) == wanted), None)
+
+    if 1 <= len(levels) <= 5:
+        # Rúbrica real: una columna por nivel, en el orden de la escala.
+        level_width = 78 / len(levels)
+        head = '<th style="width:22%">Criterio</th>' + "".join(
+            f'<th style="width:{level_width:.2f}%">{_e(level)}</th>' for level in levels
+        )
+        rows = [f"<thead><tr>{head}</tr></thead><tbody>"]
+        for cr in criterios:
+            peso = weight(cr)
+            first = f'<div class="crit-name">{_e(cr.get("nombre"))}</div>'
+            if peso:
+                first += f'<span class="crit-weight">{peso}</span>'
+            if cr.get("descripcion"):
+                first += f'<div class="crit-desc">{_e(cr["descripcion"])}</div>'
+            cells = "".join(f"<td>{_e(level_text(cr, level) or '')}</td>" for level in levels)
+            rows.append(f"<tr><td>{first}</td>{cells}</tr>")
+        out.append(f'<table class="rubric">{"".join(rows)}</tbody></table>')
+        return "".join(out)
+
     rows = ['<tr><th>Criterio</th><th>Peso</th><th>Descripción</th><th>Niveles</th></tr>']
-    for cr in c.get("criterios") or []:
-        niveles = "<br/>".join(f"<b>{_e(k)}:</b> {_e(v)}" for k, v in (cr.get("niveles") or {}).items())
-        peso = f'{_e(cr.get("peso_porcentaje"))}%' if cr.get("peso_porcentaje") is not None else ""
+    for cr in criterios:
+        niveles = "<br/>".join(
+            f"<b>{_e(level)}:</b> {_e(level_text(cr, level))}" for level in levels if level_text(cr, level)
+        )
         rows.append(
-            f'<tr><td><b>{_e(cr.get("nombre"))}</b></td><td>{peso}</td>'
+            f'<tr><td><b>{_e(cr.get("nombre"))}</b></td><td>{weight(cr)}</td>'
             f'<td>{_e(cr.get("descripcion"))}</td><td>{niveles}</td></tr>'
         )
     out.append(f'<table class="grid">{"".join(rows)}</table>')
@@ -587,7 +737,7 @@ def _render_plan(c: dict, soluciones: bool) -> str:
     if c.get("duracion_estimada"):
         out.append(f'<p class="p"><b>Duración:</b> {_e(c["duracion_estimada"])}</p>')
     for w in c.get("semanas") or []:
-        out.append('<div class="card">')
+        out.append('<div class="card keep">')
         out.append(f'<div class="h3" style="margin-top:0">Semana {_e(w.get("semana"))}: {_e(w.get("tema"))}</div>')
         if w.get("meta_semana"):
             out.append(f'<p class="p"><b>Meta:</b> {_e(w["meta_semana"])}</p>')
@@ -614,8 +764,8 @@ def _render_plan(c: dict, soluciones: bool) -> str:
 _RENDERERS = {
     "crucigrama": _render_crucigrama,
     "sopa_letras": _render_sopa,
-    "unir_columnas": lambda c, s: _render_matching(c, s, label="Unir Columnas", verb="une"),
-    "emparejar": lambda c, s: _render_matching(c, s, label="Emparejar", verb="relaciona"),
+    "unir_columnas": lambda c, s: _render_matching(c, s, label="Relacionar pares", verb="une"),
+    "emparejar": lambda c, s: _render_matching(c, s, label="Relacionar pares", verb="relaciona"),
     "cuento": _render_cuento_mejorado,
     "para_colorear": _render_para_colorear,
     "guia": _render_guia,
@@ -642,7 +792,7 @@ def _render_lectura_comprensiva(c: dict, soluciones: bool) -> str:
     if c.get("preguntas"):
         out.append('<div class="h3">Preguntas de comprensión</div>')
         for q in c["preguntas"]:
-            out.append('<div class="card">')
+            out.append('<div class="card keep">')
             badge_values = [q.get("tipo"), q.get("dificultad")]
             badge = " · ".join(_e(value) for value in badge_values if value)
             tipo_badge = f' <span class="pts">[{badge}]</span>' if badge else ""
@@ -661,7 +811,7 @@ def _render_lectura_comprensiva(c: dict, soluciones: bool) -> str:
 
 # ── Quiz rápido (igual que examen) ──────────────────────────────────────────
 def _render_quiz_rapido(c: dict, soluciones: bool) -> str:
-    return _render_examen(c, soluciones)
+    return _render_examen(c, soluciones, section_label="QUIZ RÁPIDO", keep_short_cards=True)
 
 
 # ── Ficha didáctica ──────────────────────────────────────────────────────────
@@ -672,15 +822,21 @@ def _render_ficha(c: dict, soluciones: bool) -> str:
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
     for ex in c.get("ejercicios") or []:
-        out.append('<div class="card">')
-        out.append(f'<p class="p"><b>{_e(ex.get("numero"))}.</b> ({_e(ex.get("tipo", "ejercicio"))}) <b>{_e(ex.get("enunciado"))}</b></p>')
-        if ex.get("opciones"):
-            for idx, op in enumerate(ex["opciones"]):
-                letra = chr(65 + idx)
-                txt = _e(re.sub(r"^\s*[A-Ha-h]\)\s*", "", str(op or "")))
-                out.append(f'<p class="opt"><span class="circle">○ {letra})</span> {txt}</p>')
+        out.append('<div class="card keep">')
+        tipo = str(ex.get("tipo") or "ejercicio")
+        out.append(
+            f'<p class="p"><b>{_e(ex.get("numero"))}.</b> ({_e(tipo)}) '
+            f'<b>{_e_multiline(ex.get("enunciado"))}</b></p>'
+        )
+        for idx, op in enumerate(_clean_options(ex.get("opciones"))):
+            out.append(f'<p class="opt"><span class="circle">○ {chr(65 + idx)})</span> {_e(op)}</p>')
         if soluciones and ex.get("respuesta_esperada"):
-            out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(ex["respuesta_esperada"])}</p>')
+            out.append(
+                f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e_multiline(ex["respuesta_esperada"])}</p>'
+            )
+        elif "dibuj" in tipo.casefold():
+            # Los ejercicios de dibujo necesitan espacio, no renglones.
+            out.append('<p class="drawbox-label">Dibuja aquí</p><div class="drawbox"></div>')
         else:
             out.append('<div class="line"></div><div class="line"></div>')
         out.append("</div>")
@@ -689,24 +845,32 @@ def _render_ficha(c: dict, soluciones: bool) -> str:
 
 # ── Flashcards ───────────────────────────────────────────────────────────────
 def _render_flashcards(c: dict, soluciones: bool) -> str:
-    out = ['<div class="sectionbar">FLASHCARDS</div>']
+    """Tarjetas para recortar: dos por fila, con borde punteado (Spec 194)."""
+    out = ['<div class="sectionbar">TARJETAS DE ESTUDIO</div>']
     if c.get("instrucciones"):
         out.append(f'<div class="instr indigo">{_e(c["instrucciones"])}</div>')
-    if soluciones:
-        # Hoja de respuestas: pares anverso → reverso
-        out.append('<div class="h3">Tarjetas (anverso / reverso)</div>')
-        for t in c.get("tarjetas") or []:
-            out.append('<div class="card">')
-            out.append(f'<p class="p"><b>#{_e(t.get("numero"))} · {_e(t.get("anverso"))}</b></p>')
-            out.append(f'<p class="opt" style="color:#15803D">→ {_e(t.get("reverso"))}</p>')
-            out.append("</div>")
-    else:
-        # Estudiante: solo anverso, espacio para escribir reverso
-        for t in c.get("tarjetas") or []:
-            out.append('<div class="card">')
-            out.append(f'<p class="p"><b>#{_e(t.get("numero"))} · {_e(t.get("anverso"))}</b></p>')
-            out.append('<div class="line"></div><div class="line"></div>')
-            out.append("</div>")
+    tarjetas = [t for t in (c.get("tarjetas") or []) if isinstance(t, dict)]
+    if not tarjetas:
+        return "".join(out)
+    out.append('<p class="cut-note">✂ Recorta las tarjetas por la línea punteada.</p>')
+
+    def card(index: int, t: dict) -> str:
+        number = t.get("numero") or index + 1
+        back = (
+            f'<div class="fc-back">{_e(t.get("reverso"))}</div>' if soluciones and t.get("reverso") else ""
+        )
+        return (
+            f'<td><div class="fc-num">TARJETA {_e(number)}</div>'
+            f'<div class="fc-front">{_e(t.get("anverso"))}</div>{back}</td>'
+        )
+
+    rows = []
+    for start in range(0, len(tarjetas), 2):
+        pair = [card(start + offset, t) for offset, t in enumerate(tarjetas[start:start + 2])]
+        if len(pair) == 1:
+            pair.append('<td class="empty"></td>')
+        rows.append(f'<tr>{"".join(pair)}</tr>')
+    out.append(f'<table class="fcards">{"".join(rows)}</table>')
     return "".join(out)
 
 

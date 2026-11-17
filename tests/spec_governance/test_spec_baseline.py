@@ -180,6 +180,7 @@ ALL_SPECS = {
     "186-editor-revision",
     "188-evidencia-reemplazada",
     "187-escaner-automatico",
+    "194-pdf-recursos",
 }
 OWNED_SPECS = {
     name

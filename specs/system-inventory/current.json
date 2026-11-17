@@ -656,7 +656,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "2bdeb187b5557864a9e0f668ad4b98c574c887b72299c6af940f3ee3a580045e",
+  "source_digest": "c9f1bd796f5b0eb3482f21b1798cd0837335ee684802f9b4a97f13733a7515ed",
   "surfaces": [
     {
       "actors": [
@@ -1413,6 +1413,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7378,6 +7384,12 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -7519,6 +7531,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/catalogo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -7577,6 +7595,12 @@
           "reference": "GET:/herramientas/materias/{materia_id}/recursos",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/materias/{materia_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7646,6 +7670,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7792,6 +7822,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}/evaluaciones",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}/evaluaciones",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -7838,6 +7874,12 @@
           "reference": "GET:/herramientas/{material_id}/pdf",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}/pdf",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -12898,6 +12940,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -13039,6 +13087,12 @@
           "reference": "PATCH:/herramientas/{material_id}/visibilidad",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}/visibilidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20054,6 +20108,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/crucigrama",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/crucigrama",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20093,6 +20153,12 @@
           "reference": "POST:/herramientas/cuento",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/cuento",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20142,6 +20208,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/emparejar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/emparejar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20181,6 +20253,12 @@
           "reference": "POST:/herramientas/examen",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/examen",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20230,6 +20308,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/examen-from-chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/examen-from-chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20269,6 +20353,12 @@
           "reference": "POST:/herramientas/ficha",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/ficha",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20318,6 +20408,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/flashcards",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/flashcards",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20357,6 +20453,12 @@
           "reference": "POST:/herramientas/guia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/guia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20412,6 +20514,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/lectura-comprensiva",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/lectura-comprensiva",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20451,6 +20559,12 @@
           "reference": "POST:/herramientas/mapa-conceptual",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/mapa-conceptual",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20500,6 +20614,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/para-colorear",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/para-colorear",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20539,6 +20659,12 @@
           "reference": "POST:/herramientas/plan-refuerzo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/plan-refuerzo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20588,6 +20714,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/quiz-rapido",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/quiz-rapido",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20627,6 +20759,12 @@
           "reference": "POST:/herramientas/rubrica",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/rubrica",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20676,6 +20814,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/sopa-letras",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/sopa-letras",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20720,6 +20864,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/taller",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/taller",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20759,6 +20909,12 @@
           "reference": "POST:/herramientas/unir-columnas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/unir-columnas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20809,6 +20965,12 @@
           "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20865,6 +21027,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20915,6 +21083,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/duplicar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/duplicar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20954,6 +21128,12 @@
           "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -24076,6 +24256,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_revisions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -33092,6 +33278,12 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -38681,6 +38873,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/catalogo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -38736,6 +38934,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/materias/{materiaId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/materias/{materiaId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -38774,6 +38978,12 @@
           "reference": "GET:/herramientas/{id}/evaluaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -38835,6 +39045,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -43318,6 +43534,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}/visibilidad",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}/visibilidad",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -43374,6 +43596,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -48753,6 +48981,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -48892,6 +49126,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/asignar-apoyo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/asignar-apoyo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -48930,6 +49170,12 @@
           "reference": "POST:/herramientas/{id}/convertir-evaluacion",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/convertir-evaluacion",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -48978,6 +49224,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/duplicar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/duplicar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -49016,6 +49268,12 @@
           "reference": "POST:/herramientas/{id}/retirar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/retirar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
