@@ -174,6 +174,13 @@ describe('DashboardPage docente', () => {
     await userEvent.click(screen.getByRole('button', { name: /Saltar/ }));
     expect(screen.queryByText('Empieza por tu materia')).not.toBeInTheDocument();
   });
+  it('198 acompaña el saludo con una ilustración que no ocupa espacio en celular', async () => {
+    const { container } = renderDashboard();
+    expect(await screen.findByRole('heading', { name: 'Hola, Profesor' })).toBeInTheDocument();
+    const image = container.querySelector('img[src="/branding/teacher-hero.webp"]');
+    expect(image).toHaveAttribute('alt', '');
+    expect(image).toHaveClass('hidden', 'sm:block');
+  });
   it.each(['admin', 'estudiante'] as const)('preserves the %s home', (rol) => {
     useAuth.setState({ user: { ...useAuth.getState().user!, rol } });
     renderDashboard();

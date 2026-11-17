@@ -182,6 +182,7 @@ ALL_SPECS = {
     "187-escaner-automatico",
     "189-revision-visual",
     "190-pantallas-claras",
+    "198-recursos-visuales",
 }
 OWNED_SPECS = {
     name

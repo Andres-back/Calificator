@@ -5,15 +5,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft,
-  BookOpenText,
-  ClipboardCheck,
   FileText,
   Gamepad2,
-  LayoutGrid,
-  PencilRuler,
   Search,
   Sparkles,
-  Wand2,
 } from 'lucide-react';
 import {
   EducationalIcon,
@@ -48,13 +43,13 @@ const GEN_MESSAGES = [
   'Casi listo',
 ];
 
-const GOAL_ICONS = {
-  todos: LayoutGrid,
-  evaluar: ClipboardCheck,
-  practicar: PencilRuler,
-  jugar: Gamepad2,
-  explicar: BookOpenText,
-} satisfies Record<ToolGoal, typeof LayoutGrid>;
+const GOAL_IMAGES = {
+  todos: '/branding/semantic-icons/intent-all.webp',
+  evaluar: '/branding/semantic-icons/intent-evaluate.webp',
+  practicar: '/branding/semantic-icons/intent-practice.webp',
+  jugar: '/branding/semantic-icons/intent-play.webp',
+  explicar: '/branding/semantic-icons/intent-explain.webp',
+} satisfies Record<ToolGoal, string>;
 
 function GeneratingOverlay() {
   const [messageIndex, setMessageIndex] = useState(0);
@@ -83,9 +78,7 @@ function GeneratingOverlay() {
       <div className="w-full max-w-md overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
         <div className="relative grid place-items-center bg-brand-700 px-8 py-10 text-white">
           <div className="scan-line" />
-          <div className="ai-core grid h-24 w-24 place-items-center rounded-full bg-white/15 backdrop-blur">
-            <Wand2 className="relative h-10 w-10" aria-hidden="true" />
-          </div>
+          <img src="/branding/xali-working.webp" alt="" width={144} height={144} decoding="async" className="relative h-36 w-36 object-contain drop-shadow-lg" />
         </div>
         <div className="space-y-5 p-6 text-center">
           <AnimatePresence mode="wait">
@@ -199,7 +192,6 @@ export function GeneratePage() {
             aria-label="Objetivo del material"
           >
             {TOOL_GOALS.map((option) => {
-              const Icon = GOAL_ICONS[option.id];
               const selected = goal === option.id;
               return (
                 <button
@@ -215,16 +207,18 @@ export function GeneratePage() {
                     setGoal(option.id);
                   }}
                   className={cn(
-                    'focus-ring min-h-24 rounded-xl border-2 p-4 text-left transition-colors',
+                    'focus-ring flex min-h-20 items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors sm:block sm:min-h-24 sm:p-4',
                     selected
                       ? 'border-brand-600 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-100'
                       : 'border-border bg-surface hover:border-brand-300 hover:bg-surface-2',
                   )}
                 >
-                  <Icon className="h-6 w-6" aria-hidden="true" />
-                  <strong className="mt-2 block">{option.label}</strong>
-                  <span className="mt-1 block text-xs leading-4 text-muted">
-                    {option.description}
+                  <img src={GOAL_IMAGES[option.id]} alt="" width={56} height={56} decoding="async" className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14" />
+                  <span className="block min-w-0">
+                    <strong className="block sm:mt-2">{option.label}</strong>
+                    <span className="mt-1 block text-xs leading-4 text-muted">
+                      {option.description}
+                    </span>
                   </span>
                 </button>
               );

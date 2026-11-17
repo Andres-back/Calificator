@@ -27,4 +27,16 @@ describe('LandingPage', () => {
     expect(loginLink).not.toHaveClass('hidden');
     expect(screen.getByRole('button', { name: 'Añadir al inicio' })).toBeInTheDocument();
   });
+  it('198 ilustra los beneficios y la invitación a docentes con imágenes decorativas', () => {
+    const { container } = render(<MemoryRouter><LandingPage /></MemoryRouter>);
+
+    for (const name of ['feature-evidence', 'feature-teacher-decides', 'feature-learning', 'community-teachers']) {
+      const image = container.querySelector(`img[src="/branding/${name}.webp"]`);
+      expect(image, name).toBeInTheDocument();
+      expect(image).toHaveAttribute('alt', '');
+      expect(image).toHaveAttribute('loading', 'lazy');
+    }
+    expect(screen.getByRole('heading', { name: 'Califica con evidencia' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Queremos construirlo con docentes reales' })).toBeInTheDocument();
+  });
 });

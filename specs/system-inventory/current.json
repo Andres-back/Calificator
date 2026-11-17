@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "7d1cc77b6e920d6999c0e50a80cac1e1337b77de8e901da5336c685b31fda1ae",
+  "source_digest": "f481c7c6f6b57a4f03b3a2c622a192ca76dd0a5053c976a7fdd131f145ed179a",
   "surfaces": [
     {
       "actors": [
@@ -1476,6 +1476,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -7555,6 +7561,12 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -7823,6 +7835,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -13108,6 +13126,12 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -25257,6 +25281,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
         },
         {
@@ -33374,6 +33404,12 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -39212,6 +39248,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/dashboard/DashboardPage.test.tsx"
         },
         {
@@ -43800,6 +43842,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -49192,6 +49240,12 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
