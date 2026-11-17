@@ -226,8 +226,9 @@
   }
 
   /* ── Crucigrama ── */
-  .inline-grid.crucigrama-grid {
+  .crucigrama-grid {
     display: inline-grid !important;
+    width: auto !important;
     gap: 1pt !important;
     padding: 3pt !important;
   }

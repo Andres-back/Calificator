@@ -100,7 +100,7 @@ export function MatchingView({
     <div className="space-y-5">
       <Confetti fire={checked && correct === left.length} />
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-        Haz clic en un elemento de la izquierda y luego en su pareja de la derecha.
+        Toca un elemento de la izquierda y luego su pareja de la derecha.
       </div>
 
       <div ref={containerRef} className="relative matching-container">
@@ -113,7 +113,7 @@ export function MatchingView({
           ))}
         </svg>
 
-        <div className="relative grid grid-cols-[1fr_44px_1fr] gap-0 sm:grid-cols-[1fr_72px_1fr]" style={{ zIndex: 2 }}>
+        <div className="relative grid grid-cols-[minmax(0,1fr)_28px_minmax(0,1fr)] gap-0 sm:grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)]" style={{ zIndex: 2 }} lang="es">
           <div className="space-y-2.5">
             {left.map((item) => {
               const matched = item.numero in matches;
@@ -126,17 +126,17 @@ export function MatchingView({
                   ref={(el) => (leftRefs.current[item.numero] = el)}
                   onClick={() => setSelLeft(selLeft === item.numero ? null : item.numero)}
                   className={cn(
-                    'flex w-full items-center gap-2.5 rounded-xl border-2 bg-surface px-3 py-2.5 text-left text-sm font-medium transition',
+                    'flex min-h-11 w-full items-center gap-2 rounded-xl border-2 bg-surface px-2 py-2.5 text-left text-[13px] font-medium leading-5 transition sm:gap-2.5 sm:px-3 sm:text-sm',
                     selLeft === item.numero ? 'border-brand-400 ring-2 ring-brand-300 scale-[1.01]'
                       : checked ? (ok ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : matched ? 'border-rose-400 bg-rose-50 dark:bg-rose-500/10' : 'border-border')
                         : 'border-border hover:border-brand-300',
                   )}
                   style={matched && !checked && color ? { borderColor: color } : undefined}
                 >
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white" style={{ background: color ?? '#cbd5e1' }}>
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white sm:h-6 sm:w-6 sm:text-xs" style={{ background: color ?? '#64748b' }}>
                     {item.numero}
                   </span>
-                  <span className="flex-1">{item.texto}</span>
+                  <span className="min-w-0 flex-1 hyphens-auto break-words">{item.texto}</span>
                   {checked && matched && (ok ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <XCircle className="h-4 w-4 text-rose-500" />)}
                 </button>
               );
@@ -152,14 +152,14 @@ export function MatchingView({
                   ref={(el) => (rightRefs.current[item.letra] = el)}
                   onClick={() => selLeft !== null && connect(selLeft, item.letra)}
                   className={cn(
-                    'flex w-full items-center gap-2.5 rounded-xl border-2 bg-surface px-3 py-2.5 text-left text-sm font-medium transition',
+                    'flex min-h-11 w-full items-center gap-2 rounded-xl border-2 bg-surface px-2 py-2.5 text-left text-[13px] font-medium leading-5 transition sm:gap-2.5 sm:px-3 sm:text-sm',
                     matched ? 'border-brand-300' : 'border-border hover:border-brand-300',
                   )}
                 >
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-400 text-xs font-bold text-white">
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-slate-500 text-[11px] font-bold text-white sm:h-6 sm:w-6 sm:text-xs">
                     {item.letra}
                   </span>
-                  <span className="flex-1">{item.texto}</span>
+                  <span className="min-w-0 flex-1 hyphens-auto break-words">{item.texto}</span>
                 </button>
               );
             })}

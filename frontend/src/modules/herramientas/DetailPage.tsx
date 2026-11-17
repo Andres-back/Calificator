@@ -19,7 +19,7 @@ import { ResourceEditorPanel } from './components/ResourceEditorPanel';
 import { ResourceActions } from './components/ResourceActions';
 import { resourceCapabilities, resourceLinkClass, resourceReturnPath, resourceState } from './resourcePresentationModel';
 import { useAuth } from '@/stores/auth';
-import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView } from './views';
+import { CrucigramaView, SopaLetrasView, MatchingView, ContenidoView, ResourceInstructions } from './views';
 import { useMaterias } from '@/modules/materias/MateriaSelect';
 import type { ToolContent } from './views/ContenidoView';
 import { toApiError } from '@/lib/api';
@@ -79,7 +79,6 @@ function ResourceDetail({ id }: { id: string }) {
   }, [capabilities.edit, capabilities.assign, capabilities.remove]);
   const content = useMemo(() => material?.contenido_json ?? {}, [material?.contenido_json]);
   const contentTitle = ((typeof content.titulo === 'string' ? content.titulo : material?.titulo) ?? '');
-  const instructions = typeof content.instrucciones === 'string' ? content.instrucciones : null;
   const aiTrace = (
     content._xcalificator
     && typeof content._xcalificator === 'object'
@@ -303,7 +302,7 @@ function ResourceDetail({ id }: { id: string }) {
         </Card>
       )}
       <Card role="region" aria-label="Contenido del recurso" tabIndex={0} className="focus-ring min-w-0 overflow-x-auto p-4 sm:p-6" data-resource-body>
-        {instructions && material.tipo !== 'examen' && <p className="mb-4 whitespace-pre-wrap text-sm"><strong>Instrucciones: </strong>{instructions}</p>}
+        <ResourceInstructions tipo={material.tipo} content={content} />
         {renderBody()}
       </Card>
       {material.tipo !== 'rubrica' && Array.isArray(content.criterios) && content.criterios.length > 0 && (

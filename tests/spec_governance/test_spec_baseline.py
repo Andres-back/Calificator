@@ -184,6 +184,7 @@ ALL_SPECS = {
     "190-pantallas-claras",
     "192-navegacion-movil",
     "199-lectura-en-verificacion",
+    "193-herramientas-recursos",
 }
 OWNED_SPECS = {
     name
