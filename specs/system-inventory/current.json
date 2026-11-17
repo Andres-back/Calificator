@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "09981c3a52f70dc33dae9dc6e157aeda7b36a384ac39fcdcfd59f472ebb31757",
+  "source_digest": "409a10780efd64d4a8b0aae89b511aa00a661925db275c58224bbd1fd3040a49",
   "surfaces": [
     {
       "actors": [
@@ -26098,6 +26098,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/views/StoryContent.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/views/resourceViews193.test.tsx"
         },
         {
           "level": "unit",
