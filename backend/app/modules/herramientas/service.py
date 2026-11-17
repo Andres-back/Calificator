@@ -25,6 +25,7 @@ from app.modules.herramientas.puzzle_builder import (
     normalize_word,
 )
 from app.modules.herramientas.content_quality import normalize_material_content, prepare_evaluation_criteria
+from app.modules.herramientas.image_delivery import restore_stored_image
 from app.modules.herramientas.evaluation_criteria import teacher_criteria_from
 from app.modules.herramientas.generators import (
     crucigrama,
@@ -615,6 +616,8 @@ async def update_material(
 
     if "contenido_json" in campos and isinstance(campos["contenido_json"], dict):
         old_content = existing.get("contenido_json") or {}
+        # Spec 196: el navegador recibe la imagen como enlace; al guardar se conserva la original.
+        campos["contenido_json"] = restore_stored_image(old_content, campos["contenido_json"])
         puzzle_inputs = {
             "crucigrama": ("preguntas_horizontales", "preguntas_verticales"),
             "sopa_letras": ("banco", "banco_palabras"),

@@ -181,6 +181,7 @@ ALL_SPECS = {
     "188-evidencia-reemplazada",
     "187-escaner-automatico",
     "189-revision-visual",
+    "196-imagenes-ligeras",
 }
 OWNED_SPECS = {
     name
