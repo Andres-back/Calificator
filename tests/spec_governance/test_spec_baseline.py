@@ -186,6 +186,7 @@ ALL_SPECS = {
     "199-lectura-en-verificacion",
     "193-herramientas-recursos",
     "200-xali-contexto-materia",
+    "202-lista-desde-archivo",
     "201-ingreso-flexible",
 }
 OWNED_SPECS = {

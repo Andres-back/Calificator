@@ -6,15 +6,15 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:100` |
+| endpoint | `DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:113` |
 | endpoint | `GET:/auth/me` | authenticated | covered | `backend/app/modules/auth/router.py:168` |
 | endpoint | `GET:/materias` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:24` |
 | endpoint | `GET:/materias/{materia_id}` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:33` |
 | endpoint | `GET:/materias/{materia_id}/estudiantes` | admin, estudiante, profesor | covered | `backend/app/modules/materias/router.py:66` |
-| endpoint | `GET:/materias/{materia_id}/estudiantes-existentes` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:135` |
+| endpoint | `GET:/materias/{materia_id}/estudiantes-existentes` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:148` |
 | endpoint | `GET:/materias/{materia_id}/evaluaciones` | admin, estudiante, profesor | covered | `backend/app/modules/evaluaciones/router.py:317` |
-| endpoint | `GET:/materias/{materia_id}/importaciones-estudiantes` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:66` |
-| endpoint | `GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:81` |
+| endpoint | `GET:/materias/{materia_id}/importaciones-estudiantes` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:79` |
+| endpoint | `GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:94` |
 | endpoint | `GET:/matriculas/mis-materias` | admin, estudiante, profesor | covered | `backend/app/modules/matriculas/router.py:25` |
 | endpoint | `GET:/users/me` | authenticated | covered | `backend/app/modules/users/router.py:25` |
 | endpoint | `PATCH:/materias/{materia_id}` | admin, profesor | covered | `backend/app/modules/materias/router.py:43` |
@@ -29,14 +29,14 @@
 | endpoint | `POST:/auth/refresh` | ambiguous | covered | `backend/app/modules/auth/router.py:147` |
 | endpoint | `POST:/auth/register` | ambiguous | covered | `backend/app/modules/auth/router.py:50` |
 | endpoint | `POST:/materias` | admin, profesor | covered | `backend/app/modules/materias/router.py:15` |
-| endpoint | `POST:/materias/{materia_id}/estudiantes-existentes/matricular` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:141` |
-| endpoint | `POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:148` |
-| endpoint | `POST:/materias/{materia_id}/importaciones-estudiantes` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:26` |
-| endpoint | `POST:/materias/{materia_id}/importaciones-estudiantes/manual` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:72` |
-| endpoint | `POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:119` |
+| endpoint | `POST:/materias/{materia_id}/estudiantes-existentes/matricular` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:154` |
+| endpoint | `POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:161` |
+| endpoint | `POST:/materias/{materia_id}/importaciones-estudiantes` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:35` |
+| endpoint | `POST:/materias/{materia_id}/importaciones-estudiantes/manual` | authenticated | missing | `backend/app/modules/importacion_estudiantes/router.py:85` |
+| endpoint | `POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:132` |
 | endpoint | `POST:/materias/{materia_id}/regenerar-codigo` | admin, profesor | covered | `backend/app/modules/materias/router.py:55` |
 | endpoint | `POST:/matriculas/unirse` | admin, estudiante | covered | `backend/app/modules/matriculas/router.py:15` |
-| endpoint | `PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:89` |
+| endpoint | `PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}` | admin, profesor | missing | `backend/app/modules/importacion_estudiantes/router.py:102` |
 | frontend_route | `/app/materias` | authenticated | covered | `frontend/src/config/routes.ts:30` |
 | frontend_route | `/app/materias/{id}` | authenticated | covered | `frontend/src/config/routes.ts:34` |
 | frontend_route | `/app/perfil` | authenticated | covered | `frontend/src/config/routes.ts:22` |

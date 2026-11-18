@@ -23,12 +23,12 @@
 | integration | `openai` | system | covered | `backend/app/services/ai_capability_registry.py:1` |
 | job | `tasks.assign_overdue_grades` | system | missing | `backend/app/workers/tasks_deadlines.py:46` |
 | job | `tasks.cleanup_evaluation_visual_proposals` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:176` |
-| job | `tasks.cleanup_expired_roster_imports` | system | missing | `backend/app/workers/tasks_roster_import.py:150` |
+| job | `tasks.cleanup_expired_roster_imports` | system | missing | `backend/app/workers/tasks_roster_import.py:162` |
 | job | `tasks.cleanup_feedback_conversations` | system | missing | `backend/app/workers/tasks_feedback_chat.py:58` |
 | job | `tasks.cleanup_password_reset_requests` | system | missing | `backend/app/workers/tasks_password_recovery.py:156` |
 | job | `tasks.digitalize_evaluation` | system | covered | `backend/app/workers/tasks_digitalization.py:551` |
 | job | `tasks.export_report` | system | missing | `backend/app/workers/tasks_reports.py:5` |
-| job | `tasks.extract_roster_import` | system | covered | `backend/app/workers/tasks_roster_import.py:120` |
+| job | `tasks.extract_roster_import` | system | covered | `backend/app/workers/tasks_roster_import.py:132` |
 | job | `tasks.feedback_question` | system | covered | `backend/app/workers/tasks_feedback_chat.py:35` |
 | job | `tasks.generate_evaluation_visual` | system | missing | `backend/app/workers/tasks_evaluation_visuals.py:141` |
 | job | `tasks.generate_image` | system | covered | `backend/app/workers/tasks_images.py:5` |
@@ -45,7 +45,7 @@
 | job | `tasks.recover_stale_digitalization_jobs` | system | covered | `backend/app/workers/tasks_digitalization.py:614` |
 | job | `tasks.recover_stale_grading_jobs` | system | covered | `backend/app/workers/tasks_grading.py:1096` |
 | job | `tasks.recover_stale_presentation_jobs` | system | covered | `backend/app/workers/tasks_presentations.py:84` |
-| job | `tasks.recover_stale_roster_import_jobs` | system | covered | `backend/app/workers/tasks_roster_import.py:143` |
+| job | `tasks.recover_stale_roster_import_jobs` | system | covered | `backend/app/workers/tasks_roster_import.py:155` |
 | job | `tasks.send_password_reset_email` | system | missing | `backend/app/workers/tasks_password_recovery.py:116` |
 
 ## Decisiones explícitas de permiso

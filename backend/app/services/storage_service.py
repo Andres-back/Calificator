@@ -30,6 +30,10 @@ MIME_EXTENSIONS = {
 PRIVATE_MIME_EXTENSIONS = {
     **MIME_EXTENSIONS,
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    # Spec 202: listas de estudiantes en hoja de cálculo o texto.
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "text/csv": ".csv",
+    "text/plain": ".txt",
 }
 
 

@@ -17,10 +17,19 @@ from app.modules.importacion_estudiantes.schemas import ConfirmacionRead, Existi
 from app.modules.jobs import service as jobs_service
 from app.modules.materias.service import ensure_can_manage_materia
 from app.modules.users.models import User
+from app.modules.importacion_estudiantes.roster_files import UnsupportedFile, detect_kind
 from app.services.storage_service import UploadTooLargeError, read_upload_limited, save_private_upload, validate_mime
 
 router = APIRouter(prefix="/materias", tags=["importacion-estudiantes"])
 MAX_ROSTER_PHOTO = 20 * 1024 * 1024
+ROSTER_MIME = {
+    "imagen": None,  # se valida por sus bytes
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "csv": "text/csv",
+    "texto": "text/plain",
+}
 
 
 @router.post("/{materia_id}/importaciones-estudiantes", response_model=LoteCreated, status_code=status.HTTP_202_ACCEPTED)
@@ -37,12 +46,16 @@ async def create_import(
         content = await read_upload_limited(archivo, MAX_ROSTER_PHOTO)
     except UploadTooLargeError as exc:
         raise HTTPException(status_code=413, detail=str(exc)) from exc
+    # Spec 202: además de la foto, la lista puede venir en PDF, Word, Excel, CSV o texto.
     try:
-        mime = validate_mime(content, archivo.filename or "lista.jpg")
-    except ValueError as exc:
-        raise HTTPException(status_code=415, detail="Sube una fotografía JPG, PNG o WEBP válida") from exc
-    if not mime.startswith("image/"):
-        raise HTTPException(status_code=415, detail="Sube una fotografía JPG, PNG o WEBP")
+        mime = ROSTER_MIME[detect_kind(content, archivo.filename or "lista.jpg")]
+        if mime is None:
+            mime = validate_mime(content, archivo.filename or "lista.jpg")
+    except (UnsupportedFile, ValueError) as exc:
+        raise HTTPException(
+            status_code=415,
+            detail="Sube una foto (JPG, PNG o WEBP) o un archivo PDF, Word (.docx), Excel (.xlsx), CSV o de texto con la lista.",
+        ) from exc
     file_key = await save_private_upload(content, mime, subfolder="roster-imports")
     try:
         lote = ImportacionEstudiantesLote(materia_id=materia_id, creado_por=actor.id, archivo_key=file_key, archivo_nombre=(archivo.filename or "lista.jpg")[:255], archivo_sha256=hashlib.sha256(content).hexdigest(), estado="procesando")

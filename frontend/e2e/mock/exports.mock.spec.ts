@@ -98,7 +98,7 @@ for (const [name, engine] of [['chromium', chromium], ['webkit', webkit]] as con
       });
       await page.getByRole('button', { name: /Importar.*foto/i }).click();
       const photo = page.getByRole('dialog', { name: 'Importar estudiantes desde una foto' });
-      await photo.locator('input[type="file"]').setInputFiles({ name: 'lista.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aPZwAAAAASUVORK5CYII=', 'base64') });
+      await photo.getByLabel('Elegir una foto o un archivo con la lista').setInputFiles({ name: 'lista.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aPZwAAAAASUVORK5CYII=', 'base64') });
       await photo.getByRole('button', { name: 'Confirmar 1 estudiantes' }).click();
       const photoDownload = page.waitForEvent('download');
       await photo.getByRole('button', { name: 'Descargar accesos CSV' }).click();
