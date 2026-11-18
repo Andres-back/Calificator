@@ -17,7 +17,7 @@
 | endpoint | `GET:/herramientas/{material_id}/evaluaciones` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:403` |
 | endpoint | `GET:/herramientas/{material_id}/imagen` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:266` |
 | endpoint | `GET:/herramientas/{material_id}/pdf` | admin, estudiante, profesor | covered | `backend/app/modules/herramientas/router.py:308` |
-| endpoint | `GET:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:95` |
+| endpoint | `GET:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:96` |
 | endpoint | `PATCH:/herramientas/{material_id}` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:340` |
 | endpoint | `PATCH:/herramientas/{material_id}/visibilidad` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:380` |
 | endpoint | `POST:/herramientas/crucigrama` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:84` |
@@ -41,7 +41,7 @@
 | endpoint | `POST:/herramientas/{material_id}/convertir-evaluacion` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:413` |
 | endpoint | `POST:/herramientas/{material_id}/duplicar` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:392` |
 | endpoint | `POST:/herramientas/{material_id}/retirar-apoyo` | admin, profesor | covered | `backend/app/modules/herramientas/router.py:371` |
-| endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:75` |
+| endpoint | `POST:/xali/evaluaciones/{evaluacion_id}/recursos` | admin, estudiante, profesor | covered | `backend/app/modules/xali/router.py:76` |
 | frontend_route | `/app/herramientas` | admin, profesor | covered | `frontend/src/config/routes.ts:55` |
 | frontend_route | `/app/herramientas/{id}` | admin, profesor | covered | `frontend/src/config/routes.ts:58` |
 | frontend_route | `/app/materias/{id}/recursos` | authenticated | covered | `frontend/src/modules/materias/MateriaRecursos.tsx:68` |
