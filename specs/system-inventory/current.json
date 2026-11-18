@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 605,
+      "covered": 603,
       "missing": 93
     },
     "by_kind": {
-      "endpoint": 331,
-      "frontend_call": 223,
+      "endpoint": 330,
+      "frontend_call": 222,
       "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 698
+    "total": 696
   },
   "exceptions": [],
   "findings": [
@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b16f1bdec1ddd796ac7cc640bd82fe770a3ba338b691618ee325019d89aeb2c7",
+  "source_digest": "409a10780efd64d4a8b0aae89b511aa00a661925db275c58224bbd1fd3040a49",
   "surfaces": [
     {
       "actors": [
@@ -1547,7 +1547,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 113,
+      "source_line": 100,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9529,7 +9529,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/estudiantes-existentes",
-      "source_line": 148,
+      "source_line": 135,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9597,7 +9597,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/importaciones-estudiantes",
-      "source_line": 79,
+      "source_line": 66,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9620,7 +9620,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 94,
+      "source_line": 81,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -17080,36 +17080,6 @@
     },
     {
       "actors": [
-        "authenticated"
-      ],
-      "authorization": [
-        "get_current_user"
-      ],
-      "consumers": [],
-      "coverage": "covered",
-      "details": {
-        "function": "capturar_texto",
-        "registered": true,
-        "router": "router"
-      },
-      "id": "backend:POST:/captura-texto",
-      "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
-      "signature": "POST:/captura-texto",
-      "source_line": 27,
-      "source_path": "backend/app/modules/captura_texto/router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_captura_texto.py"
-        }
-      ]
-    },
-    {
-      "actors": [
         "ambiguous"
       ],
       "authorization": [],
@@ -22039,7 +22009,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/estudiantes-existentes/matricular",
-      "source_line": 154,
+      "source_line": 141,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22062,7 +22032,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal",
-      "source_line": 161,
+      "source_line": 148,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22087,7 +22057,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes",
-      "source_line": 35,
+      "source_line": 26,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22110,7 +22080,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes/manual",
-      "source_line": 85,
+      "source_line": 72,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22135,7 +22105,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
-      "source_line": 132,
+      "source_line": 119,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -23545,7 +23515,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 102,
+      "source_line": 89,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -24177,12 +24147,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_captura_texto.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_concept_map_normalization.py"
         },
         {
@@ -24628,12 +24592,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_resource_motif_render.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_roster_files.py"
         },
         {
           "level": "unit",
@@ -25102,12 +25060,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/components/capture/TextCaptureButtons.test.tsx"
         },
         {
           "level": "unit",
@@ -26230,12 +26182,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/RosterImportDialog.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/modules/materias/RosterImportSource.test.tsx"
         },
         {
           "level": "unit",
@@ -47864,58 +47810,6 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
-      "coverage": "covered",
-      "details": {
-        "backend_contract": "backend:POST:/captura-texto",
-        "backend_contract_candidates": [],
-        "contract_status": "matched"
-      },
-      "id": "frontend_call:POST:/captura-texto:frontend/src/components/capture/textCapture.ts",
-      "kind": "frontend_call",
-      "owner_spec": "002-arquitectura-roles-seguridad",
-      "signature": "POST:/captura-texto",
-      "source_line": 25,
-      "source_path": "frontend/src/components/capture/textCapture.ts",
-      "states": [],
-      "tests": [
-        {
-          "level": "e2e",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/e2e/native-camera-capture.spec.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/src/components/capture/TextCaptureButtons.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/CameraCapture.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/nativeCapture.test.ts"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "ambiguous"
-      ],
-      "authorization": [],
       "consumers": [
         "107-retroalimentacion-familiar",
         "120-retroalimentacion-entrega-clara",
@@ -53271,7 +53165,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.cleanup_expired_roster_imports",
-      "source_line": 162,
+      "source_line": 150,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
@@ -53539,7 +53433,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.extract_roster_import",
-      "source_line": 132,
+      "source_line": 120,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
@@ -54385,7 +54279,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_roster_import_jobs",
-      "source_line": 155,
+      "source_line": 143,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
