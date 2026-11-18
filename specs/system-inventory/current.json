@@ -1,8 +1,8 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 603,
-      "missing": 93
+      "covered": 600,
+      "missing": 96
     },
     "by_kind": {
       "endpoint": 330,
@@ -59,6 +59,33 @@
         "table:profesor_ai_credentials",
         "table:profesor_ai_feature_preferences",
         "table:profesor_ai_provider_models"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
+      "id": "F-324D81DB301E",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/impacto/cualitativo",
+        "backend:GET:/impacto/estudios/{study_id}/export",
+        "backend:GET:/impacto/estudios/{study_id}/indicadores",
+        "backend:GET:/impacto/estudios/{study_id}/observaciones",
+        "backend:GET:/impacto/kappa",
+        "backend:GET:/impacto/likert",
+        "backend:GET:/impacto/tiempo-ahorrado",
+        "backend:GET:/reportes/estudiante/{estudiante_id}",
+        "backend:GET:/reportes/materia/{materia_id}",
+        "backend:POST:/impacto/encuestas",
+        "backend:POST:/impacto/estudios/{study_id}/activar",
+        "backend:POST:/impacto/estudios/{study_id}/cerrar",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
+        "backend:POST:/impacto/estudios/{study_id}/observaciones",
+        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
+        "backend:POST:/reportes/export/pdf",
+        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
       ]
     },
     {
@@ -202,30 +229,6 @@
         "backend:PATCH:/imagenes-generadas/{imagen_id}",
         "backend:POST:/imagenes/generar",
         "table:imagenes_generadas"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "15 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
-      "id": "F-F7F9231E5351",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/impacto/cualitativo",
-        "backend:GET:/impacto/estudios/{study_id}/export",
-        "backend:GET:/impacto/estudios/{study_id}/indicadores",
-        "backend:GET:/impacto/estudios/{study_id}/observaciones",
-        "backend:GET:/impacto/kappa",
-        "backend:GET:/impacto/likert",
-        "backend:GET:/impacto/tiempo-ahorrado",
-        "backend:POST:/impacto/encuestas",
-        "backend:POST:/impacto/estudios/{study_id}/activar",
-        "backend:POST:/impacto/estudios/{study_id}/cerrar",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
-        "backend:POST:/impacto/estudios/{study_id}/observaciones",
-        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
-        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
       ]
     },
     {
@@ -653,7 +656,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "1780949e6b606590b49bc6ee8d792faa4129067dbe3ec750a705ee14f066bc01",
+  "source_digest": "c9f1bd796f5b0eb3482f21b1798cd0837335ee684802f9b4a97f13733a7515ed",
   "surfaces": [
     {
       "actors": [
@@ -1227,12 +1230,6 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -1416,6 +1413,12 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{material_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -2793,12 +2796,6 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/concordancia",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2837,12 +2834,6 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/confidence",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2881,12 +2872,6 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/costs",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2925,12 +2910,6 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -2969,12 +2948,6 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/errors",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3013,12 +2986,6 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/latency",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3059,12 +3026,6 @@
           "reference": "GET:/analytics/ai-quality/usage",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/usage",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3103,12 +3064,6 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/criterios",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3147,12 +3102,6 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/estudiantes",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3191,12 +3140,6 @@
           "reference": "GET:/analytics/estudiantes/{estudiante_id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/estudiantes/{estudiante_id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3241,12 +3184,6 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/evaluaciones",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3291,12 +3228,6 @@
           "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/evaluaciones/{evaluacion_id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3335,12 +3266,6 @@
           "reference": "GET:/analytics/export/criterios.csv",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/export/criterios.csv",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3379,12 +3304,6 @@
           "reference": "GET:/analytics/export/estudiantes.csv",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/export/estudiantes.csv",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3429,12 +3348,6 @@
           "reference": "GET:/analytics/overview",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/overview",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3473,12 +3386,6 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/preguntas",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3526,12 +3433,6 @@
           "reference": "GET:/analytics/sesiones-trabajo",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/sesiones-trabajo",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -3570,12 +3471,6 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/sintesis",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -6309,12 +6204,6 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/evaluaciones/{evaluacion_id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -7495,6 +7384,12 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -7636,6 +7531,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/catalogo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -7694,6 +7595,12 @@
           "reference": "GET:/herramientas/materias/{materia_id}/recursos",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/materias/{materia_id}/recursos",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7763,6 +7670,12 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7909,6 +7822,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}/evaluaciones",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}/evaluaciones",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -7955,6 +7874,12 @@
           "reference": "GET:/herramientas/{material_id}/pdf",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{material_id}/pdf",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -8730,12 +8655,6 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -9142,12 +9061,6 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias/{materia_id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -10955,7 +10868,7 @@
         "require_any_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "reporte_estudiante",
         "registered": true,
@@ -10968,14 +10881,7 @@
       "source_line": 46,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/estudiante/{estudiante_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -10987,7 +10893,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "reporte_materia",
         "registered": true,
@@ -11000,14 +10906,7 @@
       "source_line": 17,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/materia/{materia_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -11033,12 +10932,6 @@
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
       "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/profesor/resumen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
         {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
@@ -12747,12 +12640,6 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -13053,6 +12940,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -13194,6 +13087,12 @@
           "reference": "PATCH:/herramientas/{material_id}/visibilidad",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{material_id}/visibilidad",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -13565,12 +13464,6 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/materias/{materia_id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -14737,12 +14630,6 @@
           "reference": "POST:/analytics/evento",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/analytics/evento",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -14788,12 +14675,6 @@
           "reference": "POST:/analytics/sesiones-trabajo",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/analytics/sesiones-trabajo",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -14833,12 +14714,6 @@
           "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/analytics/sesiones-trabajo/{session_id}/eventos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -17890,12 +17765,6 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/evaluaciones",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -20239,6 +20108,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/crucigrama",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/crucigrama",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20278,6 +20153,12 @@
           "reference": "POST:/herramientas/cuento",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/cuento",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20327,6 +20208,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/emparejar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/emparejar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20366,6 +20253,12 @@
           "reference": "POST:/herramientas/examen",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/examen",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20415,6 +20308,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/examen-from-chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/examen-from-chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20454,6 +20353,12 @@
           "reference": "POST:/herramientas/ficha",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/ficha",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20503,6 +20408,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/flashcards",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/flashcards",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20542,6 +20453,12 @@
           "reference": "POST:/herramientas/guia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/guia",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20597,6 +20514,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/lectura-comprensiva",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/lectura-comprensiva",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20636,6 +20559,12 @@
           "reference": "POST:/herramientas/mapa-conceptual",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/mapa-conceptual",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20685,6 +20614,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/para-colorear",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/para-colorear",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20724,6 +20659,12 @@
           "reference": "POST:/herramientas/plan-refuerzo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/plan-refuerzo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20773,6 +20714,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/quiz-rapido",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/quiz-rapido",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20812,6 +20759,12 @@
           "reference": "POST:/herramientas/rubrica",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/rubrica",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20861,6 +20814,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/sopa-letras",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/sopa-letras",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20905,6 +20864,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/taller",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/taller",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -20944,6 +20909,12 @@
           "reference": "POST:/herramientas/unir-columnas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/unir-columnas",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20994,6 +20965,12 @@
           "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21050,6 +21027,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -21100,6 +21083,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/duplicar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/duplicar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -21139,6 +21128,12 @@
           "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21698,12 +21693,6 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/materias",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -22570,7 +22559,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "export_pdf",
         "registered": true,
@@ -22580,17 +22569,10 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/reportes/export/pdf",
-      "source_line": 112,
+      "source_line": 108,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "POST:/reportes/export/pdf",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -24279,6 +24261,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_herramientas_render_contracts.py"
         },
         {
@@ -24430,12 +24418,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_reading_completeness.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
         },
         {
           "level": "unit",
@@ -25149,12 +25131,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/lib/dates.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "frontend/src/lib/installedApp.test.ts"
         },
         {
@@ -25216,12 +25192,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/api.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -25947,19 +25917,7 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/modules/herramientas/views/QuizContent.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/views/StoryContent.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/modules/herramientas/views/resourceViews193.test.tsx"
         },
         {
           "level": "unit",
@@ -33133,12 +33091,6 @@
           "level": "unit",
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/evaluaciones/{id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -33321,6 +33273,12 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -35411,7 +35369,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/concordancia",
-      "source_line": 418,
+      "source_line": 426,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35426,12 +35384,6 @@
           "reference": "GET:/analytics/ai-quality/concordancia",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/concordancia",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35454,7 +35406,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/confidence",
-      "source_line": 542,
+      "source_line": 550,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35469,12 +35421,6 @@
           "reference": "GET:/analytics/ai-quality/confidence",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/confidence",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35497,7 +35443,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs/provider-comparison",
-      "source_line": 613,
+      "source_line": 621,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35512,12 +35458,6 @@
           "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/costs/provider-comparison",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35540,7 +35480,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/costs",
-      "source_line": 609,
+      "source_line": 617,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35555,12 +35495,6 @@
           "reference": "GET:/analytics/ai-quality/costs",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/costs",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35583,7 +35517,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/errors",
-      "source_line": 577,
+      "source_line": 585,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35598,12 +35532,6 @@
           "reference": "GET:/analytics/ai-quality/errors",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/errors",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35626,7 +35554,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/ai-quality/latency",
-      "source_line": 541,
+      "source_line": 549,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35641,12 +35569,6 @@
           "reference": "GET:/analytics/ai-quality/latency",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/ai-quality/latency",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35669,7 +35591,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/criterios",
-      "source_line": 239,
+      "source_line": 247,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35684,12 +35606,6 @@
           "reference": "GET:/analytics/criterios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/criterios",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35712,7 +35628,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes/{selected}",
-      "source_line": 475,
+      "source_line": 483,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35727,12 +35643,6 @@
           "reference": "GET:/analytics/estudiantes/{selected}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/estudiantes/{selected}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35755,7 +35665,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/estudiantes",
-      "source_line": 466,
+      "source_line": 474,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35770,12 +35680,6 @@
           "reference": "GET:/analytics/estudiantes",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/estudiantes",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35798,7 +35702,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/evaluaciones",
-      "source_line": 184,
+      "source_line": 180,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35819,12 +35723,6 @@
           "reference": "GET:/analytics/evaluaciones",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/evaluaciones",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35847,7 +35745,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/overview",
-      "source_line": 183,
+      "source_line": 179,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35868,12 +35766,6 @@
           "reference": "GET:/analytics/overview",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/overview",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35896,7 +35788,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/preguntas",
-      "source_line": 240,
+      "source_line": 248,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35911,12 +35803,6 @@
           "reference": "GET:/analytics/preguntas",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/preguntas",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -35976,7 +35862,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/analytics/sintesis",
-      "source_line": 241,
+      "source_line": 249,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -35991,12 +35877,6 @@
           "reference": "GET:/analytics/sintesis",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/analytics/sintesis",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -38058,12 +37938,6 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -38830,12 +38704,6 @@
           "level": "unit",
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/evaluaciones/{id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -39005,6 +38873,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/catalogo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -39060,6 +38934,12 @@
           "level": "unit",
           "reference": "GET:/herramientas/materias/{materiaId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/materias/{materiaId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -39098,6 +38978,12 @@
           "reference": "GET:/herramientas/{id}/evaluaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}/evaluaciones",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -39159,6 +39045,12 @@
           "reference": "GET:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -39286,7 +39178,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/disponibilidad",
-      "source_line": 1025,
+      "source_line": 1033,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39307,12 +39199,6 @@
           "reference": "GET:/impacto/estudios/disponibilidad",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/impacto/estudios/disponibilidad",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39332,7 +39218,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}/indicadores",
-      "source_line": 867,
+      "source_line": 875,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39347,12 +39233,6 @@
           "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/impacto/estudios/{effectiveId}/indicadores",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39372,7 +39252,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{effectiveId}",
-      "source_line": 862,
+      "source_line": 870,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39393,12 +39273,6 @@
           "reference": "GET:/impacto/estudios/{effectiveId}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/impacto/estudios/{effectiveId}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39418,7 +39292,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios/{id}/export",
-      "source_line": 913,
+      "source_line": 921,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39433,12 +39307,6 @@
           "reference": "GET:/impacto/estudios/{id}/export",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/impacto/estudios/{id}/export",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -39458,7 +39326,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "GET:/impacto/estudios",
-      "source_line": 857,
+      "source_line": 865,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -39479,12 +39347,6 @@
           "reference": "GET:/impacto/estudios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/impacto/estudios",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -40276,12 +40138,6 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias/{id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -40966,12 +40822,6 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -41450,12 +41300,6 @@
       "source_path": "frontend/src/modules/reportes/api.ts",
       "states": [],
       "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/profesor/resumen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
         {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
@@ -43521,12 +43365,6 @@
           "level": "unit",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/evaluaciones/{id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -43696,6 +43534,12 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}/visibilidad",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}/visibilidad",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -43752,6 +43596,12 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/herramientas/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -44200,12 +44050,6 @@
           "level": "unit",
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/materias/{id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -44582,12 +44426,6 @@
           "reference": "PATCH:/xali/refuerzos/{id}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/xali/refuerzos/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -48938,12 +48776,6 @@
           "level": "unit",
           "reference": "POST:/evaluaciones",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/evaluaciones",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -49149,6 +48981,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{endpoint}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -49288,6 +49126,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/asignar-apoyo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/asignar-apoyo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -49326,6 +49170,12 @@
           "reference": "POST:/herramientas/{id}/convertir-evaluacion",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/convertir-evaluacion",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -49374,6 +49224,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/duplicar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/duplicar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -49417,6 +49273,12 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/retirar-apoyo",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/herramientas/{id}/retirar-apoyo",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -49443,7 +49305,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios/{id}/{action}",
-      "source_line": 899,
+      "source_line": 907,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -49464,12 +49326,6 @@
           "reference": "POST:/impacto/estudios/{id}/{action}",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/impacto/estudios/{id}/{action}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -49489,7 +49345,7 @@
       "kind": "frontend_call",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/impacto/estudios",
-      "source_line": 887,
+      "source_line": 895,
       "source_path": "frontend/src/modules/analytics/AnalyticsPage.tsx",
       "states": [],
       "tests": [
@@ -49510,12 +49366,6 @@
           "reference": "POST:/impacto/estudios",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/impacto/estudios",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -50112,12 +49962,6 @@
           "reference": "POST:/materias",
           "status": "direct",
           "test_path": "frontend/src/lib/api.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/materias",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -50846,12 +50690,6 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/refuerzos/generar",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -54671,12 +54509,6 @@
           "reference": "analytics_eventos",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "analytics_eventos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -54732,12 +54564,6 @@
           "reference": "analytics_work_sessions",
           "status": "domain",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "analytics_work_sessions",
-          "status": "domain",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         }
       ]
     },
@@ -56423,12 +56249,6 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_lectura_en_calificacion.py"
-        },
-        {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_manual_and_overdue_grades.py"
         },
         {
@@ -56502,12 +56322,6 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_real_photo_answer_regression.py"
-        },
-        {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
         },
         {
           "level": "unit",
@@ -57338,12 +57152,6 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "frontend/src/modules/admin/AdminUsersPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "entregas",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -58324,12 +58132,6 @@
           "level": "unit",
           "reference": "evaluaciones",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
-          "level": "unit",
-          "reference": "evaluaciones",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
@@ -58625,12 +58427,6 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/lib/analytics.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "evaluaciones",
-          "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
         },
         {
           "level": "unit",
@@ -60555,12 +60351,6 @@
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
         {
-          "level": "unit",
-          "reference": "materias",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
@@ -60768,12 +60558,6 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/analytics/AnalyticsPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/ReviewContextNavigation.test.tsx"
         },
         {
@@ -60877,6 +60661,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaManagement.test.tsx"
         },
         {
           "level": "unit",
