@@ -193,6 +193,7 @@ ALL_SPECS = {
     "197-quiz-interactivo",
     "194-pdf-recursos",
     "195-contenido-recursos",
+    "196-imagenes-ligeras",
 }
 OWNED_SPECS = {
     name
