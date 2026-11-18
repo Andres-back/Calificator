@@ -61,6 +61,8 @@ LIST_KEYS: dict[MaterialTipo, tuple[str, ...]] = {
 }
 
 NUMBERED_KEYS = {"preguntas", "puntos", "ejercicios", "tarjetas"}
+MIN_CROSSWORD_WORDS = 4
+MIN_MATCHING_PAIRS = 3
 READING_TYPES = ("literal", "inferencial", "vocabulario", "critica")
 
 
@@ -217,6 +219,8 @@ def normalize_material_content(
             issues.append("la grilla del crucigrama está vacía")
         if not clues:
             issues.append("el crucigrama no contiene pistas")
+        elif len(clues) < MIN_CROSSWORD_WORDS:
+            issues.append(f"el crucigrama necesita al menos {MIN_CROSSWORD_WORDS} palabras del tema y solo tiene {len(clues)}")
     elif tipo == MaterialTipo.SOPA_LETRAS:
         if not isinstance(normalized.get("grilla"), list) or not normalized.get("grilla"):
             issues.append("la grilla de la sopa está vacía")
@@ -227,6 +231,10 @@ def normalize_material_content(
             issues.append("faltan elementos en una columna")
         elif len(normalized["columna_izquierda"]) != len(normalized["columna_derecha"]):
             issues.append("las columnas tienen cantidades diferentes")
+        elif len(normalized["columna_izquierda"]) < MIN_MATCHING_PAIRS:
+            issues.append(
+                f"se necesitan al menos {MIN_MATCHING_PAIRS} parejas distintas del tema y solo hay {len(normalized['columna_izquierda'])}"
+            )
     else:
         for key in LIST_KEYS.get(tipo, ()):
             if not normalized.get(key):

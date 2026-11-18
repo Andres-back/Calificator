@@ -192,6 +192,7 @@ ALL_SPECS = {
     "204-ia-obedece-panel",
     "197-quiz-interactivo",
     "194-pdf-recursos",
+    "195-contenido-recursos",
 }
 OWNED_SPECS = {
     name
