@@ -53,6 +53,8 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
   }, [actorId, cal.id]);
   const [contextGeneration, setContextGeneration] = useState(0);
   const [acceptedScoreFingerprint, setAcceptedScoreFingerprint] = useState<string | null>(null);
+  // Spec 206: quien corrigió la clave espera que se use; puede desmarcarla.
+  const [keepOriginalAnswers, setKeepOriginalAnswers] = useState(false);
   const [contextNeedsRefresh, setContextNeedsRefresh] = useState(false);
   const [refreshingContext, setRefreshingContext] = useState(false);
   const [error, setError] = useState('');
@@ -75,10 +77,11 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
   const editVersionMatches = Boolean(editContext && Date.parse(editContext.version_esperada) === Date.parse(expectedVersion));
   const editChanged = Boolean(editContext && evidenceDraftChanged(editContext, editPages));
   const currentPointsAccepted = Boolean(context?.fingerprint && context.version_objetivo_id && acceptedScoreFingerprint === context.fingerprint);
+  const usingCurrentAnswers = context?.estado === 'respuestas_actualizadas' && Boolean(context.fingerprint && context.version_objetivo_id) && !keepOriginalAnswers;
   const mutation = useMutation({
     onMutate: () => { mutationEpoch.current = openEpoch.current; },
     mutationFn: () => reprocessGrade(cal.id, { requestId, version: expectedVersion, confirmed, reason,
-      ...(context?.estado === 'puntajes_actualizados' && currentPointsAccepted ? { useCurrentScores: true,
+      ...((context?.estado === 'puntajes_actualizados' && currentPointsAccepted) || usingCurrentAnswers ? { useCurrentScores: true,
         targetScoreVersion: context.version_objetivo_id!, scoreContextFingerprint: context.fingerprint! } : {}),
       ...(mode === 'replace' ? { files: pages.map((page) => page.file),
         ...(usingScan ? { scan: scanSubmission(pages) } : { rotations: pages.map((page) => page.rotation) }) } : {}),
@@ -108,7 +111,7 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
     setRefreshedGrade(null);
     setDraftPages(null);
     setEditSession(value => value + 1);
-    setAcceptedScoreFingerprint(null); setContextNeedsRefresh(false); setRefreshingContext(false); setContextGeneration((value) => value + 1);
+    setAcceptedScoreFingerprint(null); setKeepOriginalAnswers(false); setContextNeedsRefresh(false); setRefreshingContext(false); setContextGeneration((value) => value + 1);
   };
   const close = () => {
     if (mutation.isPending) return;
@@ -140,7 +143,7 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
     }
   };
   const contextReady = scoreContext.isSuccess && !scoreContext.isFetching && !contextNeedsRefresh && !refreshingContext
-    && context && ['sin_cambios', 'contenido_modificado', 'puntajes_actualizados'].includes(context.estado)
+    && context && ['sin_cambios', 'contenido_modificado', 'puntajes_actualizados', 'respuestas_actualizadas'].includes(context.estado)
     && (context.estado !== 'puntajes_actualizados' || currentPointsAccepted);
   const canSend = !disabled && !processing && !mutation.isPending && (!hasDecision || confirmed)
     && contextReady && (mode !== 'edit' || (editVersionMatches && editChanged && editPages.length > 0 && confirmed))
@@ -194,9 +197,22 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
           <Button type="button" variant="outline" className="min-h-11" disabled={mutation.isPending || refreshingContext} onClick={() => void refreshPoints()}>Consultar puntos de nuevo</Button>
         </div>}
         {scoreContext.isSuccess && context && !scoreContext.isFetching && <section data-testid="regrading-context-ready" aria-label="Puntos para esta recalificación"
-          className={`min-w-0 space-y-3 rounded-xl border p-3 text-sm leading-6 ${context.estado === 'puntajes_actualizados' ? 'border-brand-300 bg-brand-50/60 dark:border-brand-700 dark:bg-brand-950/30' : 'border-border'}`}>
+          className={`min-w-0 space-y-3 rounded-xl border p-3 text-sm leading-6 ${context.estado === 'puntajes_actualizados' || context.estado === 'respuestas_actualizadas' ? 'border-brand-300 bg-brand-50/60 dark:border-brand-700 dark:bg-brand-950/30' : 'border-border'}`}>
           {context.estado === 'puntajes_actualizados' && <h3 className="font-semibold">El reparto de puntos cambió</h3>}
+          {context.estado === 'respuestas_actualizadas' && <h3 className="font-semibold">Corregiste las respuestas esperadas</h3>}
           <p>{context.mensaje}</p>
+          {context.estado === 'respuestas_actualizadas' && <>
+            <ul className="list-disc space-y-1 pl-5">
+              {(context.respuestas_cambiadas?.length ?? 0) > 0 && <li>Respuesta esperada nueva en {context.respuestas_cambiadas!.length === 1 ? 'la pregunta' : 'las preguntas'} <strong className="[overflow-wrap:anywhere]">{context.respuestas_cambiadas!.join(', ')}</strong>.</li>}
+              {context.lectura_cambiada && <li>La lectura o el texto de apoyo cambió.</li>}
+              {context.cambios.length > 0 && <li>También cambió el reparto de puntos de {context.cambios.length === 1 ? 'una pregunta' : `${context.cambios.length} preguntas`}.</li>}
+            </ul>
+            <label className="flex min-h-11 items-start gap-3 py-1 font-medium">
+              <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={usingCurrentAnswers} disabled={mutation.isPending || contextNeedsRefresh}
+                onChange={(event) => { setKeepOriginalAnswers(!event.currentTarget.checked); changeRequest(); }} />
+              Calificar esta entrega con las respuestas actuales.
+            </label>
+          </>}
           {context.estado === 'puntajes_actualizados' && <>
             <dl className="divide-y divide-border">{context.cambios.map((change) => <div key={change.numero} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
               <dt className="font-semibold [overflow-wrap:anywhere]">Pregunta {change.numero}</dt>

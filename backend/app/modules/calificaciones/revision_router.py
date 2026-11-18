@@ -16,7 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
-from app.modules.calificaciones import answer_location_service, explanation_draft_service, revision_service, service
+from app.modules.calificaciones import answer_location_service, explanation_draft_service, reprocessing_context, revision_service, service
 from app.modules.calificaciones.models import (
     Calificacion,
     CalificacionRevision,
@@ -85,6 +85,22 @@ async def _rollback_keeping_actor(db, actor) -> None:
     await db.refresh(actor)
 
 
+async def current_answers_adoption(db, evaluation, grade, actor_id) -> dict:
+    """Spec 206: en lote, una clave o una lectura corregidas se usan sin más pasos.
+
+    El docente corrigió las respuestas esperadas y pide recalificar: espera la clave nueva.
+    Un cambio de preguntas o de puntos no se adopta aquí; conserva su flujo de siempre.
+    """
+    context = await reprocessing_context.read_reprocessing_context(db, evaluation, grade, actor_id=actor_id)
+    if context["estado"] != "respuestas_actualizadas":
+        return {}
+    return {
+        "usar_puntajes_actuales": True,
+        "version_puntajes_objetivo": context["version_objetivo_id"],
+        "contexto_puntajes_fingerprint": context["fingerprint"],
+    }
+
+
 # Declarada antes de la ruta por calificación: «lote» no debe leerse como un identificador.
 @router.post("/calificaciones/{calificacion_id}/ubicar-respuestas", response_model=AnswerLocationResult)
 async def ubicar_respuestas(
@@ -149,6 +165,7 @@ async def recalificar_lote(
                 expected_version=grade.updated_at,
                 confirmed=False,
                 reason="Recalificación en lote",
+                **await current_answers_adoption(db, evaluation, grade, current_user.id),
             )
             results.append(BatchResultItem(calificacion_id=grade_id, success=True))
         except HTTPException as exc:

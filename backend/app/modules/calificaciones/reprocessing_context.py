@@ -3,6 +3,7 @@
 No evidence reads, provider calls, writes, or historical revision replacements.
 The caller owns the grade/delivery locks before validating a proposed adoption.
 """
+from copy import deepcopy
 from dataclasses import dataclass
 from decimal import Decimal
 from types import SimpleNamespace
@@ -24,7 +25,12 @@ _MESSAGES = {
     'puntajes_actualizados': 'El reparto de puntos cambió. Confirma los puntos actuales antes de enviar.',
     'contenido_modificado': 'También cambió el contenido de la evaluación. Usaremos la versión original de esta entrega, no las preguntas ni soluciones nuevas.',
     'version_no_disponible': 'No pudimos comprobar la versión de esta entrega. Conservamos la evidencia; revisa la evaluación antes de volver a calificar.',
+    'respuestas_actualizadas': 'Las respuestas esperadas o la lectura cambiaron después de recibir esta entrega. La calificaremos con las actuales; desmarca la casilla si prefieres las originales.',
 }
+
+# Spec 206: campos que describen la clave de respuestas y la lectura, no las preguntas.
+_ANSWER_KEY_FIELDS = ('respuestas_esperadas', 'lectura', 'claves_pendientes_revision')
+_ANSWER_KEY_RULES = ('lectura', 'claves_pendientes', 'clave_completa', 'requiere_validacion_docente')
 
 
 @dataclass(frozen=True)
@@ -34,11 +40,42 @@ class AcceptedReprocessingContext:
     metadata: dict | None = None
 
 
-def _response(state, source_id, target_id, *, fingerprint=None, changes=None):
+def _response(state, source_id, target_id, *, fingerprint=None, changes=None, answers=None, reading=False):
     return {'estado': state, 'version_entrega_id': source_id,
             'version_objetivo_id': target_id, 'fingerprint': fingerprint,
             'requiere_confirmacion': state == 'puntajes_actualizados',
-            'cambios': changes or [], 'mensaje': _MESSAGES[state]}
+            'cambios': changes or [], 'respuestas_cambiadas': answers or [],
+            'lectura_cambiada': bool(reading), 'mensaje': _MESSAGES[state]}
+
+
+def _without_answer_key(snapshot):
+    """The same evaluation with its answer key and reading removed (Spec 206)."""
+    data = deepcopy(snapshot)
+    for field in _ANSWER_KEY_FIELDS:
+        data.pop(field, None)
+    blueprint = data.get('blueprint')
+    if isinstance(blueprint, dict):
+        blueprint.pop('respuestas_esperadas', None)
+        rules = blueprint.get('reglas_feedback')
+        if isinstance(rules, dict):
+            for field in _ANSWER_KEY_RULES:
+                rules.pop(field, None)
+    return data
+
+
+def _reading(snapshot):
+    rules = ((snapshot.get('blueprint') or {}).get('reglas_feedback') or {})
+    return (snapshot.get('lectura'), rules.get('lectura') if isinstance(rules, dict) else None)
+
+
+def _changed_answers(source, target):
+    """Question numbers whose expected answer differs. Never the answers themselves."""
+    def by_number(snapshot):
+        return {str(item.get('numero')): item for item in snapshot.get('respuestas_esperadas') or []
+                if isinstance(item, dict)}
+    before, after = by_number(source), by_number(target)
+    numbers = [number for number in dict.fromkeys([*before, *after]) if before.get(number) != after.get(number)]
+    return sorted(numbers, key=lambda value: (not value.isdigit(), int(value) if value.isdigit() else 0, value))
 
 
 def _maximum(value):
@@ -66,8 +103,13 @@ async def _comparison(db, evaluation, grade, actor_id):
     try:
         source = await grading_visual_context.get_content_revision(db, evaluation.id, source_id)
         target = source if source_id == target_id else await grading_visual_context.get_content_revision(db, evaluation.id, target_id)
+        answer_key_changed = False
         if academic_fingerprint(source.snapshot_json) != academic_fingerprint(target.snapshot_json):
-            return _response('contenido_modificado', source_id, target_id), None
+            # Same questions with a corrected key or reading can be adopted on request (Spec 206).
+            if academic_fingerprint(_without_answer_key(source.snapshot_json)) != academic_fingerprint(
+                    _without_answer_key(target.snapshot_json)):
+                return _response('contenido_modificado', source_id, target_id), None
+            answer_key_changed = True
         original = await grading_visual_context.read_grading_definition(db, evaluation, delivery)
         current = original if source_id == target_id else await grading_visual_context.read_grading_definition(
             db, evaluation, SimpleNamespace(evaluacion_id=evaluation.id, contenido_version_id=target_id))
@@ -82,7 +124,7 @@ async def _comparison(db, evaluation, grade, actor_id):
                   for old, new in zip(old_components, new_components)]
         changes = [{'numero': str(old['numero']), 'puntaje_anterior': _points(before), 'puntaje_actual': _points(after)}
                    for old, (before, after) in zip(old_components, maxima) if before != after]
-        if not changes:
+        if not changes and not answer_key_changed:
             return _response('sin_cambios', source_id, target_id), None
         version = grade.updated_at
         from app.modules.calificaciones.revision_service import normalized_version
@@ -97,6 +139,12 @@ async def _comparison(db, evaluation, grade, actor_id):
         metadata = {'version_anterior_id': str(source_id), 'hash_anterior': source.content_hash,
                     'version_objetivo_id': str(target_id), 'hash_objetivo': target.content_hash,
                     'fingerprint': fingerprint}
+        if answer_key_changed:
+            answers = _changed_answers(source.snapshot_json, target.snapshot_json)
+            metadata['respuestas_actualizadas'] = answers
+            return _response('respuestas_actualizadas', source_id, target_id, fingerprint=fingerprint,
+                             changes=changes, answers=answers,
+                             reading=_reading(source.snapshot_json) != _reading(target.snapshot_json)), metadata
         return _response('puntajes_actualizados', source_id, target_id,
                          fingerprint=fingerprint, changes=changes), metadata
     except HTTPException as exc:
@@ -130,6 +178,14 @@ async def validate_reprocessing_target(db, evaluation, grade, *, actor_id,
     if response['estado'] == 'version_no_disponible':
         raise HTTPException(409, response['mensaje'])
     supplied = use_current or target_version is not None or context_fingerprint is not None
+    if response['estado'] == 'respuestas_actualizadas':
+        # Optional: without an explicit choice the delivery keeps its original key.
+        if not supplied:
+            return AcceptedReprocessingContext(current)
+        if (not use_current or target_version != response['version_objetivo_id']
+                or not context_fingerprint or context_fingerprint != response['fingerprint']):
+            raise HTTPException(409, 'Las respuestas esperadas o la nota cambiaron de nuevo. Consulta otra vez antes de enviar; conservamos la evidencia y la nota. No se ha vuelto a calificar.')
+        return AcceptedReprocessingContext(current, target_version, metadata)
     if response['estado'] == 'puntajes_actualizados':
         if (not use_current or target_version != response['version_objetivo_id']
                 or not context_fingerprint or context_fingerprint != response['fingerprint']):
