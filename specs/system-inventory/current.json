@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "297187c51f831863ba51462ae845f67689d78b60101b9694bd31b59233219787",
+  "source_digest": "3a3c28290e8b16c84428342cd33b043beb8f0e9643a97708ffdab1a9d57d3744",
   "surfaces": [
     {
       "actors": [
@@ -1547,7 +1547,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 100,
+      "source_line": 113,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9529,7 +9529,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/estudiantes-existentes",
-      "source_line": 135,
+      "source_line": 148,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9597,7 +9597,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/importaciones-estudiantes",
-      "source_line": 66,
+      "source_line": 79,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9620,7 +9620,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 81,
+      "source_line": 94,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22039,7 +22039,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/estudiantes-existentes/matricular",
-      "source_line": 141,
+      "source_line": 154,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22062,7 +22062,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal",
-      "source_line": 148,
+      "source_line": 161,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22087,7 +22087,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes",
-      "source_line": 26,
+      "source_line": 35,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22110,7 +22110,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes/manual",
-      "source_line": 72,
+      "source_line": 85,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22135,7 +22135,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
-      "source_line": 119,
+      "source_line": 132,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -23545,7 +23545,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 89,
+      "source_line": 102,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -24628,6 +24628,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_resource_motif_render.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_roster_files.py"
         },
         {
           "level": "unit",
@@ -26230,6 +26236,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/RosterImportDialog.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/RosterImportSource.test.tsx"
         },
         {
           "level": "unit",
@@ -53265,7 +53277,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.cleanup_expired_roster_imports",
-      "source_line": 150,
+      "source_line": 162,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
@@ -53533,7 +53545,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.extract_roster_import",
-      "source_line": 120,
+      "source_line": 132,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
@@ -54379,7 +54391,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_roster_import_jobs",
-      "source_line": 143,
+      "source_line": 155,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
