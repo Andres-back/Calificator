@@ -269,3 +269,32 @@ def test_failed_verifier_returns_primary_for_review_without_extra_call(monkeypat
     assert consolidated.requiere_revision_docente is True
     assert consolidated.componentes == primary.componentes
     assert any("verificador" in alert.lower() for alert in consolidated.alertas)
+
+
+def test_revision_adicional_tiene_margen_de_salida_y_pide_brevedad(monkeypatch) -> None:
+    """Spec 205: con 1.024 tokens la revisión adicional se cortaba en producción."""
+    calls: list[dict] = []
+
+    class FakeArbiterClient:
+        async def chat(self, **kwargs):
+            calls.append(kwargs)
+            content = json.dumps({"nota_final": 3.5, "discrepancia": True, "feedback_integrado": "Revisa el paso dos."})
+            return {"choices": [{"message": {"content": content}}]}
+
+        async def close(self) -> None:
+            return None
+
+    monkeypatch.setattr(agents, "OpenCodeClient", FakeArbiterClient)
+    primary = result(feedback="Desglose A.", confidence=0.9, score=4.5)
+    verifier = result(feedback="Desglose B.", confidence=0.8, score=2.5)
+
+    consolidated = asyncio.run(comparator_agent(primary, verifier, model="modelo-de-prueba"))
+
+    assert len(calls) == 1
+    assert calls[0]["stage"] == "targeted_recheck"
+    assert calls[0]["max_tokens"] == agents.COMPARATOR_MAX_OUTPUT_TOKENS >= 2048
+    prompt = calls[0]["messages"][0]["content"]
+    assert "máximo 3 frases" in prompt and "máximo 4 frases" in prompt
+    assert consolidated.nota_sugerida == 3.5
+    assert consolidated.feedback_estudiante == "Revisa el paso dos."
+    assert consolidated.requiere_revision_docente is True

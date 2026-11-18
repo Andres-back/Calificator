@@ -1631,6 +1631,10 @@ async def router_grader_agent(ctx: AgentContext) -> AgentResult:
 
 # ── Agente comparador ───────────────────────────────────────────────────────────
 
+# Spec 205: con 1.024 tokens la revisión adicional se cortaba en la mayoría de los casos
+# (el modelo necesita casi todo ese margen aun cuando termina). El doble deja holgura.
+COMPARATOR_MAX_OUTPUT_TOKENS = 2048
+
 COMPARATOR_PROMPT = """Eres el módulo comparador de calificaciones de XCalificator.
 
 Recibes DOS calificaciones independientes para la misma respuesta de un estudiante.
@@ -1645,6 +1649,9 @@ Tu tarea es:
 
 ## Calificación B ({model_b})
 {grading_b}
+
+Sé breve: "analisis" en máximo 3 frases, "feedback_integrado" en máximo 4 frases y
+"alerta_docente" en una frase. No repitas el contenido de las calificaciones recibidas.
 
 Devuelve SOLO JSON válido:
 {{
@@ -1777,7 +1784,7 @@ async def comparator_agent(
         start = time.monotonic()
         raw = await client.chat(
             model=model, messages=[{"role": "user", "content": prompt}],
-            json_mode=True, max_tokens=1024,
+            json_mode=True, max_tokens=COMPARATOR_MAX_OUTPUT_TOKENS,
             timeout=None,
             max_attempts=1,
             stage="targeted_recheck",
