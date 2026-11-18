@@ -29,6 +29,7 @@ from app.modules.presentaciones.router import router as presentaciones_router
 from app.modules.rag.router import router as rag_router
 from app.modules.reportes.router import router as reportes_router
 from app.modules.users.router import router as users_router
+from app.modules.captura_texto.router import router as captura_texto_router
 from app.modules.xali.router import router as xali_router
 from app.modules.xali.refuerzo_router import router as xali_refuerzos_router
 
@@ -56,6 +57,7 @@ api_router.include_router(imagenes_router)
 api_router.include_router(imagenes_biblioteca_router)
 api_router.include_router(motif_library_router)
 api_router.include_router(xali_router)
+api_router.include_router(captura_texto_router)
 api_router.include_router(xali_refuerzos_router)
 api_router.include_router(reportes_router)
 api_router.include_router(impacto_router)

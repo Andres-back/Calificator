@@ -2,7 +2,7 @@
 
 > Archivo generado por `python scripts/build_system_inventory.py --write`. No editar manualmente.
 
-**Superficies propietarias:** 32
+**Superficies propietarias:** 34
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
@@ -13,6 +13,7 @@
 | endpoint | `GET:/openapi.json` | public | missing | `backend/app/main.py:56` |
 | endpoint | `GET:/redoc` | public | missing | `backend/app/main.py:50` |
 | endpoint | `POST:/admin/mail/test` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:86` |
+| endpoint | `POST:/captura-texto` | authenticated | covered | `backend/app/modules/captura_texto/router.py:27` |
 | endpoint | `PUT:/admin/mail/config` | ambiguous | covered | `backend/app/modules/admin_mail/router.py:58` |
 | frontend_route | `/` | public | covered | `frontend/src/config/routes.ts:8` |
 | frontend_route | `/app` | authenticated | covered | `frontend/src/config/routes.ts:21` |
@@ -22,6 +23,7 @@
 | frontend_route | `/app/cambiar-clave-inicial` | authenticated | covered | `frontend/src/config/routes.ts:18` |
 | frontend_route | `/devolucion` | ambiguous | covered | `frontend/src/router.tsx:59` |
 | frontend_route | `/registro` | public | covered | `frontend/src/config/routes.ts:10` |
+| frontend_call | `POST:/captura-texto` | ambiguous | covered | `frontend/src/components/capture/textCapture.ts:25` |
 | integration | `cloudflare` | system | covered | `backend/app/core/config.py:1` |
 | integration | `open_code` | system | covered | `backend/app/core/config.py:1` |
 | integration | `redis` | system | covered | `backend/app/core/config.py:1` |

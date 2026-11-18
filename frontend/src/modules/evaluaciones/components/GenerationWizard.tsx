@@ -1,3 +1,5 @@
+import { TextCaptureButtons } from '@/components/capture/TextCaptureButtons';
+import { mergeCapturedText } from '@/components/capture/textCapture';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
@@ -1006,8 +1008,10 @@ export function GenerationWizard({
                         {!state.estructuraDocumento && <details className="rounded-xl border border-border bg-surface p-3" open={Boolean(state.lectura)}>
                           <summary className="writing-secondary focus-ring min-h-11 cursor-pointer py-2 font-semibold">Lectura o texto de apoyo</summary>
                           <p className="writing-secondary mb-2 text-xs text-muted">Se muestra antes de las preguntas y se conserva al imprimir.</p>
+                          <TextCaptureButtons className="mb-3" subject="la lectura"
+                            onText={text => patch({ lectura: mergeCapturedText(state.lectura, text, 60000) })} />
                           <Textarea aria-label="Lectura o texto de apoyo" value={state.lectura ?? ''} maxLength={60000} rows={8}
-                            className="min-h-48 text-base leading-7" placeholder="Añade o corrige aquí la lectura de la evaluación."
+                            className="min-h-48 text-base leading-7" placeholder="Escribe, pega o trae desde una foto o un archivo la lectura de la evaluación."
                             onChange={event => patch({ lectura: event.target.value })} />
                         </details>}
                         <details open={gradingOptionsOpen} onToggle={event => setGradingOptionsOpen(event.currentTarget.open)} className="rounded-xl border border-border bg-surface p-3">

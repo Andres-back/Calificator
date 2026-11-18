@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 603,
+      "covered": 605,
       "missing": 93
     },
     "by_kind": {
-      "endpoint": 330,
-      "frontend_call": 222,
+      "endpoint": 331,
+      "frontend_call": 223,
       "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 696
+    "total": 698
   },
   "exceptions": [],
   "findings": [
@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "409a10780efd64d4a8b0aae89b511aa00a661925db275c58224bbd1fd3040a49",
+  "source_digest": "8745e85ced3cf5cc534695d526b12ff337b1e42dc39ecd89bda48fd517905e7c",
   "surfaces": [
     {
       "actors": [
@@ -17080,6 +17080,36 @@
     },
     {
       "actors": [
+        "authenticated"
+      ],
+      "authorization": [
+        "get_current_user"
+      ],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "function": "capturar_texto",
+        "registered": true,
+        "router": "router"
+      },
+      "id": "backend:POST:/captura-texto",
+      "kind": "endpoint",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "POST:/captura-texto",
+      "source_line": 27,
+      "source_path": "backend/app/modules/captura_texto/router.py",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/captura-texto",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_captura_texto.py"
+        }
+      ]
+    },
+    {
+      "actors": [
         "ambiguous"
       ],
       "authorization": [],
@@ -24147,6 +24177,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_captura_texto.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_concept_map_normalization.py"
         },
         {
@@ -25060,6 +25096,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/capture/TextCaptureButtons.test.tsx"
         },
         {
           "level": "unit",
@@ -47802,6 +47844,58 @@
           "reference": "POST:/calificaciones/{id}/recalificar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
+      "consumers": [],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/captura-texto",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/captura-texto:frontend/src/components/capture/textCapture.ts",
+      "kind": "frontend_call",
+      "owner_spec": "002-arquitectura-roles-seguridad",
+      "signature": "POST:/captura-texto",
+      "source_line": 25,
+      "source_path": "frontend/src/components/capture/textCapture.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "e2e",
+          "reference": "POST:/captura-texto",
+          "status": "domain",
+          "test_path": "frontend/e2e/camera-capture.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/captura-texto",
+          "status": "domain",
+          "test_path": "frontend/e2e/native-camera-capture.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/captura-texto",
+          "status": "domain",
+          "test_path": "frontend/src/components/capture/TextCaptureButtons.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/captura-texto",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/CameraCapture.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/captura-texto",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/nativeCapture.test.ts"
         }
       ]
     },
