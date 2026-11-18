@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "04afc950812eb77d7374add590afa8e8ac139c5243df2bab0ba4ef1d0e4b1a2d",
+  "source_digest": "8745e85ced3cf5cc534695d526b12ff337b1e42dc39ecd89bda48fd517905e7c",
   "surfaces": [
     {
       "actors": [
@@ -1771,7 +1771,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "DELETE:/xali/history",
-      "source_line": 125,
+      "source_line": 126,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -1809,6 +1809,12 @@
           "level": "unit",
           "reference": "DELETE:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -1834,6 +1840,12 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -8862,6 +8874,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -9274,6 +9292,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -11435,7 +11459,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/evaluaciones-entregadas",
-      "source_line": 48,
+      "source_line": 49,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -11473,6 +11497,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11498,6 +11528,12 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -11535,7 +11571,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 95,
+      "source_line": 96,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -11573,6 +11609,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11592,6 +11634,12 @@
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -11629,7 +11677,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/history",
-      "source_line": 113,
+      "source_line": 114,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -11667,6 +11715,12 @@
           "level": "unit",
           "reference": "GET:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11692,6 +11746,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -11765,6 +11825,12 @@
           "level": "unit",
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11784,6 +11850,12 @@
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -13702,6 +13774,12 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -14070,6 +14148,12 @@
           "level": "unit",
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -14089,6 +14173,12 @@
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -21865,6 +21955,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -22682,6 +22778,12 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -22713,6 +22815,12 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -22750,7 +22858,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
-      "source_line": 58,
+      "source_line": 59,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -22788,6 +22896,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -22807,6 +22921,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -22844,7 +22964,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 75,
+      "source_line": 76,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -22882,6 +23002,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -22901,6 +23027,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -22974,6 +23106,12 @@
           "level": "unit",
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -22993,6 +23131,12 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/refuerzos/generar",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -24568,6 +24712,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_xali_teacher_context.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
         },
         {
           "level": "unit",
@@ -26182,6 +26332,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/users/ProfilePage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -33720,6 +33876,12 @@
           "level": "unit",
           "reference": "DELETE:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -33745,6 +33907,12 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "DELETE:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -40444,6 +40612,12 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -41134,6 +41308,12 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -41774,6 +41954,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -41799,6 +41985,12 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones-entregadas",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -41868,6 +42060,12 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -41887,6 +42085,12 @@
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -41956,6 +42160,12 @@
           "level": "unit",
           "reference": "GET:/xali/history",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -41981,6 +42191,12 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/xali/history",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -44363,6 +44579,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -50337,6 +50559,12 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -50681,6 +50909,12 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -50712,6 +50946,12 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -50781,6 +51021,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -50800,6 +51046,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -50869,6 +51121,12 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -50888,6 +51146,12 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -56676,6 +56940,12 @@
           "test_path": "backend/tests/unit/test_visual_grade_history.py"
         },
         {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
@@ -57378,6 +57648,12 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "entregas",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
         },
         {
           "level": "e2e",
@@ -58487,6 +58763,12 @@
           "test_path": "backend/tests/unit/test_visual_grade_history.py"
         },
         {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
@@ -58875,6 +59157,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -61006,6 +61294,12 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -62593,6 +62887,12 @@
           "level": "unit",
           "reference": "xali_refuerzos",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -62612,6 +62912,12 @@
           "reference": "xali_refuerzos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_refuerzos",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -62705,6 +63011,12 @@
           "level": "unit",
           "reference": "xali_student_resources",
           "status": "domain",
+          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -62724,6 +63036,12 @@
           "reference": "xali_student_resources",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "xali_student_resources",
+          "status": "domain",
+          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
