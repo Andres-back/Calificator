@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "0d1312e79b15b069c48580c6f0e2f3a148c1b8173b3801165d3570fbda6e69f1",
+  "source_digest": "2ae9acc8f80c57b009c1b464db373e6fa9bd2a2ef35e26e20345fed11d736e40",
   "surfaces": [
     {
       "actors": [
@@ -869,7 +869,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "DELETE:/dba-personalizados/{dba_id}",
-      "source_line": 139,
+      "source_line": 140,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -5281,7 +5281,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 42,
+      "source_line": 43,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -9428,7 +9428,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba",
-      "source_line": 156,
+      "source_line": 157,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -9461,7 +9461,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba-personalizados",
-      "source_line": 79,
+      "source_line": 80,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -12461,7 +12461,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "PATCH:/dba-personalizados/{dba_id}",
-      "source_line": 122,
+      "source_line": 123,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -17232,7 +17232,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/dba/importar",
-      "source_line": 53,
+      "source_line": 54,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -21991,7 +21991,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados",
-      "source_line": 95,
+      "source_line": 96,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -22016,7 +22016,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados/upload-document",
-      "source_line": 176,
+      "source_line": 215,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -24465,6 +24465,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_image_preprocessing.py"
         },
         {
@@ -26116,6 +26122,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/components/ResourceEditorPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/ExtraInstructions203.test.tsx"
         },
         {
           "level": "unit",
@@ -52358,6 +52370,12 @@
           "level": "unit",
           "reference": "groq",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
+        },
+        {
+          "level": "unit",
+          "reference": "groq",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
         },
         {
@@ -52707,6 +52725,12 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "open_code",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
         },
         {
           "level": "unit",
@@ -61842,6 +61866,12 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
+        },
+        {
+          "level": "unit",
+          "reference": "presentaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
         },
         {
           "level": "unit",
