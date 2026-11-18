@@ -184,7 +184,8 @@ async def test_context_is_private_read_only_and_compares_actual_maxima(regrading
     assert Decimal(changes["9"]["puntaje_anterior"]) == Decimal(".52")
     assert [Decimal(changes[key]["puntaje_actual"]) for key in ("8", "9")] == [Decimal("1.25")] * 2
     assert set(result) == {"estado", "version_entrega_id", "version_objetivo_id", "fingerprint",
-                           "requiere_confirmacion", "cambios", "mensaje"}
+                           "requiere_confirmacion", "cambios", "respuestas_cambiadas", "lectura_cambiada", "mensaje"}
+    assert result["respuestas_cambiadas"] == [] and result["lectura_cambiada"] is False
     assert (await grade_snapshot(case, grade_id)) == before
     assert await counts(case) == (0, 0) and case.calls == []
     async with case.sessions() as db:
@@ -323,8 +324,63 @@ async def replace_target(case, mutate):
         return revision.id
 
 
+def corrected_key(raw):
+    raw["respuestas_esperadas"][0]["respuesta"] = "Otra clave"
+    raw["blueprint"]["respuestas_esperadas"][0]["respuesta"] = "Otra clave"
+
+
+def corrected_reading(raw):
+    raw["lectura"] = "Una lectura distinta a la original."
+    raw["blueprint"]["reglas_feedback"]["lectura"] = raw["lectura"]
+
+
 @pytest.mark.asyncio
-@pytest.mark.parametrize("change", ["question", "key", "scale", "reading"])
+@pytest.mark.parametrize("mutate", [corrected_key, corrected_reading], ids=["key", "reading"])
+async def test_206_corrected_key_or_reading_is_adopted_only_on_explicit_choice(regrading_case, mutate):
+    case = regrading_case
+    kept, adopted = case.grade_ids[0], case.grade_ids[1]
+    target = await replace_target(case, mutate)
+
+    context = await proposal(case, kept)
+    assert context["estado"] == "respuestas_actualizadas" and context["requiere_confirmacion"] is False
+    assert context["version_objetivo_id"] == str(target) and len(context["fingerprint"]) == 64
+    assert context["respuestas_cambiadas"] == (["1"] if mutate is corrected_key else [])
+    assert context["lectura_cambiada"] is (mutate is corrected_reading)
+    assert "Otra clave" not in str(context) and "lectura distinta" not in str(context)
+
+    # A stale or invented receipt never queues anything.
+    before = await grade_snapshot(case, kept)
+    invalid = await payload(case, kept, usar_puntajes_actuales="true",
+                            version_puntajes_objetivo=str(target), contexto_puntajes_fingerprint="0" * 64)
+    response = await case.client.post(path(kept), data=invalid)
+    assert response.status_code == 409, response.text
+    assert await grade_snapshot(case, kept) == before and await counts(case) == (0, 0)
+
+    # Without the choice the delivery keeps the key it was received with.
+    response = await case.client.post(path(kept), data=await payload(case, kept))
+    assert response.status_code == 202, response.text
+    assert case.calls[0]["reference"]["contenido_version_id"] == str(case.old_id)
+
+    # With the choice the delivery is pinned to the corrected version and the choice is archived.
+    chosen = await proposal(case, adopted)
+    response = await case.client.post(path(adopted), data=await payload(case, adopted, chosen))
+    assert response.status_code == 202, response.text
+    assert case.calls[1]["reference"]["contenido_version_id"] == str(target)
+    async with case.sessions() as db:
+        grade = await db.scalar(select(Calificacion).where(Calificacion.id == adopted)
+                                .options(selectinload(Calificacion.entrega)))
+        assert grade.entrega.contenido_version_id == target
+        archived = await db.scalar(select(CalificacionRevision).where(CalificacionRevision.calificacion_id == adopted))
+        metadata = archived.snapshot_json["recalificacion_puntajes"]
+        assert metadata["version_anterior_id"] == str(case.old_id) and metadata["version_objetivo_id"] == str(target)
+        assert metadata["respuestas_actualizadas"] == (["1"] if mutate is corrected_key else [])
+        untouched = await db.scalar(select(Calificacion).where(Calificacion.id == kept)
+                                    .options(selectinload(Calificacion.entrega)))
+        assert untouched.entrega.contenido_version_id == case.old_id
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["question", "scale"])
 async def test_content_or_scale_change_keeps_original_and_cannot_be_adopted(regrading_case, change):
     case = regrading_case
     identifier = case.grade_ids[0]
@@ -333,14 +389,8 @@ async def test_content_or_scale_change_keeps_original_and_cannot_be_adopted(regr
         if change == "question":
             raw["preguntas"][0]["enunciado"] = "Otra pregunta que no estaba en la hoja."
             raw["blueprint"]["preguntas"][0]["enunciado"] = raw["preguntas"][0]["enunciado"]
-        elif change == "key":
-            raw["respuestas_esperadas"][0]["respuesta"] = "Otra clave"
-            raw["blueprint"]["respuestas_esperadas"][0]["respuesta"] = "Otra clave"
-        elif change == "scale":
-            raw["nota_maxima"] = "10"
         else:
-            raw["lectura"] = "Una lectura distinta a la original."
-            raw["blueprint"]["reglas_feedback"]["lectura"] = raw["lectura"]
+            raw["nota_maxima"] = "10"
 
     target = await replace_target(case, mutate)
     context = await proposal(case, identifier)

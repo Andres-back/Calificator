@@ -86,12 +86,15 @@ class ReprocessingScoreChange(BaseModel):
 
 
 class ReprocessingContextRead(BaseModel):
-    estado: Literal['sin_cambios', 'puntajes_actualizados', 'contenido_modificado', 'version_no_disponible']
+    estado: Literal['sin_cambios', 'puntajes_actualizados', 'respuestas_actualizadas', 'contenido_modificado', 'version_no_disponible']
     version_entrega_id: UUID | None = None
     version_objetivo_id: UUID | None = None
     fingerprint: str | None = Field(default=None, pattern=r'^[a-f0-9]{64}$')
     requiere_confirmacion: bool
     cambios: list[ReprocessingScoreChange] = Field(default_factory=list)
+    # Spec 206: solo los números de pregunta; nunca las respuestas esperadas.
+    respuestas_cambiadas: list[str] = Field(default_factory=list, max_length=100)
+    lectura_cambiada: bool = False
     mensaje: str
 
 

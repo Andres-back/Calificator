@@ -102,12 +102,15 @@ export async function listGradingRevisions(id: string): Promise<GradingRevision[
 }
 
 export interface RegradingContext {
-  estado: 'sin_cambios' | 'puntajes_actualizados' | 'contenido_modificado' | 'version_no_disponible';
+  estado: 'sin_cambios' | 'puntajes_actualizados' | 'respuestas_actualizadas' | 'contenido_modificado' | 'version_no_disponible';
   version_entrega_id: string | null;
   version_objetivo_id: string | null;
   fingerprint: string | null;
   requiere_confirmacion: boolean;
   cambios: { numero: string; puntaje_anterior: string; puntaje_actual: string }[];
+  /** Spec 206: solo números de pregunta; las respuestas esperadas nunca viajan aquí. */
+  respuestas_cambiadas?: string[];
+  lectura_cambiada?: boolean;
   mensaje: string;
 }
 

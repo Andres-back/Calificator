@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 606,
+      "covered": 605,
       "missing": 93
     },
     "by_kind": {
-      "endpoint": 332,
+      "endpoint": 331,
       "frontend_call": 223,
       "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 699
+    "total": 698
   },
   "exceptions": [],
   "findings": [
@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "5edb192420612c0c2314021a77bd63d8cb2759de384a320c2e87b4052343ffb1",
+  "source_digest": "0d1312e79b15b069c48580c6f0e2f3a148c1b8173b3801165d3570fbda6e69f1",
   "surfaces": [
     {
       "actors": [
@@ -869,7 +869,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "DELETE:/dba-personalizados/{dba_id}",
-      "source_line": 140,
+      "source_line": 139,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -1389,7 +1389,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "DELETE:/herramientas/{material_id}",
-      "source_line": 295,
+      "source_line": 259,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -1415,25 +1415,7 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{material_id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{material_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -1494,12 +1476,6 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -5305,7 +5281,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 43,
+      "source_line": 42,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -7499,7 +7475,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas",
-      "source_line": 60,
+      "source_line": 53,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7525,25 +7501,7 @@
           "level": "unit",
           "reference": "GET:/herramientas",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7604,12 +7562,6 @@
           "reference": "GET:/herramientas",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -7682,7 +7634,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/catalogo",
-      "source_line": 49,
+      "source_line": 42,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7690,25 +7642,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7763,7 +7697,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/materias/{materia_id}/recursos",
-      "source_line": 244,
+      "source_line": 237,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7771,25 +7705,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/materias/{materia_id}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materia_id}/recursos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materia_id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materia_id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7832,7 +7748,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{material_id}",
-      "source_line": 253,
+      "source_line": 246,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7858,25 +7774,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -7937,12 +7835,6 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -8015,7 +7907,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{material_id}/evaluaciones",
-      "source_line": 403,
+      "source_line": 367,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -8023,25 +7915,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}/evaluaciones",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/evaluaciones",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/evaluaciones",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/evaluaciones",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -8076,69 +7950,6 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
-        "function": "imagen_material",
-        "registered": true,
-        "router": "router"
-      },
-      "id": "backend:GET:/herramientas/{material_id}/imagen",
-      "kind": "endpoint",
-      "owner_spec": "006-recursos-actividades",
-      "signature": "GET:/herramientas/{material_id}/imagen",
-      "source_line": 266,
-      "source_path": "backend/app/modules/herramientas/router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_render_contracts.py"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "admin",
-        "estudiante",
-        "profesor"
-      ],
-      "authorization": [
-        "get_current_user",
-        "require_permission_now:resources.read"
-      ],
-      "consumers": [],
-      "coverage": "covered",
-      "details": {
         "function": "material_pdf",
         "registered": true,
         "router": "router"
@@ -8147,7 +7958,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{material_id}/pdf",
-      "source_line": 308,
+      "source_line": 272,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -8155,25 +7966,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/{material_id}/pdf",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/pdf",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/pdf",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/pdf",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -9635,7 +9428,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba",
-      "source_line": 157,
+      "source_line": 156,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -9668,7 +9461,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba-personalizados",
-      "source_line": 80,
+      "source_line": 79,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -12668,7 +12461,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "PATCH:/dba-personalizados/{dba_id}",
-      "source_line": 123,
+      "source_line": 122,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -13300,7 +13093,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{material_id}",
-      "source_line": 340,
+      "source_line": 304,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -13326,25 +13119,7 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -13405,12 +13180,6 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -13482,7 +13251,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{material_id}/visibilidad",
-      "source_line": 380,
+      "source_line": 344,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -13496,25 +13265,7 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{material_id}/visibilidad",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}/visibilidad",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}/visibilidad",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}/visibilidad",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -17481,7 +17232,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/dba/importar",
-      "source_line": 54,
+      "source_line": 53,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -20594,7 +20345,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/crucigrama",
-      "source_line": 84,
+      "source_line": 77,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20602,25 +20353,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/crucigrama",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/crucigrama",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/crucigrama",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/crucigrama",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20656,7 +20389,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/cuento",
-      "source_line": 114,
+      "source_line": 107,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20664,25 +20397,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/cuento",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/cuento",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/cuento",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/cuento",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20718,7 +20433,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/emparejar",
-      "source_line": 104,
+      "source_line": 97,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20726,25 +20441,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/emparejar",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/emparejar",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/emparejar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/emparejar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20780,7 +20477,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/examen",
-      "source_line": 164,
+      "source_line": 157,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20788,25 +20485,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/examen",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20842,7 +20521,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/examen-from-chat",
-      "source_line": 154,
+      "source_line": 147,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20850,25 +20529,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/examen-from-chat",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen-from-chat",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen-from-chat",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen-from-chat",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20904,7 +20565,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/ficha",
-      "source_line": 184,
+      "source_line": 177,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20912,25 +20573,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/ficha",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/ficha",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/ficha",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/ficha",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -20966,7 +20609,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/flashcards",
-      "source_line": 224,
+      "source_line": 217,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20974,25 +20617,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/flashcards",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/flashcards",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/flashcards",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/flashcards",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21028,7 +20653,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/guia",
-      "source_line": 134,
+      "source_line": 127,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21036,25 +20661,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/guia",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/guia",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/guia",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/guia",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21096,7 +20703,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/lectura-comprensiva",
-      "source_line": 204,
+      "source_line": 197,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21104,25 +20711,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/lectura-comprensiva",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/lectura-comprensiva",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/lectura-comprensiva",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/lectura-comprensiva",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21158,7 +20747,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/mapa-conceptual",
-      "source_line": 214,
+      "source_line": 207,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21166,25 +20755,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/mapa-conceptual",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/mapa-conceptual",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/mapa-conceptual",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/mapa-conceptual",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21220,7 +20791,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/para-colorear",
-      "source_line": 124,
+      "source_line": 117,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21228,25 +20799,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/para-colorear",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/para-colorear",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/para-colorear",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/para-colorear",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21282,7 +20835,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/plan-refuerzo",
-      "source_line": 234,
+      "source_line": 227,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21290,25 +20843,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/plan-refuerzo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/plan-refuerzo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/plan-refuerzo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/plan-refuerzo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21344,7 +20879,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/quiz-rapido",
-      "source_line": 194,
+      "source_line": 187,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21352,25 +20887,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/quiz-rapido",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/quiz-rapido",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/quiz-rapido",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/quiz-rapido",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21406,7 +20923,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/rubrica",
-      "source_line": 174,
+      "source_line": 167,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21414,25 +20931,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/rubrica",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/rubrica",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/rubrica",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/rubrica",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21468,7 +20967,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/sopa-letras",
-      "source_line": 74,
+      "source_line": 67,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21476,25 +20975,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/sopa-letras",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/sopa-letras",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/sopa-letras",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/sopa-letras",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21530,7 +21011,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/taller",
-      "source_line": 144,
+      "source_line": 137,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21538,25 +21019,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/taller",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/taller",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/taller",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/taller",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21592,7 +21055,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/unir-columnas",
-      "source_line": 94,
+      "source_line": 87,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21600,25 +21063,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/unir-columnas",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/unir-columnas",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/unir-columnas",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/unir-columnas",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21654,7 +21099,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/asignar-apoyo",
-      "source_line": 358,
+      "source_line": 322,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21668,25 +21113,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21723,7 +21150,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/convertir-evaluacion",
-      "source_line": 413,
+      "source_line": 377,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21737,25 +21164,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21797,7 +21206,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/duplicar",
-      "source_line": 392,
+      "source_line": 356,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21805,25 +21214,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/duplicar",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/duplicar",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/duplicar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/duplicar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -21859,7 +21250,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/retirar-apoyo",
-      "source_line": 371,
+      "source_line": 335,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21867,25 +21258,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -22618,7 +21991,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados",
-      "source_line": 96,
+      "source_line": 95,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -22643,7 +22016,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados/upload-document",
-      "source_line": 215,
+      "source_line": 176,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -25086,31 +24459,7 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_herramientas_render_contracts.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
         },
         {
           "level": "unit",
@@ -26106,12 +25455,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
         },
         {
@@ -26227,6 +25570,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeReprocessing.answers.test.tsx"
         },
         {
           "level": "unit",
@@ -26772,12 +26121,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/modules/herramientas/forms/ExtraInstructions203.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
         },
         {
@@ -26803,12 +26146,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/views/PuzzleViews.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/modules/herramientas/views/QuizContent.test.tsx"
         },
         {
           "level": "unit",
@@ -31433,7 +30770,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 68,
+      "source_line": 67,
       "source_path": "frontend/src/modules/materias/MateriaRecursos.tsx",
       "states": [],
       "tests": [
@@ -33582,7 +32919,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "DELETE:/calificaciones/modo-salon/{sesionId}",
-      "source_line": 209,
+      "source_line": 212,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -34193,25 +33530,7 @@
           "level": "unit",
           "reference": "DELETE:/herramientas/{id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -34272,12 +33591,6 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -37397,7 +36710,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/modo-salon/{sesionId}",
-      "source_line": 177,
+      "source_line": 180,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -37455,7 +36768,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose/historial",
-      "source_line": 316,
+      "source_line": 319,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -37513,7 +36826,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/desglose",
-      "source_line": 306,
+      "source_line": 309,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -37571,7 +36884,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/detalle",
-      "source_line": 226,
+      "source_line": 229,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -37629,7 +36942,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 292,
+      "source_line": 295,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -37687,7 +37000,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{id}/evidencia/edicion",
-      "source_line": 137,
+      "source_line": 140,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -37745,7 +37058,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{id}/recalificacion-contexto",
-      "source_line": 115,
+      "source_line": 118,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -38153,7 +37466,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/boletin",
-      "source_line": 212,
+      "source_line": 215,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -38211,7 +37524,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/estudiantes/{estudianteId}/resumen-academico",
-      "source_line": 218,
+      "source_line": 221,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -39908,25 +39221,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -39981,25 +39276,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/materias/{materiaId}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materiaId}/recursos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materiaId}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materiaId}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -40042,25 +39319,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/{id}/evaluaciones",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}/evaluaciones",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}/evaluaciones",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}/evaluaciones",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -40121,25 +39380,7 @@
           "level": "unit",
           "reference": "GET:/herramientas/{id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -40200,12 +39441,6 @@
           "reference": "GET:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -43900,7 +43135,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/calificaciones/{calificacionId}/publicar",
-      "source_line": 279,
+      "source_line": 282,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44172,7 +43407,7 @@
       "kind": "frontend_call",
       "owner_spec": "005-evaluaciones",
       "signature": "PATCH:/evaluaciones/{evaluacionId}/respuestas-liberadas",
-      "source_line": 321,
+      "source_line": 324,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -44725,25 +43960,7 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}/visibilidad",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}/visibilidad",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}/visibilidad",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}/visibilidad",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -44804,25 +44021,7 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -44883,12 +44082,6 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -44965,7 +44158,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PATCH:/incidencias/{incidenciaId}/resolver",
-      "source_line": 302,
+      "source_line": 305,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -47910,7 +47103,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/ajustar",
-      "source_line": 239,
+      "source_line": 242,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -47968,7 +47161,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/asincrono",
-      "source_line": 205,
+      "source_line": 208,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48032,7 +47225,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/confirmar",
-      "source_line": 234,
+      "source_line": 237,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48090,7 +47283,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/publicar",
-      "source_line": 284,
+      "source_line": 287,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48154,7 +47347,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/recalificar",
-      "source_line": 246,
+      "source_line": 249,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48224,7 +47417,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/iniciar",
-      "source_line": 171,
+      "source_line": 174,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48282,7 +47475,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/modo-salon/{sesionId}/foto",
-      "source_line": 185,
+      "source_line": 188,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48340,7 +47533,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/incidencias",
-      "source_line": 297,
+      "source_line": 300,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48398,7 +47591,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/redactar-explicacion",
-      "source_line": 272,
+      "source_line": 275,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48572,7 +47765,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacionId}/ubicar-respuestas",
-      "source_line": 260,
+      "source_line": 263,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -48630,7 +47823,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{id}/recalificar",
-      "source_line": 167,
+      "source_line": 170,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -50278,25 +49471,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{endpoint}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{endpoint}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{endpoint}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -50357,12 +49532,6 @@
           "reference": "POST:/herramientas/{endpoint}",
           "status": "direct",
           "test_path": "frontend/src/config/studentNavigation.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{endpoint}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/auth/brandingAssets198.test.ts"
         },
         {
           "level": "unit",
@@ -50441,25 +49610,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/asignar-apoyo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/asignar-apoyo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/asignar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/asignar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -50502,25 +49653,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/convertir-evaluacion",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/convertir-evaluacion",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/convertir-evaluacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/convertir-evaluacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -50563,25 +49696,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/duplicar",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/duplicar",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/duplicar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/duplicar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -50624,25 +49739,7 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/retirar-apoyo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_contenido_fiel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/retirar-apoyo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/retirar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/retirar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_imprimibles.py"
         },
         {
           "level": "unit",
@@ -52786,7 +51883,7 @@
       "kind": "frontend_call",
       "owner_spec": "008-calificaciones",
       "signature": "PUT:/calificaciones/{calificacionId}/desglose",
-      "source_line": 311,
+      "source_line": 314,
       "source_path": "frontend/src/modules/calificaciones/api.ts",
       "states": [],
       "tests": [
@@ -53261,12 +52358,6 @@
           "level": "unit",
           "reference": "groq",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "groq",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
         },
         {
@@ -53621,12 +52712,6 @@
           "level": "unit",
           "reference": "open_code",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "open_code",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_legacy_usage_adapter.py"
         },
         {
@@ -53840,12 +52925,6 @@
           "reference": "openai",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ai_model_discovery.py"
-        },
-        {
-          "level": "unit",
-          "reference": "openai",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -62763,12 +61842,6 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
-        },
-        {
-          "level": "unit",
-          "reference": "presentaciones",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
         },
         {
           "level": "unit",
