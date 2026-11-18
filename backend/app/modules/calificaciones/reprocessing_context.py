@@ -25,7 +25,7 @@ _MESSAGES = {
     'puntajes_actualizados': 'El reparto de puntos cambió. Confirma los puntos actuales antes de enviar.',
     'contenido_modificado': 'También cambió el contenido de la evaluación. Usaremos la versión original de esta entrega, no las preguntas ni soluciones nuevas.',
     'version_no_disponible': 'No pudimos comprobar la versión de esta entrega. Conservamos la evidencia; revisa la evaluación antes de volver a calificar.',
-    'respuestas_actualizadas': 'Las respuestas esperadas o la lectura cambiaron después de recibir esta entrega. Marca la casilla para calificarla con las actuales; si no, usaremos las originales.',
+    'respuestas_actualizadas': 'Las respuestas esperadas o la lectura cambiaron después de recibir esta entrega. La calificaremos con las actuales; desmarca la casilla si prefieres las originales.',
 }
 
 # Spec 206: campos que describen la clave de respuestas y la lectura, no las preguntas.

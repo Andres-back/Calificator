@@ -53,6 +53,8 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
   }, [actorId, cal.id]);
   const [contextGeneration, setContextGeneration] = useState(0);
   const [acceptedScoreFingerprint, setAcceptedScoreFingerprint] = useState<string | null>(null);
+  // Spec 206: quien corrigió la clave espera que se use; puede desmarcarla.
+  const [keepOriginalAnswers, setKeepOriginalAnswers] = useState(false);
   const [contextNeedsRefresh, setContextNeedsRefresh] = useState(false);
   const [refreshingContext, setRefreshingContext] = useState(false);
   const [error, setError] = useState('');
@@ -75,10 +77,11 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
   const editVersionMatches = Boolean(editContext && Date.parse(editContext.version_esperada) === Date.parse(expectedVersion));
   const editChanged = Boolean(editContext && evidenceDraftChanged(editContext, editPages));
   const currentPointsAccepted = Boolean(context?.fingerprint && context.version_objetivo_id && acceptedScoreFingerprint === context.fingerprint);
+  const usingCurrentAnswers = context?.estado === 'respuestas_actualizadas' && Boolean(context.fingerprint && context.version_objetivo_id) && !keepOriginalAnswers;
   const mutation = useMutation({
     onMutate: () => { mutationEpoch.current = openEpoch.current; },
     mutationFn: () => reprocessGrade(cal.id, { requestId, version: expectedVersion, confirmed, reason,
-      ...((context?.estado === 'puntajes_actualizados' || context?.estado === 'respuestas_actualizadas') && currentPointsAccepted ? { useCurrentScores: true,
+      ...((context?.estado === 'puntajes_actualizados' && currentPointsAccepted) || usingCurrentAnswers ? { useCurrentScores: true,
         targetScoreVersion: context.version_objetivo_id!, scoreContextFingerprint: context.fingerprint! } : {}),
       ...(mode === 'replace' ? { files: pages.map((page) => page.file),
         ...(usingScan ? { scan: scanSubmission(pages) } : { rotations: pages.map((page) => page.rotation) }) } : {}),
@@ -108,7 +111,7 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
     setRefreshedGrade(null);
     setDraftPages(null);
     setEditSession(value => value + 1);
-    setAcceptedScoreFingerprint(null); setContextNeedsRefresh(false); setRefreshingContext(false); setContextGeneration((value) => value + 1);
+    setAcceptedScoreFingerprint(null); setKeepOriginalAnswers(false); setContextNeedsRefresh(false); setRefreshingContext(false); setContextGeneration((value) => value + 1);
   };
   const close = () => {
     if (mutation.isPending) return;
@@ -205,8 +208,8 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
               {context.cambios.length > 0 && <li>También cambió el reparto de puntos de {context.cambios.length === 1 ? 'una pregunta' : `${context.cambios.length} preguntas`}.</li>}
             </ul>
             <label className="flex min-h-11 items-start gap-3 py-1 font-medium">
-              <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={currentPointsAccepted} disabled={mutation.isPending || contextNeedsRefresh}
-                onChange={(event) => { setAcceptedScoreFingerprint(event.currentTarget.checked ? context.fingerprint : null); changeRequest(); }} />
+              <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={usingCurrentAnswers} disabled={mutation.isPending || contextNeedsRefresh}
+                onChange={(event) => { setKeepOriginalAnswers(!event.currentTarget.checked); changeRequest(); }} />
               Calificar esta entrega con las respuestas actuales.
             </label>
           </>}

@@ -2646,7 +2646,7 @@ function GradingCenter() {
       <ConfirmDialog
         open={Boolean(regradeRequest)}
         title={regradeRequest?.length === 1 ? 'Volver a calificar 1 entrega' : `Volver a calificar ${regradeRequest?.length ?? 0} entregas`}
-        description="La IA leerá de nuevo cada hoja y propondrá otra nota; puede tardar varios minutos y la lectura puede cambiar respecto a la anterior. No se tocan las notas que ya revisaste, confirmaste o publicaste. El resultado actual queda en el historial de cada entrega."
+        description="La IA leerá de nuevo cada hoja y propondrá otra nota; puede tardar varios minutos y la lectura puede cambiar respecto a la anterior. Si corregiste respuestas esperadas o la lectura, se usarán las actuales. No se tocan las notas que ya revisaste, confirmaste o publicaste. El resultado actual queda en el historial de cada entrega."
         confirmLabel="Volver a calificar"
         loading={regradeBatchMut.isPending}
         onClose={() => { if (!regradeBatchMut.isPending) setRegradeRequest(null); }}

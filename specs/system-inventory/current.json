@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "2ae9acc8f80c57b009c1b464db373e6fa9bd2a2ef35e26e20345fed11d736e40",
+  "source_digest": "48189cacb6a1442c696c5bb51354b5f13a2e3f6e8faa3bda6d4c808d63e92107",
   "surfaces": [
     {
       "actors": [
@@ -4848,7 +4848,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/evidencia/edicion",
-      "source_line": 273,
+      "source_line": 290,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -4908,7 +4908,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/evidencia/edicion/{referencia}",
-      "source_line": 306,
+      "source_line": 323,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -5030,7 +5030,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
-      "source_line": 329,
+      "source_line": 346,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -5098,7 +5098,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones",
-      "source_line": 352,
+      "source_line": 369,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -5158,7 +5158,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia",
-      "source_line": 431,
+      "source_line": 448,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -5218,7 +5218,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
-      "source_line": 464,
+      "source_line": 481,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -16372,7 +16372,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/lote/recalificar",
-      "source_line": 117,
+      "source_line": 133,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -16780,7 +16780,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/recalificar",
-      "source_line": 165,
+      "source_line": 182,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -16846,7 +16846,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/redactar-explicacion",
-      "source_line": 102,
+      "source_line": 118,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [
@@ -17030,7 +17030,7 @@
       "kind": "endpoint",
       "owner_spec": "008-calificaciones",
       "signature": "POST:/calificaciones/{calificacion_id}/ubicar-respuestas",
-      "source_line": 89,
+      "source_line": 105,
       "source_path": "backend/app/modules/calificaciones/revision_router.py",
       "states": [],
       "tests": [

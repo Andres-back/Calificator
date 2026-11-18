@@ -32,31 +32,30 @@ beforeEach(() => {
 });
 
 describe('206 recalificar con respuestas corregidas', () => {
-  it('muestra qué preguntas cambiaron sin mostrar las respuestas y deja enviar con la versión original', async () => {
+  it('muestra qué preguntas cambiaron sin mostrar las respuestas y usa las actuales por defecto', async () => {
     open();
     await screen.findByText('Corregiste las respuestas esperadas');
     expect(screen.getByText('1, 2, 5')).toBeVisible();
     expect(screen.getByText(/Respuesta esperada nueva en las preguntas/)).toBeVisible();
-    const choice = screen.getByRole('checkbox', { name: /Calificar esta entrega con las respuestas actuales/ });
-    expect(choice).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Calificar esta entrega con las respuestas actuales/ })).toBeChecked();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
-
-    await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
-    const sent = mocks.send.mock.calls[0][1];
-    expect(sent.useCurrentScores).toBeUndefined();
-    expect(sent.targetScoreVersion).toBeUndefined();
-  });
-
-  it('al marcar la casilla envía la versión actual y su comprobante', async () => {
-    open();
-    fireEvent.click(await screen.findByRole('checkbox', { name: /Calificar esta entrega con las respuestas actuales/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
 
     await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
     expect(mocks.send).toHaveBeenCalledWith('c1', expect.objectContaining({
       useCurrentScores: true, targetScoreVersion: 'new', scoreContextFingerprint: corrected.fingerprint,
     }));
+  });
+
+  it('al desmarcar la casilla conserva las respuestas originales de la entrega', async () => {
+    open();
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Calificar esta entrega con las respuestas actuales/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
+
+    await waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+    const sent = mocks.send.mock.calls[0][1];
+    expect(sent.useCurrentScores).toBeUndefined();
+    expect(sent.targetScoreVersion).toBeUndefined();
   });
 
   it('avisa cuando también cambió la lectura o el reparto de puntos', async () => {

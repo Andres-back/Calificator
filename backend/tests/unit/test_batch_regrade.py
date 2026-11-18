@@ -59,6 +59,10 @@ def batch(monkeypatch):
     async def nothing(*args, **kwargs):
         return None
 
+    async def context(db, evaluation, item, *, actor_id):
+        return getattr(item, "context", {"estado": "sin_cambios"})
+
+    monkeypatch.setattr(revision_router.reprocessing_context, "read_reprocessing_context", context)
     monkeypatch.setattr(revision_router, "owned_grade", owned)
     monkeypatch.setattr(revision_router, "lock_scan_request", nothing)
     monkeypatch.setattr(revision_router, "require_permission_now", lambda user, permission: None)
@@ -171,3 +175,29 @@ def test_teacher_decided_matches_the_single_regrade_rule():
 def test_batch_route_is_declared_before_the_grade_route():
     paths = [route.path for route in revision_router.router.routes]
     assert paths.index("/calificaciones/lote/recalificar") < paths.index("/calificaciones/{calificacion_id}/recalificar")
+
+
+
+@pytest.mark.asyncio
+async def test_206_el_lote_usa_las_respuestas_corregidas(batch):
+    target, fingerprint = uuid4(), "c" * 64
+    corrected = grade(context={"estado": "respuestas_actualizadas", "version_objetivo_id": target, "fingerprint": fingerprint})
+    same = grade()
+
+    result, calls, _db, _actor = await batch(corrected, same)
+
+    assert result.exitosos == 2
+    assert calls[0]["usar_puntajes_actuales"] is True
+    assert calls[0]["version_puntajes_objetivo"] == target
+    assert calls[0]["contexto_puntajes_fingerprint"] == fingerprint
+    assert "usar_puntajes_actuales" not in calls[1] and "version_puntajes_objetivo" not in calls[1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("state", ["contenido_modificado", "puntajes_actualizados", "version_no_disponible"])
+async def test_206_el_lote_no_adopta_otros_cambios(batch, state):
+    other = grade(context={"estado": state, "version_objetivo_id": uuid4(), "fingerprint": "d" * 64})
+
+    _result, calls, _db, _actor = await batch(other)
+
+    assert "usar_puntajes_actuales" not in calls[0] and "contexto_puntajes_fingerprint" not in calls[0]
