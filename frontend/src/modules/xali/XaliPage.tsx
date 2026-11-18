@@ -42,6 +42,16 @@ const TEACHER_SUGGESTIONS = [
   { icon: '🪜', text: 'Diseña una explicación paso a paso' },
 ];
 
+// Spec 200: con una materia elegida, Xali responde con sus datos (notas, estudiantes, evaluaciones).
+const SUBJECT_SUGGESTIONS = [
+  { icon: '📈', text: '¿Cómo va el grupo en esta materia?' },
+  { icon: '🏅', text: '¿Qué estudiante va mejor y cuál es su punto débil?' },
+  { icon: '🤝', text: '¿Quién necesita refuerzo y en qué?' },
+  { icon: '🎯', text: '¿Cuál fue la pregunta más difícil para el grupo?' },
+  { icon: '🗂️', text: '¿Qué tengo pendiente por revisar?' },
+  { icon: '📋', text: 'Propón una actividad para reforzar el punto débil del grupo' },
+];
+
 const REVIEW_SUGGESTIONS = [
   { icon: Search, text: '¿En qué me equivoqué?' },
   { icon: Lightbulb, text: '¿Cómo podía responder mejor?' },
@@ -407,7 +417,13 @@ export function XaliPage() {
                 />
               </div>
               <h3 className="mt-5 font-display text-2xl font-bold">Hola, soy Xali 👋</h3>
-              <p className="mt-2 max-w-md text-sm text-muted">{theme.welcome}</p>
+              <p className="mt-2 max-w-md text-sm text-muted">
+                {!isStudent && materiaContextual
+                  ? `Ya conozco ${materiaContextual.nombre}: sus evaluaciones, las notas confirmadas y tus recursos. Pregúntame por el grupo o por un estudiante.`
+                  : !isStudent && materias.length > 0
+                    ? `${theme.welcome} Elige una materia arriba y te respondo con sus datos reales.`
+                    : theme.welcome}
+              </p>
 
               {/* Contextual: chips de sugerencias para revisión */}
               {isStudent && evaluacionContextual?.puede_chatear && (
@@ -433,7 +449,7 @@ export function XaliPage() {
                     <Bot className="h-3.5 w-3.5" /> Sugerencias
                   </p>
                   <div className="mt-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {TEACHER_SUGGESTIONS.map((s) => (
+                    {(materiaContextual ? SUBJECT_SUGGESTIONS : TEACHER_SUGGESTIONS).map((s) => (
                       <button
                         key={s.text}
                         onClick={() => send(s.text)}

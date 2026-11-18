@@ -41,6 +41,7 @@ async def chat(
         mensaje=payload.mensaje,
         is_teacher=is_teacher,
         teacher_materia=materia,
+        teacher=current_user,
     )
     return {"respuesta": respuesta, "materia_id": payload.materia_id}
 
