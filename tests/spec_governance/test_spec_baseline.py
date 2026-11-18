@@ -190,6 +190,13 @@ ALL_SPECS = {
     "202-lista-desde-archivo",
     "201-ingreso-flexible",
     "204-ia-obedece-panel",
+    "197-quiz-interactivo",
+    "194-pdf-recursos",
+    "195-contenido-recursos",
+    "196-imagenes-ligeras",
+    "191-ilustraciones-estados",
+    "198-recursos-visuales",
+    "205-revision-adicional-limite",
 }
 OWNED_SPECS = {
     name

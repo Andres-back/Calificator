@@ -8,6 +8,25 @@ export const optionText = (value: unknown, index: number) => {
   return text.slice(match[0].length).trim() || text;
 };
 
+const comparable = (value: unknown) =>
+  String(value ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').replace(/[.;:,]+$/, '');
+
+/**
+ * Posición de la opción correcta, o -1 si no se puede saber.
+ * La IA escribe la clave de muchas formas: «B», «B)», «b.», «Opción B», «B) El Sol» o el texto de la opción.
+ */
+export const correctOptionIndex = (options: unknown[], answer: unknown): number => {
+  const raw = String(answer ?? '').trim();
+  if (!raw || options.length === 0) return -1;
+  const byLetter = /^(?:(?:la\s+)?opci[oó]n\s+)?([A-Ha-h])\s*[).:-]?$/i.exec(raw) ?? /^([A-Ha-h])\s*[).:-]\s+\S/.exec(raw);
+  if (byLetter) {
+    const index = byLetter[1].toUpperCase().charCodeAt(0) - 65;
+    if (index < options.length) return index;
+  }
+  const wanted = comparable(raw);
+  return options.findIndex((option, index) => comparable(option) === wanted || comparable(optionText(option, index)) === wanted);
+};
+
 const TYPE_LABELS: Record<string, string> = {
   opcion_multiple: 'Opción múltiple',
   seleccion_multiple: 'Opción múltiple',

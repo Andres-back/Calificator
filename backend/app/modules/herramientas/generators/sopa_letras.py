@@ -46,23 +46,26 @@ async def generate(req: SopaLetrasRequest, llm: LLMRouter) -> dict:
     # Si el profesor no proporcionó palabras, la IA las genera
     palabras = req.palabras_clave
     if not palabras:
-        try:
-            ctx = build_base_context(req)
-            n = max(req.tamanio_grilla // 2, 8)
-            prompt = f"""{TOOLS_SYSTEM}
+        # Spec 195: si la IA falla, el docente lo sabe y puede reintentar; no se
+        # rellena con palabras genéricas que no son del tema.
+        ctx = build_base_context(req)
+        n = max(req.tamanio_grilla // 2, 8)
+        prompt = f"""{TOOLS_SYSTEM}
 
 {ctx}
 Genera exactamente {n} palabras clave relacionadas con el tema. Solo palabras cortas (3-12 letras), en mayúsculas, sin tildes.
 Devuelve SOLO JSON: {{"palabras":["PALABRA1","PALABRA2",...]}}"""
-            result = await llm.generate_json("sopa_letras_words", prompt)
-            palabras = [w.upper().strip() for w in (result or {}).get("palabras", []) if isinstance(w, str) and len(w) >= 3]
-        except Exception as exc:
-            logger.info("Sopa de letras: no se pudieron generar palabras: %s", exc)
-            palabras = []
+        result = await llm.generate_json("sopa_letras_words", prompt)
+        palabras = [w.upper().strip() for w in (result or {}).get("palabras", []) if isinstance(w, str) and len(w.strip()) >= 3]
 
-    # Si aún no hay palabras, usar fallback
     if not palabras:
-        palabras = ["TEMA", "CLASE", "Aprender", "Estudio", "Examen", "Nota", "Curso", "Docente"]
+        return {
+            "titulo": (req.titulo or "Sopa de letras").strip(),
+            "instrucciones": "",
+            "grilla": [], "palabras": [], "banco_palabras": [], "banco": [],
+            "sopa_letras": {"grid": [], "palabras": [], "size": 0},
+            "palabras_sin_ubicar": [],
+        }
 
     puzzle = build_word_search(
         palabras,

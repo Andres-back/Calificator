@@ -2,13 +2,20 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user, require_permission_now
 from app.db.session import get_db
 from app.modules.evaluaciones.schemas import EvaluacionRead
 from app.modules.herramientas import service
+from app.modules.herramientas.image_delivery import (
+    image_version,
+    lighten_material,
+    render_web_image,
+    stored_image_b64,
+)
 from app.modules.herramientas.schemas import (
     AsignarMaterialApoyoRequest,
     ConvertirEvaluacionRequest,
@@ -111,7 +118,7 @@ async def cuento(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "resources.create")
-    return await service.gen_cuento(db, req, current_user)
+    return lighten_material(await service.gen_cuento(db, req, current_user))
 
 
 @router.post("/para-colorear", status_code=status.HTTP_201_CREATED)
@@ -121,7 +128,7 @@ async def para_colorear(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "resources.create")
-    return await service.gen_para_colorear(db, req, current_user)
+    return lighten_material(await service.gen_para_colorear(db, req, current_user))
 
 
 @router.post("/guia", status_code=status.HTTP_201_CREATED)
@@ -253,7 +260,36 @@ async def ver_material(
     material = await service.get_material_for_user(db, material_id, current_user)
     if material is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
-    return material
+    return lighten_material(material)
+
+
+@router.get("/{material_id}/imagen")
+async def imagen_material(
+    material_id: UUID,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Imagen del recurso en formato liviano; mismas reglas de acceso que el recurso."""
+    require_permission_now(current_user, "resources.read")
+    material = await service.get_material_for_user(db, material_id, current_user)
+    if material is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material no encontrado")
+    b64 = stored_image_b64(material.get("contenido_json"))
+    if b64 is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Este recurso no tiene imagen")
+    headers = {
+        "Cache-Control": "private, max-age=86400",
+        "ETag": f'"{image_version(b64)}"',
+        "X-Content-Type-Options": "nosniff",
+    }
+    if request.headers.get("if-none-match") == headers["ETag"]:
+        return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
+    try:
+        content, media_type = await run_in_threadpool(render_web_image, b64)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return Response(content=content, media_type=media_type, headers=headers)
 
 
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -316,7 +352,7 @@ async def actualizar_material(
     updated = await service.update_material(
         db, material_id, current_user, payload.model_dump(exclude_unset=True)
     )
-    return updated
+    return lighten_material(updated)
 
 
 @router.post("/{material_id}/asignar-apoyo", response_model=MaterialRead)
@@ -327,9 +363,9 @@ async def asignar_como_apoyo(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "resources.assign")
-    return await service.assign_material_as_support(
+    return lighten_material(await service.assign_material_as_support(
         db, material_id, current_user, req.materia_id
-    )
+    ))
 
 
 @router.post("/{material_id}/retirar-apoyo", response_model=MaterialRead)
@@ -339,7 +375,7 @@ async def retirar_apoyo(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "resources.assign")
-    return await service.withdraw_support_material(db, material_id, current_user)
+    return lighten_material(await service.withdraw_support_material(db, material_id, current_user))
 
 @router.patch("/{material_id}/visibilidad", response_model=MaterialRead)
 async def cambiar_visibilidad_material(
@@ -349,9 +385,9 @@ async def cambiar_visibilidad_material(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     require_permission_now(current_user, "resources.assign")
-    return await service.set_material_visibility(
+    return lighten_material(await service.set_material_visibility(
         db, material_id, current_user, visible=req.visible
-    )
+    ))
 
 @router.post("/{material_id}/duplicar", status_code=status.HTTP_201_CREATED)
 async def duplicar_material(
@@ -361,7 +397,7 @@ async def duplicar_material(
 ) -> dict:
     """Clona un material existente como copia editable."""
     require_permission_now(current_user, "resources.create")
-    return await service.duplicar_material(db, material_id, current_user.id)
+    return lighten_material(await service.duplicar_material(db, material_id, current_user.id))
 
 
 @router.get("/{material_id}/evaluaciones", response_model=list[EvaluacionRead])

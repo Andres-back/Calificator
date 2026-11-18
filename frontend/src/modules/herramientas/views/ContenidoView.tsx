@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowDown, CheckCircle2, Eye, EyeOff, Link2 } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { cn } from '@/lib/cn';
-import { difficultyLabel, optionText, pointsLabel, typeLabel } from './resourceLabels';
+import { correctOptionIndex, difficultyLabel, optionText, pointsLabel, typeLabel } from './resourceLabels';
+import { QuizContent } from './QuizContent';
 import type { MaterialTipo } from '@/types/api';
 import { StoryContent } from './StoryContent';
 import { ResourceHeaderMotif } from '@/modules/motif_library/ResourceHeaderMotif';
@@ -194,10 +195,8 @@ function ImageFrame({ image, alt, className }: { image?: GeneratedImageContent; 
 function ExamenContent({ data }: { data: ToolContent }) {
   const [reveal, setReveal] = useState(false);
   const questions = data.preguntas ?? [];
-  const matchLetter = (q: ExamQuestionContent, j: number) => {
-    const rc = String(q.respuesta_correcta ?? '').trim().toUpperCase();
-    return rc === String.fromCharCode(65 + j) || stripPrefix(q.opciones?.[j]).toUpperCase() === stripPrefix(rc).toUpperCase();
-  };
+  // Spec 197: la clave puede venir como «B», «B)», «Opción B» o el texto de la opción.
+  const matchLetter = (q: ExamQuestionContent, j: number) => correctOptionIndex(q.opciones ?? [], q.respuesta_correcta) === j;
   if (questions.length === 0) return <EmptyMaterial message="No se generaron preguntas. Puedes editar el contenido o intentar una nueva generación." />;
   return (
     <div className="space-y-3">
@@ -772,7 +771,7 @@ function MaterialBody({ tipo, data }: { tipo: MaterialTipo; data: ToolContent })
     );
   }
 
-  if (tipo === 'quiz_rapido') return <ExamenContent data={data} />;
+  if (tipo === 'quiz_rapido') return <QuizContent data={data} />;
 
   if (tipo === 'ficha') return <FichaContent data={data} />;
 

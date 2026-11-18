@@ -67,6 +67,7 @@ describe('PresentacionesPage access variants', () => {
     expect(await screen.findByRole('heading', { name: 'Presentaciones de clase' })).toBeInTheDocument();
     expect(screen.getByText('Consulta las presentaciones que tus docentes compartieron contigo.')).toBeInTheDocument();
     expect(await screen.findByText('Sin presentaciones asignadas')).toBeInTheDocument();
+    expect(document.querySelector('img[src="/branding/empty-presentations.webp"]')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Nueva presentación/i })).not.toBeInTheDocument();
     expect(screen.queryByText('En proceso')).not.toBeInTheDocument();
   });

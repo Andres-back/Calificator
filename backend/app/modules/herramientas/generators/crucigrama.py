@@ -15,14 +15,34 @@ from app.services.llm_router import LLMRouter
 
 logger = get_logger(__name__)
 
-_FALLBACK_PALABRAS = [
-    {"respuesta": "OBSERVAR", "pista": "Primer paso del método científico: mirar con atención."},
-    {"respuesta": "REGISTRO", "pista": "Anotar de forma ordenada lo que se descubre."},
-    {"respuesta": "EVIDENCIA", "pista": "Dato o prueba que apoya una conclusión."},
-    {"respuesta": "HIPOTESIS", "pista": "Explicación tentativa que se pone a prueba."},
-    {"respuesta": "EXPERIMENTO", "pista": "Prueba controlada para responder una pregunta."},
-    {"respuesta": "CONCLUSION", "pista": "Idea final a la que se llega tras analizar."},
-]
+MIN_WORDS = 4
+
+
+def limit_to_requested(entries: list[dict], grid: dict, cantidad: int) -> dict:
+    """Deja como máximo las palabras pedidas por el docente.
+
+    El armado ubica las palabras de la más larga a la más corta y cada una se
+    apoya solo en las anteriores; por eso rearmar con las primeras ubicadas
+    conserva un crucigrama conectado.
+    """
+    placed = {item["respuesta"] for item in grid["pistas_horizontal"] + grid["pistas_vertical"]}
+    if len(placed) <= cantidad:
+        return grid
+    ordered = sorted(
+        (entry for entry in entries if normalize_word(entry["respuesta"]) in placed),
+        key=lambda entry: len(normalize_word(entry["respuesta"])),
+        reverse=True,
+    )
+    trimmed = build_crossword(ordered[:cantidad], max_size=17)
+    if trimmed is None:
+        return grid
+    return trimmed
+
+
+_EMPTY_GRID = {
+    "grid": [], "size": 0, "filas": 0, "columnas": 0,
+    "pistas_horizontal": [], "pistas_vertical": [], "palabras_sin_ubicar": [],
+}
 
 
 def _extract_entries(result: dict) -> list[dict]:
@@ -80,20 +100,17 @@ NO dibujes la grilla. Devuelve SOLO JSON:
     if not isinstance(result, dict):
         result = {}
 
+    # Spec 195: sin relleno de otro tema. Con pocas palabras, el control de
+    # calidad pide un segundo intento y, si tampoco, el docente ve el motivo.
     entries = _extract_entries(result)
-    if len(entries) < 4:
-        logger.warning("Crucigrama: el LLM aportó %d palabras usables; usando refuerzo.", len(entries))
-        existentes = {normalize_word(e["respuesta"]) for e in entries}
-        for fb in _FALLBACK_PALABRAS:
-            if normalize_word(fb["respuesta"]) not in existentes:
-                entries.append(fb)
+    if len(entries) < MIN_WORDS:
+        logger.warning("Crucigrama: la IA aportó %d palabras usables.", len(entries))
 
-    # Limita a un poco más de lo pedido para no saturar la grilla.
+    # Algunas candidatas de más ayudan a lograr cruces; después se recorta a lo pedido.
     entries = entries[: max(req.cantidad_preguntas + 4, 8)]
 
     grid = build_crossword(entries, max_size=17)
-    if grid is None:
-        grid = build_crossword(_FALLBACK_PALABRAS, max_size=17)
+    grid = dict(_EMPTY_GRID) if grid is None else limit_to_requested(entries, grid, req.cantidad_preguntas)
 
     titulo = (result.get("titulo") or req.titulo or "Crucigrama").strip()
     instrucciones = (

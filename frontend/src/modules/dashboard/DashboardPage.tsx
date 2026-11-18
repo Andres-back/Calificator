@@ -95,7 +95,8 @@ function DashboardDocente() {
   return (
     <div className="mx-auto max-w-7xl space-y-4 pb-20 sm:space-y-5">
       <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <img src="/branding/teacher-hero.webp" alt="" width={80} height={80} decoding="async" className="hidden h-20 w-20 shrink-0 object-contain sm:block" />
+        <div className="min-w-0 flex-1 sm:self-center">
           <h1 className="break-words font-display text-2xl font-extrabold">Hola, {firstName}</h1>
           <p className="mt-1 text-sm text-muted">¿Con qué grupo trabajamos hoy?</p>
         </div>

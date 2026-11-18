@@ -132,6 +132,7 @@ export function PresentacionesPage() {
       ) : presentations.length === 0 ? (
         <EmptyState
           icon={Presentation}
+          image="/branding/empty-presentations.webp"
           title={isStudentView ? 'Sin presentaciones asignadas' : 'Sin presentaciones'}
           description={isStudentView
             ? 'Cuando un docente publique una presentación para tus materias, aparecerá aquí.'
