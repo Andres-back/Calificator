@@ -195,6 +195,7 @@ ALL_SPECS = {
     "195-contenido-recursos",
     "196-imagenes-ligeras",
     "191-ilustraciones-estados",
+    "198-recursos-visuales",
 }
 OWNED_SPECS = {
     name

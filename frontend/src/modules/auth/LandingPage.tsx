@@ -5,10 +5,6 @@ import {
   BookOpenCheck,
   CheckCircle2,
   Github,
-  GraduationCap,
-  HeartHandshake,
-  ScanLine,
-  ShieldCheck,
   Sparkles,
   UsersRound,
 } from 'lucide-react';
@@ -19,17 +15,17 @@ import { HomeScreenShortcut } from '@/components/install/HomeScreenShortcut';
 
 const benefits = [
   {
-    icon: ScanLine,
+    image: '/branding/feature-evidence.webp',
     title: 'Califica con evidencia',
     description: 'Procesa evaluaciones en línea, fotografías o PDF y conserva el detalle de cada respuesta.',
   },
   {
-    icon: ShieldCheck,
+    image: '/branding/feature-teacher-decides.webp',
     title: 'El docente tiene la última palabra',
     description: 'La IA propone y explica; el profesor revisa, ajusta y decide antes de publicar la nota.',
   },
   {
-    icon: GraduationCap,
+    image: '/branding/feature-learning.webp',
     title: 'Aprendizaje acompañado',
     description: 'El estudiante entrega, revisa su retroalimentación y practica con Xali en un espacio claro.',
   },
@@ -124,10 +120,10 @@ export function LandingPage() {
               <p className="mt-4 leading-7 text-muted">Diseñamos cada flujo para reducir trabajo repetitivo sin convertir la nota en una caja negra.</p>
             </div>
             <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {benefits.map(({ icon: Icon, title, description }) => (
+              {benefits.map(({ image, title, description }) => (
                 <article key={title} className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-300"><Icon className="h-6 w-6" /></span>
-                  <h3 className="mt-5 font-display text-xl font-extrabold">{title}</h3>
+                  <img src={image} alt="" width={144} height={144} loading="lazy" decoding="async" className="h-32 w-32 object-contain sm:h-36 sm:w-36" />
+                  <h3 className="mt-4 font-display text-xl font-extrabold">{title}</h3>
                   <p className="mt-3 text-sm leading-7 text-muted">{description}</p>
                 </article>
               ))}
@@ -138,8 +134,8 @@ export function LandingPage() {
         <section className="py-16 sm:py-20">
           <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[.85fr_1.15fr] lg:px-8">
             <div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/12 text-amber-600"><HeartHandshake className="h-6 w-6" /></span>
-              <h2 className="mt-5 font-display text-3xl font-black sm:text-4xl">Queremos construirlo con docentes reales</h2>
+              <img src="/branding/community-teachers.webp" alt="" width={224} height={224} loading="lazy" decoding="async" className="h-44 w-44 object-contain sm:h-56 sm:w-56" />
+              <h2 className="mt-3 font-display text-3xl font-black sm:text-4xl">Queremos construirlo con docentes reales</h2>
               <p className="mt-4 max-w-xl leading-7 text-muted">El proyecto está en etapa de pruebas. Tu experiencia en el aula nos ayuda a descubrir qué funciona y qué debe simplificarse.</p>
               <p className="mt-4 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm font-semibold leading-6 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-100">
                 Solicitar ser docente no activa permisos automáticamente. Un administrador revisará la solicitud para proteger a estudiantes y datos académicos.
