@@ -1,3 +1,5 @@
+import { TextCaptureButtons } from '@/components/capture/TextCaptureButtons';
+import { mergeCapturedText } from '@/components/capture/textCapture';
 import { useState } from 'react';
 import { Baby, BookOpen, GraduationCap, School, Sparkles, FlaskConical, Smile, Leaf, Wallet, Scale, Gem, CheckCircle2 } from 'lucide-react';
 import { Field, Input, Select, Textarea } from '@/components/ui';
@@ -165,8 +167,9 @@ export function PresentacionForm({
         )}
       </FormSection>
 
-      <Field label="Instrucciones adicionales (opcional)">
-        <Textarea value={f.instrucciones} onChange={(e) => set('instrucciones', e.target.value)} placeholder="Incluye una actividad de cierre y ejemplos cotidianos." />
+      <Field label="Instrucciones adicionales (opcional)" hint="Puedes escribir, pegar o traer el texto de una foto o un archivo.">
+        <Textarea value={f.instrucciones} maxLength={6000} onChange={(e) => set('instrucciones', e.target.value)} placeholder="Incluye una actividad de cierre y ejemplos cotidianos." />
+        <TextCaptureButtons compact className="mt-2" subject="las instrucciones" onText={(text) => set('instrucciones', mergeCapturedText(f.instrucciones, text, 6000))} />
       </Field>
 
       <GenerateButton loading={loading} disabled={!valid} onClick={submit} label="Generar presentación" disabledHint="Escribe el título y el tema para continuar." />

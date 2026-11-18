@@ -72,6 +72,14 @@ describe('201 llenar un campo desde una foto o un archivo', () => {
     expect(screen.getByLabelText('Subir un archivo con el texto')).not.toBeDisabled();
   });
 
+  it('203 la versión compacta conserva los dos botones y omite la nota de formatos', () => {
+    render(<TextCaptureButtons compact subject="las instrucciones" onText={vi.fn()} />);
+
+    expect(screen.getByLabelText('Tomar una foto de las instrucciones')).toBeInTheDocument();
+    expect(screen.getByLabelText('Subir un archivo con las instrucciones')).toBeInTheDocument();
+    expect(screen.queryByText(/También puedes pegar el texto/)).not.toBeInTheDocument();
+  });
+
   it('el texto nuevo se añade sin borrar lo que ya estaba escrito', () => {
     expect(mergeCapturedText('', '  Texto leído \n')).toBe('Texto leído');
     expect(mergeCapturedText(null, 'Texto')).toBe('Texto');

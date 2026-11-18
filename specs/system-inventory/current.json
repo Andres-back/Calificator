@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "8745e85ced3cf5cc534695d526b12ff337b1e42dc39ecd89bda48fd517905e7c",
+  "source_digest": "51584146d9aeda4187e930085c5705362674b1b23a5bd42acc1c2d412b214ff0",
   "surfaces": [
     {
       "actors": [
@@ -26104,6 +26104,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/components/ResourceEditorPanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/forms/ExtraInstructions203.test.tsx"
         },
         {
           "level": "unit",

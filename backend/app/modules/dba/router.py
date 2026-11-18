@@ -185,26 +185,28 @@ async def upload_document_for_dba(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> object:
-    """Sube un PDF o DOCX, extrae texto, genera sugerencias de DBA vía RAG+LLM."""
+    """Sube un documento o una foto, extrae texto y genera sugerencias de DBA vía RAG+LLM."""
     require_permission_now(current_user, "dba.manage")
     materia = await materias_service.ensure_can_manage_materia(
         db, materia_id, current_user
     )
 
     contenido = await read_upload_limited(file, 20 * 1024 * 1024)
-    mime = file.content_type or ""
+    # Spec 203: el tipo se reconoce por el contenido; también sirven fotos, Excel, CSV y texto.
+    from app.modules.captura_texto.service import UnsupportedFile, capture_text
 
-    if mime not in document_service.MIMES_PERMITIDOS:
+    try:
+        capturado = await capture_text(contenido, file.filename or "", current_user.id)
+    except UnsupportedFile as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Tipo de archivo no soportado: {mime}. Usa PDF o Word (.docx).",
-        )
-
-    texto = document_service.extraer_texto(contenido, mime)
+            detail=f"{exc} Usa un PDF, un Word (.docx), un Excel (.xlsx), un CSV, un archivo de texto o una foto.",
+        ) from exc
+    texto = capturado.texto
     if not texto.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se pudo extraer texto del documento. Verifica que no esté protegido o vacío.",
+            detail="No se pudo extraer texto del documento. Verifica que no esté protegido o vacío; si es una foto, que se lea bien.",
         )
 
     # Contar páginas/párrafos aproximados

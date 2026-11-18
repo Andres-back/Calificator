@@ -1,3 +1,4 @@
+import { TEXT_CAPTURE_ACCEPT } from '@/components/capture/textCapture';
 import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -51,12 +52,11 @@ function DocumentUploader({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSelect = (f: File) => {
-    const validTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-    if (!validTypes.includes(f.type) && !f.name.endsWith('.pdf') && !f.name.endsWith('.docx')) {
-      toast.error('Solo se aceptan archivos PDF o Word (.docx)');
+    // Spec 203: el servidor reconoce el tipo por el contenido; aquí solo se filtra lo evidente.
+    const name = f.name.toLowerCase();
+    const accepted = f.type.startsWith('image/') || ['.pdf', '.docx', '.xlsx', '.csv', '.txt', '.jpg', '.jpeg', '.png', '.webp'].some((extension) => name.endsWith(extension));
+    if (!accepted) {
+      toast.error('Usa un PDF, Word, Excel, CSV, un archivo de texto o una foto.');
       return;
     }
     if (f.size > 20 * 1024 * 1024) {
@@ -178,17 +178,18 @@ function DocumentUploader({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileRef.current?.click(); }}
         tabIndex={0}
         role="button"
-        aria-label="Subir archivo PDF o Word"
+        aria-label="Subir un documento o una foto"
       >
         <Upload className="mb-3 h-10 w-10 text-muted" />
-        <p className="text-sm font-semibold">Sube un PDF o Word (.docx)</p>
+        <p className="text-sm font-semibold">Sube un documento o una foto</p>
+        <p className="mt-1 text-xs text-muted">PDF, Word, Excel, CSV, texto o una foto del plan de área</p>
         <p className="mt-1 text-xs text-muted">
           El sistema extraerá el texto y sugerirá criterios de aprendizaje
         </p>
         <input
           ref={fileRef}
           type="file"
-          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          accept={TEXT_CAPTURE_ACCEPT}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -284,7 +285,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
             <Plus className="h-4 w-4 shrink-0" /> Nuevo criterio
           </Button>
           <Button size="sm" className="min-h-11 whitespace-normal text-left leading-tight" variant="secondary" onClick={() => setShowUploader(!showUploader)}>
-            <Upload className="h-4 w-4 shrink-0" /> {showUploader ? 'Cerrar subida' : 'Subir PDF o Word'}
+            <Upload className="h-4 w-4 shrink-0" /> {showUploader ? 'Cerrar subida' : 'Subir documento o foto'}
           </Button>
         </div>}
       </div>
@@ -312,7 +313,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
         <EmptyState
           icon={BookMarked}
           title="Sin criterios propios todavía"
-          description={canManage ? 'Escribe qué deben aprender tus estudiantes o sube un PDF/Word para obtener sugerencias. Después elige los criterios pertinentes para cada evaluación.' : 'No hay criterios propios disponibles para esta materia.'}
+          description={canManage ? 'Escribe qué deben aprender tus estudiantes o sube un documento o una foto para obtener sugerencias. Después elige los criterios pertinentes para cada evaluación.' : 'No hay criterios propios disponibles para esta materia.'}
           action={canManage ?
             <div className="flex flex-wrap gap-2">
               <Button onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo criterio</Button>
