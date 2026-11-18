@@ -367,6 +367,7 @@ export function MateriaAsistenciaReporte({
       ) : reportQuery.data && reportQuery.data.jornadas_registradas === 0 ? (
         <EmptyState
           icon={CalendarRange}
+          image='/branding/empty-attendance.webp'
           title='No hay asistencias guardadas en este periodo'
           description='Prueba otro periodo o toma asistencia en una fecha para que aparezca en el reporte.'
         />

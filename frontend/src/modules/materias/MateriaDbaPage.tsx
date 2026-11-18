@@ -125,6 +125,7 @@ function DocumentUploader({
         {result.sugerencias.length === 0 ? (
           <EmptyState
             icon={FileText}
+            image="/branding/empty-criteria.webp"
             title="Sin sugerencias"
             description="El documento no contenía suficiente contenido curricular para generar criterios de aprendizaje."
           />
@@ -312,6 +313,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
       ) : !data || data.length === 0 ? (
         <EmptyState
           icon={BookMarked}
+          image="/branding/empty-criteria.webp"
           title="Sin criterios propios todavía"
           description={canManage ? 'Escribe qué deben aprender tus estudiantes o sube un documento o una foto para obtener sugerencias. Después elige los criterios pertinentes para cada evaluación.' : 'No hay criterios propios disponibles para esta materia.'}
           action={canManage ?

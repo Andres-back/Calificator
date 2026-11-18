@@ -122,6 +122,8 @@ describe('patrones compartidos de P2', () => {
     const retry = vi.fn();
     render(<QueryError code={503} onRetry={retry} />);
     expect(screen.getByRole('alert')).toHaveTextContent('El servicio no está disponible');
+    // 191: ilustración tranquila y decorativa en lugar del triángulo de alerta
+    expect(screen.getByRole('alert').querySelector('img[src="/branding/state-error.webp"]')).toHaveAttribute('alt', '');
     await user.click(screen.getByRole('button', { name: /Reintentar/ }));
     expect(retry).toHaveBeenCalledOnce();
   });

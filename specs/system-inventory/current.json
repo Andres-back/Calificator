@@ -1,30 +1,78 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 604,
-      "missing": 93
+      "covered": 599,
+      "missing": 96
     },
     "by_kind": {
-      "endpoint": 331,
-      "frontend_call": 222,
+      "endpoint": 328,
+      "frontend_call": 223,
       "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 697
+    "total": 695
   },
   "exceptions": [],
   "findings": [
     {
+      "category": "missing_coverage",
+      "description": "18 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
+      "id": "F-324D81DB301E",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/impacto/cualitativo",
+        "backend:GET:/impacto/estudios/{study_id}/export",
+        "backend:GET:/impacto/estudios/{study_id}/indicadores",
+        "backend:GET:/impacto/estudios/{study_id}/observaciones",
+        "backend:GET:/impacto/kappa",
+        "backend:GET:/impacto/likert",
+        "backend:GET:/impacto/tiempo-ahorrado",
+        "backend:GET:/reportes/estudiante/{estudiante_id}",
+        "backend:GET:/reportes/materia/{materia_id}",
+        "backend:POST:/impacto/encuestas",
+        "backend:POST:/impacto/estudios/{study_id}/activar",
+        "backend:POST:/impacto/estudios/{study_id}/cerrar",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones",
+        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
+        "backend:POST:/impacto/estudios/{study_id}/observaciones",
+        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
+        "backend:POST:/reportes/export/pdf",
+        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
+      ]
+    },
+    {
+      "category": "missing_coverage",
+      "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
+      "id": "F-5403AC2120D0",
+      "issue_url": "",
+      "severity": "low",
+      "surface_ids": [
+        "backend:GET:/docs",
+        "backend:GET:/health",
+        "backend:GET:/openapi.json",
+        "backend:GET:/redoc",
+        "table:ai_config_audit_logs",
+        "table:ai_global_config",
+        "table:ai_global_limits",
+        "table:ai_tool_settings",
+        "table:ai_usage_events",
+        "table:ai_usage_logs",
+        "table:evaluation_blueprints",
+        "table:importacion_estudiantes_filas",
+        "table:importacion_estudiantes_lotes"
+      ]
+    },
+    {
       "category": "orphan_candidate",
-      "description": "36 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
-      "id": "F-0AB8111F3A9A",
+      "description": "34 superficies no alcanzables o históricas se conservan como candidatas a retiro.",
+      "id": "F-70925D8B3888",
       "issue_url": "",
       "severity": "low",
       "surface_ids": [
         "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
-        "backend:GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
         "backend:GET:/calificaciones/{calificacion_id}/evidencia/edicion",
         "backend:GET:/calificaciones/{calificacion_id}/evidencia/edicion/{referencia}",
         "backend:GET:/calificaciones/{calificacion_id}/recalificacion-contexto",
@@ -33,7 +81,6 @@
         "backend:GET:/calificaciones/{calificacion_id}/revisiones/{revision_id}/evidencia/paginas/{numero}",
         "backend:POST:/calificaciones/lote/recalificar",
         "backend:POST:/calificaciones/sugerir-bordes",
-        "backend:POST:/calificaciones/sugerir-orientacion",
         "backend:POST:/calificaciones/{calificacion_id}/recalificar",
         "backend:POST:/calificaciones/{calificacion_id}/redactar-explicacion",
         "backend:POST:/calificaciones/{calificacion_id}/ubicar-respuestas",
@@ -59,28 +106,6 @@
         "table:profesor_ai_credentials",
         "table:profesor_ai_feature_preferences",
         "table:profesor_ai_provider_models"
-      ]
-    },
-    {
-      "category": "missing_coverage",
-      "description": "13 superficies de 002-arquitectura-roles-seguridad no tienen evidencia de prueba observable.",
-      "id": "F-5403AC2120D0",
-      "issue_url": "",
-      "severity": "low",
-      "surface_ids": [
-        "backend:GET:/docs",
-        "backend:GET:/health",
-        "backend:GET:/openapi.json",
-        "backend:GET:/redoc",
-        "table:ai_config_audit_logs",
-        "table:ai_global_config",
-        "table:ai_global_limits",
-        "table:ai_tool_settings",
-        "table:ai_usage_events",
-        "table:ai_usage_logs",
-        "table:evaluation_blueprints",
-        "table:importacion_estudiantes_filas",
-        "table:importacion_estudiantes_lotes"
       ]
     },
     {
@@ -123,22 +148,6 @@
         "job:tasks.recover_evaluation_visuals",
         "job:tasks.recover_expired_local_jobs",
         "job:tasks.send_password_reset_email"
-      ]
-    },
-    {
-      "category": "contract_mismatch",
-      "description": "7 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
-      "id": "F-DA23BAF5CFCD",
-      "issue_url": "",
-      "severity": "medium",
-      "surface_ids": [
-        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
-        "frontend_call:GET:/evaluaciones/{evaluacionId}/{format}:frontend/src/modules/evaluaciones/api.ts",
-        "frontend_call:GET:/{path}/{id}:frontend/src/components/evidence/cornerAssistance.ts",
-        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
-        "frontend_call:POST:/devoluciones/accesos/{id}/{action}:frontend/src/modules/feedback_sharing/api.ts",
-        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
-        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
       ]
     },
     {
@@ -205,27 +214,18 @@
       ]
     },
     {
-      "category": "missing_coverage",
-      "description": "15 superficies de 011-reportes-analitica-impacto no tienen evidencia de prueba observable.",
-      "id": "F-F7F9231E5351",
+      "category": "contract_mismatch",
+      "description": "6 llamadas frontend no tienen endpoint backend canónico coincidente en el análisis estático.",
+      "id": "F-F37179181965",
       "issue_url": "",
-      "severity": "low",
+      "severity": "medium",
       "surface_ids": [
-        "backend:GET:/impacto/cualitativo",
-        "backend:GET:/impacto/estudios/{study_id}/export",
-        "backend:GET:/impacto/estudios/{study_id}/indicadores",
-        "backend:GET:/impacto/estudios/{study_id}/observaciones",
-        "backend:GET:/impacto/kappa",
-        "backend:GET:/impacto/likert",
-        "backend:GET:/impacto/tiempo-ahorrado",
-        "backend:POST:/impacto/encuestas",
-        "backend:POST:/impacto/estudios/{study_id}/activar",
-        "backend:POST:/impacto/estudios/{study_id}/cerrar",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones",
-        "backend:POST:/impacto/estudios/{study_id}/concesiones/revocar",
-        "backend:POST:/impacto/estudios/{study_id}/observaciones",
-        "backend:POST:/impacto/estudios/{study_id}/retencion/aplicar",
-        "frontend_call:POST:/analytics/sesiones-trabajo/{sessionId}/eventos:frontend/src/lib/analytics.ts"
+        "frontend_call:GET:/admin/users/{id}:frontend/src/modules/admin/usersApi.ts",
+        "frontend_call:GET:/evaluaciones/{evaluacionId}/{format}:frontend/src/modules/evaluaciones/api.ts",
+        "frontend_call:POST:/admin/roles/{id}:frontend/src/modules/admin/authorizationApi.ts",
+        "frontend_call:POST:/devoluciones/accesos/{id}/{action}:frontend/src/modules/feedback_sharing/api.ts",
+        "frontend_call:POST:/impacto/estudios/{id}/{action}:frontend/src/modules/analytics/AnalyticsPage.tsx",
+        "frontend_call:POST:/jobs/{jobId}:frontend/src/modules/evaluaciones/components/DigitalizationJobMonitor.tsx"
       ]
     },
     {
@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "76ac78690317935e88393381b498a1dac92ff441d055e4e837c8f152b3e985f0",
+  "source_digest": "c26708ca31a493f7202b3fed66bffeaa51f40017931b0663c5737d5af36210a6",
   "surfaces": [
     {
       "actors": [
@@ -1383,7 +1383,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "DELETE:/herramientas/{material_id}",
-      "source_line": 295,
+      "source_line": 259,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -1410,12 +1410,6 @@
           "reference": "DELETE:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -4437,80 +4431,6 @@
     },
     {
       "actors": [
-        "authenticated"
-      ],
-      "authorization": [
-        "get_current_user"
-      ],
-      "consumers": [
-        "131-escaneo-evidencias"
-      ],
-      "coverage": "covered",
-      "details": {
-        "function": "get_orientation_suggestion",
-        "registered": false,
-        "router": "router"
-      },
-      "id": "backend:GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-      "kind": "endpoint",
-      "owner_spec": "008-calificaciones",
-      "signature": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-      "source_line": 141,
-      "source_path": "backend/app/modules/calificaciones/evidence_scan_suggestion_router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "direct",
-          "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/calificaciones/sugerir-orientacion/{solicitud_id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
-        }
-      ]
-    },
-    {
-      "actors": [
         "admin",
         "estudiante",
         "profesor"
@@ -7349,7 +7269,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas",
-      "source_line": 60,
+      "source_line": 53,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7376,12 +7296,6 @@
           "reference": "GET:/herramientas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -7514,7 +7428,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/catalogo",
-      "source_line": 49,
+      "source_line": 42,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7523,12 +7437,6 @@
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -7583,7 +7491,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/materias/{materia_id}/recursos",
-      "source_line": 244,
+      "source_line": 237,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7592,12 +7500,6 @@
           "reference": "GET:/herramientas/materias/{materia_id}/recursos",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materia_id}/recursos",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -7640,7 +7542,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{material_id}",
-      "source_line": 253,
+      "source_line": 246,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7667,12 +7569,6 @@
           "reference": "GET:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -7805,7 +7701,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{material_id}/evaluaciones",
-      "source_line": 403,
+      "source_line": 367,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7814,12 +7710,6 @@
           "reference": "GET:/herramientas/{material_id}/evaluaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/evaluaciones",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -7854,57 +7744,6 @@
       "consumers": [],
       "coverage": "covered",
       "details": {
-        "function": "imagen_material",
-        "registered": true,
-        "router": "router"
-      },
-      "id": "backend:GET:/herramientas/{material_id}/imagen",
-      "kind": "endpoint",
-      "owner_spec": "006-recursos-actividades",
-      "signature": "GET:/herramientas/{material_id}/imagen",
-      "source_line": 266,
-      "source_path": "backend/app/modules/herramientas/router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/imagen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_render_contracts.py"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "admin",
-        "estudiante",
-        "profesor"
-      ],
-      "authorization": [
-        "get_current_user",
-        "require_permission_now:resources.read"
-      ],
-      "consumers": [],
-      "coverage": "covered",
-      "details": {
         "function": "material_pdf",
         "registered": true,
         "router": "router"
@@ -7913,7 +7752,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/herramientas/{material_id}/pdf",
-      "source_line": 308,
+      "source_line": 272,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -7922,12 +7761,6 @@
           "reference": "GET:/herramientas/{material_id}/pdf",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{material_id}/pdf",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -10916,7 +10749,7 @@
         "require_any_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "reporte_estudiante",
         "registered": true,
@@ -10929,14 +10762,7 @@
       "source_line": 46,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/estudiante/{estudiante_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -10948,7 +10774,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "reporte_materia",
         "registered": true,
@@ -10961,14 +10787,7 @@
       "source_line": 17,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/materia/{materia_id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -10994,12 +10813,6 @@
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
       "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/reportes/profesor/resumen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
         {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
@@ -12976,7 +12789,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{material_id}",
-      "source_line": 340,
+      "source_line": 304,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -13003,12 +12816,6 @@
           "reference": "PATCH:/herramientas/{material_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -13140,7 +12947,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "PATCH:/herramientas/{material_id}/visibilidad",
-      "source_line": 380,
+      "source_line": 344,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -13155,12 +12962,6 @@
           "reference": "PATCH:/herramientas/{material_id}/visibilidad",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{material_id}/visibilidad",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -16472,80 +16273,6 @@
         {
           "level": "unit",
           "reference": "POST:/calificaciones/sugerir-bordes",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "authenticated"
-      ],
-      "authorization": [
-        "get_current_user"
-      ],
-      "consumers": [
-        "131-escaneo-evidencias"
-      ],
-      "coverage": "covered",
-      "details": {
-        "function": "suggest_evidence_orientation",
-        "registered": false,
-        "router": "router"
-      },
-      "id": "backend:POST:/calificaciones/sugerir-orientacion",
-      "kind": "endpoint",
-      "owner_spec": "008-calificaciones",
-      "signature": "POST:/calificaciones/sugerir-orientacion",
-      "source_line": 103,
-      "source_path": "backend/app/modules/calificaciones/evidence_scan_suggestion_router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_boletin_permissions.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_lote_async.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_resumen_academico.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_calificaciones_revision_workspace.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "direct",
-          "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/CalificacionesTimeline.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/calificaciones/sugerir-orientacion",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/CalificacionesWorkspace.mobile.test.tsx"
         }
@@ -20162,7 +19889,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/crucigrama",
-      "source_line": 84,
+      "source_line": 77,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20171,12 +19898,6 @@
           "reference": "POST:/herramientas/crucigrama",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/crucigrama",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20212,7 +19933,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/cuento",
-      "source_line": 114,
+      "source_line": 107,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20221,12 +19942,6 @@
           "reference": "POST:/herramientas/cuento",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/cuento",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20262,7 +19977,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/emparejar",
-      "source_line": 104,
+      "source_line": 97,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20271,12 +19986,6 @@
           "reference": "POST:/herramientas/emparejar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/emparejar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20312,7 +20021,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/examen",
-      "source_line": 164,
+      "source_line": 157,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20321,12 +20030,6 @@
           "reference": "POST:/herramientas/examen",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20362,7 +20065,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/examen-from-chat",
-      "source_line": 154,
+      "source_line": 147,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20371,12 +20074,6 @@
           "reference": "POST:/herramientas/examen-from-chat",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/examen-from-chat",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20412,7 +20109,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/ficha",
-      "source_line": 184,
+      "source_line": 177,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20421,12 +20118,6 @@
           "reference": "POST:/herramientas/ficha",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/ficha",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20462,7 +20153,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/flashcards",
-      "source_line": 224,
+      "source_line": 217,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20471,12 +20162,6 @@
           "reference": "POST:/herramientas/flashcards",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/flashcards",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20512,7 +20197,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/guia",
-      "source_line": 134,
+      "source_line": 127,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20521,12 +20206,6 @@
           "reference": "POST:/herramientas/guia",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/guia",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20568,7 +20247,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/lectura-comprensiva",
-      "source_line": 204,
+      "source_line": 197,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20577,12 +20256,6 @@
           "reference": "POST:/herramientas/lectura-comprensiva",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/lectura-comprensiva",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20618,7 +20291,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/mapa-conceptual",
-      "source_line": 214,
+      "source_line": 207,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20627,12 +20300,6 @@
           "reference": "POST:/herramientas/mapa-conceptual",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/mapa-conceptual",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20668,7 +20335,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/para-colorear",
-      "source_line": 124,
+      "source_line": 117,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20677,12 +20344,6 @@
           "reference": "POST:/herramientas/para-colorear",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/para-colorear",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20718,7 +20379,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/plan-refuerzo",
-      "source_line": 234,
+      "source_line": 227,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20727,12 +20388,6 @@
           "reference": "POST:/herramientas/plan-refuerzo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/plan-refuerzo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20768,7 +20423,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/quiz-rapido",
-      "source_line": 194,
+      "source_line": 187,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20777,12 +20432,6 @@
           "reference": "POST:/herramientas/quiz-rapido",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/quiz-rapido",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20818,7 +20467,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/rubrica",
-      "source_line": 174,
+      "source_line": 167,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20827,12 +20476,6 @@
           "reference": "POST:/herramientas/rubrica",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/rubrica",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20868,7 +20511,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/sopa-letras",
-      "source_line": 74,
+      "source_line": 67,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20877,12 +20520,6 @@
           "reference": "POST:/herramientas/sopa-letras",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/sopa-letras",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20918,7 +20555,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/taller",
-      "source_line": 144,
+      "source_line": 137,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20927,12 +20564,6 @@
           "reference": "POST:/herramientas/taller",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/taller",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -20968,7 +20599,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/unir-columnas",
-      "source_line": 94,
+      "source_line": 87,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -20977,12 +20608,6 @@
           "reference": "POST:/herramientas/unir-columnas",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/unir-columnas",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -21018,7 +20643,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/asignar-apoyo",
-      "source_line": 358,
+      "source_line": 322,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21033,12 +20658,6 @@
           "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/asignar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -21075,7 +20694,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/convertir-evaluacion",
-      "source_line": 413,
+      "source_line": 377,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21090,12 +20709,6 @@
           "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/convertir-evaluacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -21137,7 +20750,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/duplicar",
-      "source_line": 392,
+      "source_line": 356,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21146,12 +20759,6 @@
           "reference": "POST:/herramientas/{material_id}/duplicar",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/duplicar",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -21187,7 +20794,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/herramientas/{material_id}/retirar-apoyo",
-      "source_line": 371,
+      "source_line": 335,
       "source_path": "backend/app/modules/herramientas/router.py",
       "states": [],
       "tests": [
@@ -21196,12 +20803,6 @@
           "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{material_id}/retirar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -22627,7 +22228,7 @@
         "require_permission_now:reports.read"
       ],
       "consumers": [],
-      "coverage": "covered",
+      "coverage": "missing",
       "details": {
         "function": "export_pdf",
         "registered": true,
@@ -22637,17 +22238,10 @@
       "kind": "endpoint",
       "owner_spec": "011-reportes-analitica-impacto",
       "signature": "POST:/reportes/export/pdf",
-      "source_line": 112,
+      "source_line": 108,
       "source_path": "backend/app/modules/reportes/router.py",
       "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "POST:/reportes/export/pdf",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        }
-      ]
+      "tests": []
     },
     {
       "actors": [
@@ -24336,12 +23930,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_herramientas_render_contracts.py"
         },
         {
@@ -24493,12 +24081,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_reading_completeness.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
         },
         {
           "level": "unit",
@@ -25207,12 +24789,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/lib/csvExport.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/lib/dates.test.ts"
         },
         {
           "level": "unit",
@@ -30605,7 +30181,7 @@
       "kind": "frontend_route",
       "owner_spec": "006-recursos-actividades",
       "signature": "/app/materias/{id}/recursos",
-      "source_line": 67,
+      "source_line": 68,
       "source_path": "frontend/src/modules/materias/MateriaRecursos.tsx",
       "states": [],
       "tests": [
@@ -33360,12 +32936,6 @@
           "reference": "DELETE:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -36502,6 +36072,259 @@
         "ambiguous"
       ],
       "authorization": [],
+      "consumers": [
+        "116-api-modelos-configurables",
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:GET:/calificaciones/sugerir-bordes/{solicitud_id}",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:GET:/calificaciones/sugerir-bordes/{id}:frontend/src/components/evidence/cornerAssistance.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "GET:/calificaciones/sugerir-bordes/{id}",
+      "source_line": 83,
+      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_coverage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_edit.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_migration_graph.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/evidence-edit.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceEditModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "GET:/calificaciones/sugerir-bordes/{id}",
+          "status": "domain",
+          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -38960,12 +38783,6 @@
           "level": "unit",
           "reference": "GET:/herramientas/catalogo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/catalogo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -39021,12 +38838,6 @@
           "level": "unit",
           "reference": "GET:/herramientas/materias/{materiaId}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/materias/{materiaId}/recursos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -39065,12 +38876,6 @@
           "reference": "GET:/herramientas/{id}/evaluaciones",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}/evaluaciones",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -39132,12 +38937,6 @@
           "reference": "GET:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -41388,12 +41187,6 @@
       "states": [],
       "tests": [
         {
-          "level": "unit",
-          "reference": "GET:/reportes/profesor/resumen",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
           "level": "e2e",
           "reference": "GET:/reportes/profesor/resumen",
           "status": "direct",
@@ -41894,259 +41687,6 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/xali/XaliPage.test.tsx"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "ambiguous"
-      ],
-      "authorization": [],
-      "consumers": [
-        "116-api-modelos-configurables",
-        "131-escaneo-evidencias"
-      ],
-      "coverage": "covered",
-      "details": {
-        "backend_contract": null,
-        "backend_contract_candidates": [],
-        "contract_status": "unmatched"
-      },
-      "id": "frontend_call:GET:/{path}/{id}:frontend/src/components/evidence/cornerAssistance.ts",
-      "kind": "frontend_call",
-      "owner_spec": "008-calificaciones",
-      "signature": "GET:/{path}/{id}",
-      "source_line": 92,
-      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_coverage.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_edit.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_manifest.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_preparation.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_replacement.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_migration_graph.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_evidence_service.py"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/e2e/evidence-edit.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/e2e/evidence-scan.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/evidenceEditModel.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/{path}/{id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
         }
       ]
     },
@@ -43627,12 +43167,6 @@
           "level": "unit",
           "reference": "PATCH:/herramientas/{id}/visibilidad",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}/visibilidad",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -43689,12 +43223,6 @@
           "reference": "PATCH:/herramientas/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/herramientas/{id}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -47177,6 +46705,259 @@
         "ambiguous"
       ],
       "authorization": [],
+      "consumers": [
+        "116-api-modelos-configurables",
+        "131-escaneo-evidencias"
+      ],
+      "coverage": "covered",
+      "details": {
+        "backend_contract": "backend:POST:/calificaciones/sugerir-bordes",
+        "backend_contract_candidates": [],
+        "contract_status": "matched"
+      },
+      "id": "frontend_call:POST:/calificaciones/sugerir-bordes:frontend/src/components/evidence/cornerAssistance.ts",
+      "kind": "frontend_call",
+      "owner_spec": "008-calificaciones",
+      "signature": "POST:/calificaciones/sugerir-bordes",
+      "source_line": 75,
+      "source_path": "frontend/src/components/evidence/cornerAssistance.ts",
+      "states": [],
+      "tests": [
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/helpers/evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_corner_cache.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_evidence_scan_persistence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/integration/test_feedback_sharing_evidence.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_answer_evidence_regions.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_canonical_evidence_consumers.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_bundle_service.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_coverage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_edit.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_manifest.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_preparation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_region_routes.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_replacement.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fidelity.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_fixtures.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_migration_graph.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_process.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_reconciliation.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_release_gate.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_scan_storage.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_evidence_scan_suggestion.py"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "backend/tests/unit/test_evidence_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/e2e/evidence-edit.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "direct",
+          "test_path": "frontend/e2e/evidence-scan.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/e2e/grade-evidence-review.spec.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/EvidenceScanEditor.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.scan.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/MultiPageEvidencePicker.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/evidenceScan.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/components/evidence/useEvidenceScanCapability.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeEvidenceViewer.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeQuestionEvidence.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceEditModel.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/calificaciones/components/evidenceViewport.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "POST:/calificaciones/sugerir-bordes",
+          "status": "domain",
+          "test_path": "frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.test.tsx"
+        }
+      ]
+    },
+    {
+      "actors": [
+        "ambiguous"
+      ],
+      "authorization": [],
       "consumers": [],
       "coverage": "covered",
       "details": {
@@ -49073,12 +48854,6 @@
         {
           "level": "unit",
           "reference": "POST:/herramientas/{endpoint}",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{endpoint}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
@@ -49219,12 +48994,6 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/asignar-apoyo",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/asignar-apoyo",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -49263,12 +49032,6 @@
           "reference": "POST:/herramientas/{id}/convertir-evaluacion",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/convertir-evaluacion",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -49317,12 +49080,6 @@
           "level": "unit",
           "reference": "POST:/herramientas/{id}/duplicar",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/duplicar",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_pdf_total.py"
         },
         {
@@ -49361,12 +49118,6 @@
           "reference": "POST:/herramientas/{id}/retirar-apoyo",
           "status": "domain",
           "test_path": "backend/tests/unit/test_herramientas_content_quality.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/herramientas/{id}/retirar-apoyo",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -52486,12 +52237,6 @@
           "reference": "openai",
           "status": "direct",
           "test_path": "backend/tests/unit/test_ai_model_discovery.py"
-        },
-        {
-          "level": "unit",
-          "reference": "openai",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_herramientas_imagen_ligera.py"
         },
         {
           "level": "unit",
@@ -56426,12 +56171,6 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_reprocessing_context.py"
         },
         {
@@ -56673,12 +56412,6 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
-          "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
         },
         {
           "level": "unit",
@@ -58232,12 +57965,6 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_reading_completeness.py"
-        },
-        {
-          "level": "unit",
-          "reference": "evaluaciones",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
         },
         {
           "level": "unit",
@@ -60462,12 +60189,6 @@
           "test_path": "backend/tests/unit/test_presentaciones_context.py"
         },
         {
-          "level": "unit",
-          "reference": "materias",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
-        },
-        {
           "level": "e2e",
           "reference": "materias",
           "status": "direct",
@@ -60778,6 +60499,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/MateriaEvaluaciones.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/src/modules/materias/MateriaManagement.test.tsx"
         },
         {
           "level": "unit",
