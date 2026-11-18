@@ -17,12 +17,15 @@ export function TextCaptureButtons({
   onText,
   disabled = false,
   subject = 'el texto',
+  compact = false,
   className,
 }: {
   onText: (text: string, captured: CapturedText) => void;
   disabled?: boolean;
   /** Para los mensajes: «la lectura», «las instrucciones»… */
   subject?: string;
+  /** Versión pequeña para campos cortos: mismos botones, sin la nota de formatos. */
+  compact?: boolean;
   className?: string;
 }) {
   const [reading, setReading] = useState(false);
@@ -78,7 +81,7 @@ export function TextCaptureButtons({
         <p className="flex items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-300" role="status">
           <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> Leyendo el archivo… puede tardar unos segundos.
         </p>
-      ) : (
+      ) : compact ? null : (
         <p className="text-xs leading-5 text-muted">También puedes pegar el texto. Se aceptan fotos, PDF, Word, Excel, CSV y texto.</p>
       )}
     </div>

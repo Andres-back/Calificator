@@ -20,6 +20,39 @@ MIMES_PERMITIDOS = {TIPO_PDF, TIPO_DOCX}
 MAX_CHARS = 50_000  # límite de caracteres por documento
 
 
+class SuggestionsUnavailable(RuntimeError):
+    """La IA no pudo redactar sugerencias; el documento sí se leyó (Spec 203)."""
+
+
+SUGGESTION_KEYS = ("sugerencias", "dba", "dbas", "criterios", "derechos")
+
+
+def optional_text(value: object) -> str | None:
+    """Texto de un campo opcional; el modelo a veces lo entrega como lista de frases."""
+    if isinstance(value, (list, tuple)):
+        value = "\n".join(str(item).strip() for item in value if str(item or "").strip())
+    if not isinstance(value, str):
+        return None
+    return value.strip() or None
+
+
+def suggestions_from_result(resultado: object) -> list:
+    """Ubica la lista de sugerencias en la respuesta del modelo.
+
+    Una respuesta con otra forma (por ejemplo la plantilla local de respaldo) no es
+    «un documento sin contenido»: se informa como servicio no disponible.
+    """
+    if isinstance(resultado, list):
+        return resultado
+    if isinstance(resultado, dict):
+        for key in SUGGESTION_KEYS:
+            if isinstance(resultado.get(key), list):
+                return resultado[key]
+        if isinstance(resultado.get("enunciado"), str):
+            return [resultado]
+    raise SuggestionsUnavailable("La respuesta de la IA no trae sugerencias de criterios.")
+
+
 def extraer_texto_pdf(contenido: bytes) -> str:
     """Extrae texto de un PDF usando PyMuPDF."""
     import fitz  # pymupdf
@@ -123,12 +156,12 @@ Texto del documento:
 {texto_completo[:8000]}
 ---
 """
-    resultado = await llm.generate_json("dba_sugerencias", prompt)
-    sugerencias = resultado if isinstance(resultado, list) else resultado.get("sugerencias", resultado.get("dba", []))
-
-    if not isinstance(sugerencias, list):
-        logger.warning("Respuesta inesperada del LLM para DBA: %s", type(sugerencias))
-        return []
+    try:
+        resultado = await llm.generate_json("dba_sugerencias", prompt)
+    except (RuntimeError, ValueError) as exc:
+        logger.warning("dba_sugerencias_no_disponible: %s", type(exc).__name__)
+        raise SuggestionsUnavailable("La IA no respondió al redactar las sugerencias.") from exc
+    sugerencias = suggestions_from_result(resultado)
 
     # Validar estructura mínima
     validas = []
@@ -136,7 +169,7 @@ Texto del documento:
         if isinstance(s, dict) and isinstance(s.get("enunciado"), str) and len(s["enunciado"].strip()) >= 10:
             validas.append({
                 "enunciado": s["enunciado"].strip(),
-                "evidencias_aprendizaje": (s.get("evidencias_aprendizaje") or "").strip() or None,
-                "ejemplo": (s.get("ejemplo") or "").strip() or None,
+                "evidencias_aprendizaje": optional_text(s.get("evidencias_aprendizaje")),
+                "ejemplo": optional_text(s.get("ejemplo")),
             })
     return validas[:5]

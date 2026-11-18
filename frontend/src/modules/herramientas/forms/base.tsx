@@ -1,3 +1,5 @@
+import { TextCaptureButtons } from '@/components/capture/TextCaptureButtons';
+import { mergeCapturedText } from '@/components/capture/textCapture';
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookCheck, ListChecks, Sparkles } from 'lucide-react';
@@ -252,8 +254,9 @@ export function PedagogicalApproachSelector({
 
 export function ExtraInstructions({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <Field label="Instrucciones adicionales (opcional)">
-      <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder="Ejemplo: lenguaje sencillo y ejemplos cercanos al contexto del grupo…" />
+    <Field label="Instrucciones adicionales (opcional)" hint="Puedes escribir, pegar o traer el texto de una foto o un archivo (por ejemplo, la página del libro).">
+      <Textarea value={value} maxLength={6000} onChange={(e) => onChange(e.target.value)} placeholder="Ejemplo: lenguaje sencillo y ejemplos cercanos al contexto del grupo…" />
+      <TextCaptureButtons compact className="mt-2" subject="las instrucciones" onText={(text) => onChange(mergeCapturedText(value, text, 6000))} />
     </Field>
   );
 }

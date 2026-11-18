@@ -185,6 +185,7 @@ ALL_SPECS = {
     "192-navegacion-movil",
     "199-lectura-en-verificacion",
     "193-herramientas-recursos",
+    "203-archivos-en-mas-campos",
     "200-xali-contexto-materia",
     "202-lista-desde-archivo",
     "201-ingreso-flexible",

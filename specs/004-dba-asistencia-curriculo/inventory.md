@@ -6,17 +6,17 @@
 
 | Tipo | Firma | Actores | Cobertura | Fuente |
 |---|---|---|---|---|
-| endpoint | `DELETE:/dba-personalizados/{dba_id}` | admin, profesor | covered | `backend/app/modules/dba/router.py:139` |
-| endpoint | `GET:/dba` | admin, estudiante, profesor | covered | `backend/app/modules/dba/router.py:42` |
+| endpoint | `DELETE:/dba-personalizados/{dba_id}` | admin, profesor | covered | `backend/app/modules/dba/router.py:140` |
+| endpoint | `GET:/dba` | admin, estudiante, profesor | covered | `backend/app/modules/dba/router.py:43` |
 | endpoint | `GET:/materias/{materia_id}/asistencia` | admin, profesor | covered | `backend/app/modules/asistencia/router.py:17` |
 | endpoint | `GET:/materias/{materia_id}/asistencia/reporte` | admin, profesor | covered | `backend/app/modules/asistencia/router.py:29` |
-| endpoint | `GET:/materias/{materia_id}/dba` | admin, estudiante, profesor | covered | `backend/app/modules/dba/router.py:156` |
-| endpoint | `GET:/materias/{materia_id}/dba-personalizados` | admin, estudiante, profesor | missing | `backend/app/modules/dba/router.py:79` |
-| endpoint | `PATCH:/dba-personalizados/{dba_id}` | admin, profesor | covered | `backend/app/modules/dba/router.py:122` |
+| endpoint | `GET:/materias/{materia_id}/dba` | admin, estudiante, profesor | covered | `backend/app/modules/dba/router.py:157` |
+| endpoint | `GET:/materias/{materia_id}/dba-personalizados` | admin, estudiante, profesor | missing | `backend/app/modules/dba/router.py:80` |
+| endpoint | `PATCH:/dba-personalizados/{dba_id}` | admin, profesor | covered | `backend/app/modules/dba/router.py:123` |
 | endpoint | `PATCH:/materias/{materia_id}/asistencia` | admin, profesor | covered | `backend/app/modules/asistencia/router.py:54` |
-| endpoint | `POST:/dba/importar` | admin, profesor | covered | `backend/app/modules/dba/router.py:53` |
-| endpoint | `POST:/materias/{materia_id}/dba-personalizados` | admin, profesor | missing | `backend/app/modules/dba/router.py:95` |
-| endpoint | `POST:/materias/{materia_id}/dba-personalizados/upload-document` | admin, profesor | missing | `backend/app/modules/dba/router.py:176` |
+| endpoint | `POST:/dba/importar` | admin, profesor | covered | `backend/app/modules/dba/router.py:54` |
+| endpoint | `POST:/materias/{materia_id}/dba-personalizados` | admin, profesor | missing | `backend/app/modules/dba/router.py:96` |
+| endpoint | `POST:/materias/{materia_id}/dba-personalizados/upload-document` | admin, profesor | missing | `backend/app/modules/dba/router.py:215` |
 | endpoint | `PUT:/materias/{materia_id}/asistencia` | admin, profesor | covered | `backend/app/modules/asistencia/router.py:42` |
 | frontend_route | `/app/materias/{id}/asistencia` | admin, profesor | covered | `frontend/src/config/routes.ts:38` |
 | frontend_route | `/app/materias/{id}/dba` | admin, profesor | covered | `frontend/src/config/routes.ts:40` |

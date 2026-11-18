@@ -379,6 +379,8 @@ def _feature_candidates(feature: str) -> tuple[str, ...]:
         "xali_chat": ("xali",),
         "xali_evaluacion_post_entrega": ("xali",),
         "xali_recurso_post_entrega": ("xali",),
+        # Spec 203: las sugerencias de criterios usan la ruta de las herramientas del docente.
+        "dba_sugerencias": ("herramientas_educativas",),
     }
     stage_parents: dict[str, tuple[str, ...]] = {
         "calificacion.extraccion": ("calificacion_foto", "grading_photo"),
