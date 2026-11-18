@@ -318,7 +318,7 @@ function DbaContent({ materiaId, canManage }: { materiaId: string; canManage: bo
             <div className="flex flex-wrap gap-2">
               <Button onClick={openCreate}><Plus className="h-4 w-4" /> Nuevo criterio</Button>
               <Button variant="secondary" onClick={() => setShowUploader(true)}>
-                <Upload className="h-4 w-4" /> Subir documento
+                <Upload className="h-4 w-4" /> Subir documento o foto
               </Button>
             </div> : undefined
           }

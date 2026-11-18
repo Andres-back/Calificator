@@ -24,6 +24,8 @@
 - Texto leído muy largo: las instrucciones se limitan a 6.000 caracteres.
 - Tipo no admitido en criterios: mensaje con la lista de formatos.
 - Foto sin texto legible: se avisa y no se generan sugerencias.
+- La indexación del documento falla: las sugerencias se entregan igual.
+- La IA no responde: aviso de reintento; no se guarda nada.
 
 ## Requisitos
 
@@ -34,8 +36,13 @@
 - **FR-003**: Las instrucciones adicionales de recursos y de presentaciones DEBEN ofrecer «Tomar foto» y «Subir archivo» en versión compacta.
 - **FR-004**: El texto leído DEBE añadirse sin borrar lo escrito y con un tope de 6.000 caracteres.
 - **FR-005**: La pantalla de criterios DEBE nombrar los formatos aceptados en lugar de «PDF o Word».
+- **FR-006**: Si el servicio de búsqueda semántica no responde, el documento DEBE quedar guardado sin indexar y el docente DEBE recibir igualmente sus sugerencias.
+- **FR-007**: Si la IA no responde o devuelve una respuesta sin sugerencias reconocibles, el sistema DEBE avisar que no pudo redactarlas en ese momento, en lugar de decir que el documento no tiene contenido curricular.
+- **FR-008**: Las evidencias o el ejemplo que la IA entregue como lista DEBEN aceptarse y unirse en un solo texto.
+- **FR-009**: Las sugerencias de criterios DEBEN usar la ruta de IA de las herramientas del docente, y no el modelo por defecto del proveedor.
 
 ## Criterios de éxito
 
 - **SC-001**: Las pruebas de recursos, presentaciones, materias y captura siguen pasando.
 - **SC-002**: En 390 px los botones compactos caben sin desplazamiento lateral.
+- **SC-003**: Una foto subida en «Criterios de aprendizaje» devuelve sugerencias de punta a punta.

@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from fastapi import (
@@ -173,6 +174,44 @@ async def list_materia_dba_combined(
 # ── Subida de documentos para generar DBA (RAG) ────────────────────────
 
 
+async def _index_document_chunks(db: AsyncSession, fuente: object, chunks_texto: list[str]) -> bool:
+    """Indexa el documento para consultas futuras sin poner en riesgo las sugerencias.
+
+    Spec 203: si el servicio de búsqueda semántica no responde, el documento queda guardado
+    sin indexar y el docente recibe igualmente las sugerencias ya generadas.
+    """
+    if not chunks_texto:
+        return True
+    from app.modules.rag.models import RagChunk
+    from app.services.embedding_service import EmbeddingUnavailableError, embed_texts_with_metadata
+
+    try:
+        batch = await embed_texts_with_metadata(chunks_texto, db=db, teacher_id=fuente.profesor_id)
+    except EmbeddingUnavailableError:
+        logging.getLogger(__name__).warning(
+            "dba_upload_sin_indexar source=%s chunks=%s", fuente.id, len(chunks_texto)
+        )
+        return False
+    for i, (chunk, emb) in enumerate(zip(chunks_texto, batch.vectors, strict=True)):
+        db.add(
+            RagChunk(
+                source_id=fuente.id,
+                profesor_id=fuente.profesor_id,
+                materia_id=fuente.materia_id,
+                tipo="dba",
+                chunk_text=chunk,
+                embedding=emb,
+                embedding_vec=emb,
+                embedding_provider=batch.space.provider,
+                embedding_model=batch.space.model,
+                embedding_dimensions=batch.space.dimensions,
+                embedding_space_version=batch.space.version,
+                metadata_json={"indice": i, "total_chunks": len(chunks_texto)},
+            )
+        )
+    return True
+
+
 @custom_router.post(
     "/materias/{materia_id}/dba-personalizados/upload-document",
     response_model=DBAUploadResponse,
@@ -214,17 +253,22 @@ async def upload_document_for_dba(
     caracteres = len(texto)
 
     # Generar sugerencias vía LLM
-    sugerencias = await document_service.generar_sugerencias_dba(
-        user_id=current_user.id,
-        materia_id=materia_id,
-        area=materia.area or "General",
-        grado=materia.grado or "N/A",
-        texto_completo=texto,
-    )
+    try:
+        sugerencias = await document_service.generar_sugerencias_dba(
+            user_id=current_user.id,
+            materia_id=materia_id,
+            area=materia.area or "General",
+            grado=materia.grado or "N/A",
+            texto_completo=texto,
+        )
+    except document_service.SuggestionsUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El documento se leyó bien, pero no pudimos redactar las sugerencias en este momento. Inténtalo de nuevo en unos minutos.",
+        ) from exc
 
     # Guardar como fuente RAG para futuras consultas
-    from app.modules.rag.models import RagSource, RagChunk
-    from app.services.embedding_service import embed_texts_with_metadata
+    from app.modules.rag.models import RagSource
 
     fuente = RagSource(
         profesor_id=current_user.id,
@@ -237,28 +281,7 @@ async def upload_document_for_dba(
     db.add(fuente)
     await db.flush()
 
-    chunks_texto = document_service._chunk_text(texto)
-    if chunks_texto:
-        batch = await embed_texts_with_metadata(
-            chunks_texto, db=db, teacher_id=current_user.id
-        )
-        for i, (chunk, emb) in enumerate(zip(chunks_texto, batch.vectors, strict=True)):
-            db.add(
-                RagChunk(
-                    source_id=fuente.id,
-                    profesor_id=current_user.id,
-                    materia_id=materia_id,
-                    tipo="dba",
-                    chunk_text=chunk,
-                    embedding=emb,
-                    embedding_vec=emb,
-                    embedding_provider=batch.space.provider,
-                    embedding_model=batch.space.model,
-                    embedding_dimensions=batch.space.dimensions,
-                    embedding_space_version=batch.space.version,
-                    metadata_json={"indice": i, "total_chunks": len(chunks_texto)},
-                )
-            )
+    await _index_document_chunks(db, fuente, document_service._chunk_text(texto))
     await db.commit()
     await db.refresh(fuente)
 
