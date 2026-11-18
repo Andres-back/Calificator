@@ -2,12 +2,14 @@ from app.services.ai_config_service import DEFAULT_FEATURES, _feature_candidates
 
 
 def test_grading_tasks_resolve_to_teacher_facing_features() -> None:
-    assert _feature_candidates("grading_photo")[:2] == (
+    assert _feature_candidates("grading_photo") == (
         "grading_photo",
+        "calificacion.valoracion",
         "calificacion_foto",
     )
-    assert _feature_candidates("grading_text")[:2] == (
+    assert _feature_candidates("grading_text") == (
         "grading_text",
+        "calificacion.valoracion",
         "calificacion_texto",
     )
 
