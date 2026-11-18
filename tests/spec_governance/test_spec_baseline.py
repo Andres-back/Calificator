@@ -196,6 +196,7 @@ ALL_SPECS = {
     "196-imagenes-ligeras",
     "191-ilustraciones-estados",
     "198-recursos-visuales",
+    "205-revision-adicional-limite",
 }
 OWNED_SPECS = {
     name
