@@ -1,18 +1,18 @@
 {
   "counts": {
     "by_coverage": {
-      "covered": 605,
+      "covered": 603,
       "missing": 93
     },
     "by_kind": {
-      "endpoint": 331,
-      "frontend_call": 223,
+      "endpoint": 330,
+      "frontend_call": 222,
       "frontend_route": 39,
       "integration": 7,
       "job": 28,
       "table": 70
     },
-    "total": 698
+    "total": 696
   },
   "exceptions": [],
   "findings": [
@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "ac2546b6f11b9c8e6744c33dcf210560592afa0d8952d066a30edd2de7ce8d0f",
+  "source_digest": "1780949e6b606590b49bc6ee8d792faa4129067dbe3ec750a705ee14f066bc01",
   "surfaces": [
     {
       "actors": [
@@ -869,7 +869,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "DELETE:/dba-personalizados/{dba_id}",
-      "source_line": 140,
+      "source_line": 139,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -1547,7 +1547,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "DELETE:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 113,
+      "source_line": 100,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -1771,7 +1771,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "DELETE:/xali/history",
-      "source_line": 126,
+      "source_line": 125,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -1809,12 +1809,6 @@
           "level": "unit",
           "reference": "DELETE:/xali/history",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/xali/history",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -1840,12 +1834,6 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/xali/history",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -5281,7 +5269,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/dba",
-      "source_line": 43,
+      "source_line": 42,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -8874,12 +8862,6 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -9297,12 +9279,6 @@
           "level": "unit",
           "reference": "GET:/materias/{materia_id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias/{materia_id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -9428,7 +9404,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba",
-      "source_line": 157,
+      "source_line": 156,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -9461,7 +9437,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "GET:/materias/{materia_id}/dba-personalizados",
-      "source_line": 80,
+      "source_line": 79,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -9529,7 +9505,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/estudiantes-existentes",
-      "source_line": 148,
+      "source_line": 135,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9597,7 +9573,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/importaciones-estudiantes",
-      "source_line": 79,
+      "source_line": 66,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -9620,7 +9596,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "GET:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 94,
+      "source_line": 81,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -11459,7 +11435,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/evaluaciones-entregadas",
-      "source_line": 49,
+      "source_line": 48,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -11497,12 +11473,6 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones-entregadas",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11528,12 +11498,6 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones-entregadas",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -11571,7 +11535,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 96,
+      "source_line": 95,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -11609,12 +11573,6 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11634,12 +11592,6 @@
           "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones/{evaluacion_id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -11677,7 +11629,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "GET:/xali/history",
-      "source_line": 114,
+      "source_line": 113,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -11715,12 +11667,6 @@
           "level": "unit",
           "reference": "GET:/xali/history",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/history",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11746,12 +11692,6 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/history",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -11825,12 +11765,6 @@
           "level": "unit",
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -11850,12 +11784,6 @@
           "reference": "GET:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/refuerzos/{refuerzo_id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -12461,7 +12389,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "PATCH:/dba-personalizados/{dba_id}",
-      "source_line": 123,
+      "source_line": 122,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -13774,12 +13702,6 @@
           "level": "unit",
           "reference": "PATCH:/materias/{materia_id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/materias/{materia_id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -14148,12 +14070,6 @@
           "level": "unit",
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -14173,12 +14089,6 @@
           "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/xali/refuerzos/{refuerzo_id}",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -17080,36 +16990,6 @@
     },
     {
       "actors": [
-        "authenticated"
-      ],
-      "authorization": [
-        "get_current_user"
-      ],
-      "consumers": [],
-      "coverage": "covered",
-      "details": {
-        "function": "capturar_texto",
-        "registered": true,
-        "router": "router"
-      },
-      "id": "backend:POST:/captura-texto",
-      "kind": "endpoint",
-      "owner_spec": "002-arquitectura-roles-seguridad",
-      "signature": "POST:/captura-texto",
-      "source_line": 27,
-      "source_path": "backend/app/modules/captura_texto/router.py",
-      "states": [],
-      "tests": [
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "backend/tests/unit/test_captura_texto.py"
-        }
-      ]
-    },
-    {
-      "actors": [
         "ambiguous"
       ],
       "authorization": [],
@@ -17232,7 +17112,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/dba/importar",
-      "source_line": 54,
+      "source_line": 53,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": [
@@ -21955,12 +21835,6 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -21991,7 +21865,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados",
-      "source_line": 96,
+      "source_line": 95,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -22016,7 +21890,7 @@
       "kind": "endpoint",
       "owner_spec": "004-dba-asistencia-curriculo",
       "signature": "POST:/materias/{materia_id}/dba-personalizados/upload-document",
-      "source_line": 215,
+      "source_line": 176,
       "source_path": "backend/app/modules/dba/router.py",
       "states": [],
       "tests": []
@@ -22039,7 +21913,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/estudiantes-existentes/matricular",
-      "source_line": 154,
+      "source_line": 141,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22062,7 +21936,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/estudiantes/{student_id}/clave-temporal",
-      "source_line": 161,
+      "source_line": 148,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22087,7 +21961,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes",
-      "source_line": 35,
+      "source_line": 26,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22110,7 +21984,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes/manual",
-      "source_line": 85,
+      "source_line": 72,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22135,7 +22009,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "POST:/materias/{materia_id}/importaciones-estudiantes/{lote_id}/confirmar",
-      "source_line": 132,
+      "source_line": 119,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -22778,12 +22652,6 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/chat",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -22815,12 +22683,6 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/chat",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -22858,7 +22720,7 @@
       "kind": "endpoint",
       "owner_spec": "009-xali-rag-refuerzos",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
-      "source_line": 59,
+      "source_line": 58,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -22896,12 +22758,6 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -22921,12 +22777,6 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/chat",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -22964,7 +22814,7 @@
       "kind": "endpoint",
       "owner_spec": "006-recursos-actividades",
       "signature": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
-      "source_line": 76,
+      "source_line": 75,
       "source_path": "backend/app/modules/xali/router.py",
       "states": [],
       "tests": [
@@ -23002,12 +22852,6 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -23027,12 +22871,6 @@
           "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacion_id}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -23106,12 +22944,6 @@
           "level": "unit",
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/refuerzos/generar",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -23131,12 +22963,6 @@
           "reference": "POST:/xali/refuerzos/generar",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/refuerzos/generar",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -23545,7 +23371,7 @@
       "kind": "endpoint",
       "owner_spec": "003-usuarios-materias-matriculas",
       "signature": "PUT:/materias/{materia_id}/importaciones-estudiantes/{lote_id}",
-      "source_line": 102,
+      "source_line": 89,
       "source_path": "backend/app/modules/importacion_estudiantes/router.py",
       "states": [],
       "tests": []
@@ -24177,12 +24003,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_captura_texto.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_concept_map_normalization.py"
         },
         {
@@ -24465,12 +24285,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_image_preprocessing.py"
         },
         {
@@ -24639,12 +24453,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_roster_files.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_roster_vision_extractor.py"
         },
         {
@@ -24724,12 +24532,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_xali_teacher_context.py"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
         },
         {
           "level": "unit",
@@ -25108,12 +24910,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/auth/RouteGuards.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/components/capture/TextCaptureButtons.test.tsx"
         },
         {
           "level": "unit",
@@ -26121,12 +25917,6 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
-          "test_path": "frontend/src/modules/herramientas/forms/ExtraInstructions203.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
           "test_path": "frontend/src/modules/herramientas/forms/base.test.tsx"
         },
         {
@@ -26152,6 +25942,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/herramientas/views/PuzzleViews.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/herramientas/views/QuizContent.test.tsx"
         },
         {
           "level": "unit",
@@ -26242,12 +26038,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/RosterImportDialog.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/modules/materias/RosterImportSource.test.tsx"
         },
         {
           "level": "unit",
@@ -26356,12 +26146,6 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/users/ProfilePage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "/",
-          "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -33900,12 +33684,6 @@
           "level": "unit",
           "reference": "DELETE:/xali/history",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/xali/history",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -33931,12 +33709,6 @@
           "reference": "DELETE:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "DELETE:/xali/history",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -40636,12 +40408,6 @@
           "level": "unit",
           "reference": "GET:/materias/{id}",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias/{id}",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -41332,12 +41098,6 @@
           "level": "unit",
           "reference": "GET:/materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -41978,12 +41738,6 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones-entregadas",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -42009,12 +41763,6 @@
           "reference": "GET:/xali/evaluaciones-entregadas",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones-entregadas",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -42084,12 +41832,6 @@
           "level": "unit",
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -42109,12 +41851,6 @@
           "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/evaluaciones/{evaluacionId}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -42184,12 +41920,6 @@
           "level": "unit",
           "reference": "GET:/xali/history",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/history",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -42215,12 +41945,6 @@
           "reference": "GET:/xali/history",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "GET:/xali/history",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -44603,12 +44327,6 @@
           "reference": "PATCH:/materias/{id}",
           "status": "direct",
           "test_path": "frontend/src/modules/presentaciones/PresentacionesPage.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "PATCH:/materias/{id}",
-          "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -47876,58 +47594,6 @@
         "ambiguous"
       ],
       "authorization": [],
-      "consumers": [],
-      "coverage": "covered",
-      "details": {
-        "backend_contract": "backend:POST:/captura-texto",
-        "backend_contract_candidates": [],
-        "contract_status": "matched"
-      },
-      "id": "frontend_call:POST:/captura-texto:frontend/src/components/capture/textCapture.ts",
-      "kind": "frontend_call",
-      "owner_spec": "002-arquitectura-roles-seguridad",
-      "signature": "POST:/captura-texto",
-      "source_line": 25,
-      "source_path": "frontend/src/components/capture/textCapture.ts",
-      "states": [],
-      "tests": [
-        {
-          "level": "e2e",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/e2e/camera-capture.spec.ts"
-        },
-        {
-          "level": "e2e",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/e2e/native-camera-capture.spec.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/src/components/capture/TextCaptureButtons.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/CameraCapture.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/captura-texto",
-          "status": "domain",
-          "test_path": "frontend/src/components/evidence/nativeCapture.test.ts"
-        }
-      ]
-    },
-    {
-      "actors": [
-        "ambiguous"
-      ],
-      "authorization": [],
       "consumers": [
         "107-retroalimentacion-familiar",
         "120-retroalimentacion-entrega-clara",
@@ -50583,12 +50249,6 @@
           "level": "unit",
           "reference": "POST:/materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -50933,12 +50593,6 @@
           "level": "unit",
           "reference": "POST:/xali/chat",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/chat",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -50970,12 +50624,6 @@
           "reference": "POST:/xali/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/chat",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -51045,12 +50693,6 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -51070,12 +50712,6 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacionId}/chat",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -51145,12 +50781,6 @@
           "level": "unit",
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -51170,12 +50800,6 @@
           "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "POST:/xali/evaluaciones/{evaluacionId}/recursos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -52364,12 +51988,6 @@
           "level": "unit",
           "reference": "groq",
           "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
-        },
-        {
-          "level": "unit",
-          "reference": "groq",
-          "status": "direct",
           "test_path": "backend/tests/unit/test_llm_router_explicit_routing.py"
         },
         {
@@ -52719,12 +52337,6 @@
           "reference": "open_code",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
-        },
-        {
-          "level": "unit",
-          "reference": "open_code",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
         },
         {
           "level": "unit",
@@ -53295,7 +52907,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.cleanup_expired_roster_imports",
-      "source_line": 162,
+      "source_line": 150,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
@@ -53563,7 +53175,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.extract_roster_import",
-      "source_line": 132,
+      "source_line": 120,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
@@ -54409,7 +54021,7 @@
       "kind": "job",
       "owner_spec": "012-ia-jobs-produccion",
       "signature": "tasks.recover_stale_roster_import_jobs",
-      "source_line": 155,
+      "source_line": 143,
       "source_path": "backend/app/workers/tasks_roster_import.py",
       "states": [
         "cancelled",
@@ -56976,12 +56588,6 @@
           "test_path": "backend/tests/unit/test_visual_grade_history.py"
         },
         {
-          "level": "unit",
-          "reference": "calificaciones",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
@@ -57684,12 +57290,6 @@
           "reference": "entregas",
           "status": "direct",
           "test_path": "backend/tests/unit/test_xali_guidance_policy.py"
-        },
-        {
-          "level": "unit",
-          "reference": "entregas",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
         },
         {
           "level": "e2e",
@@ -58799,12 +58399,6 @@
           "test_path": "backend/tests/unit/test_visual_grade_history.py"
         },
         {
-          "level": "unit",
-          "reference": "evaluaciones",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
           "level": "e2e",
           "reference": "evaluaciones",
           "status": "direct",
@@ -59193,12 +58787,6 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/src/modules/materias/teacherFlowModel.test.ts"
-        },
-        {
-          "level": "unit",
-          "reference": "evaluaciones",
-          "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -61330,12 +60918,6 @@
           "level": "unit",
           "reference": "materias",
           "status": "direct",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "materias",
-          "status": "direct",
           "test_path": "frontend/src/modules/xali/XaliPage.teacher.test.tsx"
         },
         {
@@ -61860,12 +61442,6 @@
           "reference": "presentaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_grading_provider_policy.py"
-        },
-        {
-          "level": "unit",
-          "reference": "presentaciones",
-          "status": "direct",
-          "test_path": "backend/tests/unit/test_ia_obedece_panel.py"
         },
         {
           "level": "unit",
@@ -62929,12 +62505,6 @@
           "level": "unit",
           "reference": "xali_refuerzos",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "xali_refuerzos",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -62954,12 +62524,6 @@
           "reference": "xali_refuerzos",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "xali_refuerzos",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",
@@ -63053,12 +62617,6 @@
           "level": "unit",
           "reference": "xali_student_resources",
           "status": "domain",
-          "test_path": "backend/tests/unit/test_xali_teacher_insights.py"
-        },
-        {
-          "level": "unit",
-          "reference": "xali_student_resources",
-          "status": "domain",
           "test_path": "backend/tests/unit/test_xali_visual_content.py"
         },
         {
@@ -63078,12 +62636,6 @@
           "reference": "xali_student_resources",
           "status": "domain",
           "test_path": "frontend/src/modules/calificaciones/student-feedback/XaliFeedbackStory.test.tsx"
-        },
-        {
-          "level": "unit",
-          "reference": "xali_student_resources",
-          "status": "domain",
-          "test_path": "frontend/src/modules/xali/XaliPage.subject.test.tsx"
         },
         {
           "level": "unit",

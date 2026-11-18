@@ -190,6 +190,7 @@ ALL_SPECS = {
     "202-lista-desde-archivo",
     "201-ingreso-flexible",
     "204-ia-obedece-panel",
+    "197-quiz-interactivo",
 }
 OWNED_SPECS = {
     name
