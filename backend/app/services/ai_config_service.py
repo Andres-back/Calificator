@@ -362,20 +362,50 @@ _EDUCATIONAL_TOOL_TASKS = {
 }
 
 
+# Spec 204: rutas sembradas que el panel no muestra y la etapa del panel que las gobierna.
+LEGACY_ROUTE_SOURCES: dict[str, str] = {
+    "calificacion_foto": "calificacion.extraccion",
+    "calificacion_texto": "calificacion.valoracion",
+    "evaluacion_digitalizar": "digitalizacion.extraccion",
+    "presentaciones": "presentaciones.contenido",
+}
+_MIRRORED_ROUTE_FIELDS = ("primary_provider", "primary_model", "fallback_provider", "fallback_model", "active")
+
+
+def align_legacy_routes(features: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Deja cada ruta antigua con el proveedor y el modelo de su etapa del panel.
+
+    Así no queda configuración oculta distinta de la publicada. Una ruta antigua
+    sin su etapa en la lista se conserva tal cual (sigue sirviendo de herencia).
+    """
+    by_name = {str(item.get("feature")): item for item in features}
+    aligned: list[dict[str, Any]] = []
+    for item in features:
+        source = by_name.get(LEGACY_ROUTE_SOURCES.get(str(item.get("feature")), ""))
+        if source is None:
+            aligned.append(item)
+            continue
+        aligned.append({**item, **{field: source.get(field) for field in _MIRRORED_ROUTE_FIELDS}})
+    return aligned
+
+
 def _feature_candidates(feature: str) -> tuple[str, ...]:
     """Map runtime task names to the capabilities exposed in the admin UI."""
     if feature == "evaluacion_generar_dba_rag":
         return ("generacion_preguntas",)
     aliases: dict[str, tuple[str, ...]] = {
+        # Spec 204: una tarea resuelve primero la etapa que el panel publica; la
+        # ruta antigua queda solo como herencia para instalaciones sin esa etapa.
         "grading": (
+            "calificacion.valoracion",
             "calificacion_texto",
             "calificacion_foto",
             "grading_text",
             "grading_photo",
         ),
-        "grading_text": ("calificacion_texto",),
-        "grading_photo": ("calificacion_foto",),
-        "presentacion": ("presentaciones", "presentations"),
+        "grading_text": ("calificacion.valoracion", "calificacion_texto"),
+        "grading_photo": ("calificacion.valoracion", "calificacion_foto"),
+        "presentacion": ("presentaciones.contenido", "presentaciones", "presentations"),
         "xali_chat": ("xali",),
         "xali_evaluacion_post_entrega": ("xali",),
         "xali_recurso_post_entrega": ("xali",),
@@ -625,6 +655,7 @@ class AIConfigService:
                 "fallback_provider": None,
                 "active": True,
             }
+        logger.warning("ai_feature_without_route feature=%s", feature)
         return {
             "feature": feature,
             "primary_provider": "groq",
@@ -728,7 +759,7 @@ class AIConfigService:
 
         previous = {f["feature"]: f for f in await self.get_all_features()}
         prepared = []
-        for feature in features:
+        for feature in align_legacy_routes(features):
             item = dict(feature)
             limits = item.get("runtime_limits", previous.get(item["feature"], {}).get("runtime_limits"))
             limits = validate_runtime_limits(item["feature"], limits)
@@ -825,7 +856,7 @@ class AIConfigService:
                  :max_context_tokens, :config_version, :admin, CAST(:runtime_profile AS jsonb), :verification_id)"""),
                 item,
             )
-        for feature in features:
+        for feature in align_legacy_routes(features):
             from app.services.vision_route_policy import validate_runtime_limits
 
             limits = validate_runtime_limits(feature["feature"], feature.get("runtime_limits"))

@@ -189,6 +189,7 @@ ALL_SPECS = {
     "200-xali-contexto-materia",
     "202-lista-desde-archivo",
     "201-ingreso-flexible",
+    "204-ia-obedece-panel",
 }
 OWNED_SPECS = {
     name
