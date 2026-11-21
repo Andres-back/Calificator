@@ -98,15 +98,18 @@ def test_complete_breakdown_overrides_inconsistent_global_model_score(monkeypatc
     assert float(breakdown.nota_final) == 4.67
     assert float(cal.nota_sugerida) == 4.67
     trace = cal.resultado_json["desglose"]
-    assert trace["modo"] == "controlado"
+    # Spec 212: con el desglose completo la nota es la suma; la retroalimentación se rehace
+    # desde las preguntas y la diferencia queda registrada, sin bloquear.
+    assert trace["modo"] == "autoridad"
     assert trace["nota_modelo_global"] == 4.95
     assert trace["nota_calculada"] == 4.67
     assert trace["diferencia"] == -0.28
-    assert cal.resultado_json["feedback_quality_guard"]["status"] == "blocked"
+    assert cal.resultado_json["feedback_quality_guard"]["status"] == "rebuilt"
     assert "Pregunta 1" in cal.feedback
     assert "todas las respuestas" not in cal.feedback.casefold()
-    assert cal.estado == "requiere_revision"
-    assert breakdown.requiere_revision is True
+    assert "provisional" not in cal.feedback.casefold()
+    assert cal.estado == "sugerida"
+    assert breakdown.requiere_revision is False
 
 
 def test_incomplete_breakdown_does_not_publish_partial_sum(monkeypatch):
@@ -147,7 +150,7 @@ def test_incomplete_breakdown_does_not_publish_partial_sum(monkeypatch):
     assert "revisión docente" in cal.feedback
 
 
-def test_verifier_alert_keeps_formula_but_requires_teacher_review(monkeypatch):
+def test_212_verifier_note_is_kept_but_no_longer_blocks(monkeypatch):
     monkeypatch.setattr(
         "app.modules.calificaciones.breakdown_service.settings.EXPLAINABLE_GRADING_GENERATION_ENABLED",
         True,
@@ -179,12 +182,10 @@ def test_verifier_alert_keeps_formula_but_requires_teacher_review(monkeypatch):
 
     assert breakdown is not None
     assert float(breakdown.nota_final) == 0.0
-    assert breakdown.requiere_revision is True
-    assert any(
-        str(item).startswith("verificador_ia:")
-        for item in breakdown.bloqueos_json
-    )
-    assert cal.estado == "requiere_revision"
+    assert breakdown.requiere_revision is False
+    assert not any(str(item).startswith("verificador_ia:") for item in breakdown.bloqueos_json)
+    # La nota sigue visible para el docente en grader_b.alertas del resultado.
+    assert cal.estado == "sugerida"
     assert float(cal.nota_sugerida) == 0.0
 
 

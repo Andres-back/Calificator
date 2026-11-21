@@ -203,6 +203,7 @@ ALL_SPECS = {
     "209-criterio-accesibilidad",
     "210-accesibilidad-en-ci",
     "211-axe-wcag",
+    "212-modelo-principal-desacuerdo",
 }
 OWNED_SPECS = {
     name

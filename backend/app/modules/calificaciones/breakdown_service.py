@@ -20,6 +20,7 @@ from app.modules.calificaciones.breakdown_policy import (
     component_consensus,
     coverage_state,
     feedback_quality_guard,
+    review_reasons_outside_breakdown,
 )
 from app.modules.calificaciones.models import Calificacion
 from app.modules.evaluaciones.models import Evaluacion
@@ -29,8 +30,11 @@ from app.services.answer_evidence_regions import GRID_METHOD, attach_answer_regi
 
 
 _QUESTION_IN_ALERT = re.compile(r"\b(?:pregunta\s*|p\s*\.?\s*)(\d+)\b", re.IGNORECASE)
+# Objeción concreta del verificador sobre una pregunta: deja esa pregunta pendiente.
+# Spec 212 suma las menciones de la clave, «no coincide» y «arbitraje».
 _SCORE_CONFLICT_IN_ALERT = re.compile(
-    r"incorrect[ao]|incompatib\w*|contradic\w*|error\s+en\s+(?:la\s+)?clave|puntaje\s+0",
+    r"incorrect[ao]|incompatib\w*|contradic\w*|error\s+en\s+(?:la\s+)?clave|puntaje\s+0"
+    r"|\bclave\b|no\s+coincide|arbitraje",
     re.IGNORECASE,
 )
 
@@ -255,13 +259,8 @@ async def create_automatic_breakdown(
         vision_output.get("extraction") if isinstance(vision_output, dict) else None,
         getattr(calificacion, "entrega_id", None),
     )
-    if grader_b.get("requiere_revision_docente") or verifier_alerts:
-        if verifier_alerts:
-            blockers.extend(
-                f"verificador_ia:{alert}" for alert in verifier_alerts
-            )
-        else:
-            blockers.append("verificador_ia:El verificador independiente solicitó revisión docente.")
+    # Spec 212: las notas del verificador ya no bloquean; se muestran desde grader_b.alertas.
+    # Una objeción concreta a una pregunta la deja pendiente (verifier_disputed_questions).
     sources_by_question: dict[str, list[dict]] = {}
     for source in raw_output.get("rag_sources_by_question") or []:
         if isinstance(source, dict) and source.get("pregunta") is not None:
@@ -356,6 +355,7 @@ async def create_automatic_breakdown(
         blockers=blockers,
         model_score=model_score,
         calculated_score=breakdown.nota_final,
+        sum_is_authoritative=authoritative,
     )
     if not human_decision and feedback_guard["status"] != "passed":
         result["feedback_quality_guard"] = feedback_guard
@@ -377,6 +377,16 @@ async def create_automatic_breakdown(
         calificacion.nota_sugerida = breakdown.nota_final
     if breakdown.requiere_revision and not human_decision:
         calificacion.estado = CalificacionEstado.REQUIERE_REVISION.value
+    elif (
+        not human_decision
+        and calificacion.estado == CalificacionEstado.REQUIERE_REVISION.value
+        and not review_reasons_outside_breakdown(raw_output)
+    ):
+        # Spec 212: la revisión venía solo de notas del verificador o del comparador, y el
+        # desglose quedó completo con la regla del modelo principal. La nota queda sugerida:
+        # el docente la confirma antes de publicarla.
+        calificacion.estado = CalificacionEstado.SUGERIDA.value
+        calificacion.resultado_json = {**result, "requiere_revision_docente": False, "revision_resuelta_por_desglose": True}
     return breakdown
 
 
