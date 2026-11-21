@@ -35,8 +35,9 @@ describe('206 recalificar con respuestas corregidas', () => {
   it('muestra qué preguntas cambiaron sin mostrar las respuestas y usa las actuales por defecto', async () => {
     open();
     await screen.findByText('Corregiste las respuestas esperadas');
-    expect(screen.getByText('1, 2, 5')).toBeVisible();
-    expect(screen.getByText(/Respuesta esperada nueva en las preguntas/)).toBeVisible();
+    // El diálogo entra con una animación de opacidad: con el equipo cargado (CI) aún puede estar transparente.
+    await waitFor(() => expect(screen.getByText('1, 2, 5')).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/Respuesta esperada nueva en las preguntas/)).toBeVisible());
     expect(screen.getByRole('checkbox', { name: /Calificar esta entrega con las respuestas actuales/ })).toBeChecked();
 
     fireEvent.click(screen.getByRole('button', { name: 'Enviar a calificar' }));
