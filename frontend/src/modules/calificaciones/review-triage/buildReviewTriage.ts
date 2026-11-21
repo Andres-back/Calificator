@@ -23,8 +23,34 @@ export type ReviewTriageSummary = {
 
 export type ReviewNoticeTarget = 'revision' | 'evidencia' | 'retroalimentacion';
 
-function describePendingReviewBlocker(raw: string): { message: string; guidance: string; action: string; target: ReviewNoticeTarget } {
+/** Spec 207: «2 y 3», «21, 22 y 23». */
+function joinQuestions(numbers: string[]): string {
+  return numbers.length <= 1 ? numbers.join('') : `${numbers.slice(0, -1).join(', ')} y ${numbers[numbers.length - 1]}`;
+}
+
+export const MISSING_IN_PHOTOS_PREFIX = 'faltan_en_fotos:';
+export const NO_ANSWERS_IN_PHOTOS_PREFIX = 'fotos_sin_respuestas:';
+const MISSING_IN_PHOTOS_GUIDANCE = 'Si el estudiante respondió al reverso o en otra hoja, añade esa foto en «Editar hojas» y vuelve a calificar. La IA no pone cero a una respuesta que no ve.';
+
+function describePendingReviewBlocker(raw: string): { message: string; guidance: string; action: string; target: ReviewNoticeTarget; showGuidance?: boolean; leads?: boolean } {
   const reason = raw.replace(/^feedback_quality:/, '').trim();
+  if (reason.startsWith(NO_ANSWERS_IN_PHOTOS_PREFIX)) {
+    const seen = reason.slice(NO_ANSWERS_IN_PHOTOS_PREFIX.length).trim();
+    return {
+      message: 'La IA no encontró en las fotos respuestas a esta evaluación.',
+      guidance: `${seen ? `Lo que vio: «${seen}» ` : ''}Comprueba que la foto sea de esta evaluación. Si es de otra actividad, usa «Cambiar evidencia»; si las respuestas están en otra hoja, añádela en «Editar hojas». También puedes calificar a mano.`,
+      action: 'Ver evidencia', target: 'evidencia', showGuidance: true, leads: true,
+    };
+  }
+  if (reason.startsWith(MISSING_IN_PHOTOS_PREFIX) || reason === 'cobertura_evidencia_incompleta') {
+    const numbers = reason.startsWith(MISSING_IN_PHOTOS_PREFIX) ? reason.slice(MISSING_IN_PHOTOS_PREFIX.length).split(',').filter(Boolean) : [];
+    return {
+      message: numbers.length === 0 ? 'Faltan respuestas en las fotos de la entrega.'
+        : numbers.length === 1 ? `La respuesta de la pregunta ${numbers[0]} no aparece en las fotos.`
+          : `Las respuestas de las preguntas ${joinQuestions(numbers)} no aparecen en las fotos.`,
+      guidance: MISSING_IN_PHOTOS_GUIDANCE, action: 'Añadir la foto que falta', target: 'evidencia', showGuidance: true, leads: numbers.length > 0,
+    };
+  }
   if (reason === 'nota_global_no_coincide_con_suma') return {
     message: 'La nota propuesta por la IA no coincide con la suma de los puntos por pregunta.',
     guidance: 'Compara los puntajes con las respuestas antes de confirmar la nota.', action: 'Revisar puntajes por pregunta', target: 'revision',
@@ -73,7 +99,10 @@ export function describeReviewBlocker(raw: string, context: 'pending' | 'histori
     revision_docente_pendiente: 'La sugerencia inicial quedó pendiente de la decisión del docente.',
     verificador_solicita_revision: 'La segunda revisión de IA dejó observaciones en el análisis inicial.',
   };
-  const message = initialMessages[reason]
+  const missing = reason.startsWith(MISSING_IN_PHOTOS_PREFIX) || reason === 'cobertura_evidencia_incompleta';
+  const message = (reason.startsWith(NO_ANSWERS_IN_PHOTOS_PREFIX) ? 'En el análisis inicial la IA no encontró en las fotos respuestas a esta evaluación.' : undefined)
+    ?? (missing ? 'En el análisis inicial faltaban respuestas en las fotos de la entrega.' : undefined)
+    ?? initialMessages[reason]
     ?? (/^(Cobertura |cobertura_|componentes_duplicados)/.test(reason)
       ? 'En el análisis inicial no estaban revisadas todas las preguntas de forma consistente.'
       : reason.startsWith('verificador_ia:')
@@ -145,12 +174,16 @@ function valuationsContradict(component: GradeComponentData): boolean {
   return materialDifference || oppositeStates;
 }
 
-export function classifyReviewComponent(component: GradeComponentData): ReviewTriageItem {
+export function classifyReviewComponent(component: GradeComponentData, missingInPhotos: ReadonlySet<string> = new Set()): ReviewTriageItem {
   const blocked: ReviewTriageReason[] = [];
   const attention: ReviewTriageReason[] = [];
   const add = (target: ReviewTriageReason[], code: string, label: string) => {
     if (!target.some((reason) => reason.code === code)) target.push({ code, label });
   };
+  const decidedByTeacher = ['docente', 'manual'].includes(component.origen.toLowerCase()) && !component.requiere_revision;
+  if (!decidedByTeacher && component.numero != null && missingInPhotos.has(String(component.numero))) {
+    add(blocked, 'missing_in_photos', 'Esta respuesta no aparece en las fotos de la entrega');
+  }
 
   if (component.requiere_revision) add(blocked, 'manual_review', 'Marcada para revisión manual');
   if (!['correcta', 'parcial', 'incorrecta', 'sin_respuesta', 'ilegible', 'no_evaluable', 'revision_pendiente'].includes(component.estado)) add(attention, 'unknown_state', 'Falta confirmar el estado de esta valoración');
@@ -189,17 +222,48 @@ export function classifyReviewComponent(component: GradeComponentData): ReviewTr
 }
 
 function humanizeBlocker(blocker: string): string {
+  if (blocker.startsWith(MISSING_IN_PHOTOS_PREFIX) || blocker.startsWith(NO_ANSWERS_IN_PHOTOS_PREFIX) || blocker === 'cobertura_evidencia_incompleta') return describePendingReviewBlocker(blocker).message;
   if (blocker.startsWith('verificador_ia:')) {
     return `Verificador independiente: ${blocker.slice('verificador_ia:'.length)}`;
   }
   return blocker.replace(/^componente_pendiente:/, 'Componente pendiente: ').replace(/_/g, ' ');
 }
 
-export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifierAlerts: string[] = []): ReviewTriageSummary {
+/** Spec 207: preguntas que la calificación no encontró en las fotos (`evidence_coverage`). */
+export function missingQuestionsInPhotos(result: unknown): string[] {
+  const coverage = result && typeof result === 'object' ? (result as Record<string, unknown>).evidence_coverage : null;
+  if (!coverage || typeof coverage !== 'object') return [];
+  const { faltantes, requiere_revision: requiresReview } = coverage as Record<string, unknown>;
+  if (requiresReview === false || !Array.isArray(faltantes)) return [];
+  return [...new Set(faltantes.map((item) => String(item).trim()).filter((item) => /^[\w.-]{1,12}$/.test(item)))];
+}
+
+const NO_ANSWERS_REASONS = new Set(['image_not_usable', 'student_answers_not_detected']);
+
+/**
+ * Spec 207: la lectura de las fotos no encontró respuestas a la evaluación (p. ej. una página
+ * de otra actividad). Devuelve lo que la IA explicó, o null si no es ese caso.
+ */
+export function photosWithoutAnswers(result: unknown): string | null {
+  if (!result || typeof result !== 'object') return null;
+  const data = result as Record<string, unknown>;
+  if (!NO_ANSWERS_REASONS.has(String(data.motivo_revision ?? ''))) return null;
+  const visionAlerts = (data.vision_result as Record<string, unknown> | undefined)?.alertas;
+  const alerts = [...(Array.isArray(data.alertas) ? data.alertas : []), ...(Array.isArray(visionAlerts) ? visionAlerts : [])];
+  const first = alerts.map((item) => String(item ?? '').replace(/\s+/g, ' ').trim()).find((item) => item && item !== 'Imagen no utilizable');
+  if (!first) return '';
+  return first.length > 280 ? `${first.slice(0, 277).trimEnd()}…` : first;
+}
+
+export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifierAlerts: string[] = [], missingInPhotos: string[] = [], noAnswersReason: string | null = null): ReviewTriageSummary {
+  if (noAnswersReason !== null) {
+    missingInPhotos = (breakdown?.componentes ?? []).filter((item) => item.tipo === 'pregunta' && item.numero != null).map((item) => String(item.numero));
+  }
   const targetedNumbers = new Set(verifierAlerts.flatMap((alert) => [...questionNumbersInAlert(alert)]));
+  const missing = new Set(missingInPhotos);
   const items = [...(breakdown?.componentes ?? [])]
     .sort((a, b) => a.orden - b.orden)
-    .map(classifyReviewComponent)
+    .map((component) => classifyReviewComponent(component, missing))
     .map((item) => {
       if (item.level === 'blocked' || ['docente', 'manual'].includes(item.component.origen.toLowerCase()) || !item.component.numero || !targetedNumbers.has(String(item.component.numero))) return item;
       const reasons = [...item.reasons];
@@ -211,9 +275,16 @@ export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifier
   const safe = items.filter((item) => item.level === 'safe');
   const attention = items.filter((item) => item.level === 'attention');
   const blocked = items.filter((item) => item.level === 'blocked');
+  // Las preguntas que faltan en las fotos se nombran; sustituyen al aviso genérico de cobertura.
+  const pendingMissing = missingInPhotos.filter((number) => items.some((item) => item.reasons.some((reason) => reason.code === 'missing_in_photos') && String(item.component.numero) === number));
+  const missingNotice = noAnswersReason !== null ? [`${NO_ANSWERS_IN_PHOTOS_PREFIX}${noAnswersReason}`]
+    : pendingMissing.length ? [`${MISSING_IN_PHOTOS_PREFIX}${pendingMissing.join(',')}`] : [];
   const globalReasons = [
-    ...(breakdown && breakdown.cobertura_estado !== 'completa' ? [`Cobertura ${breakdown.cobertura_estado}`] : []),
-    ...(breakdown?.bloqueos ?? []).filter((blocker) => !blocker.startsWith('componente_pendiente:')),
+    ...missingNotice,
+    ...(breakdown && breakdown.cobertura_estado !== 'completa' && !missingNotice.length ? [`Cobertura ${breakdown.cobertura_estado}`] : []),
+    ...(breakdown?.bloqueos ?? []).filter((blocker) => !blocker.startsWith('componente_pendiente:')
+      && !(missingNotice.length && blocker === 'cobertura_evidencia_incompleta')
+      && !(noAnswersReason !== null && blocker === 'feedback_quality:componentes_o_evidencia_pendientes')),
     ...verifierAlerts.filter((alert) => questionNumbersInAlert(alert).size === 0),
   ];
   return {
