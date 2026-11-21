@@ -1,12 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: plantilla sin versión -> 1.0.0
-- Added principles: separación de roles; integridad de calificaciones; procesamiento asíncrono;
-  evolución segura de datos; accesibilidad; portabilidad de IA; especificación y pruebas;
-  despliegue protegido.
-- Added sections: Restricciones del producto; Flujo de desarrollo y calidad.
-- Removed sections: ninguna; se sustituyeron todos los marcadores de plantilla.
-- Follow-up TODOs: ninguno.
+- Version change: 1.0.0 -> 1.1.0
+- Modified principles: V. Accesibilidad y experiencia inclusiva (se adopta WCAG 2.2 nivel AA,
+  objetivos táctiles de 44 × 44 px, avisos con causa y siguiente paso, y verificación en CI).
+- Added sections: ninguna. Se añade la guía docs/accesibilidad-usabilidad.md.
+- Removed sections: ninguna.
+- Follow-up TODOs: correr la suite de accesibilidad en CI y añadir revisión automática WCAG (axe).
 -->
 # Constitución de XCalificator
 
@@ -37,10 +36,13 @@ consumidores y preservar una ruta de recuperación cuando haya datos materiales.
 tablas, endpoints o adaptadores muertos sin un issue de retiro explícito.
 
 ### V. Accesibilidad y experiencia inclusiva
-Los flujos críticos DEBEN funcionar desde 360 px hasta escritorio, en modo claro y oscuro, sin
-desbordamiento horizontal ni controles inaccesibles. Los objetivos táctiles, mensajes y jerarquía
-visual DEBEN ser comprensibles para estudiantes y personas mayores. Cada operación asíncrona DEBE
-terminar en un estado visible de éxito, espera o error.
+Las pantallas de docentes y estudiantes DEBEN cumplir WCAG 2.2 nivel AA. Los flujos críticos DEBEN
+funcionar desde 360 px hasta escritorio, en modo claro y oscuro, sin desbordamiento horizontal ni
+controles inaccesibles. Los objetivos táctiles DEBEN medir al menos 44 × 44 px, y los mensajes y la
+jerarquía visual DEBEN ser comprensibles para estudiantes y personas mayores: lenguaje llano y
+avisos que digan la causa y el siguiente paso. Cada operación asíncrona DEBE terminar en un estado
+visible de éxito, espera o error. Los criterios comprobables y su forma de verificación están en
+`docs/accesibilidad-usabilidad.md`; las verificaciones automáticas DEBEN correr en CI.
 
 ### VI. Proveedores de IA intercambiables y seguros
 La lógica de negocio NO DEBE depender directamente de un proveedor o modelo específico. La
@@ -95,4 +97,4 @@ responsables y demostrar cumplimiento. Las excepciones temporales DEBEN quedar d
 deuda con responsable, fecha límite y criterio de cierre; nunca pueden reducir autorización,
 protección de secretos o integridad de notas.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-14 | **Last Amended**: 2026-08-14
+**Version**: 1.1.0 | **Ratified**: 2026-08-14 | **Last Amended**: 2026-11-20
