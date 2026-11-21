@@ -25,6 +25,30 @@ export function scanOutputSize(width: number, height: number, quad: ScanQuad, ma
   return { width: Math.max(2, Math.round(outputWidth * ratio)), height: Math.max(2, Math.round(outputHeight * ratio)) };
 }
 
+/** Sides of a crop that run along the photograph's own border (Spec 208). */
+export function sidesOnPhotoFrame(quad: ScanQuad, tolerance = 0.015): number {
+  let count = 0;
+  for (let edge = 0; edge < 4; edge++) {
+    const [ax, ay] = quad[edge], [bx, by] = quad[(edge + 1) % 4];
+    const along = (a: number, b: number) => (a <= tolerance && b <= tolerance) || (a >= 1 - tolerance && b >= 1 - tolerance);
+    if (along(ax, bx) || along(ay, by)) count++;
+  }
+  return count;
+}
+
+/**
+ * Spec 208: a crop that runs from one border of the photo to the other and leaves part
+ * of it out cuts through the page itself, not around it; writing may be left outside.
+ */
+export function cropCutsAcrossPhoto(quad: ScanQuad): boolean {
+  let twiceArea = 0;
+  for (let index = 0; index < 4; index++) {
+    const [ax, ay] = quad[index], [bx, by] = quad[(index + 1) % 4];
+    twiceArea += ax * by - bx * ay;
+  }
+  return sidesOnPhotoFrame(quad) >= 2 && Math.abs(twiceArea) / 2 < 0.97;
+}
+
 /** AI geometry is approximate: keep an enclosing margin, never crop tightly to ink. */
 export function conservativeScanSuggestion(quad: ScanQuad): ScanQuad {
   const left = Math.max(0, Math.min(...quad.map(p => p[0])) - .06);

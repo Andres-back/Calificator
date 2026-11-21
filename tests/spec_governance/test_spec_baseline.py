@@ -199,6 +199,7 @@ ALL_SPECS = {
     "205-revision-adicional-limite",
     "206-recalificar-respuestas-corregidas",
     "207-respuestas-fuera-de-fotos",
+    "208-aviso-recorte",
 }
 OWNED_SPECS = {
     name

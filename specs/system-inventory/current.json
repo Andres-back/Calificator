@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "01be088599b4686dc0989431c472b882a5b8cb3d7978e3c2762a334b3f62f515",
+  "source_digest": "af237ede38ee20de325ee0ae9c0b902a1f7c69be14f46102148a918095ffd26e",
   "surfaces": [
     {
       "actors": [
@@ -25795,6 +25795,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/components/evidence/cornerAssistance.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/components/evidence/cropWarning208.test.tsx"
         },
         {
           "level": "unit",
