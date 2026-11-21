@@ -3,7 +3,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, RotateCw, ScanLine, Undo2, Z
 import { Modal } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { EvidenceScanner } from './evidenceScan';
-import { conservativeScanSuggestion, rotateScanPoint, validScanQuad, type ScanPoint, type ScanQuad, type ScanRotation } from './scanGeometry';
+import { cropCutsAcrossPhoto, conservativeScanSuggestion, rotateScanPoint, validScanQuad, type ScanPoint, type ScanQuad, type ScanRotation } from './scanGeometry';
 import type { EvidenceScanRecipe, EvidenceScanSelection } from './scanTypes';
 import type { ImageQualityResult } from './imageQuality';
 import type { CornerAssistant, OrientationAssistant } from './cornerAssistance';
@@ -123,6 +123,7 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
   const recipe = useMemo<EvidenceScanRecipe>(() => ({ ...dimensions, corners, rotation, profile, coordinate_frame: 'exif_oriented_source' }), [dimensions, corners, rotation, profile]);
   const recipeKey = JSON.stringify(recipe);
   const valid = dimensions.width > 0 && validScanQuad(corners);
+  const cutsAcross = valid && cropCutsAcrossPhoto(corners);
   useEffect(() => {
     const element = sourceViewport.current;
     if (!element || typeof ResizeObserver !== 'function') return;
@@ -245,6 +246,7 @@ export function EvidenceScanEditor({ file, pageNumber, rotation: initialRotation
         {!!quality?.warnings.length && <p className="rounded-lg border border-amber-300 p-3 text-sm text-amber-800 dark:border-amber-500/40 dark:text-amber-100">{quality.warnings.join(' ')}</p>}
       </section>
     </div>
+    {cutsAcross && <p role="alert" data-testid="scan-crop-warning" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">Este recorte corta la foto de un borde al otro y deja fuera una parte. Comprueba que ahí no haya respuestas escritas; si dudas, usa la foto original.</p>}
     <div role="status" aria-live="polite" className="my-3 min-h-6 text-sm text-muted">{source && !valid ? 'Revisa las esquinas para continuar.' : loading ? 'Preparando en este dispositivo…' : accepted ? 'Vista lista. Comprueba la hoja antes de aceptar.' : ''}</div>
     </div>
     <footer className="mt-2 grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-surface pt-2 pb-[env(safe-area-inset-bottom)] sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
