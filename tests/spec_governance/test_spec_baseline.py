@@ -202,6 +202,7 @@ ALL_SPECS = {
     "208-aviso-recorte",
     "209-criterio-accesibilidad",
     "210-accesibilidad-en-ci",
+    "211-axe-wcag",
 }
 OWNED_SPECS = {
     name

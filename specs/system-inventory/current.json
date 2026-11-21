@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "9ebfe68ade808c9a6f24b6fe98be980e2b2ca59e94a70eeb4beb8d4bbecc2fb7",
+  "source_digest": "eaf4b5f698b9994d8a373a1af6df4d5057842208eee08975ac01911e95594aed",
   "surfaces": [
     {
       "actors": [
@@ -1024,6 +1024,12 @@
           "reference": "DELETE:/evaluaciones/{evaluacion_id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -6147,6 +6153,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/digitalization-scan.spec.ts"
         },
         {
@@ -8745,6 +8757,12 @@
           "level": "e2e",
           "reference": "GET:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -9163,6 +9181,12 @@
           "reference": "GET:/materias/{materia_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -12828,6 +12852,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{evaluacion_id}",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{evaluacion_id}",
+          "status": "direct",
           "test_path": "frontend/e2e/digitalization-scan.spec.ts"
         },
         {
@@ -13682,6 +13712,12 @@
           "reference": "PATCH:/materias/{materia_id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{materia_id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -18061,6 +18097,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/digitalization-scan.spec.ts"
         },
         {
@@ -22246,6 +22288,12 @@
           "level": "e2e",
           "reference": "POST:/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -25410,6 +25458,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/admin-ai-control-center.spec.ts"
         },
         {
@@ -27215,6 +27269,12 @@
           "level": "e2e",
           "reference": "/app",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
           "test_path": "frontend/e2e/admin-ai-control-center.spec.ts"
         },
         {
@@ -28732,6 +28792,12 @@
           "level": "e2e",
           "reference": "/app/calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/explainable-grading.spec.ts"
         },
         {
@@ -29454,6 +29520,12 @@
           "level": "e2e",
           "reference": "/app/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-ai-wizard.spec.ts"
         },
         {
@@ -30118,6 +30190,12 @@
           "level": "e2e",
           "reference": "/app/materias",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias",
+          "status": "direct",
           "test_path": "frontend/e2e/evaluation-copy.spec.ts"
         },
         {
@@ -30599,6 +30677,12 @@
           "reference": "/app/materias/{id}",
           "status": "domain",
           "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -32746,6 +32830,12 @@
           "level": "e2e",
           "reference": "/login",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/login",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -33839,6 +33929,12 @@
           "reference": "DELETE:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "DELETE:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -38805,6 +38901,12 @@
           "level": "e2e",
           "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{evaluacionId}/{format}",
+          "status": "direct",
           "test_path": "frontend/e2e/digitalization-scan.spec.ts"
         },
         {
@@ -39572,6 +39674,12 @@
           "reference": "GET:/evaluaciones/{id}",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/evaluaciones/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -41095,6 +41203,12 @@
           "level": "e2e",
           "reference": "GET:/materias/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
@@ -41786,6 +41900,12 @@
           "reference": "GET:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "GET:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -44394,6 +44514,12 @@
           "level": "e2e",
           "reference": "PATCH:/evaluaciones/{id}",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/evaluaciones/{id}",
+          "status": "direct",
           "test_path": "frontend/e2e/digitalization-scan.spec.ts"
         },
         {
@@ -45104,6 +45230,12 @@
           "reference": "PATCH:/materias/{id}",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "PATCH:/materias/{id}",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -49911,6 +50043,12 @@
           "level": "e2e",
           "reference": "POST:/evaluaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/evaluaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/digitalization-scan.spec.ts"
         },
         {
@@ -51175,6 +51313,12 @@
           "reference": "POST:/materias",
           "status": "domain",
           "test_path": "backend/tests/unit/test_materias_service.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "POST:/materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -57930,6 +58074,12 @@
           "level": "e2e",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "frontend/e2e/evidence-edit.spec.ts"
         },
         {
@@ -59754,6 +59904,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/student-feedback-story.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",
@@ -61916,6 +62072,12 @@
           "reference": "materias",
           "status": "direct",
           "test_path": "backend/tests/unit/test_reportes_resumen_escala.py"
+        },
+        {
+          "level": "e2e",
+          "reference": "materias",
+          "status": "direct",
+          "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
         },
         {
           "level": "e2e",

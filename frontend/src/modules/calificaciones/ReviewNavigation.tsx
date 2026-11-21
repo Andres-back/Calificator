@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import type { Ref } from 'react';
+import { useId, type Ref } from 'react';
 import { EducationalIcon, type EducationalIconName } from '@/components/ui';
 
 export type ReviewSection = 'resumen' | 'revision' | 'evidencia' | 'retroalimentacion' | 'historial' | 'reclamos';
@@ -16,6 +16,7 @@ export function ReviewNavigation({ active, onChange, headingRef }: {
   headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const selected = sections.find(section => section.id === active);
+  const ids = useId();
   if (active !== 'resumen') return <header className="space-y-2 border-b border-border pb-3">
     <button type="button" onClick={() => onChange('resumen')} className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-fg">
       <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a opciones
@@ -25,8 +26,9 @@ export function ReviewNavigation({ active, onChange, headingRef }: {
   return <nav aria-label="Secciones de la calificación" className="space-y-3">
     <h2 ref={headingRef} tabIndex={-1} className="text-lg font-bold text-fg">¿Qué quieres revisar?</h2>
     <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+    {/* Spec 211 (WCAG 2.5.3): el nombre es el título visible; la descripción se anuncia aparte. */}
     {sections.map(({ id, label, description, panel, icon }) => <button key={id} type="button"
-      aria-label={label} aria-controls={panel} aria-expanded={false} data-review-option={id}
+      aria-describedby={`${ids}-${id}`} aria-controls={panel} aria-expanded={false} data-review-option={id}
       onClick={() => onChange(id)}
       className="focus-ring flex min-h-28 min-w-0 flex-col items-start gap-2 rounded-xl border border-border bg-surface p-3 text-left transition-colors hover:border-brand-400 hover:bg-surface-2 sm:p-4">
       <span className="flex w-full items-center justify-between gap-2">
@@ -34,7 +36,7 @@ export function ReviewNavigation({ active, onChange, headingRef }: {
         <ArrowRight className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
       </span>
       <span className="font-bold leading-snug text-fg">{label}</span>
-      <span className="text-sm leading-snug text-muted">{description}</span>
+      <span id={`${ids}-${id}`} aria-hidden="true" className="text-sm leading-snug text-muted">{description}</span>
     </button>)}
     </div>
   </nav>;
