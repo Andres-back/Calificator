@@ -90,6 +90,7 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
         {detailsOpen && <ul className="divide-y divide-border text-sm">
           {otherNotices.map((notice, index) => <li key={index} className="py-2">
             <p>{notice.message}</p>
+            {notice.showGuidance && <p className="mt-1 text-muted">{notice.guidance}</p>}
             {onReviewGeneral && <Button variant="link" className="min-h-11 px-0" onClick={() => onReviewGeneral(notice.target)}>{notice.action}</Button>}
           </li>)}
           {otherQuestions.map(item => <li key={item.component.id}>
