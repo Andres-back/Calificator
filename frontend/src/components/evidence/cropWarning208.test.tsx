@@ -61,9 +61,12 @@ describe('208 aviso en el editor de la hoja', () => {
     open(null);
     await screen.findByRole('button', { name: 'Esquina 1, superior izquierda' });
     expect(screen.queryByTestId('scan-crop-warning')).toBeNull();
+    // Cada paso baja la esquina 0,5 %; 12 pasos dejan fuera el 6 % de arriba. Se busca el botón una sola vez
+    // porque getByRole en cada paso hacía que la prueba pasara de 5 s en CI.
+    const down = screen.getByRole('button', { name: 'Mover esquina hacia abajo' });
     for (const corner of ['Esquina 1, superior izquierda', 'Esquina 2, superior derecha']) {
       fireEvent.click(screen.getByRole('button', { name: corner }));
-      for (let step = 0; step < 60; step++) fireEvent.click(screen.getByRole('button', { name: 'Mover esquina hacia abajo' }));
+      for (let step = 0; step < 12; step++) fireEvent.click(down);
     }
     expect(await screen.findByTestId('scan-crop-warning')).toBeInTheDocument();
   });
