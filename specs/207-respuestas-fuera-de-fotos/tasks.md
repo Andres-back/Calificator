@@ -9,6 +9,8 @@
 - [X] T003 Motivo por pregunta, sin cambios en las demás y sin motivo en preguntas decididas por el docente. (FR-004)
 - [X] T004 Aviso sin detalle de preguntas y versión histórica. (FR-005)
 - [X] T005 Recorrido con API simulada en 390 px y 1366 px: aviso, botón a la evidencia y motivo de la pregunta. (FR-002, FR-003, FR-004, FR-006)
+- [X] T011 Foto sin respuestas: lectura del motivo, todas las preguntas con el motivo, aviso con lo que vio la IA y sin el aviso genérico. (FR-007)
+- [X] T012 Recorrido con API simulada de una foto sin respuestas en 390 px y 1366 px, con el aviso al frente. (FR-007, FR-008)
 
 ### Implementación
 
@@ -16,11 +18,13 @@
 - [X] T007 Motivo `missing_in_photos` en la clasificación de preguntas. (FR-004)
 - [X] T008 Aviso `faltan_en_fotos` y mensajes. (FR-002, FR-003, FR-005)
 - [X] T009 Indicación visible en «Ver todos los avisos». (FR-003)
+- [X] T013 `photosWithoutAnswers` y aviso `fotos_sin_respuestas`. (FR-007)
+- [X] T014 Aviso al frente del resumen con indicación y botón. (FR-008)
 
 ### Validación
 
-- [X] T010 Pruebas del módulo de calificaciones, tipos, lint, inventario y gobernanza. (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006)
+- [X] T010 Pruebas del módulo de calificaciones, tipos, lint, inventario y gobernanza. (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008)
 
 ## Dependencias
 
-T001 → T006. T003 → T007. T002 y T004 → T008. T005 después de T006 a T009. T010 al final.
+T001 → T006. T003 → T007. T002 y T004 → T008. T011 → T013. T005, T012 y T014 después de T006 a T009 y T013. T010 al final.

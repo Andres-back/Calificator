@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GradeBreakdownData, GradeComponentData } from '@/types/api';
-import { buildReviewTriage, describeReviewBlocker, missingQuestionsInPhotos } from './buildReviewTriage';
+import { buildReviewTriage, describeReviewBlocker, missingQuestionsInPhotos, photosWithoutAnswers } from './buildReviewTriage';
 
 // Spec 207: una respuesta que no aparece en las fotos se nombra y lleva a la evidencia.
 const pendiente = (numero: string, overrides: Partial<GradeComponentData> = {}): GradeComponentData => ({
@@ -70,5 +70,31 @@ describe('207 respuestas que no aparecen en las fotos', () => {
 
   it('tres o más preguntas se enumeran con comas', () => {
     expect(describeReviewBlocker('faltan_en_fotos:21,22,23,24').message).toBe('Las respuestas de las preguntas 21, 22, 23 y 24 no aparecen en las fotos.');
+  });
+});
+
+describe('207 la foto no trae respuestas a la evaluación', () => {
+  const resultado = {
+    motivo_revision: 'image_not_usable', orchestrator: 'vision_failed',
+    alertas: ['La hoja no contiene las preguntas 1-3 del contexto; es una página de apuntes sobre el proceso de la fotosíntesis.', 'Posibles errores ortográficos.'],
+  };
+
+  it('toma lo que explicó la IA y solo en esos casos', () => {
+    expect(photosWithoutAnswers(resultado)).toBe('La hoja no contiene las preguntas 1-3 del contexto; es una página de apuntes sobre el proceso de la fotosíntesis.');
+    expect(photosWithoutAnswers({ ...resultado, motivo_revision: 'student_answers_not_detected' })).toMatch(/^La hoja no contiene/);
+    expect(photosWithoutAnswers({ ...resultado, alertas: ['Imagen no utilizable'] })).toBe('');
+    expect(photosWithoutAnswers({ motivo_revision: 'vision_failed_temporary', alertas: ['x'] })).toBeNull();
+    expect(photosWithoutAnswers({})).toBeNull();
+    expect(photosWithoutAnswers({ ...resultado, alertas: ['a'.repeat(400)] })!.length).toBeLessThanOrEqual(280);
+  });
+
+  it('todas las preguntas muestran el motivo y el aviso explica qué vio la IA', () => {
+    const resumen = buildReviewTriage(desglose([pendiente('1'), pendiente('2'), pendiente('3')]), [], [], photosWithoutAnswers(resultado));
+    const aviso = resumen.globalReasons!.find((reason) => reason.startsWith('fotos_sin_respuestas:'))!;
+
+    expect(resumen.items.every((item) => item.reasons[0].code === 'missing_in_photos')).toBe(true);
+    expect(resumen.globalReasons).not.toContain('feedback_quality:componentes_o_evidencia_pendientes');
+    expect(describeReviewBlocker(aviso)).toMatchObject({ message: 'La IA no encontró en las fotos respuestas a esta evaluación.', target: 'evidencia', leads: true });
+    expect(describeReviewBlocker(aviso).guidance).toMatch(/Lo que vio: «La hoja no contiene.*fotosíntesis\.» Comprueba que la foto sea de esta evaluación/);
   });
 });

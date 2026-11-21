@@ -70,20 +70,24 @@ export function ReviewTriagePanel({ summary, selectedComponentId, onSelectCompon
     const firstNotice = notices[0];
     const mismatch = Boolean(primaryMessage || rawReasons[0]?.includes('nota_global_no_coincide_con_suma'));
     if (!firstException && !firstNotice && !primaryMessage) return null;
+    // Spec 207: si las fotos no traen las respuestas, esa es la causa común; se muestra primero.
+    const leading = !mismatch ? notices.find(notice => notice.leads) : undefined;
     const primaryNotice = primaryMessage
       ? notices.find(notice => notice.message.startsWith('La nota propuesta por la IA no coincide'))
-      : mismatch || !firstException ? firstNotice : undefined;
+      : leading ?? (mismatch || !firstException ? firstNotice : undefined);
     const otherNotices = notices.filter(notice => notice !== primaryNotice);
-    const otherQuestions = mismatch ? summary.exceptions : summary.exceptions.slice(1);
+    const otherQuestions = mismatch || leading ? summary.exceptions : summary.exceptions.slice(1);
     const hasMore = otherNotices.length > 0 || otherQuestions.length > 0;
     return <section aria-label="Resumen de revisión" className="space-y-2">
       <div role="alert" data-review-priority={firstException?.level ?? 'attention'} className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border px-3 py-2 text-sm ${reviewPriorityPresentation[firstException?.level ?? 'attention'].classes}`}>
-        <p className="font-semibold">{primaryMessage || (mismatch ? firstNotice?.message : firstException ? `${componentLabel(firstException)} necesita tu revisión.` : firstNotice?.message)}</p>
+        <p className="font-semibold">{primaryMessage || leading?.message || (mismatch ? firstNotice?.message : firstException ? `${componentLabel(firstException)} necesita tu revisión.` : firstNotice?.message)}</p>
         <Button variant="link" className="min-h-11 px-0" onClick={() => {
-          if (mismatch) onReviewGeneral?.('revision');
+          if (leading) onReviewGeneral?.(leading.target);
+          else if (mismatch) onReviewGeneral?.('revision');
           else if (firstException) select(firstException, 1);
           else if (firstNotice) onReviewGeneral?.(firstNotice.target);
-        }}>Revisar ahora <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
+        }}>{leading ? leading.action : 'Revisar ahora'} <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>
+        {leading?.showGuidance && <p className="basis-full text-sm font-normal">{leading.guidance}</p>}
       </div>
       {hasMore && <details open={detailsOpen}>
         <summary className="focus-ring flex min-h-11 cursor-pointer items-center text-sm font-semibold" onClick={(event) => { event.preventDefault(); setDetailsOpen((open) => !open); }}>Ver todos los avisos</summary>

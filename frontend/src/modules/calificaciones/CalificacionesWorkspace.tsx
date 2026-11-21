@@ -61,7 +61,7 @@ import { gradeCalculationPresentation } from './components/gradeCalculationPrese
 import { GradeFormula } from './components/GradeFormula';
 import { GradeFinalEditor } from './components/GradeFinalEditor';
 import { GradeBreakdownHistory } from './components/GradeBreakdownHistory';
-import { buildReviewTriage, hasVerifierReviewSignals, missingQuestionsInPhotos } from './review-triage/buildReviewTriage';
+import { buildReviewTriage, hasVerifierReviewSignals, missingQuestionsInPhotos, photosWithoutAnswers } from './review-triage/buildReviewTriage';
 import { ReviewTriagePanel } from './review-triage/ReviewTriagePanel';
 import { formatAIModelSource } from './aiPipelineLabels';
 import { excludeSubmittedStudents, summarizeCaptureRegistration, uploadEligibilityVerified } from './submissionCandidates';
@@ -730,9 +730,10 @@ function PanelDetalle({
   const verifierRequiresReview = hasVerifierReviewSignals(graderB, strategy);
   const activeBreakdown = editingSnapshot ?? cal.desglose;
   const missingInPhotos = useMemo(() => missingQuestionsInPhotos(pipeline), [pipeline]);
+  const noAnswersReason = useMemo(() => photosWithoutAnswers(pipeline), [pipeline]);
   const reviewTriage = useMemo(
-    () => buildReviewTriage(activeBreakdown ?? null, verifierAlerts, missingInPhotos),
-    [activeBreakdown, verifierAlerts, missingInPhotos],
+    () => buildReviewTriage(activeBreakdown ?? null, verifierAlerts, missingInPhotos, noAnswersReason),
+    [activeBreakdown, verifierAlerts, missingInPhotos, noAnswersReason],
   );
   const selectedQuestion = activeBreakdown?.componentes.find((component) => component.id === detailParams.get('pregunta') || component.clave === detailParams.get('pregunta')) ?? activeBreakdown?.componentes[0];
   const selectQuestion = (componentId: string) => {
