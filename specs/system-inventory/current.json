@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "4c03fae7cba049d8326ba8ea06a0dd79b1a8bb49a705e573a934e0b884b63c15",
+  "source_digest": "af237ede38ee20de325ee0ae9c0b902a1f7c69be14f46102148a918095ffd26e",
   "surfaces": [
     {
       "actors": [
@@ -25626,6 +25626,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/mock/missing-in-photos.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/motif-editors.spec.ts"
         },
         {
@@ -26335,6 +26341,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/review-triage/buildReviewTriage.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/review-triage/missingInPhotos207.test.ts"
         },
         {
           "level": "unit",
@@ -27372,6 +27384,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/missing-in-photos.mock.spec.ts"
         },
         {
           "level": "e2e",
@@ -28787,6 +28805,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/missing-in-photos.mock.spec.ts"
         },
         {
           "level": "e2e",
@@ -58003,6 +58027,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/mock/grading-review.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/missing-in-photos.mock.spec.ts"
         },
         {
           "level": "e2e",
