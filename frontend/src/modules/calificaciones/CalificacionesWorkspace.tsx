@@ -1226,7 +1226,7 @@ function PanelDetalle({
             <p className="mt-2 text-xs text-sky-800 dark:text-sky-200">Revisa el texto y la imagen por separado antes de confirmar la nota única.</p>
           </div>
         )}
-        <div ref={detailViewRef} className="min-w-0 scroll-mt-4" aria-label="Vista de la revisión">
+        <div ref={detailViewRef} role="region" className="min-w-0 scroll-mt-4" aria-label="Vista de la revisión">
           <section hidden={mobileTab !== 'evidencia'} className="min-w-0">
           <div id="grade-evidence-panel" className="min-w-0 space-y-4">
             {evidenceUrl ? (

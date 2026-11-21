@@ -152,7 +152,8 @@ export function Topbar({
           aria-controls={accountMenuId}
           aria-label={`Abrir menú de cuenta de ${user?.nombre ?? 'usuario'}`}
         >
-          <span className="grid h-8 w-8 place-items-center rounded-md bg-brand-700 text-xs font-bold text-white">{initials}</span>
+          {/* Spec 211 (WCAG 2.5.3): las iniciales son un avatar decorativo; el nombre visible sigue en la etiqueta. */}
+          <span aria-hidden="true" data-initials={initials} className="grid h-8 w-8 place-items-center rounded-md bg-brand-700 text-xs font-bold text-white before:content-[attr(data-initials)]" />
           <span className="hidden max-w-[140px] truncate text-sm font-medium sm:block">{user?.nombre}</span>
           <ChevronDown className="h-4 w-4 text-muted max-[480px]:hidden" aria-hidden="true" />
         </button>
