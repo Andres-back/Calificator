@@ -200,6 +200,7 @@ ALL_SPECS = {
     "206-recalificar-respuestas-corregidas",
     "207-respuestas-fuera-de-fotos",
     "208-aviso-recorte",
+    "209-criterio-accesibilidad",
 }
 OWNED_SPECS = {
     name

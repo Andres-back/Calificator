@@ -26,6 +26,10 @@ en español se encuentran en `.specify/templates/overrides`.
 
 Las tareas técnicas permanecen en `tasks.md`; no se usa `taskstoissues`.
 
+Una spec que cambie pantallas de docentes o estudiantes incluye en su validación el recorrido de
+[accesibilidad y usabilidad](accesibilidad-usabilidad.md): teclado, objetivos táctiles, contraste
+en claro y oscuro, lenguaje llano y capturas en celular y computador.
+
 ## Hotfix
 
 El PR y el issue llevan la etiqueta `hotfix`. Siguen siendo obligatorios `spec.md`, `plan.md`,
