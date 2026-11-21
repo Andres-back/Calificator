@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Accesibilidad básica de controles', () => {
   test('los botones visibles de acceso tienen nombre y tamaño táctil comprensible', async ({ page }) => {
     await page.goto('/login');
+    // count() no espera: con el servidor en frío de CI la página aún no se ha dibujado.
+    await expect(page.getByRole('button', { name: /Iniciar sesi.n/i })).toBeVisible();
     const buttons = page.locator('button:visible');
     const count = await buttons.count();
     expect(count).toBeGreaterThan(0);

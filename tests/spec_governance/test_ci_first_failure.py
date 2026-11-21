@@ -59,7 +59,7 @@ def test_a_browser_install_timeout_does_not_cancel_the_run(name):
     items = steps(name)
     tests = next(item for item in items if re.search(r'npm run test:(e2e|mock)', item))
     assert re.search(r'^\s+id: e2e$', tests, re.M)
-    assert "if: failure() && steps.e2e.outcome == 'failure'" in items[-1]
+    assert re.search(r"if: failure\(\) && \(?steps\.e2e\.outcome == 'failure'", items[-1])
 
 
 def test_one_slow_shard_install_does_not_cancel_the_other_shards():
