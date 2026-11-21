@@ -380,6 +380,12 @@ jobs:
         timeout-minutes: 25
         run: npm run test:mock -- grading-review.mock.spec.ts evaluation-visuals.mock.spec.ts --reporter=line --max-failures=1
 
+      # Spec 210: principio V de la constitución; criterios en docs/accesibilidad-usabilidad.md.
+      - name: Run accessibility checks
+        id: a11y
+        timeout-minutes: 10
+        run: npm run test:a11y -- --reporter=line --max-failures=1
+
       - name: Upload E2E diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -393,7 +399,7 @@ jobs:
             output/playwright/
 
       - name: Stop the run at the first failure
-        if: failure() && steps.e2e.outcome == 'failure'
+        if: failure() && (steps.e2e.outcome == 'failure' || steps.a11y.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh run cancel "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY"
