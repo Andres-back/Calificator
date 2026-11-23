@@ -170,6 +170,10 @@ table.fcards td.empty {{ border: 0; }}
 .fc-num {{ font-size: 8px; color: #94A3B8; font-weight: bold; letter-spacing: .08em; }}
 .fc-front {{ font-size: 17px; font-weight: bold; color: #1E1B4B; margin-top: 4px; line-height: 1.25; }}
 .fc-back {{ font-size: 10.5px; color: #15803D; margin-top: 8px; line-height: 1.4; }}
+/* ── Spec 214: preguntas en hoja aparte, con renglones para escribir a mano ── */
+.newpage {{ break-before: page; page-break-before: always; }}
+.aline {{ border-bottom: 1px solid #9CA3AF; height: 8mm; }}
+.sheet-name {{ font-size: 11px; margin: 0 0 12px; }}
 """
 
 
@@ -409,6 +413,29 @@ def _render_matching(c: dict, soluciones: bool, *, label: str, verb: str) -> str
     return body
 
 
+# ── Hoja de preguntas (Spec 214) ─────────────────────────────────────────────
+def _answer_lines(expected: Any = None) -> int:
+    """Renglones para responder a mano, según la extensión de la respuesta esperada."""
+    text = " ".join(str(expected or "").split())
+    if not text:
+        return 3
+    # A mano caben unas 35 letras por renglón; se deja uno de holgura.
+    return max(2, min(8, -(-len(text) // 35) + 1))
+
+
+def _answer_space(lines: int) -> str:
+    return '<div class="aline"></div>' * lines
+
+
+def _questions_sheet(questions: str, *, after_reading: bool, student_copy: bool) -> str:
+    """Con un texto antes, las preguntas empiezan en hoja nueva y esa hoja pide el nombre."""
+    heading = '<div class="h3">Preguntas de comprensión</div>'
+    if not after_reading:
+        return heading + questions
+    name = '<p class="sheet-name"><b>Nombre:</b> <span class="header-line">&nbsp;</span></p>' if student_copy else ""
+    return f'<div class="newpage">{name}{heading}{questions}</div>'
+
+
 # ── Tipos de texto ───────────────────────────────────────────────────────────
 def _ul(items: list) -> str:
     lis = "".join(f"<li>{_e(x)}</li>" for x in (items or []) if str(x).strip())
@@ -450,12 +477,12 @@ def _render_cuento_mejorado(c: dict, soluciones: bool) -> str:
         out.append(f'<div class="moraleja" style="margin-top:10px"><b>Moraleja:</b> {_e(c["moraleja"])}</div>')
     preguntas = [q for q in (c.get("preguntas_comprension") or []) if str(q).strip()]
     if preguntas:
-        out.append('<div class="h3">Preguntas de comprensión</div>')
-        for index, pregunta in enumerate(preguntas, start=1):
-            out.append(
-                f'<div class="keep" style="margin-bottom:8px"><p class="p"><b>{index}.</b> {_e(pregunta)}</p>'
-                '<div class="line"></div><div class="line"></div></div>'
-            )
+        items = "".join(
+            f'<div class="keep" style="margin-bottom:10px"><p class="p"><b>{index}.</b> {_e(pregunta)}</p>'
+            f'{_answer_space(_answer_lines())}</div>'
+            for index, pregunta in enumerate(preguntas, start=1)
+        )
+        out.append(_questions_sheet(items, after_reading=bool(parrafos or image), student_copy=not soluciones))
     return "".join(out)
 
 
@@ -790,22 +817,23 @@ def _render_lectura_comprensiva(c: dict, soluciones: bool) -> str:
             out.append(f'<p class="opt"><b>Fuente:</b> {_e(c["fuente"])}</p>')
         out.append("</div>")
     if c.get("preguntas"):
-        out.append('<div class="h3">Preguntas de comprensión</div>')
+        items = []
         for q in c["preguntas"]:
-            out.append('<div class="card keep">')
+            items.append('<div class="card keep">')
             badge_values = [q.get("tipo"), q.get("dificultad")]
             badge = " · ".join(_e(value) for value in badge_values if value)
             tipo_badge = f' <span class="pts">[{badge}]</span>' if badge else ""
-            out.append(f'<p class="p"><b>{_e(q.get("numero"))}.</b> {_e(q.get("enunciado"))}{tipo_badge}</p>')
+            items.append(f'<p class="p"><b>{_e(q.get("numero"))}.</b> {_e(q.get("enunciado"))}{tipo_badge}</p>')
             if soluciones and q.get("respuesta_esperada"):
-                out.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(q["respuesta_esperada"])}</p>')
+                items.append(f'<p class="opt" style="color:#15803D"><b>Respuesta:</b> {_e(q["respuesta_esperada"])}</p>')
                 if q.get("evidencia_textual"):
-                    out.append(f'<p class="opt" style="color:#15803D"><b>Evidencia:</b> {_e(q["evidencia_textual"])}</p>')
+                    items.append(f'<p class="opt" style="color:#15803D"><b>Evidencia:</b> {_e(q["evidencia_textual"])}</p>')
                 if q.get("justificacion"):
-                    out.append(f'<p class="opt" style="color:#15803D"><b>Por qué:</b> {_e(q["justificacion"])}</p>')
-            else:
-                out.append('<div class="line"></div><div class="line"></div><div class="line"></div>')
-            out.append("</div>")
+                    items.append(f'<p class="opt" style="color:#15803D"><b>Por qué:</b> {_e(q["justificacion"])}</p>')
+            elif not soluciones:
+                items.append(_answer_space(_answer_lines(q.get("respuesta_esperada") or q.get("respuesta_correcta"))))
+            items.append("</div>")
+        out.append(_questions_sheet("".join(items), after_reading=bool(c.get("texto")), student_copy=not soluciones))
     return "".join(out)
 
 

@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "05db9901f676442fb50c957b71befcff9208e84a6f4de39f70207d054c3e3bb2",
+  "source_digest": "99d42da85674b0c4ed016220514203f8c5435c32411f39c775b10854d1a9259c",
   "surfaces": [
     {
       "actors": [
@@ -25165,6 +25165,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "backend/tests/unit/test_image_preprocessing.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_lectura_preguntas_hoja_aparte.py"
         },
         {
           "level": "unit",

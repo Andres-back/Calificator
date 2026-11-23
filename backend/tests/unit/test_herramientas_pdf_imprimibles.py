@@ -151,7 +151,7 @@ def test_real_image_is_still_printed(tipo: str) -> None:
         assert 'class="story-grid"' in html
 
 
-def test_story_questions_are_numbered_with_two_answer_lines_each() -> None:
+def test_story_questions_are_numbered_with_room_to_answer() -> None:
     html = html_for(
         "cuento",
         {"parrafos": ["Texto."], "preguntas_comprension": ["¿Qué pasó primero?", "¿Qué aprendiste?"]},
@@ -161,7 +161,8 @@ def test_story_questions_are_numbered_with_two_answer_lines_each() -> None:
     assert "Preguntas de comprensión" in body
     assert "Preguntas de comprension<" not in body
     assert "<b>1.</b> ¿Qué pasó primero?" in body and "<b>2.</b> ¿Qué aprendiste?" in body
-    assert body.count('<div class="line"></div>') == 4
+    # Spec 214: tres renglones de escritura a mano por pregunta, en lugar de dos renglones estrechos.
+    assert body.count('<div class="aline"></div>') == 6
 
 
 def test_cards_are_kept_together_across_pages() -> None:

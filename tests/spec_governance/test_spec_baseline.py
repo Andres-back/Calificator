@@ -205,6 +205,7 @@ ALL_SPECS = {
     "211-axe-wcag",
     "212-modelo-principal-desacuerdo",
     "213-notas-ia-por-pregunta",
+    "214-lectura-preguntas-hoja-aparte",
 }
 OWNED_SPECS = {
     name
