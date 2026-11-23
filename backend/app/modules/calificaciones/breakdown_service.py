@@ -422,6 +422,9 @@ async def update_breakdown(db: AsyncSession, *, calificacion: Calificacion, expe
         if change and (not str(change.get("motivo_interno") or "").strip() or not explanation_student):
             raise HTTPException(status_code=422, detail="Cada cambio requiere motivo interno y explicación para el estudiante.")
         component = {"clave": old.clave, "orden": old.orden, "tipo": old.tipo, "numero": old.numero, "titulo": old.titulo, "respuesta_estudiante": old.respuesta_estudiante, "respuesta_referencia": old.respuesta_referencia, "puntos_obtenidos": points, "puntos_maximos": old.puntos_maximos, "estado": state, "explicacion_verificable": explanation_student or old.explicacion_verificable, "explicacion_estudiante": explanation_student, "origen": "docente" if change else old.origen, "requiere_revision": False if change else old.requiere_revision, "evidencia_json": dict(old.evidencia_json or {}), "valoraciones_json": list(old.valoraciones_json or [])}
+        if change and state == "correcta":
+            # Spec 215: una respuesta que el docente deja correcta ya no tiene nada «para mejorar».
+            component["evidencia_json"].pop("orientacion_mejora", None)
         new_components.append(component)
         if change:
             audit_rows.append((old.clave, {"puntos": float(old.puntos_obtenidos or 0), "estado": old.estado}, {"puntos": float(points), "estado": state}, str(change["motivo_interno"]).strip(), explanation_student or ""))

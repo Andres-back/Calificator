@@ -1,14 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import './gradeQuestionLayout.css';
 import { componentPoints } from '@/lib/componentPoints';
-import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, EyeOff, FileSearch, ScanSearch, XCircle } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { AlertTriangle, Check, CheckCircle2, ChevronLeft, ChevronRight, EyeOff, FileSearch, ListChecks, ScanSearch, XCircle } from 'lucide-react';
+import { Badge, Button } from '@/components/ui';
 import type { GradeBreakdownData } from '@/types/api';
 import { GradeFormula } from './GradeFormula';
 import { gradeCalculationPresentation } from './gradeCalculationPresentation';
 import { gradeComponentPresentation } from './gradeComponentPresentation';
 import { buildReviewTriage, classifyReviewComponent, type ReviewTriageSummary } from '../review-triage/buildReviewTriage';
 import { reviewPriorityPresentation } from '../review-triage/reviewPriorityPresentation';
+import { BulkMarkPanel } from './BulkMarkPanel';
+import { canBulkMark, type BulkMarkState } from './bulkQuestionMark';
 
 const stateIcons = { check: CheckCircle2, warning: AlertTriangle, x: XCircle };
 
@@ -21,7 +23,14 @@ function readSeen(key: string): ReadonlySet<string> {
   }
 }
 
-export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent, reviewSummary, onShowInSheet }: {
+/** Spec 215: la misma lista de números sirve para recorrer las preguntas o para seleccionarlas. */
+function QuestionChips({ bulk, listRef, className, children }: { bulk: boolean; listRef: RefObject<HTMLDivElement>; className: string; children: ReactNode }) {
+  return bulk
+    ? <div ref={listRef} role="group" aria-label="Preguntas para marcar" className={className}>{children}</div>
+    : <nav aria-label="Preguntas y criterios" className={className}>{children}</nav>;
+}
+
+export function GradeBreakdown({ breakdown, student = false, compactTeacher = false, onEdit, onEvidencePage, editingComponentId, renderEditor, renderEvidence, selectedComponentId, onSelectComponent, reviewSummary, onShowInSheet, onBulkMark, bulkSaving = false }: {
   breakdown: GradeBreakdownData;
   student?: boolean;
   compactTeacher?: boolean;
@@ -35,6 +44,9 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
   reviewSummary?: ReviewTriageSummary;
   /** Spec 175: lleva la hoja a la zona de la respuesta que el docente pulsa. */
   onShowInSheet?: (component: GradeBreakdownData['componentes'][number]) => void;
+  /** Spec 215: guarda de una vez el resultado de varias preguntas. */
+  onBulkMark?: (componentIds: string[], state: BulkMarkState) => void;
+  bulkSaving?: boolean;
 }) {
   const compact = compactTeacher && !student;
   const calculation = student ? undefined : gradeCalculationPresentation(breakdown);
@@ -52,6 +64,31 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
       return next;
     });
   }, [compact, selectedComponentId, seenKey]);
+  // Spec 215: en el modo de marcar varias, los números seleccionan preguntas en vez de abrirlas.
+  const bulkQuestions = !student && onBulkMark && onSelectComponent ? breakdown.componentes.filter(canBulkMark) : [];
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkPending, setBulkPending] = useState<BulkMarkState | null>(null);
+  const bulkActive = bulkMode && bulkQuestions.length > 1;
+  const leaveBulk = () => { setBulkMode(false); setBulkSelected(new Set()); setBulkPending(null); };
+  // Una versión nueva del desglose (tras guardar o al cambiar de entrega) cierra el modo.
+  // También lo cierra dejar de ofrecerlo, por ejemplo al abrir el editor de una pregunta.
+  const bulkOffered = Boolean(onBulkMark);
+  useEffect(leaveBulk, [breakdown.id, breakdown.version, bulkOffered]);
+  // El foco entra a la primera pregunta al activar el modo y vuelve al botón al salir.
+  const bulkListRef = useRef<HTMLDivElement>(null);
+  const bulkTriggerRef = useRef<HTMLButtonElement>(null);
+  const bulkWasActive = useRef(false);
+  useEffect(() => {
+    if (bulkActive) bulkListRef.current?.querySelector<HTMLButtonElement>('[role="checkbox"]:not(:disabled)')?.focus({ preventScroll: true });
+    else if (bulkWasActive.current) bulkTriggerRef.current?.focus({ preventScroll: true });
+    bulkWasActive.current = bulkActive;
+  }, [bulkActive]);
+  const toggleBulk = (componentId: string) => setBulkSelected((previous) => {
+    const next = new Set(previous);
+    if (!next.delete(componentId)) next.add(componentId);
+    return next;
+  });
   return (
     <section aria-labelledby="grade-breakdown-title" className="space-y-4">
       <div className={compact ? 'sr-only' : 'flex flex-wrap items-center justify-between gap-2'}>
@@ -64,25 +101,47 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
         </Badge>}
       </div>
       {onSelectComponent && !student ? <>
-        <nav aria-label="Preguntas y criterios" className="grid grid-cols-[repeat(auto-fit,minmax(max(2.75rem,calc((100%_-_1.5rem)/4)),1fr))] gap-2 lg:flex lg:flex-wrap">
+        <QuestionChips bulk={bulkActive} listRef={bulkListRef} className="grid grid-cols-[repeat(auto-fit,minmax(max(2.75rem,calc((100%_-_1.5rem)/4)),1fr))] gap-2 lg:flex lg:flex-wrap">
           {breakdown.componentes.map((component, index) => {
             const item = priorities.get(component.id) ?? classifyReviewComponent(component);
             const { label } = reviewPriorityPresentation[item.level];
             const settled = compact && item.level === 'attention' && (seen.has(component.id) || component.id === selectedComponentId);
-            const { Icon, classes } = reviewPriorityPresentation[settled ? 'safe' : item.level];
+            const { Icon: PriorityChipIcon, classes } = reviewPriorityPresentation[settled ? 'safe' : item.level];
+            const pickable = bulkActive && canBulkMark(component);
+            const picked = pickable && bulkSelected.has(component.id);
+            const Icon = picked ? Check : PriorityChipIcon;
             return <button
-            key={component.id} type="button" onClick={() => onSelectComponent(component.id)}
-            aria-current={component.id === selectedComponentId ? 'step' : undefined}
+            key={component.id} type="button" onClick={() => (pickable ? toggleBulk(component.id) : onSelectComponent(component.id))}
+            role={bulkActive ? 'checkbox' : undefined}
+            aria-checked={bulkActive ? picked : undefined}
+            disabled={bulkActive && (!pickable || bulkPending !== null || bulkSaving)}
+            aria-current={!bulkActive && component.id === selectedComponentId ? 'step' : undefined}
             aria-label={`${component.tipo === 'pregunta' ? 'Pregunta' : 'Criterio'} ${component.numero ?? component.orden + 1}, ${label}${breakdown.componentes.some(other => other.id !== component.id && other.numero === component.numero) ? `, posición ${index + 1} de ${breakdown.componentes.length}` : ''}`}
             aria-describedby={compact ? `grade-nav-summary-${component.id}` : undefined}
             title={[compact ? gradeComponentPresentation(component).label : null, label, ...item.reasons.map((reason) => reason.label)].filter(Boolean).join('. ')}
             data-review-priority={item.level}
             data-review-seen={settled || undefined}
-            className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold sm:justify-start sm:gap-2 sm:px-3 ${classes} ${component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
+            className={`focus-ring inline-flex min-h-11 min-w-11 max-w-full items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold sm:justify-start sm:gap-2 sm:px-3 disabled:cursor-not-allowed ${picked ? 'border-brand-700 bg-brand-700 text-white' : `${classes} ${bulkActive && !pickable ? 'opacity-40' : ''}`} ${!bulkActive && component.id === selectedComponentId ? 'ring-2 ring-brand-500 ring-offset-2 ring-offset-surface' : ''}`}
           ><Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 break-all">{component.numero ?? component.orden + 1}</span>{compact && <span data-question-score aria-hidden="true" className="hidden text-left text-xs font-normal tabular-nums lg:inline">{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)}</span>}{compact && <span className="sr-only" id={`grade-nav-summary-${component.id}`}>{componentPoints(component.puntos_obtenidos)}/{componentPoints(component.puntos_maximos)} · {gradeComponentPresentation(component).label}</span>}</button>;
           })}
-        </nav>
-        {selectedIndex >= 0 && <div className={`flex min-w-0 items-center justify-between gap-2 rounded-xl bg-surface-2 px-2 py-1 ${compact ? 'lg:justify-start lg:gap-3 lg:bg-transparent lg:px-0 lg:py-0' : ''}`} aria-label="Recorrer preguntas">
+        </QuestionChips>
+        {bulkQuestions.length > 1 && !bulkActive && <div>
+          <Button ref={bulkTriggerRef} type="button" variant="outline" size="sm" className="min-h-11" icon={<ListChecks className="h-4 w-4" />} onClick={() => setBulkMode(true)}>Marcar varias preguntas</Button>
+        </div>}
+        {bulkActive && <BulkMarkPanel
+          formula={breakdown.formula}
+          questions={bulkQuestions}
+          selected={bulkSelected}
+          pending={bulkPending}
+          saving={bulkSaving}
+          onSelectAll={() => setBulkSelected(new Set(bulkQuestions.map((component) => component.id)))}
+          onClear={() => setBulkSelected(new Set())}
+          onChoose={setBulkPending}
+          onBack={() => setBulkPending(null)}
+          onConfirm={() => bulkPending && onBulkMark?.(bulkQuestions.filter((component) => bulkSelected.has(component.id)).map((component) => component.id), bulkPending)}
+          onCancel={leaveBulk}
+        />}
+        {selectedIndex >= 0 && !bulkActive && <div className={`flex min-w-0 items-center justify-between gap-2 rounded-xl bg-surface-2 px-2 py-1 ${compact ? 'lg:justify-start lg:gap-3 lg:bg-transparent lg:px-0 lg:py-0' : ''}`} aria-label="Recorrer preguntas">
           <button type="button" aria-label="Pregunta anterior" disabled={selectedIndex === 0} onClick={() => onSelectComponent(breakdown.componentes[selectedIndex - 1].id)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-sm font-semibold disabled:opacity-40"><ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="hidden sm:inline">Anterior</span></button>
           <p className="text-sm font-semibold tabular-nums" aria-live="polite">{selectedIndex + 1} de {breakdown.componentes.length}</p>
           <button type="button" aria-label="Pregunta siguiente" disabled={selectedIndex === breakdown.componentes.length - 1} onClick={() => onSelectComponent(breakdown.componentes[selectedIndex + 1].id)} className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border border-border px-2 text-sm font-semibold disabled:opacity-40"><span className="hidden sm:inline">Siguiente</span><ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" /></button>

@@ -29,6 +29,17 @@ const screens: Screen[] = [
     await page.getByText('Estudiante Prueba', { exact: true }).click();
     await expect(page.getByRole('heading', { name: '1. Nota y explicación' })).toBeVisible();
   } },
+  // Spec 215: el modo de marcar varias preguntas, con dos seleccionadas.
+  { name: 'marcar varias preguntas', open: async (page) => {
+    await login(page, 'profesor', { questionCount: 8 });
+    await page.goto('/app/calificaciones?evaluacion=e1&calificacion=c1');
+    await page.getByRole('navigation', { name: 'Secciones de la calificación' }).getByRole('button', { name: 'Respuestas y puntajes', exact: true }).click();
+    await page.getByRole('button', { name: 'Marcar varias preguntas', exact: true }).click();
+    const chips = page.getByRole('group', { name: 'Preguntas para marcar' }).getByRole('checkbox');
+    await chips.nth(1).click();
+    await chips.nth(2).click();
+    await expect(page.getByText('2 preguntas seleccionadas')).toBeVisible();
+  } },
   { name: 'retroalimentación del estudiante', open: async (page) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await login(page, 'estudiante');
