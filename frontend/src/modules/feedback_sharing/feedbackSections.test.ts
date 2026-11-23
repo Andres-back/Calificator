@@ -40,6 +40,14 @@ describe('presentación conservadora de retroalimentación', () => {
     expect(blocks[2].steps).toEqual(['Añade un ejemplo del párrafo final.']);
     expect(feedbackPrintText(text)).toContain('Añade un ejemplo del párrafo final.');
   });
+  it('160 la pregunta empieza por la acción y conserva el motivo, sin perder texto', () => {
+    const text = 'Lograste 1 de 2 respuestas con puntaje completo. Pregunta 2: Relee el párrafo inicial y escribe una razón. Por qué: Falta explicar el motivo.';
+    const blocks = feedbackLearningBlocks(text);
+    expect(blocks.map(block => block.original).join('')).toBe(text);
+    expect(blocks.map(block => block.kind)).toEqual(['summary', 'question']);
+    expect(blocks[1].text).toBe('Relee el párrafo inicial y escribe una razón. Por qué: Falta explicar el motivo.');
+    expect(feedbackPrintText(text)).toContain('Por qué: Falta explicar el motivo.');
+  });
   it('135 no añade logros, errores o prácticas cuando no están documentados', () => {
     const text = 'No se distingue la última respuesta. Consulta la foto con tu docente.';
     expect(feedbackLearningBlocks(text)).toEqual([{ title: 'Retroalimentación', text, original: text, kind: 'summary', steps: [] }]);

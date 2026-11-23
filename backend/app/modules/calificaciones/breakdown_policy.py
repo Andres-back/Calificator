@@ -294,9 +294,11 @@ def build_formative_feedback(components: list[dict]) -> str:
                 (item.get("evidencia_json") or {}).get("orientacion_mejora") or ""
             ).split()
         ).strip()
-        detail = explanation or "Esta respuesta necesita revisión."
-        if orientation:
-            detail = f"{detail} Siguiente paso: {orientation}"
+        # Spec 160 (FR-004): primero qué hacer y después, breve, por qué.
+        if orientation and explanation:
+            detail = f"{orientation} Por qué: {explanation}"
+        else:
+            detail = orientation or explanation or "Esta respuesta necesita revisión."
         parts.append(f"Pregunta {number}: {detail}")
     if len(needs_attention) > 3:
         parts.append(

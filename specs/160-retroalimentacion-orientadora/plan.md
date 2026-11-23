@@ -12,7 +12,7 @@
 
 ## Decisión
 
-Dos PR pequeños.
+Tres PR pequeños. El mensaje orientador se dividió en dos el 2026-11-23: el PR 2 cambia solo código y el PR 3, las instrucciones al modelo, que necesitan una validación con IA.
 
 **PR 1, foto siempre adjunta**
 - `new_publication` guarda siempre `evidence_enabled=True`. El campo `evidencia` de la API se sigue aceptando y se ignora, para no romper pestañas abiertas durante el despliegue.
@@ -21,11 +21,13 @@ Dos PR pequeños.
 - La copia del docente pide activar la foto con `adjuntar_evidencia`. La recuperación automática al abrir el panel usa la misma ruta sin ese campo, y no cambia nada. Reemplazar el enlace también activa la foto.
 - `evidencia_disponible` exige que la entrega tenga archivo. Un 404 de la foto ya no cierra la página: vuelve a consultar el enlace y solo se cierra si de verdad está cerrado. Antes esto casi no ocurría porque la foto venía apagada.
 
-**PR 2, mensaje orientador**
+**PR 2, mensaje orientador sin IA**
 - `build_formative_feedback`: "Pregunta N: {orientación} Por qué: {explicación}".
-- Reglas nuevas en `agents.py` y `feedback_refinement.py` (FR-005, FR-006).
 - `score_notes.py` deja de añadir la frase a la explicación del estudiante.
-- El aviso interno no pasa a enlaces nuevos, sin cambiar la huella de los vigentes; se confirma con una prueba de enlace vigente (FR-008, FR-009).
+- El aviso interno ya no llega a enlaces nuevos: `ensure_feedback_coherence` rechaza el mensaje que empieza por él y `delivery_message` lo quita del texto ofrecido. No se cambia la proyección, así que la huella de los enlaces vigentes es la misma; se fija con una prueba (FR-008, FR-009).
+
+**PR 3, reglas de redacción**
+- Reglas nuevas en `agents.py` y `feedback_refinement.py` (FR-005, FR-006).
 - Validación con pocas entregas anónimas y un modelo dentro del techo de costo, sin guardar nada, avisando el costo antes.
 
 Descartado:
@@ -43,9 +45,9 @@ Descartado:
 | 1 | `frontend/src/modules/feedback_sharing/FeedbackSharePanel.tsx`, `FeedbackAccessList.tsx`, `FeedbackLinkActions.tsx`, `FeedbackStudentLink.tsx`, `api.ts` | sin casilla, texto nuevo, gesto que activa la foto |
 | 1 | `frontend/src/modules/feedback_sharing/PublicFeedbackEvidence.tsx`, `PublicFeedbackPage.tsx` | la foto que falla no oculta la nota |
 | 2 | `backend/app/modules/calificaciones/breakdown_policy.py` | la acción primero |
-| 2 | `backend/app/modules/calificaciones/agents.py`, `feedback_refinement.py` | reglas de redacción |
 | 2 | `backend/app/modules/evaluaciones/score_notes.py` | sin frase de reparto al estudiante |
-| 2 | `backend/app/modules/feedback_sharing/projection.py` | aviso interno fuera de enlaces nuevos |
+| 2 | `backend/tests/unit/test_feedback_action_first.py`, `frontend/src/modules/feedback_sharing/feedbackSections.test.ts` | pruebas; la proyección no cambia |
+| 3 | `backend/app/modules/calificaciones/agents.py`, `feedback_refinement.py` | reglas de redacción |
 
 ## Riesgos
 
