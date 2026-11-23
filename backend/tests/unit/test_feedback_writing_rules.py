@@ -53,8 +53,15 @@ def test_fr006_los_textos_del_estudiante_no_nombran_el_funcionamiento_interno():
     for term in ("validación objetiva", "clave oficial", "verificador", "transcripción", "reparto"):
         assert term in rule
     assert "«tu respuesta»" in rule and "«la respuesta esperada»" in rule
+
+
+def test_fr006_las_alertas_son_para_el_docente_y_solo_cuando_debe_decidir():
     # Lo que es para el docente tiene dónde ir, y la interfaz lo muestra en la pregunta (Spec 213).
-    assert "va en alertas" in rule and "«P3: …»" in rule
+    rule = next(line for line in formative_rules().splitlines() if line.startswith("- alertas es solo"))
+    assert "lo que el docente debe comprobar o decidir" in rule
+    assert "«P3: …»" in rule
+    # En la muestra, sin esta frase el modelo anotaba como alerta cada respuesta incorrecta.
+    assert "No pongas en alertas que una respuesta es incorrecta" in rule
 
 
 def test_fr006_orientar_sin_dar_respuesta_cubre_los_tres_textos():

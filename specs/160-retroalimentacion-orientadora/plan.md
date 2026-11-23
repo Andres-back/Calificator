@@ -29,6 +29,7 @@ Tres PR pequeños. El mensaje orientador se dividió en dos el 2026-11-23: el PR
 **PR 3, reglas de redacción**
 - Reglas nuevas en `agents.py` y `feedback_refinement.py` (FR-005, FR-006).
 - Validación con pocas entregas anónimas y un modelo dentro del techo de costo, sin guardar nada, avisando el costo antes.
+- Las alertas del calificador se muestran al docente en cada pregunta (Spec 213). Por eso la regla dice qué es una alerta: algo que el docente debe comprobar o decidir, no el aviso de que una respuesta es incorrecta.
 
 Descartado:
 

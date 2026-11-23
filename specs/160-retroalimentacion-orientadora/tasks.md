@@ -39,8 +39,22 @@
 
 ## PR 3: reglas de redacción
 
-Sus tareas se añaden en ese PR: reglas en `agents.py` y `feedback_refinement.py` y validación con una muestra anónima y un modelo dentro del techo de costo, avisando el costo antes. (FR-005, FR-006)
+### Pruebas primero (RED)
+
+- [X] T014 Pruebas en `backend/tests/unit/test_feedback_writing_rules.py`: el calificador pide primero la acción y el error breve, la meta en palabras sencillas, ningún término interno en los tres textos del estudiante, `orientar_sin_dar_respuesta` sobre los tres textos, y la reescritura con el mismo orden y lenguaje. RED: las 5 fallan con las instrucciones desplegadas. (FR-005, FR-006)
+
+### Corrección (GREEN)
+
+- [X] T015 Reglas de la sección «Retroalimentación formativa» de `GRADER_PROMPT_TEMPLATE` en `agents.py`: primero la acción y luego el porqué, `orientacion_mejora` empieza por un verbo, la meta se dice si existe, y los textos del estudiante no nombran el funcionamiento interno. Las reglas obligatorias de puntaje no se tocan. (FR-005, FR-006)
+- [X] T016 `orientar_sin_dar_respuesta` cubre `feedback_estudiante`, `explicacion` y `orientacion_mejora`: sin letra, valor ni texto esperados. Se actualiza la aserción de `test_comparator_feedback.py`. (FR-006)
+- [X] T017 Instrucción de `feedback_refinement.py` con el mismo orden y sin términos internos, conservando sus protecciones. (FR-005, FR-006)
+
+### Validación con IA
+
+- [X] T018 Muestra sin guardar nada: 8 entregas anónimas de producción con `claude-haiku-5-5`, instrucciones actuales frente a nuevas, con el costo aprobado antes. (FR-005, FR-006)
+- [X] T019 Ajuste nacido de la muestra: las alertas son solo para lo que el docente debe comprobar o decidir, empiezan por la pregunta y no repiten que una respuesta es incorrecta. La prueba añadida falla con las instrucciones desplegadas; la muestra se repitió con la regla nueva. (FR-006)
+- [X] T020 Ejecutar pruebas, inventario y gobernanza, y registrar los resultados en `quickstart.md`. (FR-005, FR-006, FR-009)
 
 ## Dependencias
 
-T001 → T002 → T003 y T004 → T005 → T006 → T007. T008 → T009 y T010 → T011 → T012 → T013.
+T001 → T002 → T003 y T004 → T005 → T006 → T007. T008 → T009 y T010 → T011 → T012 → T013. T014 → T015, T016 y T017 → T018 → T019 → T020.
