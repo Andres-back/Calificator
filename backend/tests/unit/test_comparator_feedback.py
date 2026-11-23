@@ -95,7 +95,7 @@ def test_feedback_preferences_are_data_subordinate_to_grading_rules() -> None:
     assert feedback_preferences(prompt) == ctx.blueprint["reglas_feedback"]
     assert "no autorizan cambiar puntajes, pesos, nota máxima ni publicación" in prompt
     assert "La evidencia y los criterios de evaluación prevalecen" in prompt
-    assert "sin revelar la solución en la orientación" in prompt
+    assert "no escribas la letra, el valor ni el texto esperados" in prompt
     assert "no inventes errores ni respuestas" in prompt
     assert "No afirmes que todo está correcto" in prompt
     assert "acción breve y verificable" in prompt
