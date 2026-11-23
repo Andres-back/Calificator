@@ -727,13 +727,18 @@ function PanelDetalle({
   const verifierAlerts = useMemo(() => Array.isArray(graderB?.alertas)
     ? graderB.alertas.map((item) => String(item)).filter(Boolean)
     : [], [graderB]);
+  // Spec 213: las alertas del modelo principal se muestran con su texto en la pregunta que nombran.
+  const primaryAlerts = useMemo(() => {
+    const alerts = (pipeline?.grader_a as Record<string, unknown> | undefined)?.alertas;
+    return Array.isArray(alerts) ? alerts.map((item) => String(item)).filter(Boolean) : [];
+  }, [pipeline]);
   const verifierRequiresReview = hasVerifierReviewSignals(graderB, strategy);
   const activeBreakdown = editingSnapshot ?? cal.desglose;
   const missingInPhotos = useMemo(() => missingQuestionsInPhotos(pipeline), [pipeline]);
   const noAnswersReason = useMemo(() => photosWithoutAnswers(pipeline), [pipeline]);
   const reviewTriage = useMemo(
-    () => buildReviewTriage(activeBreakdown ?? null, verifierAlerts, missingInPhotos, noAnswersReason),
-    [activeBreakdown, verifierAlerts, missingInPhotos, noAnswersReason],
+    () => buildReviewTriage(activeBreakdown ?? null, verifierAlerts, missingInPhotos, noAnswersReason, primaryAlerts),
+    [activeBreakdown, verifierAlerts, missingInPhotos, noAnswersReason, primaryAlerts],
   );
   const selectedQuestion = activeBreakdown?.componentes.find((component) => component.id === detailParams.get('pregunta') || component.clave === detailParams.get('pregunta')) ?? activeBreakdown?.componentes[0];
   const selectQuestion = (componentId: string) => {
@@ -923,11 +928,11 @@ function PanelDetalle({
     ? rubricComponents.map((component) => ({ nombre: component.titulo, puntaje: component.puntos_obtenidos, maximo: component.puntos_maximos }))
     : !activeBreakdown ? criterios.filter((item) => typeof item.nombre === 'string' && item.nombre.trim()) : [];
   const formatCriterionNumber = (value: unknown) => value == null || String(value).trim() === '' || !Number.isFinite(Number(value)) ? '—' : Number(value).toFixed(2);
+  // Las notas de la IA ya van en reviewTriage (por pregunta o como aviso general, con su texto).
   const alertas = [...new Set([
-    ...(Array.isArray(graderA?.alertas) ? graderA.alertas.map(String).filter(Boolean) : []),
-    ...(!activeBreakdown ? verifierAlerts : []),
     ...(answerKeyIncomplete ? ['clave_incompleta'] : []),
-    ...(graderA?.requiere_revision_docente || graderB?.requiere_revision_docente || strategy?.arbiter_reason === 'verifier_requested' ? ['verificador_solicita_revision'] : []),
+    ...(graderA?.requiere_revision_docente && cal.estado === 'requiere_revision' ? ['principal_solicita_revision'] : []),
+    ...((graderB?.requiere_revision_docente || strategy?.arbiter_reason === 'verifier_requested') && !verifierAlerts.length ? ['verificador_solicita_revision'] : []),
   ])];
   const evidenceUrl = cal.entrega_archivo_url;
   const evidenceScope = `${detailActorId}:${cal.id}:${cal.updated_at}:${evidenceUrl ?? ''}`;

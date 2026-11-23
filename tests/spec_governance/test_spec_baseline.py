@@ -204,6 +204,7 @@ ALL_SPECS = {
     "210-accesibilidad-en-ci",
     "211-axe-wcag",
     "212-modelo-principal-desacuerdo",
+    "213-notas-ia-por-pregunta",
 }
 OWNED_SPECS = {
     name

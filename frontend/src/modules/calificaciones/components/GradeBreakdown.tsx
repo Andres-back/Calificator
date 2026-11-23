@@ -96,11 +96,19 @@ export function GradeBreakdown({ breakdown, student = false, compactTeacher = fa
           const item = priorities.get(component.id);
           const priority = item ? reviewPriorityPresentation[item.level] : null;
           const PriorityIcon = priority?.Icon;
+          // Spec 213: lo que anotó la IA explica el puntaje; se ve dentro de la pregunta aunque solo pida atención.
+          const aiNotes = compact && item?.level !== 'blocked'
+            ? [...new Set((item?.reasons ?? []).filter((reason) => reason.code.startsWith('ai_note') || reason.code === 'primary_model_used').map((reason) => reason.label))]
+            : [];
           const splitEvidence = compact && Boolean(renderEvidence);
           return <article id={`grade-component-${component.id}`} key={component.id} tabIndex={-1} data-review-priority={item?.level} data-grade-tone={student ? presentation.tone : undefined} className={`min-w-0 scroll-mt-24 [overflow-wrap:anywhere] ${compact ? 'grade-question-container border-t border-border pt-5 outline-none' : `rounded-xl border border-l-4 p-4 ${priority ? priority.classes : `border-border bg-surface ${presentation.cardClass}`}`}`}>
             <div className={splitEvidence ? 'grade-question-split grid items-start gap-5' : undefined}>
             <div className="min-w-0" data-testid={compact ? 'grade-question-reading' : undefined}>
             {priority && PriorityIcon && (!compact || item?.level === 'blocked') && <div className={`mb-3 space-y-1 ${compact ? `rounded-lg border px-3 py-2 ${priority.classes}` : ''}`}><p className="flex items-center gap-2 text-sm font-bold"><PriorityIcon className="h-4 w-4 shrink-0" aria-hidden="true" />{priority.label}</p>{item?.reasons.length ? <p className="text-xs leading-5">{[...new Set(item.reasons.map((reason) => reason.label))].join(' · ')}</p> : null}</div>}
+            {aiNotes.length > 0 && <div data-testid="grade-ai-notes" className="mb-3 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-fg">
+              <p className="font-semibold">Notas de la IA</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5 leading-6">{aiNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+            </div>}
             <div className={`flex flex-col gap-2 ${compact || !selectedComponentId || student ? 'sm:flex-row sm:items-start sm:justify-between' : ''}`}>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-200">

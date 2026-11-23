@@ -142,7 +142,9 @@ describe('buildReviewTriage', () => {
 
     expect(result.counts).toEqual({ safe: 1, attention: 2, blocked: 0 });
     expect(result.attention.map((item) => item.component.numero)).toEqual(['2', '3']);
-    expect(result.globalBlockers).toContain('La clave general requiere validación docente.');
+    // Spec 213: la nota conserva su texto y dice quién la escribió.
+    expect(result.globalBlockers).toContain('El verificador anotó: La clave general requiere validación docente.');
+    expect(result.attention[0].reasons.map((reason) => reason.label)).toContain('El verificador anotó: «Revisar la respuesta de la pregunta 3 y la pregunta 2.»');
   });
 
   it('detecta revisión del verificador aunque la nota numérica coincida', () => {

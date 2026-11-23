@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "c2ddc94533384e6d2f0addbc08f5a1eebde25e1f2d90a31ae68431f48d86ec63",
+  "source_digest": "b650a1030c0870b28c069d15fbea418215b5ce6a20d30db8e568e48bbee6cad6",
   "surfaces": [
     {
       "actors": [
@@ -25662,6 +25662,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/mock/ai-notes.mock.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/mock/evaluation-visuals.mock.spec.ts"
         },
         {
@@ -26395,6 +26401,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/review-triage/ReviewTriagePanel.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/review-triage/aiNotes213.test.tsx"
         },
         {
           "level": "unit",
@@ -27438,6 +27450,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/ai-notes.mock.spec.ts"
         },
         {
           "level": "e2e",
@@ -28877,6 +28895,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/ai-notes.mock.spec.ts"
         },
         {
           "level": "e2e",
@@ -58183,6 +58207,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/materia-queue-mobile.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/mock/ai-notes.mock.spec.ts"
         },
         {
           "level": "e2e",
