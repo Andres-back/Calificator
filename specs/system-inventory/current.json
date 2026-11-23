@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "99d42da85674b0c4ed016220514203f8c5435c32411f39c775b10854d1a9259c",
+  "source_digest": "b81ffd61a15ae3d14c113c1465f72cb4600a0a78fb04dd66fc56dfdf3fc9587f",
   "surfaces": [
     {
       "actors": [
@@ -25506,6 +25506,12 @@
           "level": "e2e",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/e2e/bulk-question-mark.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/e2e/camera-capture.spec.ts"
         },
         {
@@ -26268,6 +26274,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/GradeBreakdown.bulk.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/GradeBreakdown.test.tsx"
         },
         {
@@ -26347,6 +26359,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/components/VerificationPendingNotice.test.tsx"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/components/bulkQuestionMark.test.ts"
         },
         {
           "level": "unit",
@@ -27330,6 +27348,12 @@
           "reference": "/app",
           "status": "direct",
           "test_path": "frontend/e2e/auth-navigation.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app",
+          "status": "direct",
+          "test_path": "frontend/e2e/bulk-question-mark.spec.ts"
         },
         {
           "level": "e2e",
@@ -28829,6 +28853,12 @@
           "reference": "/app/calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/app/calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/bulk-question-mark.spec.ts"
         },
         {
           "level": "e2e",
@@ -57654,6 +57684,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_breakdown_bulk_mark.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_breakdown_compatibility.py"
         },
         {
@@ -58135,6 +58171,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "frontend/e2e/accessibility/wcag-axe.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "frontend/e2e/bulk-question-mark.spec.ts"
         },
         {
           "level": "e2e",

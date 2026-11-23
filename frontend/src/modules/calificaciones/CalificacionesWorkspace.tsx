@@ -54,6 +54,7 @@ import { focusReviewSection, revealWithinReview } from './components/reviewSecti
 import { GradeEvidenceViewer } from './components/GradeEvidenceViewer';
 import { GradeQuestionEvidence, type AnswerLocationAction } from './components/GradeQuestionEvidence';
 import { GradeComponentEditor } from './components/GradeComponentEditor';
+import { bulkMarkChanges, type BulkMarkState } from './components/bulkQuestionMark';
 import { GradeFeedback } from './components/GradeFeedback';
 import { GradeReprocessing } from './components/GradeReprocessing';
 import { VerificationPendingNotice } from './components/VerificationPendingNotice';
@@ -842,6 +843,41 @@ function PanelDetalle({
       toast.error(parsed.detail);
     },
   });
+  // Spec 215: varias preguntas en un solo guardado y una sola versión del desglose.
+  const bulkMarkMutation = useMutation({
+    mutationFn: ({ ids, state }: { ids: string[]; state: BulkMarkState }) => {
+      const current = cal.desglose;
+      if (!current) throw new Error('No hay desglose vigente');
+      return updateGradeBreakdown(cal.id, {
+        version_esperada: current.version,
+        cambios_componentes: bulkMarkChanges(current.componentes, new Set(ids), state),
+      });
+    },
+    onSuccess: (data, { ids, state }) => {
+      onSaved();
+      void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+      void queryClient.invalidateQueries({ queryKey: ['calificaciones', cal.evaluacion_id] });
+      void queryClient.invalidateQueries({ queryKey: ['evaluation-review', cal.evaluacion_id] });
+      void queryClient.invalidateQueries({ queryKey: ['grade-breakdown-history', cal.id] });
+      const marked = ids.length === 1
+        ? `1 pregunta marcada como ${state}.`
+        : `${ids.length} preguntas marcadas como ${state === 'correcta' ? 'correctas' : 'incorrectas'}.`;
+      const unscored = data.componentes.filter((component) => component.puntos_obtenidos == null).length;
+      toast.success(unscored
+        ? `${marked} ${unscored === 1 ? 'Falta 1 pregunta' : `Faltan ${unscored} preguntas`} por revisar; la nota sigue sin confirmar.`
+        : `${marked} Nota recalculada.`);
+    },
+    onError: (error) => {
+      const parsed = toApiError(error);
+      if (parsed.status === 409) {
+        // Otra revisión cambió la calificación: se trae la versión vigente y el docente vuelve a elegir.
+        void queryClient.invalidateQueries({ queryKey: ['calificacion-detalle', cal.id] });
+        toast.error('La calificación cambió en otra revisión. No se guardó nada; vuelve a seleccionar las preguntas.');
+        return;
+      }
+      toast.error(parsed.detail);
+    },
+  });
   const finalGradeMutation = useMutation({
     mutationFn: (change: GradeFinalAdjustment) => {
       const { nota_confirmada, ...options } = change;
@@ -882,8 +918,8 @@ function PanelDetalle({
 
   // Notify parent about dirty state
   useEffect(() => {
-    onDirtyChange?.(isDirty || editingComponentDirty || editingFinalGrade || breakdownMutation.isPending || claimDirty || reprocessingDirty);
-  }, [isDirty, editingComponentDirty, editingFinalGrade, breakdownMutation.isPending, claimDirty, reprocessingDirty, onDirtyChange]);
+    onDirtyChange?.(isDirty || editingComponentDirty || editingFinalGrade || breakdownMutation.isPending || bulkMarkMutation.isPending || claimDirty || reprocessingDirty);
+  }, [isDirty, editingComponentDirty, editingFinalGrade, breakdownMutation.isPending, bulkMarkMutation.isPending, claimDirty, reprocessingDirty, onDirtyChange]);
 
   function requestComponentEdit(componentId: string) {
     if (editingComponentId && editingComponentId !== componentId && editingComponentDirty) {
@@ -1054,6 +1090,8 @@ function PanelDetalle({
       selectedComponentId={selectedQuestion?.id}
       onSelectComponent={selectQuestion}
       onEdit={canGrade ? requestComponentEdit : undefined}
+      onBulkMark={canGrade && !editingComponentId ? (ids, state) => bulkMarkMutation.mutate({ ids, state }) : undefined}
+      bulkSaving={bulkMarkMutation.isPending}
       onEvidencePage={evidenceUrl ? showEvidencePage : undefined}
       onShowInSheet={evidenceUrl && mobileTab === 'revision' ? showAnswerInSheet : undefined}
       renderEvidence={evidenceUrl && mobileTab === 'revision' ? (component) => <GradeQuestionEvidence
