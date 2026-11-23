@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b650a1030c0870b28c069d15fbea418215b5ce6a20d30db8e568e48bbee6cad6",
+  "source_digest": "1c23521609c23750ab3a359a3039790f5df91907f552141dd45944a665ddf59a",
   "surfaces": [
     {
       "actors": [
@@ -57852,6 +57852,12 @@
           "level": "unit",
           "reference": "calificaciones",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_feedback_action_first.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_feedback_delivery_batch.py"
         },
         {
@@ -59796,6 +59802,12 @@
           "reference": "evaluaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_evidence_scan_reads.py"
+        },
+        {
+          "level": "unit",
+          "reference": "evaluaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_feedback_action_first.py"
         },
         {
           "level": "unit",

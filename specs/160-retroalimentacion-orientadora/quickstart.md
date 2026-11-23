@@ -32,3 +32,34 @@ Antes de la corrección, 9 pruebas de backend fallaban: publicación sin foto, 4
 1. Generar un enlace de una entrega con foto, sin marcar nada: el estudiante ve **Ver foto de tu entrega**.
 2. Generar un enlace de una entrega en línea: no aparece esa opción.
 3. Abrir un enlace vigente sin foto: sigue igual hasta que el docente lo copie; después aparece la opción.
+
+## PR 2: la acción primero y sin textos internos para el estudiante
+
+### Pruebas
+
+```
+python -m pytest backend/tests/unit/test_feedback_action_first.py -q
+  8 passed
+
+python -m pytest backend/tests/unit -q   (sin test_evidence_scan* ni la versión de fpdf, que fallan solo en este equipo)
+  2291 passed, 7 skipped
+
+npx vitest run src/modules/feedback_sharing
+  216 passed
+```
+
+Antes de la corrección, la importación de `repartition_explanations` fallaba y, con ella resuelta, 3 pruebas de orden seguían fallando: el mensaje empezaba por el error y terminaba con «Siguiente paso». Las pruebas de integración con PostgreSQL corren en CI.
+
+### Hallazgo durante la implementación
+
+El plan preveía tocar `projection.py` para que el aviso «Retroalimentación provisional» no llegara a enlaces nuevos. No hizo falta: `ensure_feedback_coherence` ya rechaza un enlace directo cuyo mensaje empieza por ese aviso, y el texto que se ofrece para aprobar pasa por `delivery_message`, que lo quita. Como la proyección no cambia, la huella de los enlaces vigentes es la misma. Una prueba lo fija.
+
+### Sin efecto en datos
+
+- Ninguna migración ni escritura masiva. Los mensajes y explicaciones guardados conservan su redacción.
+- El orden nuevo se ve en las calificaciones nuevas y en los mensajes que se rehacen desde el desglose. La frase del reparto deja de añadirse a la explicación del estudiante en los próximos repartos; la del docente la conserva.
+
+### Manual, después del despliegue
+
+1. En una calificación nueva con una respuesta parcial, el borrador dice «Pregunta N: {qué hacer} Por qué: {motivo}».
+2. Tras confirmar un reparto de puntos, la explicación del estudiante no empieza por «Con el reparto confirmado».

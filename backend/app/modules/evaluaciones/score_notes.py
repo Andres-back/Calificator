@@ -154,6 +154,13 @@ async def read_score_operation(db, evaluation_id, request_id, actor):
     return deepcopy(receipt.resultado_json)
 
 
+def repartition_explanations(original, student_original, points, maximum):
+    """Spec 160 (FR-007): la frase del reparto va en la explicación del docente, no en la del estudiante."""
+    kept = 'Se conserva la valoración anterior.'
+    teacher = f'Con el reparto confirmado, esta respuesta obtiene {points} de {maximum} puntos. ' + (original or kept)
+    return teacher, student_original or original or kept
+
+
 async def _apply_one(db, evaluation, grade, active, components, actor, request_id):
     previous_score = grade.nota_confirmada if grade.nota_confirmada is not None else grade.nota_sugerida
     previous_context = grade.entrega.contenido_version_id
@@ -167,9 +174,8 @@ async def _apply_one(db, evaluation, grade, active, components, actor, request_i
         component['evidencia_json']['reparto_puntajes'] = metadata
         points = format(component['puntos_obtenidos'].normalize(), 'f')
         maximum = format(component['puntos_maximos'].normalize(), 'f')
-        prefix = f'Con el reparto confirmado, esta respuesta obtiene {points} de {maximum} puntos. '
-        component['explicacion_verificable'] = prefix + (original or 'Se conserva la valoración anterior.')
-        component['explicacion_estudiante'] = prefix + (student_original or original or 'Se conserva la valoración anterior.')
+        component['explicacion_verificable'], component['explicacion_estudiante'] = repartition_explanations(
+            original, student_original, points, maximum)
     formula = calculate_formula(components, evaluation.nota_maxima, 0, active.decimales)
     provenance = deepcopy(active.procedencia_json or {})
     provenance.update(version_anterior=active.version, reparto_puntajes={'request_id': str(request_id), 'version': active.version + 1,
