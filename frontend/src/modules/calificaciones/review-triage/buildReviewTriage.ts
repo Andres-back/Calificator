@@ -32,8 +32,36 @@ export const MISSING_IN_PHOTOS_PREFIX = 'faltan_en_fotos:';
 export const NO_ANSWERS_IN_PHOTOS_PREFIX = 'fotos_sin_respuestas:';
 const MISSING_IN_PHOTOS_GUIDANCE = 'Si el estudiante respondió al reverso o en otra hoja, añade esa foto en «Editar hojas» y vuelve a calificar. La IA no pone cero a una respuesta que no ve.';
 
+/** Spec 213: notas que la IA escribió para el docente, marcadas con quién las escribió. */
+export const PRIMARY_NOTE_PREFIX = 'nota_principal:';
+export const VERIFIER_NOTE_PREFIX = 'nota_verificador:';
+const NOTE_AUTHORS: Record<string, string> = { [PRIMARY_NOTE_PREFIX]: 'El modelo principal', [VERIFIER_NOTE_PREFIX]: 'El verificador' };
+
+/** Texto legible de una nota de la IA, o null si parece un código o un diagnóstico técnico. */
+export function readableAiNote(value: string): string | null {
+  // eslint-disable-next-line no-control-regex
+  const text = value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length < 8 || !/\s/.test(text) || /\b(?:HTTP_?\d{3}|trace(?:back)?|exception|error_code|stack)\b/i.test(text)) return null;
+  return text.length > 280 ? `${text.slice(0, 277).trimEnd()}…` : text;
+}
+
+function aiNote(raw: string): { author: string; text: string | null; verifier: boolean } | null {
+  const prefix = Object.keys(NOTE_AUTHORS).find((item) => raw.startsWith(item));
+  return prefix ? { author: NOTE_AUTHORS[prefix], text: readableAiNote(raw.slice(prefix.length)), verifier: prefix === VERIFIER_NOTE_PREFIX } : null;
+}
+
 function describePendingReviewBlocker(raw: string): { message: string; guidance: string; action: string; target: ReviewNoticeTarget; showGuidance?: boolean; leads?: boolean } {
+  const note = aiNote(raw);
+  if (note?.text) return {
+    message: `${note.author} anotó: «${note.text}»`,
+    guidance: 'Compara la nota con la respuesta del estudiante y la evidencia.', action: 'Revisar respuestas', target: 'revision',
+  };
+  if (note) raw = note.verifier ? 'verificador_solicita_revision' : 'aviso_del_modelo_principal';
   const reason = raw.replace(/^feedback_quality:/, '').trim();
+  if (reason === 'principal_solicita_revision') return {
+    message: 'El modelo principal pidió que revises esta calificación antes de confirmarla.',
+    guidance: 'Revisa las respuestas con avisos y compáralas con la evidencia.', action: 'Revisar respuestas', target: 'revision',
+  };
   if (reason.startsWith(NO_ANSWERS_IN_PHOTOS_PREFIX)) {
     const seen = reason.slice(NO_ANSWERS_IN_PHOTOS_PREFIX.length).trim();
     return {
@@ -89,6 +117,13 @@ function describePendingReviewBlocker(raw: string): { message: string; guidance:
 export function describeReviewBlocker(raw: string, context: 'pending' | 'historical' | 'processing' = 'pending') {
   const notice = describePendingReviewBlocker(raw);
   if (context === 'pending') return notice;
+  const note = aiNote(raw);
+  if (note?.text) return {
+    ...notice,
+    message: `En el análisis inicial, ${note.author.toLowerCase()} anotó: «${note.text}»`,
+    guidance: context === 'processing' ? 'La entrega sigue en análisis. La nota todavía no es definitiva.' : 'Estos avisos pertenecen a la primera revisión; no cambian la nota actual.',
+    action: 'Ver puntajes por pregunta',
+  };
   const reason = raw.replace(/^feedback_quality:/, '').trim();
   const initialMessages: Record<string, string> = {
     nota_global_no_coincide_con_suma: 'En el análisis inicial, la IA propuso una nota distinta a la suma por preguntas.',
@@ -98,6 +133,7 @@ export function describeReviewBlocker(raw: string, context: 'pending' | 'histori
     componentes_o_evidencia_pendientes: 'En el análisis inicial faltaba información para revisar la entrega completa.',
     revision_docente_pendiente: 'La sugerencia inicial quedó pendiente de la decisión del docente.',
     verificador_solicita_revision: 'La segunda revisión de IA dejó observaciones en el análisis inicial.',
+    principal_solicita_revision: 'En el análisis inicial, el modelo principal pidió revisión docente.',
   };
   const missing = reason.startsWith(MISSING_IN_PHOTOS_PREFIX) || reason === 'cobertura_evidencia_incompleta';
   const message = (reason.startsWith(NO_ANSWERS_IN_PHOTOS_PREFIX) ? 'En el análisis inicial la IA no encontró en las fotos respuestas a esta evaluación.' : undefined)
@@ -138,7 +174,8 @@ export function hasVerifierReviewSignals(
 
 function questionNumbersInAlert(alert: string): Set<string> {
   const numbers = new Set<string>();
-  const pattern = /preguntas?\s*(?:n[úu]mero\s*)?(\d+)/gi;
+  // Spec 213: la IA escribe «Pregunta 3», «P3», «P. 3» o «Q3» (igual que el backend).
+  const pattern = /\b(?:preguntas?\s*(?:n[úu]mero\s*)?|p\s*\.?\s*|q\s*)(\d+)\b/gi;
   for (const match of alert.matchAll(pattern)) numbers.add(match[1]);
   return numbers;
 }
@@ -169,7 +206,7 @@ export const PRIMARY_MODEL_ORIGIN = 'modelo_principal';
 function primaryModelLabel(valuations: Record<string, unknown>[]): string {
   const verifier = valuations.find((valuation) => valuation.evaluador === 'B');
   const score = numeric(verifier?.puntaje);
-  const proposal = score != null ? `propuso ${score.toLocaleString('es-CO', { maximumFractionDigits: 2 })} puntos` : 'no pudo valorarla';
+  const proposal = score != null ? `propuso ${score.toLocaleString('es-CO', { maximumFractionDigits: 2 })} ${score === 1 ? 'punto' : 'puntos'}` : 'no pudo valorarla';
   return `El verificador ${proposal}; se usó la valoración del modelo principal`;
 }
 
@@ -236,6 +273,8 @@ export function classifyReviewComponent(component: GradeComponentData, missingIn
 
 function humanizeBlocker(blocker: string): string {
   if (blocker.startsWith(MISSING_IN_PHOTOS_PREFIX) || blocker.startsWith(NO_ANSWERS_IN_PHOTOS_PREFIX) || blocker === 'cobertura_evidencia_incompleta') return describePendingReviewBlocker(blocker).message;
+  const note = aiNote(blocker);
+  if (note) return note.text ? `${note.author} anotó: ${note.text}` : describePendingReviewBlocker(blocker).message;
   if (blocker.startsWith('verificador_ia:')) {
     return `Verificador independiente: ${blocker.slice('verificador_ia:'.length)}`;
   }
@@ -268,23 +307,35 @@ export function photosWithoutAnswers(result: unknown): string | null {
   return first.length > 280 ? `${first.slice(0, 277).trimEnd()}…` : first;
 }
 
-export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifierAlerts: string[] = [], missingInPhotos: string[] = [], noAnswersReason: string | null = null): ReviewTriageSummary {
+export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifierAlerts: string[] = [], missingInPhotos: string[] = [], noAnswersReason: string | null = null, primaryAlerts: string[] = []): ReviewTriageSummary {
   if (noAnswersReason !== null) {
     missingInPhotos = (breakdown?.componentes ?? []).filter((item) => item.tipo === 'pregunta' && item.numero != null).map((item) => String(item.numero));
   }
-  const targetedNumbers = new Set(verifierAlerts.flatMap((alert) => [...questionNumbersInAlert(alert)]));
+  // Spec 213: cada nota de la IA va a la pregunta que nombra; las demás quedan como aviso general.
+  const notes = [
+    ...primaryAlerts.map((alert) => `${PRIMARY_NOTE_PREFIX}${alert}`),
+    ...verifierAlerts.map((alert) => `${VERIFIER_NOTE_PREFIX}${alert}`),
+  ].filter((raw, index, all) => all.indexOf(raw) === index);
+  const attached = new Set<string>();
   const missing = new Set(missingInPhotos);
   const items = [...(breakdown?.componentes ?? [])]
     .sort((a, b) => a.orden - b.orden)
     .map((component) => classifyReviewComponent(component, missing))
     .map((item) => {
-      if (item.level === 'blocked' || ['docente', 'manual'].includes(item.component.origen.toLowerCase()) || !item.component.numero || !targetedNumbers.has(String(item.component.numero))) return item;
+      const numero = item.component.numero == null ? '' : String(item.component.numero);
+      const own = numero ? notes.filter((raw) => questionNumbersInAlert(raw).has(numero)) : [];
+      own.forEach((raw) => attached.add(raw));
+      if (!own.length || ['docente', 'manual'].includes(item.component.origen.toLowerCase())) return item;
       const reasons = [...item.reasons];
-      if (!reasons.some((reason) => reason.code === 'verifier_alert')) {
-        reasons.push({ code: 'verifier_alert', label: 'El verificador independiente pide revisar esta pregunta' });
-      }
-      return { ...item, level: 'attention' as const, reasons };
+      own.forEach((raw, index) => {
+        const note = aiNote(raw);
+        const label = note?.text ? `${note.author} anotó: «${note.text}»`
+          : note?.verifier ? 'El verificador independiente pide revisar esta pregunta' : 'El modelo principal dejó una observación sobre esta pregunta';
+        if (!reasons.some((reason) => reason.label === label)) reasons.push({ code: `ai_note:${index}`, label });
+      });
+      return { ...item, level: item.level === 'blocked' ? item.level : 'attention' as const, reasons };
     });
+  // Una nota sin pregunta, o que nombra una que no está en el desglose, va al aviso general.
   const safe = items.filter((item) => item.level === 'safe');
   const attention = items.filter((item) => item.level === 'attention');
   const blocked = items.filter((item) => item.level === 'blocked');
@@ -298,7 +349,7 @@ export function buildReviewTriage(breakdown: GradeBreakdownData | null, verifier
     ...(breakdown?.bloqueos ?? []).filter((blocker) => !blocker.startsWith('componente_pendiente:')
       && !(missingNotice.length && blocker === 'cobertura_evidencia_incompleta')
       && !(noAnswersReason !== null && blocker === 'feedback_quality:componentes_o_evidencia_pendientes')),
-    ...verifierAlerts.filter((alert) => questionNumbersInAlert(alert).size === 0),
+    ...notes.filter((raw) => !attached.has(raw)),
   ];
   return {
     items,

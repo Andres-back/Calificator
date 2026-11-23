@@ -17,7 +17,7 @@ describe('212 desacuerdo resuelto con el modelo principal', () => {
 
     expect(item.level).toBe('attention');
     expect(item.reasons.map((reason) => reason.code)).toEqual(['primary_model_used']);
-    expect(item.reasons[0].label).toBe('El verificador propuso 1 puntos; se usó la valoración del modelo principal');
+    expect(item.reasons[0].label).toBe('El verificador propuso 1 punto; se usó la valoración del modelo principal');
   });
 
   it('dice cuando el verificador no pudo valorarla', () => {
