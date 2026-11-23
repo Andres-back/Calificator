@@ -63,3 +63,60 @@ El plan preveía tocar `projection.py` para que el aviso «Retroalimentación pr
 
 1. En una calificación nueva con una respuesta parcial, el borrador dice «Pregunta N: {qué hacer} Por qué: {motivo}».
 2. Tras confirmar un reparto de puntos, la explicación del estudiante no empieza por «Con el reparto confirmado».
+
+## PR 3: reglas de redacción
+
+### Pruebas
+
+```
+python -m pytest backend/tests/unit/test_feedback_writing_rules.py backend/tests/unit/test_comparator_feedback.py -q
+  25 passed
+
+python -m pytest backend/tests/unit -q   (sin test_evidence_scan* ni la versión de fpdf, que fallan solo en este equipo)
+  2296 passed, 7 skipped, 1 failed
+```
+
+La que falla es `test_normal_twenty_delivery_path_has_no_extra_calls_or_material_cpu_overhead`, que compara tiempos de proceso entre dos caminos que usan las mismas instrucciones. En este equipo es intermitente: repetida sola pasó 2 de 3 veces. No depende de este cambio; CI la corre en un entorno estable.
+
+Con las instrucciones desplegadas, las 6 pruebas de `test_feedback_writing_rules.py` fallan. Las reglas obligatorias de puntaje no se tocaron.
+
+### Muestra con IA, sin guardar nada
+
+El 2026-11-23 se compararon las instrucciones desplegadas con las nuevas sobre entregas reales, sin nombres y sin escribir en la base: 8 entregas de 5 evaluaciones, cada una con al menos dos respuestas por mejorar. Modelo `claude-haiku-5-5`, 25 llamadas, 0,49 USD según el registro de uso. El costo se aprobó antes, con tope de 1 USD.
+
+Resultado en las 7 entregas que se corrieron con la versión final de las reglas (63 preguntas):
+
+| Medida | Instrucciones desplegadas | Instrucciones nuevas |
+|---|---|---|
+| Preguntas cuyo texto para el estudiante nombra el funcionamiento interno | 41 | 1 |
+| Mensajes al estudiante que lo nombran | 1 de 7 | 0 de 7 |
+| Alertas al docente que dicen de qué pregunta hablan | 13 de 23 | 21 de 23 |
+| Orientaciones que empiezan por un verbo | 25 de 27 | 28 de 28 |
+| Largo medio del mensaje al estudiante | 638 caracteres | 514 caracteres |
+| Preguntas incorrectas que revelan la letra esperada, con «orientar sin dar la respuesta» activo | 4 de 21 | 0 de 22 |
+| Nota sugerida | | igual en 5 de 7 |
+
+La fila de la letra revelada se contó sobre las preguntas por mejorar cuyo texto se guardó, hasta cuatro por entrega.
+
+Ejemplo de una misma pregunta. Antes: «La validación objetiva marcó la respuesta B (La comunidad) frente a la clave oficial (C) como incorrecta». Después: «La opción marcada no es la primera comunidad a la que pertenece una persona, por eso no suma puntaje».
+
+### Hallazgo de la muestra
+
+La primera versión de la regla decía que lo que es solo para el docente va en las alertas. En 5 de 8 entregas el modelo llevó ahí el aviso de que una respuesta era incorrecta, y las alertas subieron de 26 a 35. Desde la Spec 213 el docente ve cada alerta en su pregunta, así que eso tapaba las dudas reales. La regla final dice que una alerta es solo para lo que el docente debe comprobar o decidir. Con ella, las alertas volvieron a 23 en las 7 entregas repetidas y todas son dudas sobre la foto, la lectura, la clave o un criterio.
+
+### Límites de la muestra
+
+- El modelo de la muestra es más pequeño que el que califica en producción, y recibió las respuestas ya leídas, sin la foto. Sirve para comparar redacción, no para medir la exactitud de la nota.
+- Cada entrega se calificó una vez por versión. En dos la nota sugerida bajó, 0,15 y 0,28. Al repetir esas dos con las instrucciones desplegadas, una varió 0,05 por sí sola. La otra diferencia está en una pregunta cuya respuesta esperada parece equivocada: las instrucciones desplegadas dieron el punto completo y las nuevas lo dejaron parcial y avisaron al docente para que revise la clave. Con esta muestra no se puede saber si es un efecto de las reglas o variación del modelo.
+- Las 8 entregas pidieron revisión docente con ambas versiones.
+
+### Sin efecto en datos
+
+- Ninguna migración ni escritura. Las calificaciones guardadas conservan su redacción; las reglas nuevas se ven en las calificaciones nuevas y al recalificar.
+- No cambia la proyección ni la huella de los enlaces vigentes.
+
+### Manual, después del despliegue
+
+1. Calificar una entrega con una respuesta incorrecta: la explicación del estudiante no dice «validación», «clave oficial» ni «transcripción».
+2. Con «orientar sin dar la respuesta» activo, ni el mensaje ni la explicación dicen la letra o el texto correctos.
+3. Las notas del modelo que ve el docente en cada pregunta son dudas por comprobar, no avisos de que la respuesta es incorrecta.
