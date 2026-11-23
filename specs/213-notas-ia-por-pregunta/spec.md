@@ -19,6 +19,7 @@
 2. **Dada** una nota sin pregunta, o con una pregunta que no está en el desglose, **entonces** se muestra como aviso general con su texto.
 3. **Dada** una pregunta que solo pide atención, **entonces** sus notas se ven dentro de la pregunta, en «Notas de la IA».
 4. **Dado** un texto técnico (código, HTTP, traza), **entonces** no se muestra; queda el aviso genérico.
+5. **Dada** una entrega que sigue en análisis, **entonces** las notas son provisionales y no se muestra su texto.
 
 ### Historia 2 - Se sabe quién pidió revisión (Prioridad: P2)
 

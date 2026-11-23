@@ -56,6 +56,9 @@ describe('213 notas de la IA con su texto', () => {
     expect(describeReviewBlocker('principal_solicita_revision').message).toBe('El modelo principal pidió que revises esta calificación antes de confirmarla.');
     expect(describeReviewBlocker('nota_principal:P2: letra tenue en la segunda línea.', 'historical').message)
       .toBe('En el análisis inicial, el modelo principal anotó: «P2: letra tenue en la segunda línea.»');
+    // Mientras la entrega sigue en análisis, la nota es provisional y no se muestra su texto.
+    expect(describeReviewBlocker('nota_principal:Comprobar evidencia pendiente', 'processing').message)
+      .toBe('En el análisis inicial se registró un aviso adicional. Puedes consultar las respuestas y la evidencia.');
   });
 
   it('las preguntas decididas por el docente no reciben notas nuevas', () => {

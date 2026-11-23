@@ -117,11 +117,12 @@ function describePendingReviewBlocker(raw: string): { message: string; guidance:
 export function describeReviewBlocker(raw: string, context: 'pending' | 'historical' | 'processing' = 'pending') {
   const notice = describePendingReviewBlocker(raw);
   if (context === 'pending') return notice;
-  const note = aiNote(raw);
+  // Mientras la entrega sigue en análisis, las notas son provisionales y no se muestra su texto.
+  const note = context === 'historical' ? aiNote(raw) : null;
   if (note?.text) return {
     ...notice,
     message: `En el análisis inicial, ${note.author.toLowerCase()} anotó: «${note.text}»`,
-    guidance: context === 'processing' ? 'La entrega sigue en análisis. La nota todavía no es definitiva.' : 'Estos avisos pertenecen a la primera revisión; no cambian la nota actual.',
+    guidance: 'Estos avisos pertenecen a la primera revisión; no cambian la nota actual.',
     action: 'Ver puntajes por pregunta',
   };
   const reason = raw.replace(/^feedback_quality:/, '').trim();
