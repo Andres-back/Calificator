@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "eaf4b5f698b9994d8a373a1af6df4d5057842208eee08975ac01911e95594aed",
+  "source_digest": "c2ddc94533384e6d2f0addbc08f5a1eebde25e1f2d90a31ae68431f48d86ec63",
   "surfaces": [
     {
       "actors": [
@@ -25218,6 +25218,12 @@
           "level": "unit",
           "reference": "/",
           "status": "direct",
+          "test_path": "backend/tests/unit/test_modelo_principal_desacuerdo.py"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
           "test_path": "backend/tests/unit/test_motif_library.py"
         },
         {
@@ -26401,6 +26407,12 @@
           "reference": "/",
           "status": "direct",
           "test_path": "frontend/src/modules/calificaciones/review-triage/missingInPhotos207.test.ts"
+        },
+        {
+          "level": "unit",
+          "reference": "/",
+          "status": "direct",
+          "test_path": "frontend/src/modules/calificaciones/review-triage/primaryModel212.test.ts"
         },
         {
           "level": "unit",
@@ -57913,6 +57925,12 @@
           "reference": "calificaciones",
           "status": "direct",
           "test_path": "backend/tests/unit/test_model_metadata.py"
+        },
+        {
+          "level": "unit",
+          "reference": "calificaciones",
+          "status": "direct",
+          "test_path": "backend/tests/unit/test_modelo_principal_desacuerdo.py"
         },
         {
           "level": "unit",

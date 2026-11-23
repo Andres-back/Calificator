@@ -6,7 +6,10 @@ from typing import Any
 import unicodedata
 
 PENDING_STATES = {"ilegible", "no_evaluable", "revision_pendiente"}
-VALID_STATES = {"correcta", "parcial", "incorrecta", "sin_respuesta", *PENDING_STATES}
+VALUED_STATES = {"correcta", "parcial", "incorrecta", "sin_respuesta"}
+VALID_STATES = {*VALUED_STATES, *PENDING_STATES}
+# Spec 212: origen de una pregunta en la que el verificador discrepó y se usó el modelo principal.
+PRIMARY_MODEL_ORIGIN = "modelo_principal"
 ALLOWED_VALUATION_FIELDS = {"evaluador", "puntaje", "estado", "explicacion", "orientacion_mejora", "confianza", "proveedor", "modelo", "tiempo_ms"}
 OBJECTIVE_REVIEW_REASONS = {
     "sin_lectura": "No se encontró una lectura de la respuesta.",
@@ -165,7 +168,15 @@ def component_consensus(
             orientation = str((a or b or {}).get("orientacion_mejora") or "")
             pending_evaluator = any(item in PENDING_STATES for item in states)
             review, origin = material or pending_evaluator or state in PENDING_STATES, "consenso_ia"
-            if material or pending_evaluator:
+            primary_valued = bool(a and a.get("puntaje") is not None and a.get("estado") in VALUED_STATES)
+            if b and primary_valued and (material or pending_evaluator):
+                # Spec 212: si el verificador discrepa o no pudo valorar, vale la valoración del
+                # modelo principal. Ambas quedan en valoraciones_json y el docente confirma la nota.
+                score = min(max(_decimal(a.get("puntaje")), Decimal("0")), maximum)
+                state, origin, review = str(a.get("estado")), PRIMARY_MODEL_ORIGIN, False
+                explanation = str(a.get("explicacion") or "Valoración del modelo principal.")
+                orientation = str(a.get("orientacion_mejora") or "")
+            elif material or pending_evaluator:
                 score = None
                 # Conserva la causa concreta si ambos coinciden (p. ej. ilegible).
                 state = states[0] if pending_evaluator and len(set(states)) == 1 else "revision_pendiente"
@@ -301,8 +312,14 @@ def feedback_quality_guard(
     blockers: list[str],
     model_score: Decimal | None,
     calculated_score: Decimal,
+    sum_is_authoritative: bool = False,
 ) -> dict[str, Any]:
-    """Evita que una redacción convincente oculte incoherencias verificables."""
+    """Evita que una redacción convincente oculte incoherencias verificables.
+
+    Spec 212: con ``sum_is_authoritative`` (todas las preguntas con puntaje y sin bloqueos),
+    la nota es la suma por preguntas; si la nota global del modelo era otra, la
+    retroalimentación se rehace desde el desglose sin bloquear la calificación.
+    """
     reasons: list[str] = []
     if blockers:
         reasons.append("componentes_o_evidencia_pendientes")
@@ -317,6 +334,14 @@ def feedback_quality_guard(
         reasons.append("feedback_contradice_desglose")
 
     summary = build_formative_feedback(components)
+    if sum_is_authoritative and reasons == ["nota_global_no_coincide_con_suma"]:
+        return {
+            "version": "pilot-v1",
+            "status": "rebuilt",
+            "reasons": reasons,
+            "original_feedback": original_feedback,
+            "visible_feedback": summary[:2000],
+        }
     if reasons:
         visible = (
             "Retroalimentación provisional: requiere revisión docente porque la evidencia, "
@@ -333,3 +358,39 @@ def feedback_quality_guard(
         "original_feedback": original_feedback,
         "visible_feedback": visible,
     }
+
+
+def review_reasons_outside_breakdown(raw_output: dict | None) -> list[str]:
+    """Spec 212: motivos de revisión del flujo de calificación que el desglose no resuelve.
+
+    Las notas y solicitudes del verificador y la discrepancia o el fallo del comparador
+    quedan resueltos por el desglose (la regla del modelo principal). Todo lo demás
+    sigue pidiendo revisión docente. Un dato ausente cuenta como motivo, por prudencia.
+    """
+    raw = raw_output if isinstance(raw_output, dict) else {}
+    primary = raw.get("grader_a") if isinstance(raw.get("grader_a"), dict) else {}
+    verifier = raw.get("grader_b") if isinstance(raw.get("grader_b"), dict) else {}
+    reasons: list[str] = []
+    if raw.get("terminal_reason") not in {"review_required", "success"}:
+        reasons.append("sin_trazabilidad")
+    if primary.get("requiere_revision_docente") is not False:
+        reasons.append("principal_solicita_revision")
+    if primary.get("error_code") or primary.get("nota") is None or verifier.get("nota") is None:
+        reasons.append("evaluador_sin_nota")
+    if raw.get("verification_status") != "complete":
+        reasons.append("segunda_revision_incompleta")
+    if raw.get("objective_floor_applied"):
+        reasons.append("piso_objetivo")
+    refinement = raw.get("feedback_refinement")
+    if isinstance(refinement, dict) and refinement.get("status") == "draft":
+        reasons.append("retroalimentacion_reescrita")
+    coverage = raw.get("evidence_coverage")
+    if isinstance(coverage, dict) and coverage.get("requiere_revision"):
+        reasons.append("cobertura_evidencia_incompleta")
+    if raw.get("graphic_uncertain_questions"):
+        reasons.append("evidencia_grafica_incierta")
+    vision = raw.get("vision")
+    extraction = vision.get("extraction") if isinstance(vision, dict) else None
+    if isinstance(extraction, dict) and extraction.get("requires_review"):
+        reasons.append("lectura_requiere_revision")
+    return reasons

@@ -163,6 +163,16 @@ function usableValuations(component: GradeComponentData): Record<string, unknown
   return Array.isArray(component.valoraciones) ? component.valoraciones.filter((item) => item && typeof item === 'object' && !Array.isArray(item)) : [];
 }
 
+/** Spec 212: origen de una pregunta en la que el verificador discrepó y se usó el modelo principal. */
+export const PRIMARY_MODEL_ORIGIN = 'modelo_principal';
+
+function primaryModelLabel(valuations: Record<string, unknown>[]): string {
+  const verifier = valuations.find((valuation) => valuation.evaluador === 'B');
+  const score = numeric(verifier?.puntaje);
+  const proposal = score != null ? `propuso ${score.toLocaleString('es-CO', { maximumFractionDigits: 2 })} puntos` : 'no pudo valorarla';
+  return `El verificador ${proposal}; se usó la valoración del modelo principal`;
+}
+
 function valuationsContradict(component: GradeComponentData): boolean {
   const valuations = usableValuations(component);
   if (valuations.length < 2) return false;
@@ -200,18 +210,21 @@ export function classifyReviewComponent(component: GradeComponentData, missingIn
     && !component.requiere_revision && !['ilegible', 'no_evaluable', 'revision_pendiente'].includes(component.estado);
   // Only a per-question correction makes original model assessments historical.
   const valuations = teacherReviewed ? [] : usableValuations(component);
-  const confidences = valuations
+  // Spec 212: si el verificador discrepó se usó el modelo principal; solo su confianza cuenta.
+  const primaryModel = component.origen.toLowerCase() === PRIMARY_MODEL_ORIGIN;
+  const confidences = (primaryModel ? valuations.filter((valuation) => valuation.evaluador === 'A') : valuations)
     .map((valuation) => normalizedConfidence(valuation.confianza))
     .filter((value): value is number => value != null);
   if (confidences.some((confidence) => confidence < REVIEW_CONFIDENCE_THRESHOLD)) {
     add(blocked, 'low_confidence', 'La IA indicó baja confianza: contrasta esta respuesta con la evidencia');
   }
-  if (!teacherReviewed && valuationsContradict(component)) add(blocked, 'valuation_disagreement', 'Las verificaciones tienen una diferencia importante');
+  if (!teacherReviewed && primaryModel) add(attention, 'primary_model_used', primaryModelLabel(valuations));
+  else if (!teacherReviewed && valuationsContradict(component)) add(blocked, 'valuation_disagreement', 'Las verificaciones tienen una diferencia importante');
   const scores = valuations.map((item) => numeric(item.puntaje)).filter((value): value is number => value != null);
-  if (scores.length > 1 && Math.max(...scores) - Math.min(...scores) > 0.000001) add(attention, 'minor_disagreement', 'Los puntajes de las verificaciones tienen una diferencia');
+  if (!primaryModel && scores.length > 1 && Math.max(...scores) - Math.min(...scores) > 0.000001) add(attention, 'minor_disagreement', 'Los puntajes de las verificaciones tienen una diferencia');
   if (confidences.some((confidence) => confidence >= REVIEW_CONFIDENCE_THRESHOLD && confidence < REVIEW_HIGH_CONFIDENCE_THRESHOLD)) add(attention, 'moderate_confidence', 'Conviene comprobar la valoración con la evidencia');
   if (!component.explicacion?.trim()) add(attention, 'missing_explanation', 'Falta explicar cómo se obtuvo el puntaje');
-  if (isAssisted(component) && (valuations.length < 2 || confidences.length !== valuations.length
+  if (isAssisted(component) && !primaryModel && (valuations.length < 2 || confidences.length !== valuations.length
     || scores.length !== valuations.length || scores.some((value) => value < 0 || maximum == null || value > maximum)
     || valuations.some((value) => !['correcta', 'parcial', 'incorrecta', 'sin_respuesta'].includes(String(value.estado))))) {
     add(attention, 'insufficient_verification', 'No hay información suficiente para comprobar la revisión de IA');

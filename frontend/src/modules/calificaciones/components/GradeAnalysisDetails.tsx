@@ -14,7 +14,7 @@ export function GradeAnalysisDetails({ breakdown }: { breakdown: GradeBreakdownD
         aria-label={summary} className="min-w-0 rounded-xl border border-border bg-surface px-3">
         <summary className="focus-ring min-h-11 cursor-pointer content-center py-3 text-sm font-semibold">{summary}</summary>
         <div className="space-y-3 border-t border-border py-3 text-sm leading-6">
-          <p className="text-xs text-muted">Proceso: evidencia extraída → valoración {component.origen === 'objetivo' ? 'objetiva' : component.origen === 'docente' ? 'docente' : 'asistida por IA'} → {component.valoraciones && component.valoraciones.length > 1 ? 'comparación registrada' : 'comprobación disponible'}.</p>
+          <p className="text-xs text-muted">Proceso: evidencia extraída → valoración {component.origen === 'objetivo' ? 'objetiva' : component.origen === 'docente' ? 'docente' : component.origen === 'modelo_principal' ? 'del modelo principal (el verificador discrepó)' : 'asistida por IA'} → {component.valoraciones && component.valoraciones.length > 1 ? 'comparación registrada' : 'comprobación disponible'}.</p>
           <div className="space-y-2">
             <h4 className="font-semibold">Valoraciones registradas</h4>
             {component.valoraciones?.length ? component.valoraciones.map((valuation, index) => <p key={index} className="rounded-lg bg-surface-2 p-3 whitespace-pre-wrap">Valoración {String(valuation.evaluador ?? index + 1)}: {String(valuation.puntaje ?? '—')} puntos.{valuation.explicacion != null && String(valuation.explicacion) ? ` ${String(valuation.explicacion)}` : ''}</p>) : <p className="text-xs text-muted">No se registraron valoraciones individuales.</p>}
