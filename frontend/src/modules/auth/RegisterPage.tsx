@@ -49,7 +49,7 @@ export function RegisterPage() {
     <main className="relative flex min-h-dvh flex-col overflow-hidden bg-surface text-fg">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,.14),transparent_32%)]" />
       <div className="absolute right-4 top-4 z-10"><ThemeToggle /></div>
-      <div className="relative grid flex-1 place-items-center px-4 py-10"><Card className="w-full max-w-lg p-6 shadow-xl sm:p-8">
+      <div className="relative grid flex-1 place-items-center px-4 pb-10 pt-20 sm:py-10"><Card className="w-full max-w-lg p-6 shadow-xl sm:p-8">
         <div className="mb-6 flex items-center gap-3">
           <img src="/branding/logo-mark.webp" alt="XCalificator" className="h-14 w-14 rounded-xl object-contain" />
           <div>

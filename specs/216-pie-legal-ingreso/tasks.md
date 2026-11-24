@@ -11,6 +11,8 @@
 - [X] T002 `LoginPage.tsx`: página en columna, contenido que ocupa el espacio disponible y pie legal después del contenido. (FR-001, FR-003)
 - [X] T003 `LoginPage.tsx`: en pantallas estrechas el contenido empieza debajo del botón de tema. (FR-002)
 
+- [X] T006 Prueba de regresión para «Crear cuenta» a 375 × 812 px y `RegisterPage.tsx`: la tarjeta empieza debajo del botón de tema. (FR-005)
+
 ### Cierre
 
 - [X] T004 Capturas a 320, 375 y 1366 px en claro y oscuro; tipos, lint y pruebas del módulo de ingreso. Sin cambios en el servidor ni en los textos. (FR-004)

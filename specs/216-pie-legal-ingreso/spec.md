@@ -10,6 +10,8 @@ En «Ingresar», el pie con los enlaces legales estaba fijado al borde inferior 
 
 En la misma pantalla, el botón de tema claro u oscuro se dibujaba sobre la esquina superior derecha de la tarjeta.
 
+En «Crear cuenta» ocurría lo mismo con el botón de tema.
+
 Es la primera pantalla que ve un docente. Las otras pantallas públicas (registro y recuperación de contraseña) ya tenían el pie después del contenido.
 
 ## Escenarios de usuario y pruebas
@@ -27,6 +29,7 @@ Es la primera pantalla que ve un docente. Las otras pantallas públicas (registr
 - **FR-002**: En pantallas estrechas, la tarjeta empieza debajo del botón de tema.
 - **FR-003**: Los cinco enlaces legales siguen visibles y la página no tiene desplazamiento lateral.
 - **FR-004**: Sin cambios en el servidor, en los textos ni en el ingreso.
+- **FR-005**: En «Crear cuenta», en pantallas estrechas, la tarjeta también empieza debajo del botón de tema.
 
 ## Criterios de éxito
 

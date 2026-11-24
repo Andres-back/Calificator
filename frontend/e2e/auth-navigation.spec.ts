@@ -91,3 +91,17 @@ for (const [width, height] of [[320, 568], [375, 812], [1280, 600]] as const) te
   await expect(page.getByRole('navigation', { name: 'Información legal' }).getByRole('link')).toHaveCount(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
+
+test('216 en «Crear cuenta» el botón de tema no toca la tarjeta en un celular', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/registro');
+  const card = page.locator('.card').filter({ has: page.locator('form') });
+  await expect(card.getByRole('heading', { name: 'Crear cuenta' })).toBeVisible();
+
+  await expect.poll(async () => {
+    const cardBox = (await card.boundingBox())!;
+    const themeBox = (await page.getByRole('button', { name: 'Cambiar tema' }).boundingBox())!;
+    return themeBox.y + themeBox.height <= cardBox.y || themeBox.x >= cardBox.x + cardBox.width;
+  }).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
