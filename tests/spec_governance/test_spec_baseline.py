@@ -207,6 +207,7 @@ ALL_SPECS = {
     "213-notas-ia-por-pregunta",
     "214-lectura-preguntas-hoja-aparte",
     "215-marcar-varias-preguntas",
+    "216-pie-legal-ingreso",
 }
 OWNED_SPECS = {
     name

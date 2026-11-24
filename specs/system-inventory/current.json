@@ -653,7 +653,7 @@
     }
   ],
   "schema_version": 1,
-  "source_digest": "b81ffd61a15ae3d14c113c1465f72cb4600a0a78fb04dd66fc56dfdf3fc9587f",
+  "source_digest": "0754215158d9935b55cad80192c23bcad63d137baa8c7af64873b93ac8232b84",
   "surfaces": [
     {
       "actors": [
@@ -33362,6 +33362,12 @@
           "reference": "/registro",
           "status": "domain",
           "test_path": "frontend/e2e/accessibility/teacher-ai-configuration.a11y.spec.ts"
+        },
+        {
+          "level": "e2e",
+          "reference": "/registro",
+          "status": "direct",
+          "test_path": "frontend/e2e/auth-navigation.spec.ts"
         },
         {
           "level": "e2e",
