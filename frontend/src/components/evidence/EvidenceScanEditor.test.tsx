@@ -108,7 +108,7 @@ describe('revisión de escaneo antes del envío', () => {
     const onAccept = vi.fn();
     const view = render(<EvidenceScanEditor file={photo} pageNumber={1} rotation={90} onAccept={onAccept} onClose={vi.fn()} />);
     const corner = await screen.findByRole('button', { name: 'Esquina 1, superior izquierda' });
-    const svg = view.container.querySelector('svg[aria-label="Foto con cuatro esquinas ajustables"]')!;
+    const svg = view.baseElement.querySelector('svg[aria-label="Foto con cuatro esquinas ajustables"]')!;
     vi.spyOn(svg, 'getBoundingClientRect').mockReturnValue({ top: 0, left: 0, width: 600, height: 400, right: 600, bottom: 400, x: 0, y: 0, toJSON() {} });
     const pointer = (target: Element, kind: string, x: number, y: number) => {
       const event = new Event(kind, { bubbles: true });

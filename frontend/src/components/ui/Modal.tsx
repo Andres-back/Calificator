@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -140,7 +141,7 @@ export function Modal({
   // never retain an overlay or a ghost dialog above the underlying draft.
   if (!open) return null;
 
-  return (
+  const layer = (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       initial={reduceMotion ? false : { opacity: 0 }}
@@ -188,4 +189,7 @@ export function Modal({
       </motion.div>
     </motion.div>
   );
+  // Spec 217: a pantalla completa se dibuja en el documento. Dentro de otro diálogo, su desenfoque
+  // (backdrop-filter) encerraba la capa en la caja de atrás y dejaba botones fuera de la pantalla.
+  return fullScreen && typeof document !== 'undefined' ? createPortal(layer, document.body) : layer;
 }

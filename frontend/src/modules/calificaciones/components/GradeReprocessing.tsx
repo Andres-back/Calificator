@@ -149,6 +149,12 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
     && contextReady && (mode !== 'edit' || (editVersionMatches && editChanged && editPages.length > 0 && confirmed))
     && (mode !== 'replace' || (pages.length > 0 && !hasUnusableEvidence(pages) && (!usingScan || scanPagesReviewed(pages))));
 
+  // Spec 217: el botón apagado dice qué falta, en vez de dejar adivinar.
+  const editSaveHint = mode !== 'edit' || !editContext || !editVersionMatches || mutation.isPending ? ''
+    : !editChanged ? 'Para guardar, primero cambia algo en las hojas: girar o recortar, ordenar, quitar o añadir.'
+      : editPages.length === 0 ? 'Deja al menos una hoja para poder guardar.'
+        : !confirmed ? 'Marca la casilla de confirmación para guardar.' : '';
+
   return <div className="min-w-0 space-y-3" aria-label="Corregir entrega y consultar historial">
     {evidenceView && cal.entrega_archivo_url && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 p-3">
       <div><p className="text-sm font-bold text-fg">Gestionar hojas</p><p className="text-xs leading-5 text-muted">Añade, quita, ajusta u ordena las fotos.</p></div>
@@ -253,10 +259,13 @@ function GradeReprocessingContent({ cal, onAccepted, onDirtyChange, disabled = f
         </details>
         {(hasDecision || mode === 'edit') && <label className="flex min-h-11 items-start gap-3 rounded-xl border border-amber-300 p-3 text-sm leading-6">
           <input type="checkbox" checked={confirmed} disabled={mutation.isPending} className="mt-1 h-5 w-5 shrink-0" onChange={(event) => { setConfirmed(event.currentTarget.checked); changeRequest(); }} />
-          {mode === 'edit' ? 'Confirmo guardar las hojas y volver a calificar. El original y el resultado anterior quedarán en el historial. Los enlaces compartidos se suspenden y la nueva nota no se publica automáticamente.' : 'Confirmo reabrir esta nota. Lo anterior se conserva y la nueva nota no se publicará automáticamente.'}
+          {mode === 'edit' ? <span><span className="block font-semibold">Confirmo guardar las hojas y volver a calificar.</span>
+            <span className="block text-muted">Las hojas y la nota anteriores quedan en el historial. La nueva nota no se publica hasta que la revises; mientras tanto se pausa el enlace que hayas compartido.</span></span>
+            : 'Confirmo reabrir esta nota. Lo anterior se conserva y la nueva nota no se publicará automáticamente.'}
         </label>}
         {error && <p role="alert" className="text-sm leading-6 text-rose-700 dark:text-rose-300">{error} Conservamos tus archivos para que puedas volver a intentarlo.</p>}
         {contextNeedsRefresh && <Button type="button" variant="outline" className="min-h-11" disabled={mutation.isPending || scoreContext.isFetching || refreshingContext} onClick={() => void refreshPoints()}>Actualizar puntos</Button>}
+        {editSaveHint && <p role="status" data-testid="evidence-edit-save-hint" className="text-sm leading-6 text-muted">{editSaveHint}</p>}
         <div className="flex flex-wrap gap-2"><Button type="button" loading={mutation.isPending} disabled={!canSend} onClick={() => mutation.mutate()}>{mode === 'edit' ? 'Guardar y volver a calificar' : 'Enviar a calificar'}</Button>
           <Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancelar</Button></div>
       </div>

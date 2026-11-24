@@ -61,6 +61,18 @@ describe('141 editar hojas guardadas', () => {
     })));
   });
 
+  it('217 dice qué falta para poder guardar', async () => {
+    await openEditor();
+    expect(screen.getByTestId('evidence-edit-save-hint')).toHaveTextContent('Para guardar, primero cambia algo en las hojas');
+    fireEvent.click(screen.getByRole('button', { name: 'Subir hoja 2' }));
+    expect(screen.getByTestId('evidence-edit-save-hint')).toHaveTextContent('Marca la casilla de confirmación para guardar.');
+    fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo guardar las hojas y volver a calificar/ }));
+    expect(screen.queryByTestId('evidence-edit-save-hint')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar y volver a calificar' })).toBeEnabled();
+    // La confirmación explica en lenguaje llano qué pasa con lo anterior.
+    expect(screen.getByText(/La nueva nota no se publica hasta que la revises/)).toBeInTheDocument();
+  });
+
   it('pide confirmar el descarte y no escribe al cancelar', async () => {
     await openEditor();
     fireEvent.click(screen.getByRole('button', { name: 'Quitar hoja 1' }));
