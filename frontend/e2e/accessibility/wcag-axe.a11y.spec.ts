@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { login } from '../fixtures/explainableGrading';
+import { openEvidenceEditor } from '../fixtures/evidenceEdit';
 
 /**
  * Spec 211: revisión automática de reglas WCAG 2.2 A y AA (axe) en las pantallas principales.
@@ -39,6 +40,12 @@ const screens: Screen[] = [
     await chips.nth(1).click();
     await chips.nth(2).click();
     await expect(page.getByText('2 preguntas seleccionadas')).toBeVisible();
+  } },
+  // Spec 217: «Editar hojas», con una hoja quitada y la opción de deshacer a la vista.
+  { name: 'editar hojas de la evidencia', open: async (page) => {
+    const dialog = await openEvidenceEditor(page);
+    await dialog.getByRole('button', { name: 'Quitar hoja 2' }).click();
+    await expect(dialog.getByRole('button', { name: 'Deshacer', exact: true })).toBeVisible();
   } },
   { name: 'retroalimentación del estudiante', open: async (page) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
