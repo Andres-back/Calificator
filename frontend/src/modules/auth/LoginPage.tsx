@@ -86,7 +86,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-dvh bg-surface text-fg">
+    <div className="relative flex min-h-dvh flex-col bg-surface text-fg">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(20,184,166,0.13),transparent_30%)]" />
       <div className="absolute inset-0 z-0">
         <img
@@ -99,7 +99,7 @@ export function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <main className="relative grid min-h-dvh place-items-center px-4 pb-20 pt-10 sm:px-6">
+      <main className="relative grid flex-1 place-items-center px-4 pb-6 pt-20 sm:px-6 sm:py-10">
         <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <section className="hidden lg:block">
             <div className="mb-8 flex items-center gap-3">
@@ -294,7 +294,8 @@ export function LoginPage() {
           </motion.div>
         </div>
       </main>
-      <LegalFooter className="absolute inset-x-0 bottom-0 z-10" compact />
+      {/* Spec 216: en el flujo de la página, para que nunca quede encima de la tarjeta. */}
+      <LegalFooter className="relative z-10" compact />
     </div>
   );
 }

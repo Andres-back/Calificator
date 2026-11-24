@@ -68,3 +68,26 @@ test('login mocks a professor session and protects the admin navigation', async 
   await page.goto('/app/admin/configuracion-ia');
   await expect(page).toHaveURL(/\/app\/403/);
 });
+
+// Spec 216: en la pantalla de ingreso nada queda encima de la tarjeta, tampoco en un celular pequeño.
+for (const [width, height] of [[320, 568], [375, 812], [1280, 600]] as const) test(`216 el pie legal y el botón de tema no tapan la tarjeta de ingreso ${width}x${height}`, async ({ page }) => {
+  await page.setViewportSize({ width, height });
+  await page.goto('/login');
+  const card = page.locator('.card').filter({ has: page.locator('form') });
+  await expect(card.getByText('Tu contraseña nunca se guarda en este dispositivo.')).toBeVisible();
+
+  // La tarjeta entra con una animación: se espera a que el pie quede debajo.
+  await expect.poll(async () => {
+    const cardBox = (await card.boundingBox())!;
+    const footerBox = (await page.getByRole('contentinfo').boundingBox())!;
+    return Math.round(footerBox.y - (cardBox.y + cardBox.height));
+  }).toBeGreaterThanOrEqual(0);
+  await expect.poll(async () => {
+    const cardBox = (await card.boundingBox())!;
+    const themeBox = (await page.getByRole('button', { name: /tema|modo/i }).first().boundingBox())!;
+    const apart = themeBox.y + themeBox.height <= cardBox.y || themeBox.x >= cardBox.x + cardBox.width;
+    return apart;
+  }).toBe(true);
+  await expect(page.getByRole('navigation', { name: 'Información legal' }).getByRole('link')).toHaveCount(5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
