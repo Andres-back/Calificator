@@ -1,6 +1,6 @@
 # Especificación: Recuperar calificación multipágina
 **Rama**: `codex/112-evaluacion-multipagina` | **Fecha**: 2026-10-21 | **Issue**: #232
-**Estado**: Hotfix solicitado y aprobado expresamente por el usuario: investigar y resolver entregas sin nota de Sociales Hidrografía, 17 preguntas, Marcela Rosero, 6-B.
+**Estado**: Hotfix solicitado y aprobado expresamente por el usuario: investigar y resolver entregas sin nota de Sociales Hidrografía, 17 preguntas, de una docente de grado sexto.
 
 ## Escenarios de usuario y pruebas
 

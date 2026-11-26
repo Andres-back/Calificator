@@ -78,7 +78,7 @@ El administrador asigna los modelos elegidos tras la comparación local: Luna pr
 
 El usuario indicó explícitamente: Luna como principal y GLM como respaldo para digitalizar; Luna como principal evaluador, GLM Flash como segundo evaluador y Luna como confirmador. «Confirmador» se corresponde con la revisión adicional/arbitraje ya existente, no con otro modelo que cambie la fórmula de la nota. La consolidación matemática sigue siendo determinista y el docente conserva la decisión final.
 
-La muestra local de nueve llamadas no certifica calidad universal: Luna y GLM renumeraron cuatro preguntas de Marcela y hubo recortes imperfectos; GLM produjo una clave inválida para una pregunta abierta de Amparo; DeepSeek no completó el documento de dos hojas. La publicación exige el soporte de protocolo, pruebas sintéticas y regresiones; registrar esta decisión no significa que ya esté activa en producción. El informe local es evidencia de selección, no un artefacto público ni una nueva autorización para transmitir datos de alumnos.
+La muestra local de nueve llamadas no certifica calidad universal: Luna y GLM renumeraron cuatro preguntas de una evaluación de Ciencias Sociales y hubo recortes imperfectos; GLM produjo una clave inválida para una pregunta abierta de una evaluación de Artística; DeepSeek no completó el documento de dos hojas. La publicación exige el soporte de protocolo, pruebas sintéticas y regresiones; registrar esta decisión no significa que ya esté activa en producción. El informe local es evidencia de selección, no un artefacto público ni una nueva autorización para transmitir datos de alumnos.
 
 ## Corrección aprobada de generación — 23-10-2026, issue #249
 

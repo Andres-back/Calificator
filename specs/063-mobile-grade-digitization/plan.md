@@ -53,7 +53,7 @@ Eliminar el bloqueo perceptible de la búsqueda móvil con entrada local inmedia
 
 - Sin cambios en endpoints, tablas ni esquemas públicos.
 - `reglas_feedback.advertencias` puede incluir una advertencia adicional ya admitida por el contrato existente.
-- La evaluación histórica de Edby no será modificada por despliegue ni migración.
+- La evaluación histórica de la docente afectada no será modificada por despliegue ni migración.
 
 ## Estructura afectada
 

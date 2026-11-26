@@ -8,7 +8,7 @@
 
 La docente digitaliza una evaluación acompañada de una lectura y necesita verla, corregirla y entregarla junto a las preguntas. El estudiante y el calificador deben disponer del mismo texto de apoyo, separado del solucionario privado.
 
-**Razón de prioridad**: La profesora Marcela identificó que conservar solo las preguntas vuelve incompleta su evaluación de Hidrografía.
+**Razón de prioridad**: Una docente de Ciencias Sociales identificó que conservar solo las preguntas vuelve incompleta su evaluación de Hidrografía.
 
 **Prueba independiente**: Digitalizar una muestra sintética con lectura y preguntas; guardarla, volver a abrirla, editar la lectura y comprobar pantalla, impresión y contexto de calificación. Las soluciones siguen siendo exclusivas del docente.
 
