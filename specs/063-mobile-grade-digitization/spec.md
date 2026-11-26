@@ -70,7 +70,7 @@ Como docente que digitaliza una evaluación ya contestada, quiero que el sistema
 
 ## Supuestos y límites
 
-- Se corrigen nuevas digitalizaciones; el caso histórico de Matemáticas de Edby queda intacto hasta revisión explícita del docente.
+- Se corrigen nuevas digitalizaciones; el caso histórico de Matemáticas de la docente afectada queda intacto hasta revisión explícita del docente.
 - Se reutilizan los endpoints y datos de matrícula actuales.
 - No se añaden tablas ni migraciones.
 - El término de búsqueda se aplica en el backend para conservar cobertura sobre matrículas paginadas.

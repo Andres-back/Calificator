@@ -209,6 +209,7 @@ ALL_SPECS = {
     "215-marcar-varias-preguntas",
     "216-pie-legal-ingreso",
     "217-editar-hojas-facil",
+    "218-datos-personales-repo",
 }
 OWNED_SPECS = {
     name

@@ -135,3 +135,7 @@ POSTGRES_PORT=5433 docker compose up -d
 Proyecto de investigación en fase de implementación piloto. El sistema se encuentra operativo en la Institución Educativa San Agustín para pruebas con docentes reales.
 
 ---
+
+## Licencia
+
+Código bajo licencia MIT. Ver [LICENSE](LICENSE).
